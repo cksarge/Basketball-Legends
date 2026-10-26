@@ -9,7 +9,10 @@
     "start": "npx serve out",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "data": "tsx scripts/build-data.ts",
+    "assets:player": "blender -b -P scripts/blender/build_player.py -- . && mkdir -p scripts/blender/out && cp public/models/player.glb scripts/blender/out/player.raw.glb && gltf-transform meshopt scripts/blender/out/player.raw.glb public/models/player.glb --level medium",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",
@@ -30,6 +33,7 @@
     "zustand": "^5.0.16"
   },
   "devDependencies": {
+    "@gltf-transform/cli": "^4.5.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",

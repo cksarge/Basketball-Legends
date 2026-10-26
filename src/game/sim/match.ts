@@ -20,8 +20,10 @@ const DT_DECIDE = 0.2;
 
 export interface MatchSetup {
   league: LeagueId;
-  home: { team: Team; roster: Player[]; tactics?: Partial<TeamTactics>; human?: boolean; starters?: string[] };
-  away: { team: Team; roster: Player[]; tactics?: Partial<TeamTactics>; human?: boolean; starters?: string[] };
+  home: { team: Team; roster: Player[]; tactics?: Partial<TeamTactics>; human?: boolean; starters?: string[]; humans?: number[] };
+  away: { team: Team; roster: Player[]; tactics?: Partial<TeamTactics>; human?: boolean; starters?: string[]; humans?: number[] };
+  /** Career mode: the human always controls this player (no auto-switching). */
+  lockPlayerId?: string;
   quarterMinutes?: number;
   difficulty?: Difficulty;
   shotMeter?: boolean;
@@ -74,6 +76,9 @@ export interface MatchState {
 export class Match {
   state: MatchState;
   rng: Rng;
+  /** Human controller indexes per team. */
+  humanSlots: [number[], number[]] = [[], []];
+  lockPlayerId: string | null = null;
   private ballEvents: BallEvent[] = [];
 
   constructor(setup: MatchSetup) {
@@ -105,6 +110,8 @@ export class Match {
       };
     };
     const teams: [TeamGameState, TeamGameState] = [mkTeam(setup.home, 1), mkTeam(setup.away, -1)];
+    this.humanSlots = [setup.home.humans ?? (setup.home.human ? [0] : []), setup.away.humans ?? (setup.away.human ? [1] : [])];
+    this.lockPlayerId = setup.lockPlayerId ?? null;
     const box: BoxScore = {};
     for (const t of teams) for (const p of t.roster) box[p.id] = emptyLine();
 
@@ -135,12 +142,20 @@ export class Match {
         s.agents.push(old ? { ...old, idx: ti * 5 + slot } : newAgent(ti * 5 + slot, ti, p));
       });
     }
-    // humans: first agent of human teams (rebound to ball handler later)
+    // humans: keep existing assignments, otherwise hand out this team's controller slots
     for (const ti of [0, 1] as TeamIdx[]) {
-      if (s.teams[ti].humanControlled && !s.agents.some((a) => a.team === ti && a.human !== null)) {
-        s.agents[ti * 5].human = ti === 0 ? 0 : 1;
+      const slots = this.humanSlots?.[ti] ?? [];
+      const taken = new Set(s.agents.filter((a) => a.team === ti && a.human !== null).map((a) => a.human));
+      for (const h of slots) {
+        if (taken.has(h)) continue;
+        let ag: Agent | undefined;
+        if (this.lockPlayerId) ag = s.agents.find((a) => a.player.id === this.lockPlayerId && a.team === ti);
+        if (!ag && this.lockPlayerId) continue; // career player is on the bench
+        ag = ag ?? s.agents.find((a) => a.team === ti && a.human === null);
+        if (ag) { ag.human = h; taken.add(h); }
       }
     }
+    (s as MatchState & { lockHuman?: boolean }).lockHuman = !!this.lockPlayerId;
     this.assignRoles();
   }
 
@@ -1936,7 +1951,7 @@ export class Match {
     }
     for (const ti of [0, 1] as TeamIdx[]) {
       const hv = humanByTeam[ti];
-      if (hv !== null && !s.agents.some((a) => a.team === ti && a.human !== null)) s.agents[ti * 5].human = hv;
+      if (hv !== null && !this.lockPlayerId && !s.agents.some((a) => a.team === ti && a.human !== null)) s.agents[ti * 5].human = hv;
     }
     s.ball.owner = ownerSlot;
   }

@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+@theme {
+  --color-navy: #0d1b2e;
+  --color-deck: #16283f;
+  --color-deck-2: #1f3552;
+  --color-line: #2c4566;
+  --color-wood: #d59a5b;
+  --color-wood-deep: #a86e37;
+  --color-amber: #ffb627;
+  --color-net: #f2f5f8;
+  --color-steel: #8fa3b8;
+  --color-good: #4cc38a;
+  --color-bad: #f0625a;
+
+  --font-display: var(--font-big-shoulders), "Arial Narrow", sans-serif;
+  --font-body: var(--font-barlow), system-ui, sans-serif;
+
+  --radius-chip: 6px;
+  --radius-panel: 14px;
+}
+
+:root {
+  color-scheme: dark;
+  --ui-scale: 1;
+}
+
+html {
+  font-size: calc(16px * var(--ui-scale));
+  background: var(--color-navy);
+}
+
+body {
+  background: var(--color-navy);
+  color: var(--color-net);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+}
+
+/* Visible keyboard / gamepad focus everywhere: the scoreboard-amber ring. */
+:focus-visible {
+  outline: 2px solid var(--color-amber);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--color-amber);
+  color: var(--color-navy);
+}
+
+.font-display {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+}
+
+/* Scoreboard numerals: tabular, slightly glowing. */
+.led {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-amber);
+  text-shadow: 0 0 12px rgb(255 182 39 / 0.35);
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+html[data-reduced-motion="true"] *,
+html[data-reduced-motion="true"] *::before,
+html[data-reduced-motion="true"] *::after {
+  animation-duration: 0.001ms !important;
+  transition-duration: 0.001ms !important;
+}
