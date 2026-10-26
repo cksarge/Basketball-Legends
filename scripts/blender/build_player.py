@@ -245,18 +245,28 @@ ears = {s: J(f"joint-{s}-eye") for s in ("l", "r")}  # placeholder; ear zones be
 
 ARMISH = ("upperarm", "forearm", "hand", "thumb", "index", "middle", "ring", "pinky")
 
-def f_jersey(i):
-    co, (bn, t) = CO[i], VINFO[i]
-    if isb(bn, *ARMISH, "shin", "foot", "toe", "head") or (isb(bn, "thigh") and t > 0.12):
-        return -1.0
+class Pt:
+    """A surface point: position + nearest bone info (interpolated for subdivided verts)."""
+    __slots__ = ("co", "bn", "t")
+    def __init__(self, co, bn, t):
+        self.co, self.bn, self.t = co, bn, t
+
+def f_jersey(p):
+    co = p.co
+    # every term is continuous so the snapped cut line is smooth
     hem = co.z - (pelvis.z - 0.11)
+    side = 0.2 - abs(co.x)  # arms hang outside this
     front = smooth(-0.02, -0.09, co.y) * smooth(0.09, 0.0, abs(co.x))
     neck = (neck_base - 0.035 - 0.055 * front) - co.z
-    arm = min((co - shoulders[s] - Vector((0, 0, -0.035))).length for s in "LR") - 0.125
-    return min(hem, neck, arm)
+    # sleeveless armhole: an ellipsoid around the shoulder joint, deeper toward the armpit
+    arm = 9.0
+    for sd in "LR":
+        d = co - shoulders[sd] - Vector((0, 0, -0.05))
+        arm = min(arm, math.sqrt(d.x * d.x * 1.0 + d.y * d.y * 1.6 + d.z * d.z * 0.55) - 0.11)
+    return min(hem, neck, arm, side)
 
-def f_shorts(i):
-    co, (bn, t) = CO[i], VINFO[i]
+def f_shorts(p):
+    co, bn, t = p.co, p.bn, p.t
     if isb(bn, *ARMISH, "shin", "foot", "toe", "head", "neck", "chest", "upperchest", "clavicle"):
         return -1.0
     waist = waist_z - co.z
@@ -264,31 +274,28 @@ def f_shorts(i):
         return min(waist, (0.88 - t) * 0.45)
     return waist
 
-def f_socks(i):
-    bn, t = VINFO[i]
-    if isb(bn, "shin"):
-        return (t - 0.52) * 0.4
-    if isb(bn, "foot", "toe"):
+def f_socks(p):
+    if isb(p.bn, "shin"):
+        return (p.t - 0.52) * 0.4
+    if isb(p.bn, "foot", "toe"):
         return 1.0
     return -1.0
 
 def f_sleeve(side):
-    def f(i):
-        bn, t = VINFO[i]
-        if bn == f"upperarm.{side}":
-            return (t - 0.18) * 0.3
-        if bn == f"forearm.{side}":
-            return (0.92 - t) * 0.25
+    def f(p):
+        if p.bn == f"upperarm.{side}":
+            return (p.t - 0.18) * 0.3
+        if p.bn == f"forearm.{side}":
+            return (0.92 - p.t) * 0.25
         return -1.0
     return f
 
 def f_knee(side):
-    def f(i):
-        bn, t = VINFO[i]
-        if bn == f"thigh.{side}":
-            return (t - 0.86) * 0.45
-        if bn == f"shin.{side}":
-            return (0.2 - t) * 0.4
+    def f(p):
+        if p.bn == f"thigh.{side}":
+            return (p.t - 0.86) * 0.45
+        if p.bn == f"shin.{side}":
+            return (0.2 - p.t) * 0.4
         return -1.0
     return f
 
@@ -299,10 +306,10 @@ def head_frame(co):
 def ear_dist(co):
     return min((co - Vector((sx * 0.083, headc.y + 0.008, eye.z - 0.012))).length for sx in (1, -1))
 
-def f_hairline(i, front_cut=0.035, side_drop=0.0, back_cut=-0.055, side_cut=0.01):
+def f_hairline(p, front_cut=0.035, side_drop=0.0, back_cut=-0.055, side_cut=0.01):
     """Signed distance-ish to a smooth hairline (meters, + inside)."""
-    co, (bn, _) = CO[i], VINFO[i]
-    if bn not in ("head", "neck"):
+    co = p.co
+    if p.bn not in ("head", "neck"):
         return -1.0
     f, u, s = head_frame(co)
     ang = math.atan2(abs(s), f)  # 0 front, pi back
@@ -313,64 +320,122 @@ def f_hairline(i, front_cut=0.035, side_drop=0.0, back_cut=-0.055, side_cut=0.01
     v = (co.z - eye.z) - cut
     return min(v, ear_dist(co) - 0.045)
 
-def f_headband(i):
-    co, (bn, _) = CO[i], VINFO[i]
-    if bn != "head":
+def f_headband(p):
+    if p.bn != "head":
         return -1.0
-    dz = co.z - eye.z
-    return min(dz - 0.03, 0.062 - dz, ear_dist(co) - 0.04)
+    dz = p.co.z - eye.z
+    return min(dz - 0.03, 0.062 - dz, ear_dist(p.co) - 0.04)
 
 # ------------------------------------------------------- shell builder ----
 SHELLS = []  # (obj, combos) combos[i] = [(body_vertex, weight), ...]
+BASE_PT = [Pt(CO[i], VINFO[i][0], VINFO[i][1]) for i in range(len(CO))]
 
-def cut_shell(name, field, offset, material, tuck=0.0):
-    """Shell over body faces where `field` >= 0, with edges snapped to field == 0.
+def cut_shell(name, field, offset, material, tuck=0.0, subdiv=2):
+    """Shell over body faces where `field` >= 0.
 
-    tuck > 0: instead of snapping, push outside verts under the skin by `tuck` so the
-    shell intersects the skin along a smooth iso-line (used for hair).
+    The candidate faces are subdivided first, then the field is evaluated per new
+    vertex and the cut edge is snapped exactly onto field == 0, giving clean hems
+    and armholes. tuck > 0 (hair): outside verts are pushed under the skin instead,
+    so the shell meets the scalp along a smooth line.
     """
-    fv = {}
+    F0 = {}
     def F(i):
-        if i not in fv:
-            fv[i] = field(i)
-        return fv[i]
-    faces = [f for f in BODY_FACES if any(F(v) >= 0 for v in f)]
-    if tuck <= 0:
-        faces = [f for f in faces if sum(F(v) >= 0 for v in f) >= 2 or len(f) == 3]
-    vs = sorted({v for f in faces for v in f})
-    loc = {v: k for k, v in enumerate(vs)}
-    nbrs = {v: set() for v in vs}
+        if i not in F0:
+            F0[i] = field(BASE_PT[i])
+        return F0[i]
+    faces = [f for f in BODY_FACES if any(F(v) >= -0.015 for v in f)]
+    if not faces:
+        return None
+    bm = bmesh.new()
+    vmap = {}
+    combo_of = {}
     for f in faces:
-        n = len(f)
-        for k in range(n):
-            nbrs[f[k]].update((f[(k - 1) % n], f[(k + 1) % n]))
-    combos, coords = [], []
-    for v in vs:
-        if F(v) >= 0 or tuck > 0:
-            combo = [(v, 1.0)]
-        else:
-            ins = [u for u in nbrs[v] if F(u) >= 0]
+        for v in f:
+            if v not in vmap:
+                bv = bm.verts.new(CO[v])
+                vmap[v] = bv
+                combo_of[bv] = [(v, 1.0)]
+    for f in faces:
+        try:
+            bm.faces.new([vmap[v] for v in f])
+        except ValueError:
+            pass
+    bm.verts.index_update()
+    orig = list(vmap.items())
+    if subdiv > 0:
+        bmesh.ops.subdivide_edges(bm, edges=list(bm.edges), cuts=subdiv, use_grid_fill=True)
+    # combos for new verts: inverse-distance blend of the 3 nearest original verts
+    kd = kdtree.KDTree(len(orig))
+    for k, (vi, bv) in enumerate(orig):
+        kd.insert(CO[vi], k)
+    kd.balance()
+    for bv in bm.verts:
+        if bv in combo_of:
+            continue
+        near = kd.find_n(bv.co, 3)
+        ws = [(orig[k][0], 1.0 / (d + 1e-4)) for (_, k, d) in near]
+        tot = sum(w for _, w in ws)
+        combo_of[bv] = [(vi, w / tot) for vi, w in ws]
+    def pt_of(bv):
+        combo = combo_of[bv]
+        main = max(combo, key=lambda c: c[1])[0]
+        bn = VINFO[main][0]
+        t = sum(VINFO[vi][1] * w for vi, w in combo if VINFO[vi][0] == bn) / max(1e-6, sum(w for vi, w in combo if VINFO[vi][0] == bn))
+        return Pt(bv.co.copy(), bn, t)
+    pts = {bv: pt_of(bv) for bv in bm.verts}
+    fval = {bv: field(pts[bv]) for bv in bm.verts}
+    nrm_of = lambda combo: sum((NORM[vi] * w for vi, w in combo), Vector()).normalized()
+
+    if tuck <= 0:
+        # snap outside verts onto the zero crossing of an edge toward the inside
+        snapped = {}
+        dead = set()
+        for bv in bm.verts:
+            fv = fval[bv]
+            if fv >= 0:
+                continue
+            ins = [e.other_vert(bv) for e in bv.link_edges if fval[e.other_vert(bv)] >= 0]
             if not ins:
-                ins_all = [u for f in faces if v in f for u in f if F(u) >= 0]
-                ins = ins_all[:1]
-            combo = []
+                dead.add(bv)
+                continue
+            pos = Vector(); combo = {}
             for u in ins:
-                a = F(u) / (F(u) - F(v))  # 0 at u, 1 at v
-                combo += [(u, (1 - a) / len(ins)), (v, a / len(ins))]
-        pos = sum((CO[b] * w for b, w in combo), Vector())
-        nrm = sum((NORM[b] * w for b, w in combo), Vector()).normalized()
-        off = offset(v)
+                a = fval[u] / (fval[u] - fv)  # 0 at u, 1 at bv
+                pos += pts[u].co.lerp(pts[bv].co, a) / len(ins)
+                for vi, w in combo_of[u]:
+                    combo[vi] = combo.get(vi, 0) + w * (1 - a) / len(ins)
+                for vi, w in combo_of[bv]:
+                    combo[vi] = combo.get(vi, 0) + w * a / len(ins)
+            snapped[bv] = (pos, list(combo.items()))
+        bmesh.ops.delete(bm, geom=[f for f in bm.faces if any(v in dead for v in f.verts)], context="FACES_ONLY")
+        for bv, (pos, combo) in snapped.items():
+            if bv.is_valid:
+                bv.co = pos
+                combo_of[bv] = combo
+                fval[bv] = 0.0
+    else:
+        bmesh.ops.delete(bm, geom=[f for f in bm.faces if all(fval[v] < -0.01 for v in f.verts)], context="FACES_ONLY")
+    bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+    bm.verts.index_update()
+    verts = list(bm.verts)
+    combos = []
+    for bv in verts:
+        combo = combo_of[bv]
+        pt = Pt(bv.co.copy(), pts[bv].bn, pts[bv].t)
+        off = offset(pt)
         if tuck > 0:
-            off = off * smooth(0.0, 0.012, F(v)) - tuck * (1 - smooth(-0.004, 0.006, F(v)))
-        coords.append(pos + nrm * off)
+            fv = fval[bv]
+            off = off * smooth(0.0, 0.012, fv) - tuck * (1 - smooth(-0.004, 0.006, fv))
+        bv.co = bv.co + nrm_of(combo) * off
         combos.append(combo)
     m = bpy.data.meshes.new(name + "Mesh")
-    m.from_pydata(coords, [], [[loc[v] for v in f] for f in faces])
+    bm.to_mesh(m)
+    bm.free()
     o = bpy.data.objects.new(name, m)
     coll.objects.link(o)
     m.materials.append(material)
-    for p in m.polygons:
-        p.use_smooth = True
+    for poly in m.polygons:
+        poly.use_smooth = True
     SHELLS.append((o, combos))
     return o
 
@@ -390,33 +455,33 @@ def cyl_uv(o, z0, z1):
                 if uv.data[li].uv.x < 0.5:
                     uv.data[li].uv.x += 1.0
 
-# ---- clothing
-jersey = cut_shell("Jersey", f_jersey, lambda v: 0.011 + 0.008 * smooth(BONES["chest"][0].z, pelvis.z - 0.1, CO[v].z), MAT["Jersey"])
+# ---- clothing (the jersey hangs looser toward the hem)
+jersey = cut_shell("Jersey", f_jersey, lambda p: 0.013 + 0.016 * smooth(BONES["chest"][0].z, pelvis.z - 0.1, p.co.z), MAT["Jersey"])
 cyl_uv(jersey, pelvis.z - 0.11, neck_base)
-shorts = cut_shell("Shorts", f_shorts, lambda v: 0.027 + (VINFO[v][1] if isb(VINFO[v][0], "thigh") else 0.0) * 0.05, MAT["Shorts"])
-cyl_uv(shorts, BONES["knee.L"][0].z if "knee.L" in BONES else BONES["shin.L"][0].z, waist_z)
-socks = cut_shell("Socks", f_socks, lambda v: 0.0035, MAT["Socks"])
+shorts = cut_shell("Shorts", f_shorts, lambda p: 0.03 + (p.t if isb(p.bn, "thigh") else 0.0) * 0.05, MAT["Shorts"])
+cyl_uv(shorts, BONES["shin.L"][0].z, waist_z)
+socks = cut_shell("Socks", f_socks, lambda p: 0.0035, MAT["Socks"], subdiv=1)
 
 # ---- accessories
-acc = [cut_shell("Acc_Headband", f_headband, lambda v: 0.008, MAT["Accessory"])]
+acc = [cut_shell("Acc_Headband", f_headband, lambda p: 0.008, MAT["Accessory"])]
 for side in ("L", "R"):
-    acc.append(cut_shell(f"Acc_Sleeve{side}", f_sleeve(side), lambda v: 0.0045, MAT["Accessory"]))
-    acc.append(cut_shell(f"Acc_Knee{side}", f_knee(side), lambda v: 0.011, MAT["Accessory"]))
+    acc.append(cut_shell(f"Acc_Sleeve{side}", f_sleeve(side), lambda p: 0.0045, MAT["Accessory"], subdiv=1))
+    acc.append(cut_shell(f"Acc_Knee{side}", f_knee(side), lambda p: 0.011, MAT["Accessory"], subdiv=1))
 
 # ---- volume hair (texture-only styles: 0 Bald, 1 Buzz, 3 Fade, 4 Waves, 7 Braids)
-def topness(v):
-    return max(0.0, (CO[v].z - eye.z) / (head_top - eye.z))
+def topness(p):
+    return max(0.0, (p.co.z - eye.z) / (head_top - eye.z))
 def noise3(c, k):
     return math.sin(c.x * k + 1.3) * math.sin(c.y * k * 1.17 + 0.7) * math.sin(c.z * k * 0.93 + 2.1)
 
 hairs = {}
-hairs[2] = cut_shell("Hair_2", f_hairline, lambda v: 0.007 + topness(v) * 0.014, MAT["Hair"], tuck=0.004)
-hairs[5] = cut_shell("Hair_5", lambda i: f_hairline(i, front_cut=0.03), lambda v: 0.014 + topness(v) * 0.022 + 0.007 * noise3(CO[v], 230), MAT["Hair"], tuck=0.004)
-hairs[6] = cut_shell("Hair_6", lambda i: f_hairline(i, front_cut=0.04), lambda v: 0.022 + topness(v) ** 0.8 * 0.06 + 0.003 * noise3(CO[v], 400), MAT["Hair"], tuck=0.004)
-hairs[8] = cut_shell("Hair_8", f_hairline, lambda v: 0.01 + topness(v) * 0.012, MAT["Hair"], tuck=0.004)
-hairs[9] = cut_shell("Hair_9", f_hairline, lambda v: 0.006 + topness(v) * 0.004, MAT["Hair"], tuck=0.004)
-hairs[10] = cut_shell("Hair_10", lambda i: f_hairline(i, side_cut=0.05, back_cut=0.01), lambda v: 0.008 + topness(v) ** 2 * 0.05 + 0.004 * noise3(CO[v], 300), MAT["Hair"], tuck=0.004)
-hairs[11] = cut_shell("Hair_11", lambda i: min(f_hairline(i), 0.03 - abs(CO[i].x)), lambda v: 0.008 + topness(v) * 0.035, MAT["Hair"], tuck=0.004)
+hairs[2] = cut_shell("Hair_2", f_hairline, lambda p: 0.007 + topness(p) * 0.014, MAT["Hair"], tuck=0.004, subdiv=1)
+hairs[5] = cut_shell("Hair_5", lambda p: f_hairline(p, front_cut=0.03), lambda p: 0.014 + topness(p) * 0.022 + 0.007 * noise3(p.co, 230), MAT["Hair"], tuck=0.004, subdiv=1)
+hairs[6] = cut_shell("Hair_6", lambda p: f_hairline(p, front_cut=0.04), lambda p: 0.022 + topness(p) ** 0.8 * 0.06 + 0.003 * noise3(p.co, 400), MAT["Hair"], tuck=0.004, subdiv=1)
+hairs[8] = cut_shell("Hair_8", f_hairline, lambda p: 0.01 + topness(p) * 0.012, MAT["Hair"], tuck=0.004, subdiv=1)
+hairs[9] = cut_shell("Hair_9", f_hairline, lambda p: 0.006 + topness(p) * 0.004, MAT["Hair"], tuck=0.004, subdiv=1)
+hairs[10] = cut_shell("Hair_10", lambda p: f_hairline(p, side_cut=0.05, back_cut=0.01), lambda p: 0.008 + topness(p) ** 2 * 0.05 + 0.004 * noise3(p.co, 300), MAT["Hair"], tuck=0.004, subdiv=1)
+hairs[11] = cut_shell("Hair_11", lambda p: min(f_hairline(p), 0.03 - abs(p.co.x)), lambda p: 0.008 + topness(p) * 0.035, MAT["Hair"], tuck=0.004, subdiv=1)
 
 def add_tube(o, combos_list, a, b, r, anchor, segs=7):
     bm = bmesh.new()
@@ -564,8 +629,8 @@ shoe.name = "Shoes"
 shoe.data.name = "ShoesMesh"
 
 # ---- delete body faces hidden under clothing (with hem margins)
-F_J = {i: f_jersey(i) for i in range(len(CO))}
-F_S = {i: f_shorts(i) for i in range(len(CO))}
+F_J = {i: f_jersey(BASE_PT[i]) for i in range(len(CO))}
+F_S = {i: f_shorts(BASE_PT[i]) for i in range(len(CO))}
 hide = []
 for pi, f in enumerate(BODY_FACES):
     if all(F_J[v] > 0.025 for v in f) or all(F_S[v] > 0.035 for v in f):
