@@ -1,0 +1,2756 @@
+[
+ {
+  "name": "Adams State",
+  "full": "Adams State University",
+  "city": "Alamosa",
+  "state": "CO",
+  "conference": "Rocky Mountain Athletic Conference",
+  "enrollment": 3007,
+  "avoidNickname": "Grizzlies"
+ },
+ {
+  "name": "Adelphi",
+  "full": "Adelphi University",
+  "city": "Garden City",
+  "state": "NY",
+  "conference": "Northeast-10 Conference",
+  "enrollment": 7603,
+  "avoidNickname": "Panthers"
+ },
+ {
+  "name": "Alabama in Huntsville",
+  "full": "University of Alabama in Huntsville",
+  "city": "Huntsville",
+  "state": "AL",
+  "conference": "Gulf South Conference",
+  "enrollment": 8564,
+  "avoidNickname": "Chargers"
+ },
+ {
+  "name": "Alaska Anchorage",
+  "full": "University of Alaska Anchorage",
+  "city": "Anchorage",
+  "state": "AK",
+  "conference": "Great Northwest Athletic Conference",
+  "enrollment": 10687,
+  "avoidNickname": "Seawolves"
+ },
+ {
+  "name": "Alaska Fairbanks",
+  "full": "University of Alaska Fairbanks",
+  "city": "Fairbanks",
+  "state": "AK",
+  "conference": "Great Northwest Athletic Conference",
+  "enrollment": 7451,
+  "avoidNickname": "Nanooks"
+ },
+ {
+  "name": "Albany State",
+  "full": "Albany State University",
+  "city": "Albany",
+  "state": "GA",
+  "conference": "Southern Intercollegiate Athletic Conference",
+  "enrollment": 6809,
+  "avoidNickname": "Golden Rams"
+ },
+ {
+  "name": "Allen",
+  "full": "Allen University",
+  "city": "Columbia",
+  "state": "SC",
+  "conference": "Southern Intercollegiate Athletic Conference",
+  "enrollment": 657,
+  "avoidNickname": "Yellow Jackets"
+ },
+ {
+  "name": "American International",
+  "full": "American International College",
+  "city": "Springfield",
+  "state": "MA",
+  "conference": "Northeast-10 Conference",
+  "enrollment": 2010,
+  "avoidNickname": "Yellow Jackets"
+ },
+ {
+  "name": "Anderson",
+  "full": "Anderson University",
+  "city": "Anderson",
+  "state": "SC",
+  "conference": "South Atlantic Conference",
+  "enrollment": 4519,
+  "avoidNickname": "Trojans"
+ },
+ {
+  "name": "Angelo State",
+  "full": "Angelo State University",
+  "city": "San Angelo",
+  "state": "TX",
+  "conference": "Lone Star Conference",
+  "enrollment": 11542,
+  "avoidNickname": "Rams"
+ },
+ {
+  "name": "Arkansas Tech",
+  "full": "Arkansas Tech University",
+  "city": "Russellville",
+  "state": "AR",
+  "conference": "Great American Conference",
+  "enrollment": 8746,
+  "avoidNickname": "Wonder Boys & Golden Suns"
+ },
+ {
+  "name": "Arkansas\u2013Fort Smith",
+  "full": "University of Arkansas\u2013Fort Smith",
+  "city": "Fort Smith",
+  "state": "AR",
+  "conference": "Mid-America Intercollegiate Athletics Association",
+  "enrollment": 5463,
+  "avoidNickname": "Lions"
+ },
+ {
+  "name": "Arkansas at Monticello",
+  "full": "University of Arkansas at Monticello",
+  "city": "Monticello",
+  "state": "AR",
+  "conference": "Great American Conference",
+  "enrollment": 2856,
+  "avoidNickname": "Boll Weevils & Cotton Blossoms"
+ },
+ {
+  "name": "Ashland",
+  "full": "Ashland University",
+  "city": "Ashland",
+  "state": "OH",
+  "conference": "Great Midwest Athletic Conference",
+  "enrollment": 6433,
+  "avoidNickname": "Eagles"
+ },
+ {
+  "name": "Assumption",
+  "full": "Assumption University",
+  "city": "Worcester",
+  "state": "MA",
+  "conference": "Northeast-10 Conference",
+  "enrollment": 2044,
+  "avoidNickname": "Greyhounds"
+ },
+ {
+  "name": "Auburn University at Montgomery",
+  "full": "Auburn University at Montgomery",
+  "city": "Montgomery",
+  "state": "AL",
+  "conference": "Gulf South Conference",
+  "enrollment": 5189,
+  "avoidNickname": "Warhawks"
+ },
+ {
+  "name": "Augusta",
+  "full": "Augusta University",
+  "city": "Augusta",
+  "state": "GA",
+  "conference": "Peach Belt Conference",
+  "enrollment": 11584,
+  "avoidNickname": "Jaguars"
+ },
+ {
+  "name": "Augustana",
+  "full": "Augustana University",
+  "city": "Sioux Falls",
+  "state": "SD",
+  "conference": "Northern Sun Intercollegiate Conference",
+  "enrollment": 2158,
+  "avoidNickname": "Vikings"
+ },
+ {
+  "name": "Barry",
+  "full": "Barry University",
+  "city": "Miami Shores",
+  "state": "FL",
+  "conference": "Sunshine State Conference",
+  "enrollment": 6825,
+  "avoidNickname": "Buccaneers"
+ },
+ {
+  "name": "Barton",
+  "full": "Barton College",
+  "city": "Wilson",
+  "state": "NC",
+  "conference": "Conference Carolinas",
+  "enrollment": 1235,
+  "avoidNickname": "Bulldogs"
+ },
+ {
+  "name": "Belmont Abbey",
+  "full": "Belmont Abbey College",
+  "city": "Belmont",
+  "state": "NC",
+  "conference": "Conference Carolinas",
+  "enrollment": 1687,
+  "avoidNickname": "Crusaders"
+ },
+ {
+  "name": "Bemidji State",
+  "full": "Bemidji State University",
+  "city": "Bemidji",
+  "state": "MN",
+  "conference": "Northern Sun Intercollegiate Conference",
+  "enrollment": 4076,
+  "avoidNickname": "Beavers"
+ },
+ {
+  "name": "Benedict",
+  "full": "Benedict College",
+  "city": "Columbia",
+  "state": "SC",
+  "conference": "Southern Intercollegiate Athletic Conference",
+  "enrollment": 1746,
+  "avoidNickname": "Tigers"
+ },
+ {
+  "name": "Bentley",
+  "full": "Bentley University",
+  "city": "Waltham",
+  "state": "MA",
+  "conference": "Northeast-10 Conference",
+  "enrollment": 4526,
+  "avoidNickname": "Falcons"
+ },
+ {
+  "name": "Biola",
+  "full": "Biola University",
+  "city": "La Mirada",
+  "state": "CA",
+  "conference": "Pacific West Conference",
+  "enrollment": 5448,
+  "avoidNickname": "Eagles"
+ },
+ {
+  "name": "Black Hills State",
+  "full": "Black Hills State University",
+  "city": "Spearfish",
+  "state": "SD",
+  "conference": "Rocky Mountain Athletic Conference",
+  "enrollment": 3346,
+  "avoidNickname": "Yellow Jackets"
+ },
+ {
+  "name": "Bluefield State",
+  "full": "Bluefield State University",
+  "city": "Bluefield",
+  "state": "WV",
+  "conference": "Central Intercollegiate Athletic Association",
+  "enrollment": 1313,
+  "avoidNickname": "Big Blues & Lady Blues"
+ },
+ {
+  "name": "Bowie State",
+  "full": "Bowie State University",
+  "city": "Bowie",
+  "state": "MD",
+  "conference": "Central Intercollegiate Athletic Association",
+  "enrollment": 6353,
+  "avoidNickname": "Bulldogs"
+ },
+ {
+  "name": "Bridgeport",
+  "full": "University of Bridgeport",
+  "city": "Bridgeport",
+  "state": "CT",
+  "conference": "Central Atlantic Collegiate Conference",
+  "enrollment": 3838,
+  "avoidNickname": "Purple Knights"
+ },
+ {
+  "name": "Caldwell",
+  "full": "Caldwell University",
+  "city": "Caldwell",
+  "state": "NJ",
+  "conference": "Central Atlantic Collegiate Conference",
+  "enrollment": 2193,
+  "avoidNickname": "Cougars"
+ },
+ {
+  "name": "PennWest California",
+  "full": "PennWest California",
+  "city": "California",
+  "state": "PA",
+  "conference": "Pennsylvania State Athletic Conference",
+  "enrollment": 2717,
+  "avoidNickname": "Vulcans"
+ },
+ {
+  "name": "California State Polytechnic University, Humboldt",
+  "full": "California State Polytechnic University, Humboldt",
+  "city": "Arcata",
+  "state": "CA",
+  "conference": "California Collegiate Athletic Association",
+  "enrollment": 6045,
+  "avoidNickname": "Lumberjacks"
+ },
+ {
+  "name": "California State Polytechnic University, Pomona",
+  "full": "California State Polytechnic University, Pomona",
+  "city": "Pomona",
+  "state": "CA",
+  "conference": "California Collegiate Athletic Association",
+  "enrollment": 27196,
+  "avoidNickname": "Broncos"
+ },
+ {
+  "name": "California State, Chico",
+  "full": "California State University, Chico",
+  "city": "Chico",
+  "state": "CA",
+  "conference": "California Collegiate Athletic Association",
+  "enrollment": 13504,
+  "avoidNickname": "Wildcats"
+ },
+ {
+  "name": "California State, Dominguez Hills",
+  "full": "California State University, Dominguez Hills",
+  "city": "Carson",
+  "state": "CA",
+  "conference": "California Collegiate Athletic Association",
+  "enrollment": 14299,
+  "avoidNickname": "Toros"
+ },
+ {
+  "name": "California State, East Bay",
+  "full": "California State University, East Bay",
+  "city": "Hayward",
+  "state": "CA",
+  "conference": "California Collegiate Athletic Association",
+  "enrollment": 12323,
+  "avoidNickname": "Pioneers"
+ },
+ {
+  "name": "California State, Los Angeles",
+  "full": "California State University, Los Angeles",
+  "city": "Los Angeles",
+  "state": "CA",
+  "conference": "California Collegiate Athletic Association",
+  "enrollment": 22740,
+  "avoidNickname": "Golden Eagles"
+ },
+ {
+  "name": "California State, Monterey Bay",
+  "full": "California State University, Monterey Bay",
+  "city": "Seaside",
+  "state": "CA",
+  "conference": "California Collegiate Athletic Association",
+  "enrollment": 7713,
+  "avoidNickname": "Otters"
+ },
+ {
+  "name": "California State, San Bernardino",
+  "full": "California State University, San Bernardino",
+  "city": "San Bernardino",
+  "state": "CA",
+  "conference": "California Collegiate Athletic Association",
+  "enrollment": 17900,
+  "avoidNickname": "Coyotes"
+ },
+ {
+  "name": "California State, San Marcos",
+  "full": "California State University, San Marcos",
+  "city": "San Marcos",
+  "state": "CA",
+  "conference": "California Collegiate Athletic Association",
+  "enrollment": 14999,
+  "avoidNickname": "Cougars"
+ },
+ {
+  "name": "California State, Stanislaus",
+  "full": "California State University, Stanislaus",
+  "city": "Turlock",
+  "state": "CA",
+  "conference": "California Collegiate Athletic Association",
+  "enrollment": 9295,
+  "avoidNickname": "Warriors"
+ },
+ {
+  "name": "Cameron",
+  "full": "Cameron University",
+  "city": "Lawton",
+  "state": "OK",
+  "conference": "Lone Star Conference",
+  "enrollment": 3559,
+  "avoidNickname": "Aggies"
+ },
+ {
+  "name": "Carson\u2013Newman",
+  "full": "Carson\u2013Newman University",
+  "city": "Jefferson City",
+  "state": "TN",
+  "conference": "South Atlantic Conference",
+  "enrollment": 2585,
+  "avoidNickname": "Eagles"
+ },
+ {
+  "name": "Catawba",
+  "full": "Catawba College",
+  "city": "Salisbury",
+  "state": "NC",
+  "conference": "South Atlantic Conference",
+  "enrollment": 1241,
+  "avoidNickname": "Indians"
+ },
+ {
+  "name": "Cedarville",
+  "full": "Cedarville University",
+  "city": "Cedarville",
+  "state": "OH",
+  "conference": "Great Midwest Athletic Conference",
+  "enrollment": 6384,
+  "avoidNickname": "Yellow Jackets"
+ },
+ {
+  "name": "Central Missouri",
+  "full": "University of Central Missouri",
+  "city": "Warrensburg",
+  "state": "MO",
+  "conference": "Mid-America Intercollegiate Athletics Association",
+  "enrollment": 12857,
+  "avoidNickname": "Mules & Jennies"
+ },
+ {
+  "name": "Central Oklahoma",
+  "full": "University of Central Oklahoma",
+  "city": "Edmond",
+  "state": "OK",
+  "conference": "Mid-America Intercollegiate Athletics Association",
+  "enrollment": 12554,
+  "avoidNickname": "Bronchos"
+ },
+ {
+  "name": "Central State",
+  "full": "Central State University",
+  "city": "Wilberforce",
+  "state": "OH",
+  "conference": "Southern Intercollegiate Athletic Conference",
+  "enrollment": 2719,
+  "avoidNickname": "Marauders & Lady Marauders"
+ },
+ {
+  "name": "Central Washington",
+  "full": "Central Washington University",
+  "city": "Ellensburg",
+  "state": "WA",
+  "conference": "Great Northwest Athletic Conference",
+  "enrollment": 8509,
+  "avoidNickname": "Wildcats"
+ },
+ {
+  "name": "Chadron State",
+  "full": "Chadron State College",
+  "city": "Chadron",
+  "state": "NE",
+  "conference": "Rocky Mountain Athletic Conference",
+  "enrollment": 2098,
+  "avoidNickname": "Eagles"
+ },
+ {
+  "name": "Chaminade University of Honolulu",
+  "full": "Chaminade University of Honolulu",
+  "city": "Honolulu",
+  "state": "HI",
+  "conference": "Pacific West Conference",
+  "enrollment": 2369,
+  "avoidNickname": "Silverswords"
+ },
+ {
+  "name": "Charleston",
+  "full": "University of Charleston",
+  "city": "Charleston",
+  "state": "WV",
+  "conference": "Mountain East Conference",
+  "enrollment": 3051,
+  "avoidNickname": "Golden Eagles"
+ },
+ {
+  "name": "Chestnut Hill",
+  "full": "Chestnut Hill College",
+  "city": "Philadelphia",
+  "state": "PA",
+  "conference": "Central Atlantic Collegiate Conference",
+  "enrollment": 1417,
+  "avoidNickname": "Griffins"
+ },
+ {
+  "name": "Chowan",
+  "full": "Chowan University",
+  "city": "Murfreesboro",
+  "state": "NC",
+  "conference": "Conference Carolinas",
+  "enrollment": 708,
+  "avoidNickname": "Hawks"
+ },
+ {
+  "name": "Christian Brothers",
+  "full": "Christian Brothers University",
+  "city": "Memphis",
+  "state": "TN",
+  "conference": "Gulf South Conference",
+  "enrollment": 1813,
+  "avoidNickname": "Buccaneers & Lady Buccaneers"
+ },
+ {
+  "name": "Claflin",
+  "full": "Claflin University",
+  "city": "Orangeburg",
+  "state": "SC",
+  "conference": "Central Intercollegiate Athletic Association",
+  "enrollment": 1960,
+  "avoidNickname": "Panthers"
+ },
+ {
+  "name": "PennWest Clarion",
+  "full": "PennWest Clarion",
+  "city": "Clarion",
+  "state": "PA",
+  "conference": "Pennsylvania State Athletic Conference",
+  "enrollment": 1743,
+  "avoidNickname": "Golden Eagles"
+ },
+ {
+  "name": "Clark Atlanta",
+  "full": "Clark Atlanta University",
+  "city": "Atlanta",
+  "state": "GA",
+  "conference": "Southern Intercollegiate Athletic Conference",
+  "enrollment": 4252,
+  "avoidNickname": "Panthers"
+ },
+ {
+  "name": "Clayton State",
+  "full": "Clayton State University",
+  "city": "Morrow",
+  "state": "GA",
+  "conference": "Peach Belt Conference",
+  "enrollment": 6172,
+  "avoidNickname": "Lakers"
+ },
+ {
+  "name": "Coker",
+  "full": "Coker University",
+  "city": "Hartsville",
+  "state": "SC",
+  "conference": "South Atlantic Conference",
+  "enrollment": 1263,
+  "avoidNickname": "Cobras"
+ },
+ {
+  "name": "Colorado Christian",
+  "full": "Colorado Christian University",
+  "city": "Lakewood",
+  "state": "CO",
+  "conference": "Rocky Mountain Athletic Conference",
+  "enrollment": 10563,
+  "avoidNickname": "Cougars"
+ },
+ {
+  "name": "Colorado Mesa",
+  "full": "Colorado Mesa University",
+  "city": "Grand Junction",
+  "state": "CO",
+  "conference": "Rocky Mountain Athletic Conference",
+  "enrollment": 10139,
+  "avoidNickname": "Mavericks"
+ },
+ {
+  "name": "Colorado School of Mines",
+  "full": "Colorado School of Mines",
+  "city": "Golden",
+  "state": "CO",
+  "conference": "Rocky Mountain Athletic Conference",
+  "enrollment": 7608,
+  "avoidNickname": "Orediggers"
+ },
+ {
+  "name": "Colorado State\u2013Pueblo",
+  "full": "Colorado State University\u2013Pueblo",
+  "city": "Pueblo",
+  "state": "CO",
+  "conference": "Rocky Mountain Athletic Conference",
+  "enrollment": 3716,
+  "avoidNickname": "ThunderWolves"
+ },
+ {
+  "name": "Colorado Colorado Springs",
+  "full": "University of Colorado Colorado Springs",
+  "city": "Colorado Springs",
+  "state": "CO",
+  "conference": "Rocky Mountain Athletic Conference",
+  "enrollment": 11213,
+  "avoidNickname": "Mountain Lions"
+ },
+ {
+  "name": "Columbus State",
+  "full": "Columbus State University",
+  "city": "Columbus",
+  "state": "GA",
+  "conference": "Peach Belt Conference",
+  "enrollment": 7937,
+  "avoidNickname": "Cougars"
+ },
+ {
+  "name": "Commonwealth University-Bloomsburg",
+  "full": "Commonwealth University-Bloomsburg",
+  "city": "Bloomsburg",
+  "state": "PA",
+  "conference": "Pennsylvania State Athletic Conference",
+  "enrollment": 7206,
+  "avoidNickname": "Huskies"
+ },
+ {
+  "name": "Commonwealth University-Lock Haven",
+  "full": "Commonwealth University-Lock Haven",
+  "city": "Lock Haven",
+  "state": "PA",
+  "conference": "Pennsylvania State Athletic Conference",
+  "enrollment": 2702,
+  "avoidNickname": "Bald Eagles"
+ },
+ {
+  "name": "Commonwealth University-Mansfield",
+  "full": "Commonwealth University-Mansfield",
+  "city": "Mansfield",
+  "state": "PA",
+  "conference": "Pennsylvania State Athletic Conference",
+  "enrollment": 1195,
+  "avoidNickname": "Mountaineers"
+ },
+ {
+  "name": "Concord",
+  "full": "Concord University",
+  "city": "Athens",
+  "state": "WV",
+  "conference": "Mountain East Conference",
+  "enrollment": 1943,
+  "avoidNickname": "Mountain Lions"
+ },
+ {
+  "name": "Concordia University\u2013Irvine",
+  "full": "Concordia University\u2013Irvine",
+  "city": "Irvine",
+  "state": "CA",
+  "conference": "Pacific West Conference",
+  "enrollment": 3522,
+  "avoidNickname": "Golden Eagles"
+ },
+ {
+  "name": "Concordia University\u2013St. Paul",
+  "full": "Concordia University\u2013St. Paul",
+  "city": "St. Paul",
+  "state": "MN",
+  "conference": "Northern Sun Intercollegiate Conference",
+  "enrollment": 5928,
+  "avoidNickname": "Golden Bears"
+ },
+ {
+  "name": "Converse",
+  "full": "Converse University",
+  "city": "Spartanburg",
+  "state": "SC",
+  "conference": "Conference Carolinas",
+  "enrollment": 1967,
+  "avoidNickname": "Valkyries"
+ },
+ {
+  "name": "Daemen",
+  "full": "Daemen University",
+  "city": "Amherst",
+  "state": "NY",
+  "conference": "East Coast Conference",
+  "enrollment": 2540,
+  "avoidNickname": "Wildcats"
+ },
+ {
+  "name": "Dallas Baptist",
+  "full": "Dallas Baptist University",
+  "city": "Dallas",
+  "state": "TX",
+  "conference": "Lone Star Conference",
+  "enrollment": 4157,
+  "avoidNickname": "Patriots"
+ },
+ {
+  "name": "Davenport",
+  "full": "Davenport University",
+  "city": "Grand Rapids",
+  "state": "MI",
+  "conference": "Great Lakes Intercollegiate Athletic Conference",
+  "enrollment": 4848,
+  "avoidNickname": "Panthers"
+ },
+ {
+  "name": "Davis & Elkins",
+  "full": "Davis & Elkins College",
+  "city": "Elkins",
+  "state": "WV",
+  "conference": "Mountain East Conference",
+  "enrollment": 683,
+  "avoidNickname": "Senators"
+ },
+ {
+  "name": "Delta State",
+  "full": "Delta State University",
+  "city": "Cleveland",
+  "state": "MS",
+  "conference": "Gulf South Conference",
+  "enrollment": 2654,
+  "avoidNickname": "Statesmen & Lady Statesmen"
+ },
+ {
+  "name": "the District of Columbia",
+  "full": "University of the District of Columbia",
+  "city": "Washington",
+  "state": "DC",
+  "conference": "East Coast Conference",
+  "enrollment": 4202,
+  "avoidNickname": "Firebirds"
+ },
+ {
+  "name": "Dominican University of California",
+  "full": "Dominican University of California",
+  "city": "San Rafael",
+  "state": "CA",
+  "conference": "Pacific West Conference",
+  "enrollment": 1818,
+  "avoidNickname": "Penguins"
+ },
+ {
+  "name": "Dominican University New York",
+  "full": "Dominican University New York",
+  "city": "Orangeburg",
+  "state": "NY",
+  "conference": "Central Atlantic Collegiate Conference",
+  "enrollment": 1083,
+  "avoidNickname": "Chargers"
+ },
+ {
+  "name": "Drury",
+  "full": "Drury University",
+  "city": "Springfield",
+  "state": "MO",
+  "conference": "Great Lakes Valley Conference",
+  "enrollment": 2268,
+  "avoidNickname": "Panthers"
+ },
+ {
+  "name": "D'Youville",
+  "full": "D'Youville University",
+  "city": "Buffalo",
+  "state": "NY",
+  "conference": "East Coast Conference",
+  "enrollment": 2376,
+  "avoidNickname": "Saints"
+ },
+ {
+  "name": "East Central",
+  "full": "East Central University",
+  "city": "Ada",
+  "state": "OK",
+  "conference": "Great American Conference",
+  "enrollment": 3935,
+  "avoidNickname": "Tigers"
+ },
+ {
+  "name": "East Stroudsburg",
+  "full": "East Stroudsburg University",
+  "city": "East Stroudsburg",
+  "state": "PA",
+  "conference": "Pennsylvania State Athletic Conference",
+  "enrollment": 5636,
+  "avoidNickname": "Warriors"
+ },
+ {
+  "name": "Eastern New Mexico",
+  "full": "Eastern New Mexico University",
+  "city": "Portales",
+  "state": "NM",
+  "conference": "Lone Star Conference",
+  "enrollment": 5737,
+  "avoidNickname": "Greyhounds"
+ },
+ {
+  "name": "Eckerd",
+  "full": "Eckerd College",
+  "city": "St. Petersburg",
+  "state": "FL",
+  "conference": "Sunshine State Conference",
+  "enrollment": 1893,
+  "avoidNickname": "Tritons"
+ },
+ {
+  "name": "PennWest Edinboro",
+  "full": "PennWest Edinboro",
+  "city": "Edinboro",
+  "state": "PA",
+  "conference": "Pennsylvania State Athletic Conference",
+  "enrollment": 2259,
+  "avoidNickname": "Fighting Scots"
+ },
+ {
+  "name": "Edward Waters",
+  "full": "Edward Waters University",
+  "city": "Jacksonville",
+  "state": "FL",
+  "conference": "Southern Intercollegiate Athletic Conference",
+  "enrollment": 1177,
+  "avoidNickname": "Tigers"
+ },
+ {
+  "name": "Elizabeth City State",
+  "full": "Elizabeth City State University",
+  "city": "Elizabeth City",
+  "state": "NC",
+  "conference": "Central Intercollegiate Athletic Association",
+  "enrollment": 2261,
+  "avoidNickname": "Vikings"
+ },
+ {
+  "name": "Embry\u2013Riddle Aeronautical",
+  "full": "Embry\u2013Riddle Aeronautical University",
+  "city": "Daytona Beach",
+  "state": "FL",
+  "conference": "Sunshine State Conference",
+  "enrollment": 8755,
+  "avoidNickname": "Eagles"
+ },
+ {
+  "name": "Emmanuel",
+  "full": "Emmanuel University",
+  "city": "Franklin Springs",
+  "state": "GA",
+  "conference": "Conference Carolinas",
+  "enrollment": 932,
+  "avoidNickname": "Lions"
+ },
+ {
+  "name": "Emory & Henry",
+  "full": "Emory & Henry University",
+  "city": "Emory",
+  "state": "VA",
+  "conference": "South Atlantic Conference",
+  "enrollment": 1292,
+  "avoidNickname": "Wasps"
+ },
+ {
+  "name": "Emporia State",
+  "full": "Emporia State University",
+  "city": "Emporia",
+  "state": "KS",
+  "conference": "Mid-America Intercollegiate Athletics Association",
+  "enrollment": 4557,
+  "avoidNickname": "Hornets"
+ },
+ {
+  "name": "Erskine",
+  "full": "Erskine College",
+  "city": "Due West",
+  "state": "SC",
+  "conference": "Conference Carolinas",
+  "enrollment": 1132,
+  "avoidNickname": "Flying Fleet"
+ },
+ {
+  "name": "Fairmont State",
+  "full": "Fairmont State University",
+  "city": "Fairmont",
+  "state": "WV",
+  "conference": "Mountain East Conference",
+  "enrollment": 3325,
+  "avoidNickname": "Fighting Falcons"
+ },
+ {
+  "name": "Fayetteville State",
+  "full": "Fayetteville State University",
+  "city": "Fayetteville",
+  "state": "NC",
+  "conference": "Central Intercollegiate Athletic Association",
+  "enrollment": 7113,
+  "avoidNickname": "Broncos & Lady Broncos"
+ },
+ {
+  "name": "Felician",
+  "full": "Felician University",
+  "city": "Rutherford",
+  "state": "NJ",
+  "conference": "Central Atlantic Collegiate Conference",
+  "enrollment": 2427,
+  "avoidNickname": "Golden Falcons"
+ },
+ {
+  "name": "Ferris State",
+  "full": "Ferris State University",
+  "city": "Big Rapids",
+  "state": "MI",
+  "conference": "Great Lakes Intercollegiate Athletic Conference",
+  "enrollment": 9959,
+  "avoidNickname": "Bulldogs"
+ },
+ {
+  "name": "Findlay",
+  "full": "University of Findlay",
+  "city": "Findlay",
+  "state": "OH",
+  "conference": "Great Midwest Athletic Conference",
+  "enrollment": 5057,
+  "avoidNickname": "Oilers"
+ },
+ {
+  "name": "Flagler",
+  "full": "Flagler College",
+  "city": "St. Augustine",
+  "state": "FL",
+  "conference": "Peach Belt Conference",
+  "enrollment": 2530,
+  "avoidNickname": "Saints"
+ },
+ {
+  "name": "Florida Southern",
+  "full": "Florida Southern College",
+  "city": "Lakeland",
+  "state": "FL",
+  "conference": "Sunshine State Conference",
+  "enrollment": 2915,
+  "avoidNickname": "Moccasins"
+ },
+ {
+  "name": "Florida Institute of Technology",
+  "full": "Florida Institute of Technology",
+  "city": "Melbourne",
+  "state": "FL",
+  "conference": "Sunshine State Conference",
+  "enrollment": 7223,
+  "avoidNickname": "Panthers"
+ },
+ {
+  "name": "Fort Hays State",
+  "full": "Fort Hays State University",
+  "city": "Hays",
+  "state": "KS",
+  "conference": "Mid-America Intercollegiate Athletics Association",
+  "enrollment": 12843,
+  "avoidNickname": "Tigers"
+ },
+ {
+  "name": "Fort Lewis",
+  "full": "Fort Lewis College",
+  "city": "Durango",
+  "state": "CO",
+  "conference": "Rocky Mountain Athletic Conference",
+  "enrollment": 3544,
+  "avoidNickname": "Skyhawks"
+ },
+ {
+  "name": "Fort Valley State",
+  "full": "Fort Valley State University",
+  "city": "Fort Valley",
+  "state": "GA",
+  "conference": "Southern Intercollegiate Athletic Conference",
+  "enrollment": 2905,
+  "avoidNickname": "Wildcats"
+ },
+ {
+  "name": "Francis Marion",
+  "full": "Francis Marion University",
+  "city": "Florence",
+  "state": "SC",
+  "conference": "Conference Carolinas",
+  "enrollment": 4261,
+  "avoidNickname": "Patriots"
+ },
+ {
+  "name": "Franklin Pierce",
+  "full": "Franklin Pierce University",
+  "city": "Rindge",
+  "state": "NH",
+  "conference": "Northeast-10 Conference",
+  "enrollment": 1172,
+  "avoidNickname": "Ravens"
+ },
+ {
+  "name": "Fresno Pacific",
+  "full": "Fresno Pacific University",
+  "city": "Fresno",
+  "state": "CA",
+  "conference": "California Collegiate Athletic Association",
+  "enrollment": 2889,
+  "avoidNickname": "Sunbirds"
+ },
+ {
+  "name": "Frostburg State",
+  "full": "Frostburg State University",
+  "city": "Frostburg",
+  "state": "MD",
+  "conference": "Mountain East Conference",
+  "enrollment": 3422,
+  "avoidNickname": "Bobcats"
+ },
+ {
+  "name": "Gannon",
+  "full": "Gannon University",
+  "city": "Erie",
+  "state": "PA",
+  "conference": "Pennsylvania State Athletic Conference",
+  "enrollment": 4665,
+  "avoidNickname": "Golden Knights"
+ },
+ {
+  "name": "Georgia College & State",
+  "full": "Georgia College & State University",
+  "city": "Milledgeville",
+  "state": "GA",
+  "conference": "Peach Belt Conference",
+  "enrollment": 7097,
+  "avoidNickname": "Bobcats"
+ },
+ {
+  "name": "Georgia Southwestern State",
+  "full": "Georgia Southwestern State University",
+  "city": "Americus",
+  "state": "GA",
+  "conference": "Peach Belt Conference",
+  "enrollment": 3704,
+  "avoidNickname": "Hurricanes"
+ },
+ {
+  "name": "Georgian Court",
+  "full": "Georgian Court University",
+  "city": "Lakewood",
+  "state": "NJ",
+  "conference": "Central Atlantic Collegiate Conference",
+  "enrollment": 1910,
+  "avoidNickname": "Lions"
+ },
+ {
+  "name": "Glenville State",
+  "full": "Glenville State University",
+  "city": "Glenville",
+  "state": "WV",
+  "conference": "Mountain East Conference",
+  "enrollment": 1772,
+  "avoidNickname": "Pioneers"
+ },
+ {
+  "name": "Goldey\u2013Beacom",
+  "full": "Goldey\u2013Beacom College",
+  "city": "Pike Creek Valley",
+  "state": "DE",
+  "conference": "Central Atlantic Collegiate Conference",
+  "enrollment": 1074,
+  "avoidNickname": "Lightning"
+ },
+ {
+  "name": "Grand Valley State",
+  "full": "Grand Valley State University",
+  "city": "Allendale",
+  "state": "MI",
+  "conference": "Great Lakes Intercollegiate Athletic Conference",
+  "enrollment": 22011,
+  "avoidNickname": "Lakers"
+ },
+ {
+  "name": "Harding",
+  "full": "Harding University",
+  "city": "Searcy",
+  "state": "AR",
+  "conference": "Great American Conference",
+  "enrollment": 4608,
+  "avoidNickname": "Bisons & Lady Bisons"
+ },
+ {
+  "name": "Hawai'i Pacific",
+  "full": "Hawai'i Pacific University",
+  "city": "Honolulu",
+  "state": "HI",
+  "conference": "Pacific West Conference",
+  "enrollment": 4748,
+  "avoidNickname": "Sharks"
+ },
+ {
+  "name": "Hawai'i at Hilo",
+  "full": "University of Hawai'i at Hilo",
+  "city": "Hilo",
+  "state": "HI",
+  "conference": "Pacific West Conference",
+  "enrollment": 2781,
+  "avoidNickname": "Vulcans"
+ },
+ {
+  "name": "Henderson State",
+  "full": "Henderson State University",
+  "city": "Arkadelphia",
+  "state": "AR",
+  "conference": "Great American Conference",
+  "enrollment": 2061,
+  "avoidNickname": "Reddies"
+ },
+ {
+  "name": "Hillsdale",
+  "full": "Hillsdale College",
+  "city": "Hillsdale",
+  "state": "MI",
+  "conference": "Great Midwest Athletic Conference",
+  "enrollment": 1573,
+  "avoidNickname": "Chargers"
+ },
+ {
+  "name": "Holy Family",
+  "full": "Holy Family University",
+  "city": "Philadelphia",
+  "state": "PA",
+  "conference": "Central Atlantic Collegiate Conference",
+  "enrollment": 3278,
+  "avoidNickname": "Tigers"
+ },
+ {
+  "name": "Illinois at Springfield",
+  "full": "University of Illinois at Springfield",
+  "city": "Springfield",
+  "state": "IL",
+  "conference": "Great Lakes Valley Conference",
+  "enrollment": 4628,
+  "avoidNickname": "Prairie Stars"
+ },
+ {
+  "name": "Indiana University of Pennsylvania",
+  "full": "Indiana University of Pennsylvania",
+  "city": "Indiana",
+  "state": "PA",
+  "conference": "Pennsylvania State Athletic Conference",
+  "enrollment": 9081,
+  "avoidNickname": "Crimson Hawks"
+ },
+ {
+  "name": "Indianapolis",
+  "full": "University of Indianapolis",
+  "city": "Indianapolis",
+  "state": "IN",
+  "conference": "Great Lakes Valley Conference",
+  "enrollment": 5447,
+  "avoidNickname": "Greyhounds"
+ },
+ {
+  "name": "Jamestown",
+  "full": "University of Jamestown",
+  "city": "Jamestown",
+  "state": "ND",
+  "conference": "Northern Sun Intercollegiate Conference",
+  "enrollment": 1372,
+  "avoidNickname": "Jimmies"
+ },
+ {
+  "name": "Thomas Jefferson",
+  "full": "Thomas Jefferson University",
+  "city": "Philadelphia",
+  "state": "PA",
+  "conference": "Central Atlantic Collegiate Conference",
+  "enrollment": 8315,
+  "avoidNickname": "Rams"
+ },
+ {
+  "name": "Jessup",
+  "full": "Jessup University",
+  "city": "Rocklin",
+  "state": "CA",
+  "conference": "Pacific West Conference",
+  "enrollment": 1484,
+  "avoidNickname": "Warriors"
+ },
+ {
+  "name": "Johnson C. Smith",
+  "full": "Johnson C. Smith University",
+  "city": "Charlotte",
+  "state": "NC",
+  "conference": "Central Intercollegiate Athletic Association",
+  "enrollment": 1302,
+  "avoidNickname": "Golden Bulls"
+ },
+ {
+  "name": "Kentucky State",
+  "full": "Kentucky State University",
+  "city": "Frankfort",
+  "state": "KY",
+  "conference": "Southern Intercollegiate Athletic Conference",
+  "enrollment": 1932,
+  "avoidNickname": "Thorobreds & Thorobrettes"
+ },
+ {
+  "name": "Kentucky Wesleyan",
+  "full": "Kentucky Wesleyan College",
+  "city": "Owensboro",
+  "state": "KY",
+  "conference": "Great Midwest Athletic Conference",
+  "enrollment": 864,
+  "avoidNickname": "Panthers"
+ },
+ {
+  "name": "King",
+  "full": "King University",
+  "city": "Bristol",
+  "state": "TN",
+  "conference": "Conference Carolinas",
+  "enrollment": 1295,
+  "avoidNickname": "Tornados"
+ },
+ {
+  "name": "Kutztown",
+  "full": "Kutztown University",
+  "city": "Kutztown",
+  "state": "PA",
+  "conference": "Pennsylvania State Athletic Conference",
+  "enrollment": 7468,
+  "avoidNickname": "Golden Bears"
+ },
+ {
+  "name": "Lake Erie",
+  "full": "Lake Erie College",
+  "city": "Painesville",
+  "state": "OH",
+  "conference": "Great Midwest Athletic Conference",
+  "enrollment": 1236,
+  "avoidNickname": "Storm"
+ },
+ {
+  "name": "Lake Superior State",
+  "full": "Lake Superior State University",
+  "city": "Sault Ste. Marie",
+  "state": "MI",
+  "conference": "Great Lakes Intercollegiate Athletic Conference",
+  "enrollment": 1669,
+  "avoidNickname": "Lakers"
+ },
+ {
+  "name": "Lander",
+  "full": "Lander University",
+  "city": "Greenwood",
+  "state": "SC",
+  "conference": "Peach Belt Conference",
+  "enrollment": 4423,
+  "avoidNickname": "Bearcats"
+ },
+ {
+  "name": "Lane",
+  "full": "Lane College",
+  "city": "Jackson",
+  "state": "TN",
+  "conference": "Southern Intercollegiate Athletic Conference",
+  "enrollment": 822,
+  "avoidNickname": "Dragons"
+ },
+ {
+  "name": "Lee",
+  "full": "Lee University",
+  "city": "Cleveland",
+  "state": "TN",
+  "conference": "Gulf South Conference",
+  "enrollment": 3714,
+  "avoidNickname": "Flames"
+ },
+ {
+  "name": "Lees\u2013McRae",
+  "full": "Lees\u2013McRae College",
+  "city": "Banner Elk",
+  "state": "NC",
+  "conference": "Conference Carolinas",
+  "enrollment": 917,
+  "avoidNickname": "Bobcats"
+ },
+ {
+  "name": "LeMoyne\u2013Owen",
+  "full": "LeMoyne\u2013Owen College",
+  "city": "Memphis",
+  "state": "TN",
+  "conference": "Southern Intercollegiate Athletic Conference",
+  "enrollment": 613,
+  "avoidNickname": "Magicians"
+ },
+ {
+  "name": "Lenoir\u2013Rhyne",
+  "full": "Lenoir\u2013Rhyne University",
+  "city": "Hickory",
+  "state": "NC",
+  "conference": "South Atlantic Conference",
+  "enrollment": 2255,
+  "avoidNickname": "Bears"
+ },
+ {
+  "name": "Lewis",
+  "full": "Lewis University",
+  "city": "Romeoville",
+  "state": "IL",
+  "conference": "Great Lakes Valley Conference",
+  "enrollment": 6636,
+  "avoidNickname": "Flyers"
+ },
+ {
+  "name": "Lincoln",
+  "full": "Lincoln University (MO)",
+  "city": "Jefferson City",
+  "state": "MO",
+  "conference": "Great Lakes Valley Conference",
+  "enrollment": 2093,
+  "avoidNickname": "Blue Tigers"
+ },
+ {
+  "name": "Lincoln",
+  "full": "Lincoln University (PA)",
+  "city": "Lincoln University",
+  "state": "PA",
+  "conference": "Central Intercollegiate Athletic Association",
+  "enrollment": 1848,
+  "avoidNickname": "Lions"
+ },
+ {
+  "name": "Lincoln Memorial",
+  "full": "Lincoln Memorial University",
+  "city": "Harrogate",
+  "state": "TN",
+  "conference": "South Atlantic Conference",
+  "enrollment": 6081,
+  "avoidNickname": "Railsplitters"
+ },
+ {
+  "name": "Livingstone",
+  "full": "Livingstone College",
+  "city": "Salisbury",
+  "state": "NC",
+  "conference": "Central Intercollegiate Athletic Association",
+  "enrollment": 814,
+  "avoidNickname": "Blue Bears"
+ },
+ {
+  "name": "Lubbock Christian",
+  "full": "Lubbock Christian University",
+  "city": "Lubbock",
+  "state": "TX",
+  "conference": "Lone Star Conference",
+  "enrollment": 1595,
+  "avoidNickname": "Chaparrals & Lady Chaps"
+ },
+ {
+  "name": "Lynn",
+  "full": "Lynn University",
+  "city": "Boca Raton",
+  "state": "FL",
+  "conference": "Sunshine State Conference",
+  "enrollment": 3520,
+  "avoidNickname": "Fighting Knights"
+ },
+ {
+  "name": "Malone",
+  "full": "Malone University",
+  "city": "Canton",
+  "state": "OH",
+  "conference": "Great Midwest Athletic Conference",
+  "enrollment": 1268,
+  "avoidNickname": "Pioneers"
+ },
+ {
+  "name": "Mars Hill",
+  "full": "Mars Hill University",
+  "city": "Mars Hill",
+  "state": "NC",
+  "conference": "South Atlantic Conference",
+  "enrollment": 1049,
+  "avoidNickname": "Lions"
+ },
+ {
+  "name": "Mary",
+  "full": "University of Mary",
+  "city": "Bismarck",
+  "state": "ND",
+  "conference": "Northern Sun Intercollegiate Conference",
+  "enrollment": 3801,
+  "avoidNickname": "Marauders"
+ },
+ {
+  "name": "Maryville",
+  "full": "Maryville University",
+  "city": "Town and Country",
+  "state": "MO",
+  "conference": "Great Lakes Valley Conference",
+  "enrollment": 9250,
+  "avoidNickname": "Saints"
+ },
+ {
+  "name": "McKendree",
+  "full": "McKendree University",
+  "city": "Lebanon",
+  "state": "IL",
+  "conference": "Great Lakes Valley Conference",
+  "enrollment": 2442,
+  "avoidNickname": "Bearcats"
+ },
+ {
+  "name": "Menlo",
+  "full": "Menlo College",
+  "city": "Atherton",
+  "state": "CA",
+  "conference": "California Collegiate Athletic Association",
+  "enrollment": 810,
+  "avoidNickname": "Oaks"
+ },
+ {
+  "name": "Mercy",
+  "full": "Mercy University",
+  "city": "Dobbs Ferry",
+  "state": "NY",
+  "conference": "East Coast Conference",
+  "enrollment": 8774,
+  "avoidNickname": "Mavericks"
+ },
+ {
+  "name": "Metropolitan State of Denver",
+  "full": "Metropolitan State University of Denver",
+  "city": "Denver",
+  "state": "CO",
+  "conference": "Rocky Mountain Athletic Conference",
+  "enrollment": 17782,
+  "avoidNickname": "Roadrunners"
+ },
+ {
+  "name": "Michigan Technological",
+  "full": "Michigan Technological University",
+  "city": "Houghton",
+  "state": "MI",
+  "conference": "Great Lakes Intercollegiate Athletic Conference",
+  "enrollment": 7430,
+  "avoidNickname": "Huskies"
+ },
+ {
+  "name": "Midwestern State",
+  "full": "Midwestern State University",
+  "city": "Wichita Falls",
+  "state": "TX",
+  "conference": "Lone Star Conference",
+  "enrollment": 5324,
+  "avoidNickname": "Mustangs"
+ },
+ {
+  "name": "Miles",
+  "full": "Miles College",
+  "city": "Fairfield",
+  "state": "AL",
+  "conference": "Southern Intercollegiate Athletic Conference",
+  "enrollment": 1489,
+  "avoidNickname": "Golden Bears"
+ },
+ {
+  "name": "Millersville",
+  "full": "Millersville University",
+  "city": "Millersville",
+  "state": "PA",
+  "conference": "Pennsylvania State Athletic Conference",
+  "enrollment": 7009,
+  "avoidNickname": "Marauders"
+ },
+ {
+  "name": "Minnesota State, Mankato",
+  "full": "Minnesota State University, Mankato",
+  "city": "Mankato",
+  "state": "MN",
+  "conference": "Northern Sun Intercollegiate Conference",
+  "enrollment": 14709,
+  "avoidNickname": "Mavericks"
+ },
+ {
+  "name": "Minnesota State Moorhead",
+  "full": "Minnesota State University Moorhead",
+  "city": "Moorhead",
+  "state": "MN",
+  "conference": "Northern Sun Intercollegiate Conference",
+  "enrollment": 5547,
+  "avoidNickname": "Dragons"
+ },
+ {
+  "name": "Minnesota Crookston",
+  "full": "University of Minnesota Crookston",
+  "city": "Crookston",
+  "state": "MN",
+  "conference": "Northern Sun Intercollegiate Conference",
+  "enrollment": 1729,
+  "avoidNickname": "Golden Eagles"
+ },
+ {
+  "name": "Minnesota Duluth",
+  "full": "University of Minnesota Duluth",
+  "city": "Duluth",
+  "state": "MN",
+  "conference": "Northern Sun Intercollegiate Conference",
+  "enrollment": 9253,
+  "avoidNickname": "Bulldogs"
+ },
+ {
+  "name": "Minot State",
+  "full": "Minot State University",
+  "city": "Minot",
+  "state": "ND",
+  "conference": "Northern Sun Intercollegiate Conference",
+  "enrollment": 2751,
+  "avoidNickname": "Beavers"
+ },
+ {
+  "name": "Mississippi Christian",
+  "full": "Mississippi Christian University",
+  "city": "Clinton",
+  "state": "MS",
+  "conference": "Gulf South Conference",
+  "enrollment": 4250,
+  "avoidNickname": "Choctaws"
+ },
+ {
+  "name": "Missouri University of Science and Technology",
+  "full": "Missouri University of Science and Technology",
+  "city": "Rolla",
+  "state": "MO",
+  "conference": "Great Lakes Valley Conference",
+  "enrollment": 7154,
+  "avoidNickname": "Miners"
+ },
+ {
+  "name": "Missouri Southern State",
+  "full": "Missouri Southern State University",
+  "city": "Joplin",
+  "state": "MO",
+  "conference": "Mid-America Intercollegiate Athletics Association",
+  "enrollment": 4147,
+  "avoidNickname": "Lions"
+ },
+ {
+  "name": "Missouri Western State",
+  "full": "Missouri Western State University",
+  "city": "St. Joseph",
+  "state": "MO",
+  "conference": "Mid-America Intercollegiate Athletics Association",
+  "enrollment": 3716,
+  "avoidNickname": "Griffons"
+ },
+ {
+  "name": "Missouri\u2013St. Louis",
+  "full": "University of Missouri\u2013St. Louis",
+  "city": "St. Louis",
+  "state": "MO",
+  "conference": "Great Lakes Valley Conference",
+  "enrollment": 14787,
+  "avoidNickname": "Tritons"
+ },
+ {
+  "name": "Molloy",
+  "full": "Molloy University",
+  "city": "Rockville Centre",
+  "state": "NY",
+  "conference": "East Coast Conference",
+  "enrollment": 4845,
+  "avoidNickname": "Lions"
+ },
+ {
+  "name": "Montana State Billings",
+  "full": "Montana State University Billings",
+  "city": "Billings",
+  "state": "MT",
+  "conference": "Great Northwest Athletic Conference",
+  "enrollment": 4129,
+  "avoidNickname": "Yellowjackets"
+ },
+ {
+  "name": "Montevallo",
+  "full": "University of Montevallo",
+  "city": "Montevallo",
+  "state": "AL",
+  "conference": "Gulf South Conference",
+  "enrollment": 3142,
+  "avoidNickname": "Falcons"
+ },
+ {
+  "name": "Morehouse",
+  "full": "Morehouse College",
+  "city": "Atlanta",
+  "state": "GA",
+  "conference": "Southern Intercollegiate Athletic Conference",
+  "enrollment": 2206,
+  "avoidNickname": "Maroon Tigers"
+ },
+ {
+  "name": "Mount Olive",
+  "full": "University of Mount Olive",
+  "city": "Mount Olive",
+  "state": "NC",
+  "conference": "Conference Carolinas",
+  "enrollment": 2154,
+  "avoidNickname": "Trojans"
+ },
+ {
+  "name": "Nebraska at Kearney",
+  "full": "University of Nebraska at Kearney",
+  "city": "Kearney",
+  "state": "NE",
+  "conference": "Mid-America Intercollegiate Athletics Association",
+  "enrollment": 5881,
+  "avoidNickname": "Lopers"
+ },
+ {
+  "name": "New Mexico Highlands",
+  "full": "New Mexico Highlands University",
+  "city": "Las Vegas",
+  "state": "NM",
+  "conference": "Rocky Mountain Athletic Conference",
+  "enrollment": 2704,
+  "avoidNickname": "Cowboys & Cowgirls"
+ },
+ {
+  "name": "Newberry",
+  "full": "Newberry College",
+  "city": "Newberry",
+  "state": "SC",
+  "conference": "South Atlantic Conference",
+  "enrollment": 1521,
+  "avoidNickname": "Wolves"
+ },
+ {
+  "name": "Newman",
+  "full": "Newman University",
+  "city": "Wichita",
+  "state": "KS",
+  "conference": "Mid-America Intercollegiate Athletics Association",
+  "enrollment": 2787,
+  "avoidNickname": "Jets"
+ },
+ {
+  "name": "North Georgia",
+  "full": "University of North Georgia",
+  "city": "Dahlonega",
+  "state": "GA",
+  "conference": "Peach Belt Conference",
+  "enrollment": 19298,
+  "avoidNickname": "Nighthawks"
+ },
+ {
+  "name": "North Greenville",
+  "full": "North Greenville University",
+  "city": "Tigerville",
+  "state": "SC",
+  "conference": "Conference Carolinas",
+  "enrollment": 2304,
+  "avoidNickname": "Trailblazers"
+ },
+ {
+  "name": "Northeastern State",
+  "full": "Northeastern State University",
+  "city": "Tahlequah",
+  "state": "OK",
+  "conference": "Mid-America Intercollegiate Athletics Association",
+  "enrollment": 8002,
+  "avoidNickname": "RiverHawks"
+ },
+ {
+  "name": "Northern Michigan",
+  "full": "Northern Michigan University",
+  "city": "Marquette",
+  "state": "MI",
+  "conference": "Great Lakes Intercollegiate Athletic Conference",
+  "enrollment": 6958,
+  "avoidNickname": "Wildcats"
+ },
+ {
+  "name": "Northern State",
+  "full": "Northern State University",
+  "city": "Aberdeen",
+  "state": "SD",
+  "conference": "Northern Sun Intercollegiate Conference",
+  "enrollment": 3711,
+  "avoidNickname": "Wolves"
+ },
+ {
+  "name": "Northwest Missouri State",
+  "full": "Northwest Missouri State University",
+  "city": "Maryville",
+  "state": "MO",
+  "conference": "Mid-America Intercollegiate Athletics Association",
+  "enrollment": 9152,
+  "avoidNickname": "Bearcats"
+ },
+ {
+  "name": "Northwest Nazarene",
+  "full": "Northwest Nazarene University",
+  "city": "Nampa",
+  "state": "ID",
+  "conference": "Great Northwest Athletic Conference",
+  "enrollment": 1646,
+  "avoidNickname": "Nighthawks"
+ },
+ {
+  "name": "Northwestern Oklahoma State",
+  "full": "Northwestern Oklahoma State University",
+  "city": "Alva",
+  "state": "OK",
+  "conference": "Great American Conference",
+  "enrollment": 2081,
+  "avoidNickname": "Rangers"
+ },
+ {
+  "name": "Northwood",
+  "full": "Northwood University",
+  "city": "Midland",
+  "state": "MI",
+  "conference": "Great Midwest Athletic Conference",
+  "enrollment": 2227,
+  "avoidNickname": "Timberwolves"
+ },
+ {
+  "name": "Nova Southeastern",
+  "full": "Nova Southeastern University",
+  "city": "Davie",
+  "state": "FL",
+  "conference": "Sunshine State Conference",
+  "enrollment": 22830,
+  "avoidNickname": "Sharks"
+ },
+ {
+  "name": "Ohio Dominican",
+  "full": "Ohio Dominican University",
+  "city": "Columbus",
+  "state": "OH",
+  "conference": "Great Midwest Athletic Conference",
+  "enrollment": 1209,
+  "avoidNickname": "Panthers"
+ },
+ {
+  "name": "Oklahoma Baptist",
+  "full": "Oklahoma Baptist University",
+  "city": "Shawnee",
+  "state": "OK",
+  "conference": "Great American Conference",
+  "enrollment": 1569,
+  "avoidNickname": "Bison"
+ },
+ {
+  "name": "Oklahoma Christian",
+  "full": "Oklahoma Christian University",
+  "city": "Oklahoma City",
+  "state": "OK",
+  "conference": "Lone Star Conference",
+  "enrollment": 2153,
+  "avoidNickname": "Eagles & Lady Eagles"
+ },
+ {
+  "name": "Ouachita Baptist",
+  "full": "Ouachita Baptist University",
+  "city": "Arkadelphia",
+  "state": "AR",
+  "conference": "Great American Conference",
+  "enrollment": 1858,
+  "avoidNickname": "Tigers"
+ },
+ {
+  "name": "Pace",
+  "full": "Pace University",
+  "city": "Pleasantville",
+  "state": "NY",
+  "conference": "Northeast-10 Conference",
+  "enrollment": 14092,
+  "avoidNickname": "Setters"
+ },
+ {
+  "name": "Palm Beach Atlantic",
+  "full": "Palm Beach Atlantic University",
+  "city": "West Palm Beach",
+  "state": "FL",
+  "conference": "Sunshine State Conference",
+  "enrollment": 4147,
+  "avoidNickname": "Sailfish"
+ },
+ {
+  "name": "Wisconsin\u2013Parkside",
+  "full": "University of Wisconsin\u2013Parkside",
+  "city": "Kenosha",
+  "state": "WI",
+  "conference": "Great Lakes Intercollegiate Athletic Conference",
+  "enrollment": 3947,
+  "avoidNickname": "Rangers"
+ },
+ {
+  "name": "Pittsburg State",
+  "full": "Pittsburg State University",
+  "city": "Pittsburg",
+  "state": "KS",
+  "conference": "Mid-America Intercollegiate Athletics Association",
+  "enrollment": 5774,
+  "avoidNickname": "Gorillas"
+ },
+ {
+  "name": "Pittsburgh at Johnstown",
+  "full": "University of Pittsburgh at Johnstown",
+  "city": "Johnstown",
+  "state": "PA",
+  "conference": "Pennsylvania State Athletic Conference",
+  "enrollment": 1809,
+  "avoidNickname": "Mountain Cats"
+ },
+ {
+  "name": "Point Loma Nazarene",
+  "full": "Point Loma Nazarene University",
+  "city": "San Diego",
+  "state": "CA",
+  "conference": "Pacific West Conference",
+  "enrollment": 4813,
+  "avoidNickname": "Sea Lions"
+ },
+ {
+  "name": "Point Park",
+  "full": "Point Park University",
+  "city": "Pittsburgh",
+  "state": "PA",
+  "conference": "Mountain East Conference",
+  "enrollment": 3448,
+  "avoidNickname": "Pioneers"
+ },
+ {
+  "name": "Post",
+  "full": "Post University",
+  "city": "Waterbury",
+  "state": "CT",
+  "conference": "Central Atlantic Collegiate Conference",
+  "enrollment": 21699,
+  "avoidNickname": "Eagles"
+ },
+ {
+  "name": "Puerto Rico at Bayam\u00f3n",
+  "full": "University of Puerto Rico at Bayam\u00f3n",
+  "city": "Bayam\u00f3n",
+  "state": "PR",
+  "conference": "Independent",
+  "enrollment": 2967,
+  "avoidNickname": "Cowboys"
+ },
+ {
+  "name": "Puerto Rico at Mayag\u00fcez",
+  "full": "University of Puerto Rico at Mayag\u00fcez",
+  "city": "Mayag\u00fcez",
+  "state": "PR",
+  "conference": "Independent",
+  "enrollment": 10716,
+  "avoidNickname": "Bulldogs"
+ },
+ {
+  "name": "Puerto Rico at R\u00edo Piedras",
+  "full": "University of Puerto Rico at R\u00edo Piedras",
+  "city": "San Juan",
+  "state": "PR",
+  "conference": "Independent",
+  "enrollment": 11493,
+  "avoidNickname": "Gallitos"
+ },
+ {
+  "name": "Purdue University Northwest",
+  "full": "Purdue University Northwest",
+  "city": "Hammond and Westville",
+  "state": "IN",
+  "conference": "Great Lakes Intercollegiate Athletic Conference",
+  "enrollment": 9051,
+  "avoidNickname": "Lions"
+ },
+ {
+  "name": "Queens",
+  "full": "Queens College",
+  "city": "Flushing",
+  "state": "NY",
+  "conference": "East Coast Conference",
+  "enrollment": 15965,
+  "avoidNickname": "Knights"
+ },
+ {
+  "name": "Quincy",
+  "full": "Quincy University",
+  "city": "Quincy",
+  "state": "IL",
+  "conference": "Great Lakes Valley Conference",
+  "enrollment": 1192,
+  "avoidNickname": "Hawks"
+ },
+ {
+  "name": "Regis",
+  "full": "Regis University",
+  "city": "Denver",
+  "state": "CO",
+  "conference": "Rocky Mountain Athletic Conference",
+  "enrollment": 4627,
+  "avoidNickname": "Rangers"
+ },
+ {
+  "name": "Roberts Wesleyan",
+  "full": "Roberts Wesleyan University",
+  "city": "North Chili",
+  "state": "NY",
+  "conference": "East Coast Conference",
+  "enrollment": 1619,
+  "avoidNickname": "Redhawks"
+ },
+ {
+  "name": "Rockhurst",
+  "full": "Rockhurst University",
+  "city": "Kansas City",
+  "state": "MO",
+  "conference": "Great Lakes Valley Conference",
+  "enrollment": 3496,
+  "avoidNickname": "Hawks"
+ },
+ {
+  "name": "Rogers State",
+  "full": "Rogers State University",
+  "city": "Claremore",
+  "state": "OK",
+  "conference": "Mid-America Intercollegiate Athletics Association",
+  "enrollment": 3281,
+  "avoidNickname": "Hillcats"
+ },
+ {
+  "name": "Rollins",
+  "full": "Rollins College",
+  "city": "Winter Park",
+  "state": "FL",
+  "conference": "Sunshine State Conference",
+  "enrollment": 3047,
+  "avoidNickname": "Tars"
+ },
+ {
+  "name": "Roosevelt",
+  "full": "Roosevelt University",
+  "city": "Chicago",
+  "state": "IL",
+  "conference": "Great Lakes Intercollegiate Athletic Conference",
+  "enrollment": 4281,
+  "avoidNickname": "Lakers"
+ },
+ {
+  "name": "Saginaw Valley State",
+  "full": "Saginaw Valley State University",
+  "city": "University Center",
+  "state": "MI",
+  "conference": "Great Lakes Intercollegiate Athletic Conference",
+  "enrollment": 6822,
+  "avoidNickname": "Cardinals"
+ },
+ {
+  "name": "Saint Anselm",
+  "full": "Saint Anselm College",
+  "city": "Goffstown",
+  "state": "NH",
+  "conference": "Northeast-10 Conference",
+  "enrollment": 2111,
+  "avoidNickname": "Hawks"
+ },
+ {
+  "name": "St. Cloud State",
+  "full": "St. Cloud State University",
+  "city": "St. Cloud",
+  "state": "MN",
+  "conference": "Northern Sun Intercollegiate Conference",
+  "enrollment": 10164,
+  "avoidNickname": "Huskies"
+ },
+ {
+  "name": "St. Edward's",
+  "full": "St. Edward's University",
+  "city": "Austin",
+  "state": "TX",
+  "conference": "Lone Star Conference",
+  "enrollment": 3309,
+  "avoidNickname": "Hilltoppers"
+ },
+ {
+  "name": "Saint Leo",
+  "full": "Saint Leo University",
+  "city": "St. Leo",
+  "state": "FL",
+  "conference": "Sunshine State Conference",
+  "enrollment": 14190,
+  "avoidNickname": "Lions"
+ },
+ {
+  "name": "Saint Martin's",
+  "full": "Saint Martin's University",
+  "city": "Lacey",
+  "state": "WA",
+  "conference": "Great Northwest Athletic Conference",
+  "enrollment": 1505,
+  "avoidNickname": "Saints"
+ },
+ {
+  "name": "St. Mary's",
+  "full": "St. Mary's University",
+  "city": "San Antonio",
+  "state": "TX",
+  "conference": "Lone Star Conference",
+  "enrollment": 3457,
+  "avoidNickname": "Rattlers"
+ },
+ {
+  "name": "Saint Michael's",
+  "full": "Saint Michael's College",
+  "city": "Colchester",
+  "state": "VT",
+  "conference": "Northeast-10 Conference",
+  "enrollment": 1370,
+  "avoidNickname": "Purple Knights"
+ },
+ {
+  "name": "St. Thomas Aquinas",
+  "full": "St. Thomas Aquinas College",
+  "city": "Sparkill",
+  "state": "NY",
+  "conference": "East Coast Conference",
+  "enrollment": 1950,
+  "avoidNickname": "Spartans"
+ },
+ {
+  "name": "Salem",
+  "full": "Salem University",
+  "city": "Salem",
+  "state": "WV",
+  "conference": "Independent",
+  "enrollment": 894,
+  "avoidNickname": "Tigers"
+ },
+ {
+  "name": "San Francisco State",
+  "full": "San Francisco State University",
+  "city": "San Francisco",
+  "state": "CA",
+  "conference": "California Collegiate Athletic Association",
+  "enrollment": 22357,
+  "avoidNickname": "Gators"
+ },
+ {
+  "name": "Savannah State",
+  "full": "Savannah State University",
+  "city": "Savannah",
+  "state": "GA",
+  "conference": "Southern Intercollegiate Athletic Conference",
+  "enrollment": 3208,
+  "avoidNickname": "Tigers"
+ },
+ {
+  "name": "Seattle Pacific",
+  "full": "Seattle Pacific University",
+  "city": "Seattle",
+  "state": "WA",
+  "conference": "Great Northwest Athletic Conference",
+  "enrollment": 2261,
+  "avoidNickname": "Falcons"
+ },
+ {
+  "name": "Seton Hill",
+  "full": "Seton Hill University",
+  "city": "Greensburg",
+  "state": "PA",
+  "conference": "Pennsylvania State Athletic Conference",
+  "enrollment": 1989,
+  "avoidNickname": "Griffins"
+ },
+ {
+  "name": "Shaw",
+  "full": "Shaw University",
+  "city": "Raleigh",
+  "state": "NC",
+  "conference": "Central Intercollegiate Athletic Association",
+  "enrollment": 962,
+  "avoidNickname": "Bears"
+ },
+ {
+  "name": "Shepherd",
+  "full": "Shepherd University",
+  "city": "Shepherdstown",
+  "state": "WV",
+  "conference": "Pennsylvania State Athletic Conference",
+  "enrollment": 3339,
+  "avoidNickname": "Rams"
+ },
+ {
+  "name": "Shippensburg",
+  "full": "Shippensburg University",
+  "city": "Shippensburg",
+  "state": "PA",
+  "conference": "Pennsylvania State Athletic Conference",
+  "enrollment": 5165,
+  "avoidNickname": "Raiders"
+ },
+ {
+  "name": "Shorter",
+  "full": "Shorter University",
+  "city": "Rome",
+  "state": "GA",
+  "conference": "Conference Carolinas",
+  "enrollment": 1447,
+  "avoidNickname": "Hawks"
+ },
+ {
+  "name": "Simon Fraser",
+  "full": "Simon Fraser University",
+  "city": "Burnaby",
+  "state": "BC",
+  "conference": "Great Northwest Athletic Conference",
+  "enrollment": 30380,
+  "avoidNickname": "Red Leafs"
+ },
+ {
+  "name": "Sioux Falls",
+  "full": "University of Sioux Falls",
+  "city": "Sioux Falls",
+  "state": "SD",
+  "conference": "Northern Sun Intercollegiate Conference",
+  "enrollment": 1624,
+  "avoidNickname": "Cougars"
+ },
+ {
+  "name": "Slippery Rock",
+  "full": "Slippery Rock University",
+  "city": "Slippery Rock",
+  "state": "PA",
+  "conference": "Pennsylvania State Athletic Conference",
+  "enrollment": 8394,
+  "avoidNickname": "The Rock"
+ },
+ {
+  "name": "South Carolina Aiken",
+  "full": "University of South Carolina Aiken",
+  "city": "Aiken",
+  "state": "SC",
+  "conference": "Peach Belt Conference",
+  "enrollment": 3855,
+  "avoidNickname": "Pacers"
+ },
+ {
+  "name": "South Carolina Beaufort",
+  "full": "University of South Carolina Beaufort",
+  "city": "Bluffton",
+  "state": "SC",
+  "conference": "Peach Belt Conference",
+  "enrollment": 2204,
+  "avoidNickname": "Sand Sharks"
+ },
+ {
+  "name": "South Dakota School of Mines and Technology",
+  "full": "South Dakota School of Mines and Technology",
+  "city": "Rapid City",
+  "state": "SD",
+  "conference": "Rocky Mountain Athletic Conference",
+  "enrollment": 2579,
+  "avoidNickname": "Hardrockers"
+ },
+ {
+  "name": "Southeastern Oklahoma State",
+  "full": "Southeastern Oklahoma State University",
+  "city": "Durant",
+  "state": "OK",
+  "conference": "Great American Conference",
+  "enrollment": 5801,
+  "avoidNickname": "Savage Storm"
+ },
+ {
+  "name": "Southern Arkansas",
+  "full": "Southern Arkansas University",
+  "city": "Magnolia",
+  "state": "AR",
+  "conference": "Great American Conference",
+  "enrollment": 4733,
+  "avoidNickname": "Muleriders"
+ },
+ {
+  "name": "Southern Connecticut State",
+  "full": "Southern Connecticut State University",
+  "city": "New Haven",
+  "state": "CT",
+  "conference": "Northeast-10 Conference",
+  "enrollment": 9377,
+  "avoidNickname": "Owls"
+ },
+ {
+  "name": "Southern Nazarene",
+  "full": "Southern Nazarene University",
+  "city": "Bethany",
+  "state": "OK",
+  "conference": "Great American Conference",
+  "enrollment": 2165,
+  "avoidNickname": "Crimson Storm"
+ },
+ {
+  "name": "Southern New Hampshire",
+  "full": "Southern New Hampshire University",
+  "city": "Manchester and Hooksett",
+  "state": "NH",
+  "conference": "Northeast-10 Conference",
+  "enrollment": 2769,
+  "avoidNickname": "Penmen"
+ },
+ {
+  "name": "Southern Wesleyan",
+  "full": "Southern Wesleyan University",
+  "city": "Central",
+  "state": "SC",
+  "conference": "Conference Carolinas",
+  "enrollment": 980,
+  "avoidNickname": "Warriors"
+ },
+ {
+  "name": "Southwest Baptist",
+  "full": "Southwest Baptist University",
+  "city": "Bolivar",
+  "state": "MO",
+  "conference": "Great Lakes Valley Conference",
+  "enrollment": 2709,
+  "avoidNickname": "Bearcats"
+ },
+ {
+  "name": "Southwest Minnesota State",
+  "full": "Southwest Minnesota State University",
+  "city": "Marshall",
+  "state": "MN",
+  "conference": "Northern Sun Intercollegiate Conference",
+  "enrollment": 7773,
+  "avoidNickname": "Mustangs"
+ },
+ {
+  "name": "Southwestern Oklahoma State",
+  "full": "Southwestern Oklahoma State University",
+  "city": "Weatherford",
+  "state": "OK",
+  "conference": "Great American Conference",
+  "enrollment": 5163,
+  "avoidNickname": "Bulldogs"
+ },
+ {
+  "name": "Spring Hill",
+  "full": "Spring Hill College",
+  "city": "Mobile",
+  "state": "AL",
+  "conference": "Southern Intercollegiate Athletic Conference",
+  "enrollment": 920,
+  "avoidNickname": "Badgers"
+ },
+ {
+  "name": "College of Staten Island",
+  "full": "College of Staten Island",
+  "city": "Staten Island",
+  "state": "NY",
+  "conference": "East Coast Conference",
+  "enrollment": 10973,
+  "avoidNickname": "Dolphins"
+ },
+ {
+  "name": "Sul Ross State",
+  "full": "Sul Ross State University",
+  "city": "Alpine",
+  "state": "TX",
+  "conference": "Lone Star Conference",
+  "enrollment": 2576,
+  "avoidNickname": "Lobos"
+ },
+ {
+  "name": "Tampa",
+  "full": "University of Tampa",
+  "city": "Tampa",
+  "state": "FL",
+  "conference": "Sunshine State Conference",
+  "enrollment": 11429,
+  "avoidNickname": "Spartans"
+ },
+ {
+  "name": "Texas A&M University\u2013Kingsville",
+  "full": "Texas A&M University\u2013Kingsville",
+  "city": "Kingsville",
+  "state": "TX",
+  "conference": "Lone Star Conference",
+  "enrollment": 6862,
+  "avoidNickname": "Javelinas"
+ },
+ {
+  "name": "Texas A&M International",
+  "full": "Texas A&M International University",
+  "city": "Laredo",
+  "state": "TX",
+  "conference": "Lone Star Conference",
+  "enrollment": 8532,
+  "avoidNickname": "Dustdevils"
+ },
+ {
+  "name": "Texas Woman's",
+  "full": "Texas Woman's University",
+  "city": "Denton",
+  "state": "TX",
+  "conference": "Lone Star Conference",
+  "enrollment": 15361,
+  "avoidNickname": "Pioneers"
+ },
+ {
+  "name": "Texas at Dallas",
+  "full": "University of Texas at Dallas",
+  "city": "Richardson",
+  "state": "TX",
+  "conference": "Lone Star Conference",
+  "enrollment": 29886,
+  "avoidNickname": "Comets"
+ },
+ {
+  "name": "Texas Permian Basin",
+  "full": "University of Texas Permian Basin",
+  "city": "Odessa",
+  "state": "TX",
+  "conference": "Lone Star Conference",
+  "enrollment": 7372,
+  "avoidNickname": "Falcons"
+ },
+ {
+  "name": "Texas at Tyler",
+  "full": "University of Texas at Tyler",
+  "city": "Tyler",
+  "state": "TX",
+  "conference": "Lone Star Conference",
+  "enrollment": 10183,
+  "avoidNickname": "Patriots"
+ },
+ {
+  "name": "Thomas More",
+  "full": "Thomas More University",
+  "city": "Crestview Hills",
+  "state": "KY",
+  "conference": "Great Midwest Athletic Conference",
+  "enrollment": 1844,
+  "avoidNickname": "Saints"
+ },
+ {
+  "name": "Tiffin",
+  "full": "Tiffin University",
+  "city": "Tiffin",
+  "state": "OH",
+  "conference": "Great Midwest Athletic Conference",
+  "enrollment": 3726,
+  "avoidNickname": "Dragons"
+ },
+ {
+  "name": "Trevecca Nazarene",
+  "full": "Trevecca Nazarene University",
+  "city": "Nashville",
+  "state": "TN",
+  "conference": "Gulf South Conference",
+  "enrollment": 3196,
+  "avoidNickname": "Trojans"
+ },
+ {
+  "name": "Truman State",
+  "full": "Truman State University",
+  "city": "Kirksville",
+  "state": "MO",
+  "conference": "Great Lakes Valley Conference",
+  "enrollment": 3664,
+  "avoidNickname": "Bulldogs"
+ },
+ {
+  "name": "Tusculum",
+  "full": "Tusculum University",
+  "city": "Greeneville",
+  "state": "TN",
+  "conference": "South Atlantic Conference",
+  "enrollment": 1105,
+  "avoidNickname": "Pioneers"
+ },
+ {
+  "name": "Tuskegee",
+  "full": "Tuskegee University",
+  "city": "Tuskegee",
+  "state": "AL",
+  "conference": "Southern Intercollegiate Athletic Conference",
+  "enrollment": 3121,
+  "avoidNickname": "Golden Tigers"
+ },
+ {
+  "name": "California, Merced",
+  "full": "University of California, Merced",
+  "city": "Merced",
+  "state": "CA",
+  "conference": "California Collegiate Athletic Association",
+  "enrollment": 9110,
+  "avoidNickname": "Bobcats"
+ },
+ {
+  "name": "North Carolina at Pembroke",
+  "full": "University of North Carolina at Pembroke",
+  "city": "Pembroke",
+  "state": "NC",
+  "conference": "Conference Carolinas",
+  "enrollment": 7674,
+  "avoidNickname": "Braves"
+ },
+ {
+  "name": "Union",
+  "full": "Union University",
+  "city": "Jackson",
+  "state": "TN",
+  "conference": "Gulf South Conference",
+  "enrollment": 2718,
+  "avoidNickname": "Bulldogs"
+ },
+ {
+  "name": "Upper Iowa",
+  "full": "Upper Iowa University",
+  "city": "Fayette",
+  "state": "IA",
+  "conference": "Great Lakes Valley Conference",
+  "enrollment": 5559,
+  "avoidNickname": "Peacocks"
+ },
+ {
+  "name": "Ursuline",
+  "full": "Ursuline College",
+  "city": "Pepper Pike",
+  "state": "OH",
+  "conference": "Great Midwest Athletic Conference",
+  "enrollment": 970,
+  "avoidNickname": "Arrows"
+ },
+ {
+  "name": "Valdosta State",
+  "full": "Valdosta State University",
+  "city": "Valdosta",
+  "state": "GA",
+  "conference": "Gulf South Conference",
+  "enrollment": 10305,
+  "avoidNickname": "Blazers"
+ },
+ {
+  "name": "Vanguard",
+  "full": "Vanguard University",
+  "city": "Costa Mesa",
+  "state": "CA",
+  "conference": "Pacific West Conference",
+  "enrollment": 2219,
+  "avoidNickname": "Lions"
+ },
+ {
+  "name": "Virginia State",
+  "full": "Virginia State University",
+  "city": "Ettrick",
+  "state": "VA",
+  "conference": "Central Intercollegiate Athletic Association",
+  "enrollment": 5605,
+  "avoidNickname": "Trojans"
+ },
+ {
+  "name": "Virginia Union",
+  "full": "Virginia Union University",
+  "city": "Richmond",
+  "state": "VA",
+  "conference": "Central Intercollegiate Athletic Association",
+  "enrollment": 1783,
+  "avoidNickname": "Panthers"
+ },
+ {
+  "name": "Virginia's College at Wise",
+  "full": "University of Virginia's College at Wise",
+  "city": "Wise",
+  "state": "VA",
+  "conference": "South Atlantic Conference",
+  "enrollment": 2253,
+  "avoidNickname": "Cavaliers"
+ },
+ {
+  "name": "Walsh",
+  "full": "Walsh University",
+  "city": "North Canton",
+  "state": "OH",
+  "conference": "Great Midwest Athletic Conference",
+  "enrollment": 2311,
+  "avoidNickname": "Cavaliers"
+ },
+ {
+  "name": "Washburn",
+  "full": "Washburn University",
+  "city": "Topeka",
+  "state": "KS",
+  "conference": "Mid-America Intercollegiate Athletics Association",
+  "enrollment": 5327,
+  "avoidNickname": "Ichabods"
+ },
+ {
+  "name": "Wayne State",
+  "full": "Wayne State University",
+  "city": "Detroit",
+  "state": "MI",
+  "conference": "Great Lakes Intercollegiate Athletic Conference",
+  "enrollment": 23553,
+  "avoidNickname": "Warriors"
+ },
+ {
+  "name": "Wayne State",
+  "full": "Wayne State College",
+  "city": "Wayne",
+  "state": "NE",
+  "conference": "Northern Sun Intercollegiate Conference",
+  "enrollment": 4666,
+  "avoidNickname": "Wildcats"
+ },
+ {
+  "name": "West Alabama",
+  "full": "University of West Alabama",
+  "city": "Livingston",
+  "state": "AL",
+  "conference": "Gulf South Conference",
+  "enrollment": 6195,
+  "avoidNickname": "Tigers"
+ },
+ {
+  "name": "West Chester",
+  "full": "West Chester University",
+  "city": "West Chester",
+  "state": "PA",
+  "conference": "Pennsylvania State Athletic Conference",
+  "enrollment": 17202,
+  "avoidNickname": "Golden Rams"
+ },
+ {
+  "name": "West Liberty",
+  "full": "West Liberty University",
+  "city": "West Liberty",
+  "state": "WV",
+  "conference": "Mountain East Conference",
+  "enrollment": 2291,
+  "avoidNickname": "Hilltoppers"
+ },
+ {
+  "name": "West Texas A&M",
+  "full": "West Texas A&M University",
+  "city": "Canyon",
+  "state": "TX",
+  "conference": "Lone Star Conference",
+  "enrollment": 9037,
+  "avoidNickname": "Buffaloes"
+ },
+ {
+  "name": "West Virginia State",
+  "full": "West Virginia State University",
+  "city": "Institute",
+  "state": "WV",
+  "conference": "Mountain East Conference",
+  "enrollment": 3247,
+  "avoidNickname": "Yellow Jackets"
+ },
+ {
+  "name": "West Virginia Wesleyan",
+  "full": "West Virginia Wesleyan College",
+  "city": "Buckhannon",
+  "state": "WV",
+  "conference": "Mountain East Conference",
+  "enrollment": 1041,
+  "avoidNickname": "Bobcats"
+ },
+ {
+  "name": "Western Colorado",
+  "full": "Western Colorado University",
+  "city": "Gunnison",
+  "state": "CO",
+  "conference": "Rocky Mountain Athletic Conference",
+  "enrollment": 3548,
+  "avoidNickname": "Mountaineers"
+ },
+ {
+  "name": "Western New Mexico",
+  "full": "Western New Mexico University",
+  "city": "Silver City",
+  "state": "NM",
+  "conference": "Lone Star Conference",
+  "enrollment": 3531,
+  "avoidNickname": "Mustangs"
+ },
+ {
+  "name": "Western Oregon",
+  "full": "Western Oregon University",
+  "city": "Monmouth",
+  "state": "OR",
+  "conference": "Great Northwest Athletic Conference",
+  "enrollment": 3823,
+  "avoidNickname": "Wolves"
+ },
+ {
+  "name": "Western Washington",
+  "full": "Western Washington University",
+  "city": "Bellingham",
+  "state": "WA",
+  "conference": "Great Northwest Athletic Conference",
+  "enrollment": 14700,
+  "avoidNickname": "Vikings"
+ },
+ {
+  "name": "Westminster",
+  "full": "Westminster University",
+  "city": "Salt Lake City",
+  "state": "UT",
+  "conference": "Rocky Mountain Athletic Conference",
+  "enrollment": 1155,
+  "avoidNickname": "Griffins"
+ },
+ {
+  "name": "Westmont",
+  "full": "Westmont College",
+  "city": "Santa Barbara",
+  "state": "CA",
+  "conference": "Pacific West Conference",
+  "enrollment": 1312,
+  "avoidNickname": "Warriors"
+ },
+ {
+  "name": "Wheeling",
+  "full": "Wheeling University",
+  "city": "Wheeling",
+  "state": "WV",
+  "conference": "Mountain East Conference",
+  "enrollment": 1171,
+  "avoidNickname": "Cardinals"
+ },
+ {
+  "name": "William Jewell",
+  "full": "William Jewell College",
+  "city": "Liberty",
+  "state": "MO",
+  "conference": "Great Lakes Valley Conference",
+  "enrollment": 956,
+  "avoidNickname": "Cardinals"
+ },
+ {
+  "name": "Wilmington",
+  "full": "Wilmington University",
+  "city": "New Castle",
+  "state": "DE",
+  "conference": "Central Atlantic Collegiate Conference",
+  "enrollment": 20384,
+  "avoidNickname": "Wildcats"
+ },
+ {
+  "name": "Wingate",
+  "full": "Wingate University",
+  "city": "Wingate",
+  "state": "NC",
+  "conference": "South Atlantic Conference",
+  "enrollment": 3424,
+  "avoidNickname": "Bulldogs"
+ },
+ {
+  "name": "Winona State",
+  "full": "Winona State University",
+  "city": "Winona",
+  "state": "MN",
+  "conference": "Northern Sun Intercollegiate Conference",
+  "enrollment": 6072,
+  "avoidNickname": "Warriors"
+ },
+ {
+  "name": "Winston-Salem State",
+  "full": "Winston-Salem State University",
+  "city": "Winston-Salem",
+  "state": "NC",
+  "conference": "Central Intercollegiate Athletic Association",
+  "enrollment": 4192,
+  "avoidNickname": "Rams"
+ },
+ {
+  "name": "Young Harris",
+  "full": "Young Harris College",
+  "city": "Young Harris",
+  "state": "GA",
+  "conference": "Conference Carolinas",
+  "enrollment": 1922,
+  "avoidNickname": "Mountain Lions"
+ },
+ {
+  "name": "Sonoma State",
+  "full": "Sonoma State University",
+  "city": "Rohnert Park",
+  "state": "CA",
+  "conference": "California Collegiate Athletic Association",
+  "enrollment": 6566,
+  "avoidNickname": "Seawolves"
+ },
+ {
+  "name": "Ferrum",
+  "full": "Ferrum College",
+  "city": "Ferrum",
+  "state": "VA",
+  "conference": "Conference Carolinas",
+  "enrollment": 780,
+  "avoidNickname": "Panthers"
+ },
+ {
+  "name": "Middle Georgia State",
+  "full": "Middle Georgia State University",
+  "city": "Macon and Cochran",
+  "state": "GA",
+  "conference": "Peach Belt Conference",
+  "enrollment": 8409,
+  "avoidNickname": "Knights"
+ },
+ {
+  "name": "Shawnee State",
+  "full": "Shawnee State University",
+  "city": "Portsmouth",
+  "state": "OH",
+  "conference": "Mountain East Conference",
+  "enrollment": 3641,
+  "avoidNickname": "Bears"
+ },
+ {
+  "name": "Texas A&M University\u2013Texarkana",
+  "full": "Texas A&M University\u2013Texarkana",
+  "city": "Texarkana",
+  "state": "TX",
+  "conference": "Lone Star Conference",
+  "enrollment": 2109,
+  "avoidNickname": "Eagles"
+ },
+ {
+  "name": "Lackawanna",
+  "full": "Lackawanna College",
+  "city": "Scranton",
+  "state": "PA",
+  "conference": "Pennsylvania State Athletic Conference",
+  "enrollment": 1939,
+  "avoidNickname": "Falcons"
+ },
+ {
+  "name": "Loyola University New Orleans",
+  "full": "Loyola University New Orleans",
+  "city": "New Orleans",
+  "state": "LA",
+  "conference": "Gulf South Conference",
+  "enrollment": 4351,
+  "avoidNickname": "Wolf Pack"
+ },
+ {
+  "name": "Monroe",
+  "full": "Monroe University",
+  "city": "New Rochelle",
+  "state": "NY",
+  "conference": "Central Atlantic Collegiate Conference",
+  "enrollment": 7924,
+  "avoidNickname": "Mustangs"
+ },
+ {
+  "name": "Texas Wesleyan",
+  "full": "Texas Wesleyan University",
+  "city": "Fort Worth",
+  "state": "TX",
+  "conference": "Lone Star Conference",
+  "enrollment": 2666,
+  "avoidNickname": "Rams"
+ },
+ {
+  "name": "Georgia Gwinnett",
+  "full": "Georgia Gwinnett College",
+  "city": "Lawrenceville",
+  "state": "GA",
+  "conference": "Peach Belt Conference",
+  "enrollment": 11907,
+  "avoidNickname": "Grizzlies"
+ }
+]

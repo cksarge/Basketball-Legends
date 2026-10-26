@@ -1,0 +1,1700 @@
+[
+ {
+  "name": "Apollo",
+  "classification": "6A",
+  "region": "Central",
+  "enrollment": 2129
+ },
+ {
+  "name": "Brophy Prep",
+  "classification": "6A",
+  "region": "Central",
+  "enrollment": 2670
+ },
+ {
+  "name": "Corona del Sol",
+  "classification": "6A",
+  "region": "Central",
+  "enrollment": 2595
+ },
+ {
+  "name": "Desert Vista",
+  "classification": "6A",
+  "region": "Central",
+  "enrollment": 2835
+ },
+ {
+  "name": "Millennium",
+  "classification": "6A",
+  "region": "Central",
+  "enrollment": 2193
+ },
+ {
+  "name": "Sunnyslope",
+  "classification": "6A",
+  "region": "Central",
+  "enrollment": 2358
+ },
+ {
+  "name": "Cibola",
+  "classification": "6A",
+  "region": "Desert Southwest",
+  "enrollment": 2330
+ },
+ {
+  "name": "Gila Ridge",
+  "classification": "6A",
+  "region": "Desert Southwest",
+  "enrollment": 2475
+ },
+ {
+  "name": "San Luis",
+  "classification": "6A",
+  "region": "Desert Southwest",
+  "enrollment": 2656
+ },
+ {
+  "name": "Boulder Creek",
+  "classification": "6A",
+  "region": "Desert Valley",
+  "enrollment": 2107
+ },
+ {
+  "name": "Canyon View",
+  "classification": "6A",
+  "region": "Desert Valley",
+  "enrollment": 2143
+ },
+ {
+  "name": "Liberty",
+  "classification": "6A",
+  "region": "Desert Valley",
+  "enrollment": 2491
+ },
+ {
+  "name": "Mountain Ridge",
+  "classification": "6A",
+  "region": "Desert Valley",
+  "enrollment": 2848
+ },
+ {
+  "name": "Pinnacle",
+  "classification": "6A",
+  "region": "Desert Valley",
+  "enrollment": 2439
+ },
+ {
+  "name": "Sandra Day O'Connor",
+  "classification": "6A",
+  "region": "Desert Valley",
+  "enrollment": 2673
+ },
+ {
+  "name": "Dobson",
+  "classification": "6A",
+  "region": "East Valley",
+  "enrollment": 2182
+ },
+ {
+  "name": "Mesa",
+  "classification": "6A",
+  "region": "East Valley",
+  "enrollment": 3188
+ },
+ {
+  "name": "Mountain View (Mesa)",
+  "classification": "6A",
+  "region": "East Valley",
+  "enrollment": 3333
+ },
+ {
+  "name": "Red Mountain",
+  "classification": "6A",
+  "region": "East Valley",
+  "enrollment": 3277
+ },
+ {
+  "name": "Tucson",
+  "classification": "6A",
+  "region": "East Valley",
+  "enrollment": 2666
+ },
+ {
+  "name": "Westwood",
+  "classification": "6A",
+  "region": "East Valley",
+  "enrollment": 2945
+ },
+ {
+  "name": "Gilbert",
+  "classification": "6A",
+  "region": "Fiesta",
+  "enrollment": 2255
+ },
+ {
+  "name": "Highland",
+  "classification": "6A",
+  "region": "Fiesta",
+  "enrollment": 2910
+ },
+ {
+  "name": "Higley",
+  "classification": "6A",
+  "region": "Fiesta",
+  "enrollment": 2311
+ },
+ {
+  "name": "Queen Creek",
+  "classification": "6A",
+  "region": "Fiesta",
+  "enrollment": 1932
+ },
+ {
+  "name": "Sunnyside",
+  "classification": "6A",
+  "region": "Fiesta",
+  "enrollment": 2104
+ },
+ {
+  "name": "Williams Field",
+  "classification": "6A",
+  "region": "Fiesta",
+  "enrollment": 2182
+ },
+ {
+  "name": "Carl Hayden",
+  "classification": "6A",
+  "region": "Metro",
+  "enrollment": 2156
+ },
+ {
+  "name": "Desert Ridge",
+  "classification": "6A",
+  "region": "Metro",
+  "enrollment": 2118
+ },
+ {
+  "name": "La Joya Community",
+  "classification": "6A",
+  "region": "Metro",
+  "enrollment": 2224
+ },
+ {
+  "name": "Marana",
+  "classification": "6A",
+  "region": "Metro",
+  "enrollment": 2409
+ },
+ {
+  "name": "Maryvale",
+  "classification": "6A",
+  "region": "Metro",
+  "enrollment": 2150
+ },
+ {
+  "name": "Trevor G. Browne",
+  "classification": "6A",
+  "region": "Metro",
+  "enrollment": 2639
+ },
+ {
+  "name": "AZ College Prep",
+  "classification": "6A",
+  "region": "Premier",
+  "enrollment": 2635
+ },
+ {
+  "name": "Basha",
+  "classification": "6A",
+  "region": "Premier",
+  "enrollment": 2498
+ },
+ {
+  "name": "Casteel",
+  "classification": "6A",
+  "region": "Premier",
+  "enrollment": 1956
+ },
+ {
+  "name": "Chandler",
+  "classification": "6A",
+  "region": "Premier",
+  "enrollment": 3159
+ },
+ {
+  "name": "Hamilton",
+  "classification": "6A",
+  "region": "Premier",
+  "enrollment": 3338
+ },
+ {
+  "name": "Perry",
+  "classification": "6A",
+  "region": "Premier",
+  "enrollment": 2315
+ },
+ {
+  "name": "Cactus Canyon",
+  "classification": "6A",
+  "region": "West Valley",
+  "enrollment": 2583
+ },
+ {
+  "name": "Shadow Ridge",
+  "classification": "6A",
+  "region": "West Valley",
+  "enrollment": 2222
+ },
+ {
+  "name": "Tolleson Union",
+  "classification": "6A",
+  "region": "West Valley",
+  "enrollment": 2740
+ },
+ {
+  "name": "Valley Vista",
+  "classification": "6A",
+  "region": "West Valley",
+  "enrollment": 2111
+ },
+ {
+  "name": "West Point",
+  "classification": "6A",
+  "region": "West Valley",
+  "enrollment": 2556
+ },
+ {
+  "name": "Youngker",
+  "classification": "6A",
+  "region": "West Valley",
+  "enrollment": 2127
+ },
+ {
+  "name": "Alhambra",
+  "classification": "5A",
+  "region": "Central Valley",
+  "enrollment": 1874
+ },
+ {
+  "name": "Copper Canyon",
+  "classification": "5A",
+  "region": "Central Valley",
+  "enrollment": 1937
+ },
+ {
+  "name": "Independence",
+  "classification": "5A",
+  "region": "Central Valley",
+  "enrollment": 1830
+ },
+ {
+  "name": "Lake Havasu",
+  "classification": "5A",
+  "region": "Central Valley",
+  "enrollment": 1825
+ },
+ {
+  "name": "Metro Tech",
+  "classification": "5A",
+  "region": "Central Valley",
+  "enrollment": 1726
+ },
+ {
+  "name": "Sierra Linda",
+  "classification": "5A",
+  "region": "Central Valley",
+  "enrollment": 1716
+ },
+ {
+  "name": "Betty H. Fairfax",
+  "classification": "5A",
+  "region": "Desert West",
+  "enrollment": 1906
+ },
+ {
+  "name": "Buckeye Union",
+  "classification": "5A",
+  "region": "Desert West",
+  "enrollment": 1778
+ },
+ {
+  "name": "Central",
+  "classification": "5A",
+  "region": "Desert West",
+  "enrollment": 1349
+ },
+ {
+  "name": "Desert Edge",
+  "classification": "5A",
+  "region": "Desert West",
+  "enrollment": 1921
+ },
+ {
+  "name": "Paradise Valley",
+  "classification": "5A",
+  "region": "Desert West",
+  "enrollment": 1816
+ },
+ {
+  "name": "Verrado",
+  "classification": "5A",
+  "region": "Desert West",
+  "enrollment": 1993
+ },
+ {
+  "name": "Westview",
+  "classification": "5A",
+  "region": "Desert West",
+  "enrollment": 1679
+ },
+ {
+  "name": "Campo Verde",
+  "classification": "5A",
+  "region": "East Sky",
+  "enrollment": 1753
+ },
+ {
+  "name": "Chaparral",
+  "classification": "5A",
+  "region": "East Sky",
+  "enrollment": 1692
+ },
+ {
+  "name": "Desert Mountain",
+  "classification": "5A",
+  "region": "East Sky",
+  "enrollment": 1839
+ },
+ {
+  "name": "Horizon",
+  "classification": "5A",
+  "region": "East Sky",
+  "enrollment": 1699
+ },
+ {
+  "name": "Notre Dame Prep",
+  "classification": "5A",
+  "region": "East Sky",
+  "enrollment": 982
+ },
+ {
+  "name": "Camelback",
+  "classification": "5A",
+  "region": "Metro",
+  "enrollment": 2003
+ },
+ {
+  "name": "Maricopa",
+  "classification": "5A",
+  "region": "Metro",
+  "enrollment": 1924
+ },
+ {
+  "name": "McClintock",
+  "classification": "5A",
+  "region": "Metro",
+  "enrollment": 1773
+ },
+ {
+  "name": "Mountain Pointe",
+  "classification": "5A",
+  "region": "Metro",
+  "enrollment": 1471
+ },
+ {
+  "name": "North",
+  "classification": "5A",
+  "region": "Metro",
+  "enrollment": 1672
+ },
+ {
+  "name": "Skyline",
+  "classification": "5A",
+  "region": "Metro",
+  "enrollment": 1846
+ },
+ {
+  "name": "South Mountain",
+  "classification": "5A",
+  "region": "Metro",
+  "enrollment": 2085
+ },
+ {
+  "name": "Centennial",
+  "classification": "5A",
+  "region": "Northwest Valley",
+  "enrollment": 2028
+ },
+ {
+  "name": "Ironwood",
+  "classification": "5A",
+  "region": "Northwest Valley",
+  "enrollment": 1868
+ },
+ {
+  "name": "Raymond S. Kellis",
+  "classification": "5A",
+  "region": "Northwest Valley",
+  "enrollment": 1676
+ },
+ {
+  "name": "Sunrise Mountain",
+  "classification": "5A",
+  "region": "Northwest Valley",
+  "enrollment": 1856
+ },
+ {
+  "name": "Willow Canyon",
+  "classification": "5A",
+  "region": "Northwest Valley",
+  "enrollment": 2068
+ },
+ {
+  "name": "Canyon Del Oro",
+  "classification": "5A",
+  "region": "Sonoran",
+  "enrollment": 1723
+ },
+ {
+  "name": "Casa Grande",
+  "classification": "5A",
+  "region": "Sonoran",
+  "enrollment": 1870
+ },
+ {
+  "name": "Catalina Foothills",
+  "classification": "5A",
+  "region": "Sonoran",
+  "enrollment": 1883
+ },
+ {
+  "name": "Cholla",
+  "classification": "5A",
+  "region": "Sonoran",
+  "enrollment": 1671
+ },
+ {
+  "name": "Mountain View (Marana)",
+  "classification": "5A",
+  "region": "Sonoran",
+  "enrollment": 1810
+ },
+ {
+  "name": "Rincon/University",
+  "classification": "5A",
+  "region": "Sonoran",
+  "enrollment": 2098
+ },
+ {
+  "name": "Salpointe Catholic",
+  "classification": "5A",
+  "region": "Sonoran",
+  "enrollment": 1366
+ },
+ {
+  "name": "Buena",
+  "classification": "5A",
+  "region": "Southern",
+  "enrollment": 1670
+ },
+ {
+  "name": "Cienega",
+  "classification": "5A",
+  "region": "Southern",
+  "enrollment": 1803
+ },
+ {
+  "name": "Desert View",
+  "classification": "5A",
+  "region": "Southern",
+  "enrollment": 1978
+ },
+ {
+  "name": "Flowing Wells",
+  "classification": "5A",
+  "region": "Southern",
+  "enrollment": 1768
+ },
+ {
+  "name": "Nogales",
+  "classification": "5A",
+  "region": "Southern",
+  "enrollment": 1766
+ },
+ {
+  "name": "Pueblo",
+  "classification": "5A",
+  "region": "Southern",
+  "enrollment": 1811
+ },
+ {
+  "name": "Vista Grande",
+  "classification": "5A",
+  "region": "Southern",
+  "enrollment": 1837
+ },
+ {
+  "name": "Coronado",
+  "classification": "4A",
+  "region": "Black Canyon",
+  "enrollment": 718
+ },
+ {
+  "name": "Cortez",
+  "classification": "4A",
+  "region": "Black Canyon",
+  "enrollment": 1011
+ },
+ {
+  "name": "Dysart",
+  "classification": "4A",
+  "region": "Black Canyon",
+  "enrollment": 1460
+ },
+ {
+  "name": "Glendale",
+  "classification": "4A",
+  "region": "Black Canyon",
+  "enrollment": 1606
+ },
+ {
+  "name": "Marcos de Niza",
+  "classification": "4A",
+  "region": "Black Canyon",
+  "enrollment": 1327
+ },
+ {
+  "name": "Moon Valley",
+  "classification": "4A",
+  "region": "Black Canyon",
+  "enrollment": 1385
+ },
+ {
+  "name": "Tempe",
+  "classification": "4A",
+  "region": "Black Canyon",
+  "enrollment": 1478
+ },
+ {
+  "name": "Arcadia",
+  "classification": "4A",
+  "region": "Desert Sky",
+  "enrollment": 1710
+ },
+ {
+  "name": "Cactus",
+  "classification": "4A",
+  "region": "Desert Sky",
+  "enrollment": 1048
+ },
+ {
+  "name": "Cactus Shadows",
+  "classification": "4A",
+  "region": "Desert Sky",
+  "enrollment": 1247
+ },
+ {
+  "name": "Deer Valley",
+  "classification": "4A",
+  "region": "Desert Sky",
+  "enrollment": 1678
+ },
+ {
+  "name": "Mesquite",
+  "classification": "4A",
+  "region": "Desert Sky",
+  "enrollment": 1225
+ },
+ {
+  "name": "Saguaro",
+  "classification": "4A",
+  "region": "Desert Sky",
+  "enrollment": 1298
+ },
+ {
+  "name": "St. Mary's",
+  "classification": "4A",
+  "region": "Desert Sky",
+  "enrollment": 510
+ },
+ {
+  "name": "ALA - Gilbert North",
+  "classification": "4A",
+  "region": "East Sky",
+  "enrollment": 1130
+ },
+ {
+  "name": "ALA - QC",
+  "classification": "4A",
+  "region": "East Sky",
+  "enrollment": 1101
+ },
+ {
+  "name": "Combs",
+  "classification": "4A",
+  "region": "East Sky",
+  "enrollment": 1282
+ },
+ {
+  "name": "Crismon",
+  "classification": "4A",
+  "region": "East Sky",
+  "enrollment": 1441
+ },
+ {
+  "name": "Desert Sunrise",
+  "classification": "4A",
+  "region": "East Sky",
+  "enrollment": 1281
+ },
+ {
+  "name": "Eastmark",
+  "classification": "4A",
+  "region": "East Sky",
+  "enrollment": 1294
+ },
+ {
+  "name": "Poston Butte",
+  "classification": "4A",
+  "region": "East Sky",
+  "enrollment": 1298
+ },
+ {
+  "name": "Bradshaw Mountain",
+  "classification": "4A",
+  "region": "Grand Canyon",
+  "enrollment": 1524
+ },
+ {
+  "name": "Coconino",
+  "classification": "4A",
+  "region": "Grand Canyon",
+  "enrollment": 1413
+ },
+ {
+  "name": "Flagstaff",
+  "classification": "4A",
+  "region": "Grand Canyon",
+  "enrollment": 1657
+ },
+ {
+  "name": "Lee Williams",
+  "classification": "4A",
+  "region": "Grand Canyon",
+  "enrollment": 1039
+ },
+ {
+  "name": "Mingus Union",
+  "classification": "4A",
+  "region": "Grand Canyon",
+  "enrollment": 1154
+ },
+ {
+  "name": "Prescott",
+  "classification": "4A",
+  "region": "Grand Canyon",
+  "enrollment": 1511
+ },
+ {
+  "name": "Douglas",
+  "classification": "4A",
+  "region": "Kino",
+  "enrollment": 1265
+ },
+ {
+  "name": "Ironwood Ridge",
+  "classification": "4A",
+  "region": "Kino",
+  "enrollment": 1542
+ },
+ {
+  "name": "Mica Mountain",
+  "classification": "4A",
+  "region": "Kino",
+  "enrollment": 1514
+ },
+ {
+  "name": "Rio Rico",
+  "classification": "4A",
+  "region": "Kino",
+  "enrollment": 1340
+ },
+ {
+  "name": "Sahuarita",
+  "classification": "4A",
+  "region": "Kino",
+  "enrollment": 1260
+ },
+ {
+  "name": "Sahuaro",
+  "classification": "4A",
+  "region": "Kino",
+  "enrollment": 1174
+ },
+ {
+  "name": "Walden Grove",
+  "classification": "4A",
+  "region": "Kino",
+  "enrollment": 1092
+ },
+ {
+  "name": "Barry Goldwater",
+  "classification": "4A",
+  "region": "Skyline",
+  "enrollment": 1616
+ },
+ {
+  "name": "Greenway",
+  "classification": "4A",
+  "region": "Skyline",
+  "enrollment": 1328
+ },
+ {
+  "name": "North Canyon",
+  "classification": "4A",
+  "region": "Skyline",
+  "enrollment": 1489
+ },
+ {
+  "name": "Paradise Honors",
+  "classification": "4A",
+  "region": "Skyline",
+  "enrollment": 1066
+ },
+ {
+  "name": "Shadow Mountain",
+  "classification": "4A",
+  "region": "Skyline",
+  "enrollment": 1008
+ },
+ {
+  "name": "Thunderbird",
+  "classification": "4A",
+  "region": "Skyline",
+  "enrollment": 1449
+ },
+ {
+  "name": "Washington",
+  "classification": "4A",
+  "region": "Skyline",
+  "enrollment": 1640
+ },
+ {
+  "name": "ALA - West Foothills",
+  "classification": "4A",
+  "region": "West Valley",
+  "enrollment": 1010
+ },
+ {
+  "name": "Agua Fria",
+  "classification": "4A",
+  "region": "West Valley",
+  "enrollment": 1438
+ },
+ {
+  "name": "Estrella Foothills",
+  "classification": "4A",
+  "region": "West Valley",
+  "enrollment": 1588
+ },
+ {
+  "name": "Goodyear",
+  "classification": "4A",
+  "region": "West Valley",
+  "enrollment": 1314
+ },
+ {
+  "name": "Kofa",
+  "classification": "4A",
+  "region": "West Valley",
+  "enrollment": 1717
+ },
+ {
+  "name": "Peoria",
+  "classification": "4A",
+  "region": "West Valley",
+  "enrollment": 1297
+ },
+ {
+  "name": "Somerton",
+  "classification": "4A",
+  "region": "West Valley",
+  "enrollment": 1214
+ },
+ {
+  "name": "ALA - Ironwood",
+  "classification": "3A",
+  "region": "East",
+  "enrollment": 910
+ },
+ {
+  "name": "ALA - Radiance",
+  "classification": "3A",
+  "region": "East",
+  "enrollment": null
+ },
+ {
+  "name": "Apache Junction",
+  "classification": "3A",
+  "region": "East",
+  "enrollment": 709
+ },
+ {
+  "name": "Benjamin Franklin",
+  "classification": "3A",
+  "region": "East",
+  "enrollment": 851
+ },
+ {
+  "name": "Coolidge",
+  "classification": "3A",
+  "region": "East",
+  "enrollment": 968
+ },
+ {
+  "name": "Florence",
+  "classification": "3A",
+  "region": "East",
+  "enrollment": 758
+ },
+ {
+  "name": "Heritage Acad Gateway",
+  "classification": "3A",
+  "region": "East",
+  "enrollment": null
+ },
+ {
+  "name": "Heritage Acad Maricopa",
+  "classification": "3A",
+  "region": "East",
+  "enrollment": null
+ },
+ {
+  "name": "San Tan Foothills",
+  "classification": "3A",
+  "region": "East",
+  "enrollment": 837
+ },
+ {
+  "name": "Yuma Catholic",
+  "classification": "3A",
+  "region": "East",
+  "enrollment": 526
+ },
+ {
+  "name": "ALA - Vistancia",
+  "classification": "3A",
+  "region": "Metro Mountain",
+  "enrollment": 207
+ },
+ {
+  "name": "Blue Ridge",
+  "classification": "3A",
+  "region": "Metro Mountain",
+  "enrollment": 576
+ },
+ {
+  "name": "Gilbert Christian",
+  "classification": "3A",
+  "region": "Metro Mountain",
+  "enrollment": 564
+ },
+ {
+  "name": "Northwest Christian",
+  "classification": "3A",
+  "region": "Metro Mountain",
+  "enrollment": 502
+ },
+ {
+  "name": "Payson",
+  "classification": "3A",
+  "region": "Metro Mountain",
+  "enrollment": 682
+ },
+ {
+  "name": "Seton Catholic Prep",
+  "classification": "3A",
+  "region": "Metro Mountain",
+  "enrollment": 573
+ },
+ {
+  "name": "Show Low",
+  "classification": "3A",
+  "region": "Metro Mountain",
+  "enrollment": 879
+ },
+ {
+  "name": "Snowflake",
+  "classification": "3A",
+  "region": "Metro Mountain",
+  "enrollment": 893
+ },
+ {
+  "name": "Valley Christian",
+  "classification": "3A",
+  "region": "Metro Mountain",
+  "enrollment": 512
+ },
+ {
+  "name": "Alchesay",
+  "classification": "3A",
+  "region": "North",
+  "enrollment": 817
+ },
+ {
+  "name": "Chinle",
+  "classification": "3A",
+  "region": "North",
+  "enrollment": 968
+ },
+ {
+  "name": "Ganado",
+  "classification": "3A",
+  "region": "North",
+  "enrollment": 389
+ },
+ {
+  "name": "Holbrook",
+  "classification": "3A",
+  "region": "North",
+  "enrollment": 626
+ },
+ {
+  "name": "Monument Valley",
+  "classification": "3A",
+  "region": "North",
+  "enrollment": 624
+ },
+ {
+  "name": "Page",
+  "classification": "3A",
+  "region": "North",
+  "enrollment": 718
+ },
+ {
+  "name": "Tuba City",
+  "classification": "3A",
+  "region": "North",
+  "enrollment": 622
+ },
+ {
+  "name": "Window Rock",
+  "classification": "3A",
+  "region": "North",
+  "enrollment": 583
+ },
+ {
+  "name": "Winslow",
+  "classification": "3A",
+  "region": "North",
+  "enrollment": 643
+ },
+ {
+  "name": "Amphitheater",
+  "classification": "3A",
+  "region": "South",
+  "enrollment": 870
+ },
+ {
+  "name": "Andrada Polytechnic",
+  "classification": "3A",
+  "region": "South",
+  "enrollment": 919
+ },
+ {
+  "name": "Empire",
+  "classification": "3A",
+  "region": "South",
+  "enrollment": 895
+ },
+ {
+  "name": "Palo Verde Magnet",
+  "classification": "3A",
+  "region": "South",
+  "enrollment": 733
+ },
+ {
+  "name": "Pusch Ridge",
+  "classification": "3A",
+  "region": "South",
+  "enrollment": 413
+ },
+ {
+  "name": "Sabino",
+  "classification": "3A",
+  "region": "South",
+  "enrollment": 785
+ },
+ {
+  "name": "Safford",
+  "classification": "3A",
+  "region": "South",
+  "enrollment": 892
+ },
+ {
+  "name": "Tanque Verde",
+  "classification": "3A",
+  "region": "South",
+  "enrollment": 827
+ },
+ {
+  "name": "Thatcher",
+  "classification": "3A",
+  "region": "South",
+  "enrollment": 577
+ },
+ {
+  "name": "Chino Valley",
+  "classification": "3A",
+  "region": "West",
+  "enrollment": 618
+ },
+ {
+  "name": "Highland Prep",
+  "classification": "3A",
+  "region": "West",
+  "enrollment": 511
+ },
+ {
+  "name": "Highland Prep West",
+  "classification": "3A",
+  "region": "West",
+  "enrollment": 525
+ },
+ {
+  "name": "Kingman",
+  "classification": "3A",
+  "region": "West",
+  "enrollment": 819
+ },
+ {
+  "name": "Madison Highland",
+  "classification": "3A",
+  "region": "West",
+  "enrollment": 515
+ },
+ {
+  "name": "Mohave",
+  "classification": "3A",
+  "region": "West",
+  "enrollment": 990
+ },
+ {
+  "name": "Odyssey Institute",
+  "classification": "3A",
+  "region": "West",
+  "enrollment": 793
+ },
+ {
+  "name": "River Valley",
+  "classification": "3A",
+  "region": "West",
+  "enrollment": 593
+ },
+ {
+  "name": "St. John Paul II",
+  "classification": "3A",
+  "region": "West",
+  "enrollment": 426
+ },
+ {
+  "name": "Tonopah Valley",
+  "classification": "3A",
+  "region": "West",
+  "enrollment": 886
+ },
+ {
+  "name": "Yuma",
+  "classification": "3A",
+  "region": "West",
+  "enrollment": 979
+ },
+ {
+  "name": "Anthem Prep",
+  "classification": "2A",
+  "region": "Black Canyon",
+  "enrollment": 246
+ },
+ {
+  "name": "Arizona Lutheran",
+  "classification": "2A",
+  "region": "Black Canyon",
+  "enrollment": 233
+ },
+ {
+  "name": "Bourgade Catholic",
+  "classification": "2A",
+  "region": "Black Canyon",
+  "enrollment": 371
+ },
+ {
+  "name": "Camp Verde",
+  "classification": "2A",
+  "region": "Black Canyon",
+  "enrollment": 516
+ },
+ {
+  "name": "North Valley Christian",
+  "classification": "2A",
+  "region": "Black Canyon",
+  "enrollment": 268
+ },
+ {
+  "name": "Phoenix Christian",
+  "classification": "2A",
+  "region": "Black Canyon",
+  "enrollment": 250
+ },
+ {
+  "name": "Sedona Red Rock",
+  "classification": "2A",
+  "region": "Black Canyon",
+  "enrollment": 265
+ },
+ {
+  "name": "ALA - Mesa North",
+  "classification": "2A",
+  "region": "Central",
+  "enrollment": 255
+ },
+ {
+  "name": "Chandler Prep",
+  "classification": "2A",
+  "region": "Central",
+  "enrollment": 312
+ },
+ {
+  "name": "Fountain Hills",
+  "classification": "2A",
+  "region": "Central",
+  "enrollment": 382
+ },
+ {
+  "name": "Heritage Acad Mesa",
+  "classification": "2A",
+  "region": "Central",
+  "enrollment": null
+ },
+ {
+  "name": "Rancho Solano Prep",
+  "classification": "2A",
+  "region": "Central",
+  "enrollment": 230
+ },
+ {
+  "name": "Scottsdale Christian",
+  "classification": "2A",
+  "region": "Central",
+  "enrollment": 306
+ },
+ {
+  "name": "Scottsdale Prep",
+  "classification": "2A",
+  "region": "Central",
+  "enrollment": 347
+ },
+ {
+  "name": "Arete Prep",
+  "classification": "2A",
+  "region": "East",
+  "enrollment": 234
+ },
+ {
+  "name": "Gilbert Classical",
+  "classification": "2A",
+  "region": "East",
+  "enrollment": 354
+ },
+ {
+  "name": "Globe",
+  "classification": "2A",
+  "region": "East",
+  "enrollment": 483
+ },
+ {
+  "name": "Lincoln Prep",
+  "classification": "2A",
+  "region": "East",
+  "enrollment": 239
+ },
+ {
+  "name": "Miami",
+  "classification": "2A",
+  "region": "East",
+  "enrollment": 263
+ },
+ {
+  "name": "San Carlos",
+  "classification": "2A",
+  "region": "East",
+  "enrollment": 436
+ },
+ {
+  "name": "San Tan Charter",
+  "classification": "2A",
+  "region": "East",
+  "enrollment": 308
+ },
+ {
+  "name": "Hopi",
+  "classification": "2A",
+  "region": "North",
+  "enrollment": 325
+ },
+ {
+  "name": "Many Farms",
+  "classification": "2A",
+  "region": "North",
+  "enrollment": 245
+ },
+ {
+  "name": "Northland Prep",
+  "classification": "2A",
+  "region": "North",
+  "enrollment": 355
+ },
+ {
+  "name": "Pinon",
+  "classification": "2A",
+  "region": "North",
+  "enrollment": 351
+ },
+ {
+  "name": "Round Valley",
+  "classification": "2A",
+  "region": "North",
+  "enrollment": 417
+ },
+ {
+  "name": "St. Johns",
+  "classification": "2A",
+  "region": "North",
+  "enrollment": 321
+ },
+ {
+  "name": "Valley (Sanders)",
+  "classification": "2A",
+  "region": "North",
+  "enrollment": 226
+ },
+ {
+  "name": "Baboquivari",
+  "classification": "2A",
+  "region": "South",
+  "enrollment": 232
+ },
+ {
+  "name": "Catalina",
+  "classification": "2A",
+  "region": "South",
+  "enrollment": 562
+ },
+ {
+  "name": "Desert Christian",
+  "classification": "2A",
+  "region": "South",
+  "enrollment": 239
+ },
+ {
+  "name": "San Miguel",
+  "classification": "2A",
+  "region": "South",
+  "enrollment": 286
+ },
+ {
+  "name": "Santa Cruz Valley",
+  "classification": "2A",
+  "region": "South",
+  "enrollment": 376
+ },
+ {
+  "name": "Santa Rita",
+  "classification": "2A",
+  "region": "South",
+  "enrollment": 384
+ },
+ {
+  "name": "St. Augustine",
+  "classification": "2A",
+  "region": "South",
+  "enrollment": 247
+ },
+ {
+  "name": "ALA - Sierra Vista",
+  "classification": "2A",
+  "region": "Southeast",
+  "enrollment": null
+ },
+ {
+  "name": "Benson",
+  "classification": "2A",
+  "region": "Southeast",
+  "enrollment": 442
+ },
+ {
+  "name": "Bisbee",
+  "classification": "2A",
+  "region": "Southeast",
+  "enrollment": 292
+ },
+ {
+  "name": "Morenci",
+  "classification": "2A",
+  "region": "Southeast",
+  "enrollment": 346
+ },
+ {
+  "name": "Pima",
+  "classification": "2A",
+  "region": "Southeast",
+  "enrollment": 367
+ },
+ {
+  "name": "Tombstone",
+  "classification": "2A",
+  "region": "Southeast",
+  "enrollment": 431
+ },
+ {
+  "name": "Willcox",
+  "classification": "2A",
+  "region": "Southeast",
+  "enrollment": 396
+ },
+ {
+  "name": "ALA - Anthem South",
+  "classification": "2A",
+  "region": "Valley",
+  "enrollment": 294
+ },
+ {
+  "name": "Heritage Acad Laveen",
+  "classification": "2A",
+  "region": "Valley",
+  "enrollment": 460
+ },
+ {
+  "name": "Horizon Honors",
+  "classification": "2A",
+  "region": "Valley",
+  "enrollment": 394
+ },
+ {
+  "name": "NFL Yet",
+  "classification": "2A",
+  "region": "Valley",
+  "enrollment": 236
+ },
+ {
+  "name": "Phoenix Country Day",
+  "classification": "2A",
+  "region": "Valley",
+  "enrollment": 307
+ },
+ {
+  "name": "Tempe Prep",
+  "classification": "2A",
+  "region": "Valley",
+  "enrollment": 246
+ },
+ {
+  "name": "Veritas Prep",
+  "classification": "2A",
+  "region": "Valley",
+  "enrollment": 330
+ },
+ {
+  "name": "Glendale Prep",
+  "classification": "2A",
+  "region": "West",
+  "enrollment": 345
+ },
+ {
+  "name": "Kingman Academy",
+  "classification": "2A",
+  "region": "West",
+  "enrollment": 377
+ },
+ {
+  "name": "Mohave Accelerated",
+  "classification": "2A",
+  "region": "West",
+  "enrollment": 281
+ },
+ {
+  "name": "Mountainside",
+  "classification": "2A",
+  "region": "West",
+  "enrollment": 412
+ },
+ {
+  "name": "Parker",
+  "classification": "2A",
+  "region": "West",
+  "enrollment": 486
+ },
+ {
+  "name": "Trivium Prep",
+  "classification": "2A",
+  "region": "West",
+  "enrollment": 401
+ },
+ {
+  "name": "Wickenburg",
+  "classification": "2A",
+  "region": "West",
+  "enrollment": 371
+ },
+ {
+  "name": "Ash Fork",
+  "classification": "1A",
+  "region": "Central",
+  "enrollment": 97
+ },
+ {
+  "name": "BASIS Flagstaff",
+  "classification": "1A",
+  "region": "Central",
+  "enrollment": 119
+ },
+ {
+  "name": "Desert Star",
+  "classification": "1A",
+  "region": "Central",
+  "enrollment": 135
+ },
+ {
+  "name": "Grand Canyon",
+  "classification": "1A",
+  "region": "Central",
+  "enrollment": 75
+ },
+ {
+  "name": "Joseph City",
+  "classification": "1A",
+  "region": "Central",
+  "enrollment": 131
+ },
+ {
+  "name": "Mayer",
+  "classification": "1A",
+  "region": "Central",
+  "enrollment": 155
+ },
+ {
+  "name": "Mogollon",
+  "classification": "1A",
+  "region": "Central",
+  "enrollment": 150
+ },
+ {
+  "name": "Music Mountain Jr. / Sr.",
+  "classification": "1A",
+  "region": "Central",
+  "enrollment": 58
+ },
+ {
+  "name": "Seligman",
+  "classification": "1A",
+  "region": "Central",
+  "enrollment": 50
+ },
+ {
+  "name": "Williams",
+  "classification": "1A",
+  "region": "Central",
+  "enrollment": 220
+ },
+ {
+  "name": "Cicero Prep",
+  "classification": "1A",
+  "region": "East",
+  "enrollment": 210
+ },
+ {
+  "name": "Duncan",
+  "classification": "1A",
+  "region": "East",
+  "enrollment": 116
+ },
+ {
+  "name": "Fort Thomas",
+  "classification": "1A",
+  "region": "East",
+  "enrollment": 190
+ },
+ {
+  "name": "Hayden",
+  "classification": "1A",
+  "region": "East",
+  "enrollment": 95
+ },
+ {
+  "name": "Ray",
+  "classification": "1A",
+  "region": "East",
+  "enrollment": 104
+ },
+ {
+  "name": "San Manuel Jr./Sr.",
+  "classification": "1A",
+  "region": "East",
+  "enrollment": 147
+ },
+ {
+  "name": "Superior Jr./Sr.",
+  "classification": "1A",
+  "region": "East",
+  "enrollment": 90
+ },
+ {
+  "name": "Dishchii'bikoh",
+  "classification": "1A",
+  "region": "North",
+  "enrollment": 157
+ },
+ {
+  "name": "El Capitan",
+  "classification": "1A",
+  "region": "North",
+  "enrollment": 107
+ },
+ {
+  "name": "Fredonia",
+  "classification": "1A",
+  "region": "North",
+  "enrollment": 40
+ },
+ {
+  "name": "Greyhills Academy",
+  "classification": "1A",
+  "region": "North",
+  "enrollment": 172
+ },
+ {
+  "name": "Red Mesa",
+  "classification": "1A",
+  "region": "North",
+  "enrollment": 139
+ },
+ {
+  "name": "Rock Point",
+  "classification": "1A",
+  "region": "North",
+  "enrollment": 72
+ },
+ {
+  "name": "Rough Rock",
+  "classification": "1A",
+  "region": "North",
+  "enrollment": 53
+ },
+ {
+  "name": "Shonto Prep",
+  "classification": "1A",
+  "region": "North",
+  "enrollment": 65
+ },
+ {
+  "name": "St. Michael",
+  "classification": "1A",
+  "region": "North",
+  "enrollment": 82
+ },
+ {
+  "name": "ASDB",
+  "classification": "1A",
+  "region": "South",
+  "enrollment": 48
+ },
+ {
+  "name": "Lourdes Catholic",
+  "classification": "1A",
+  "region": "South",
+  "enrollment": 94
+ },
+ {
+  "name": "Patagonia Union",
+  "classification": "1A",
+  "region": "South",
+  "enrollment": 71
+ },
+ {
+  "name": "San Simon",
+  "classification": "1A",
+  "region": "South",
+  "enrollment": 33
+ },
+ {
+  "name": "St. David",
+  "classification": "1A",
+  "region": "South",
+  "enrollment": 128
+ },
+ {
+  "name": "The Gregory School",
+  "classification": "1A",
+  "region": "South",
+  "enrollment": 206
+ },
+ {
+  "name": "Valley Union",
+  "classification": "1A",
+  "region": "South",
+  "enrollment": 84
+ },
+ {
+  "name": "Antelope Union",
+  "classification": "1A",
+  "region": "West",
+  "enrollment": 200
+ },
+ {
+  "name": "Bagdad",
+  "classification": "1A",
+  "region": "West",
+  "enrollment": 122
+ },
+ {
+  "name": "Desert Heights Prep",
+  "classification": "1A",
+  "region": "West",
+  "enrollment": 263
+ },
+ {
+  "name": "Maryvale Prep",
+  "classification": "1A",
+  "region": "West",
+  "enrollment": 202
+ },
+ {
+  "name": "North Phoenix Preparatory",
+  "classification": "1A",
+  "region": "West",
+  "enrollment": 254
+ },
+ {
+  "name": "PDSD",
+  "classification": "1A",
+  "region": "West",
+  "enrollment": 72
+ },
+ {
+  "name": "Salome",
+  "classification": "1A",
+  "region": "West",
+  "enrollment": 119
+ },
+ {
+  "name": "San Pasqual",
+  "classification": "1A",
+  "region": "West",
+  "enrollment": 182
+ },
+ {
+  "name": "Valley Lutheran",
+  "classification": "1A",
+  "region": "West",
+  "enrollment": 108
+ }
+]
