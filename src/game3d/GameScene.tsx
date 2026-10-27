@@ -345,9 +345,11 @@ function NameTags({ match, replayFrame }: { match: Match; replayFrame: React.Ref
       const x = rect.left + (v3.x * 0.5 + 0.5) * rect.width;
       const y = rect.top + (-v3.y * 0.5 + 0.5) * rect.height;
       el.style.display = "flex";
-      el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`;
+      // the controlled player and the ball handler get full tags; everyone else stays small and faint
       const key = ag.human !== null || v.ball.owner === ag.idx;
-      el.style.opacity = key ? "1" : "0.6";
+      el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%) scale(${key ? 1 : 0.8})`;
+      el.style.opacity = key ? "1" : "0.38";
+      el.style.zIndex = key ? "2" : "1";
     });
   });
   return null;

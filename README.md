@@ -12,6 +12,10 @@ A free, open-source 3D basketball game that runs in the browser. Play pro basket
 - **Quick Play:** any two teams from any league (cross-league exhibitions included), instant simulation, and up to four local players with keyboard and gamepads.
 - **Practice:** a shootaround with no clock or defense.
 - **Presentation:** broadcast HUD, six cameras, commentary with optional voice, a crowd that reacts to the game, and synthesized sound.
+- **Instant replays and highlights:** replay any moment with scrubbing, slow motion and five replay cameras; big plays replay automatically, and a highlight reel is ready at every break and after the game.
+- **Game flow:** quarter, halftime and timeout screens with line scores, team stats and leaders; team huddles; benches full of players who react to big plays; name tags; big-play banners (AND ONE, REJECTED, runs, buzzer beaters).
+- **Injuries (optional):** falls, hard drives and awkward landings can hurt players, with forced substitutions and games-missed estimates.
+- **Works offline:** after one visit the whole game is cached and playable without a connection, and it can be installed as an app.
 - **Settings for everyone:** graphics presets with auto-detect, full key and button remapping, colorblind modes, subtitles, reduced motion, UI scale and tap-to-shoot.
 
 Career mode, Franchise mode, roster editing, accounts and online play are in development.
@@ -41,7 +45,11 @@ Useful scripts:
 
 - `npm run data` rebuilds league data in `src/data/generated/` from the factual lists in `scripts/raw/`.
 - `npm run assets:player` rebuilds the rigged player model with Blender 4.2+ (`blender` on your PATH) and compresses it.
-- `npx tsx scripts/dev/headless-game.ts 10 pro` simulates full games headlessly and prints league-wide stats, which is useful for tuning.
+- `npx tsx scripts/dev/headless-game.ts 10 pro` simulates full games headlessly and prints league-wide stats, which is useful for tuning (`college` and `hs` work too).
+- `npx tsx scripts/dev/injury-rate.ts 30 pro` measures how often in-game injuries happen.
+- `/dev/anim` (dev server only) is an animation lab: every procedural clip with a timeline, contact sheets (`?sheet=1`) and a side view (`&profile=1`).
+
+`npm run build` also stamps `out/sw.js` (the offline service worker) with a build version and the list of hashed assets to precache.
 
 ### Project layout
 

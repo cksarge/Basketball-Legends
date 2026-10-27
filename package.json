@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "next dev",
-    "build": "tsx scripts/gen-sitemap.ts && next build",
+    "build": "tsx scripts/gen-sitemap.ts && next build && tsx scripts/gen-sw.ts",
     "start": "npx serve out",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

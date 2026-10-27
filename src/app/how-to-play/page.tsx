@@ -52,6 +52,12 @@ export default function HowToPlay() {
       <p>Stay between your man and the basket. Reaching for steals from behind or from too far away risks a foul. Jump at the right moment to block: too early and the shooter waits you out. A pump fake can get an eager defender off his feet.</p>
       <H2>Game controls</H2>
       <p>Press Esc (or Menu) to pause. From the pause menu you can see the box score and play-by-play, make substitutions, call a timeout, change the camera, simulate the rest of the game or restart. T calls a timeout when your team has the ball, and Y cycles through the cameras.</p>
+      <H2>Replays and highlights</H2>
+      <p>Press R (or the left stick click) at any time to replay the last few seconds. In a replay, Space plays and pauses, the arrow keys scrub back and forth and change the speed, and Y switches between the orbit, baseline, above-the-rim, courtside and broadcast cameras. Press R or Esc to go back to the game.</p>
+      <p>Big plays (dunks, blocks, ankle breakers, clutch shots and buzzer beaters) replay automatically in slow motion; press Space to skip one. The best plays are also saved as highlights you can watch from the pause menu, at quarter breaks and after the final buzzer. You can turn automatic replays off in Settings under Presentation.</p>
+      <H2>Breaks, timeouts and injuries</H2>
+      <p>At the end of each quarter, at halftime and during timeouts, both teams huddle at their benches and a panel shows the line score, team stats, leaders and any injuries. Make substitutions from there, watch highlights, or press Continue to get back to the game. When nobody is playing (CPU vs CPU) the game continues on its own after ten seconds.</p>
+      <p>With injuries turned on in Settings, hard falls, collisions on drives and awkward landings can hurt a player. Play stops at the next safe moment and the coach brings in a substitute, even if you manage substitutions yourself. Tougher players (higher durability) get hurt less often and recover sooner.</p>
       <H2>League rules</H2>
       <ul className="list-disc pl-6">
         <li><b>Pro:</b> four 12-minute quarters, 24-second shot clock (resets to 14 on an offensive rebound off the rim), 23 ft 9 in three-point line, six fouls to foul out, bonus on the fifth team foul per quarter.</li>

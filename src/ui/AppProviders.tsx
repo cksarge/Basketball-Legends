@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { detectPreset, useSettings } from "@/state/settings";
 import { MenuNavigator } from "./MenuNavigator";
-import { Toaster } from "./Toaster";
+import { toast, Toaster } from "./Toaster";
 
 /** Global client providers: applies settings to <html>, menu navigation, toasts. */
 export function AppProviders({ children }: { children: React.ReactNode }) {
@@ -25,6 +25,19 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
       set("graphics", { autoDetected: true });
     }
   }, [autoDetected, applyPreset, set]);
+
+  // offline support (production builds only, so dev never serves stale code)
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) return;
+    const firstInstall = !navigator.serviceWorker.controller;
+    navigator.serviceWorker.register("/sw.js").then((reg) => {
+      if (!firstInstall) return;
+      reg.addEventListener("updatefound", () => {
+        const w = reg.installing;
+        w?.addEventListener("statechange", () => { if (w.state === "activated") toast("Basketball Legends now works offline", "good"); });
+      });
+    }).catch(() => { /* offline support is optional */ });
+  }, []);
 
   return (
     <>

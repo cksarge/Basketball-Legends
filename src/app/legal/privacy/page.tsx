@@ -5,13 +5,15 @@ export const metadata: Metadata = { title: "Privacy Policy", description: "What 
 
 export default function Privacy() {
   return (
-    <ProsePage title="Privacy Policy" updated="October 26, 2026">
+    <ProsePage title="Privacy Policy" updated="October 27, 2026">
       <p>Basketball Legends is built to work without collecting personal information. There are no accounts, ads, analytics, tracking pixels or cookies.</p>
       <H2>What stays on your device</H2>
       <ul className="list-disc pl-6">
         <li><b>Settings</b> (graphics, audio, controls, accessibility) are saved in your browser&apos;s local storage.</li>
         <li><b>The current match setup</b> is kept in session storage so a page reload doesn&apos;t lose it. It clears when you close the tab.</li>
         <li><b>Saved games and roster files</b> you create are stored in your browser and never uploaded.</li>
+        <li><b>An offline copy of the game</b> (pages, code, 3D models and images) is kept in your browser&apos;s cache by a service worker so the game loads and plays without an internet connection. It contains only the game&apos;s own files, nothing about you.</li>
+        <li><b>Instant replays and highlights</b> are recorded in memory during a game and discarded when you leave it.</li>
       </ul>
       <p>You can remove all of this at any time by clearing this site&apos;s data in your browser settings.</p>
       <H2>Hosting</H2>

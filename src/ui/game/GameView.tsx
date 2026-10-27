@@ -443,7 +443,7 @@ function ControlsReference() {
     ["Pass / call for ball", ["pass"]], ["Lob / alley-oop", ["lob"]], ["Bounce pass", ["bounce"]], ["Icon pass (hold, then 1-5)", ["iconPass"]],
     ["Crossover", ["dribbleLeft", "dribbleRight"]], ["Stepback", ["dribbleBack"]], ["Spin", ["dribbleSpin"]], ["Pump fake", ["pumpFake"]],
     ["Post up", ["post"]], ["Call pick and roll", ["callScreen"]], ["Steal (defense)", ["steal"]], ["Block / rebound (defense)", ["block"]],
-    ["Intense defense", ["intenseD"]], ["Switch player", ["switchPlayer"]], ["Take charge", ["takeCharge"]], ["Timeout", ["timeout"]], ["Camera", ["camera"]], ["Pause", ["pause"]],
+    ["Intense defense", ["intenseD"]], ["Switch player", ["switchPlayer"]], ["Take charge", ["takeCharge"]], ["Timeout", ["timeout"]], ["Camera", ["camera"]], ["Instant replay", ["replay"]], ["Pause", ["pause"]],
   ];
   const lab = (c: string) => c.replace(/^Key/, "").replace(/^Digit/, "").replace("ShiftLeft", "Shift").replace("Arrow", "").replace("Escape", "Esc");
   return (
