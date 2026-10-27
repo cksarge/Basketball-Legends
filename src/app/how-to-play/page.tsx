@@ -70,6 +70,8 @@ export default function HowToPlay() {
       <H2>Breaks, timeouts and injuries</H2>
       <p>At the end of each quarter, at halftime and during timeouts, both teams huddle at their benches and a panel shows the line score, team stats, leaders and any injuries. Make substitutions from there, watch highlights, or press Continue to get back to the game. When nobody is playing (CPU vs CPU) the game continues on its own after ten seconds.</p>
       <p>With injuries turned on in Settings, hard falls, collisions on drives and awkward landings can hurt a player. Play stops at the next safe moment and the coach brings in a substitute, even if you manage substitutions yourself. Tougher players (higher durability) get hurt less often and recover sooner.</p>
+      <H2>Officials</H2>
+      <p>Three referees work every game. Watch them for the call: a raised fist is a foul, rolling forearms is traveling, a hand behind the head is a charge, hands on hips is a blocking foul, a T is a timeout, and a pointed arm shows which way the ball is going. On a three-point try the nearest official raises one arm, and both arms go up when it falls. On inbounds the official counts the five seconds with his arm.</p>
       <H2>League rules</H2>
       <ul className="list-disc pl-6">
         <li><b>Pro:</b> four 12-minute quarters, 24-second shot clock (resets to 14 on an offensive rebound off the rim), 23 ft 9 in three-point line, six fouls to foul out, bonus on the fifth team foul per quarter.</li>

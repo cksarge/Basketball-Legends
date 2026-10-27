@@ -106,6 +106,11 @@ export function ftSpot(c: CourtSpec, side: 1 | -1) {
   return { x: side * (c.halfL - c.ftLineFromBaseline), z: 0 };
 }
 
+/** Scorer's table crew chairs, behind the table (it sits between the two benches). */
+export function tableSeats(c: CourtSpec) {
+  return [-2.4, -0.8, 0.8, 2.4].map((x) => ({ x, z: -(c.halfW + 2.15) }));
+}
+
 /** Chairs per team bench. */
 export const BENCH_SEATS = 9;
 

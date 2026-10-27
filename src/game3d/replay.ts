@@ -5,6 +5,7 @@ import type { Match } from "@/game/sim/match";
 import type { GameEvent } from "@/game/sim/events";
 import type { ActionKind, BallMode, TeamIdx } from "@/game/sim/state";
 import type { Player } from "@/engine/types";
+import type { Official } from "@/game/sim/officials";
 
 export interface AgentView {
   idx: number;
@@ -28,6 +29,8 @@ export interface ViewFrame {
   phase: string;
   /** Rim x for each team's attacking basket at this moment. */
   rimX: [number, number];
+  /** The officiating crew at this moment (if any). */
+  officials?: Official[];
 }
 
 export interface Clip {
@@ -78,6 +81,7 @@ export function liveView(match: Match): ViewFrame {
     offense: s.offense,
     phase: s.phase,
     rimX: [match.rim(0).x, match.rim(1).x],
+    officials: s.crew?.refs,
   };
 }
 
@@ -96,6 +100,7 @@ function snapshot(match: Match): ViewFrame {
     offense: s.offense,
     phase: s.phase,
     rimX: [match.rim(0).x, match.rim(1).x],
+    officials: s.crew?.refs.map((o) => ({ ...o, pos: { ...o.pos }, vel: { ...o.vel }, queue: [] })),
   };
 }
 

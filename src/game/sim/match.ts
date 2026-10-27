@@ -14,6 +14,7 @@ import {
 } from "./state";
 import { type BoxScore, emptyLine } from "./stats";
 import { exportAIMemory, importAIMemory, runAI } from "./ai";
+import { type Crew, createCrew, crewOnEvent, crewStartHandoff, crewStep, refHand } from "./officials";
 
 export const AGENT_RADIUS = 0.32;
 const DT_DECIDE = 0.2;
@@ -76,6 +77,8 @@ export interface MatchState {
   injuries: InjuryRecord[];
   /** On-court agent who just got hurt: play stops at the next safe moment. */
   pendingInjury: number | null;
+  /** The officiating crew (null for instant sims and practice). */
+  crew: Crew | null;
 }
 
 export interface InjuryRecord {
@@ -155,9 +158,10 @@ export class Match {
       offense: 0, frontcourt: false, backcourtTimer: 0, possessionArrow: 0, inbound: null, freeThrows: null,
       box, events: [], frameEvents: [], time: 0, lastScoreTime: 0, run: { team: 0, pts: 0 }, winner: null,
       timeoutTeam: null, aiClock: 0, playByPlay: [], possessions: [0, 0], pendingAndOne: null,
-      injuries: [], pendingInjury: null,
+      injuries: [], pendingInjury: null, crew: null,
     };
     this.buildAgents();
+    if (!cfg.fast && !cfg.practice) this.state.crew = createCrew(this);
     if (cfg.practice) this.setupPractice();
     else this.setupJumpBall();
   }
@@ -341,6 +345,7 @@ export class Match {
   emit(e: GameEvent) {
     this.state.events.push(e);
     this.state.frameEvents.push(e);
+    if (this.state.crew) crewOnEvent(this, this.state.crew, e);
   }
 
   log(text: string, team: TeamIdx | null) {
@@ -356,6 +361,11 @@ export class Match {
   // ------------------------------------------------------------------- step
   /** Advance the simulation by dt seconds (call with fixed steps, e.g. 1/60). */
   step(dt: number, humanIntents: (AgentIntent | null)[] = []) {
+    this.stepGame(dt, humanIntents);
+    if (this.state.crew) crewStep(this, this.state.crew, dt);
+  }
+
+  private stepGame(dt: number, humanIntents: (AgentIntent | null)[]) {
     const s = this.state;
     s.frameEvents = [];
     if (s.phase === "final") return;
@@ -474,10 +484,17 @@ export class Match {
       return;
     }
     if (s.ball.mode === "dead") {
-      // toss
+      // toss: from the official's hands, peaking between the jumpers
       s.ball.mode = "loose"; s.ball.looseCause = "jumpball";
-      b.pos = v3(0, 2.0, 0);
-      b.vel = v3(0, 4.6, 0);
+      if (s.crew) {
+        const h = refHand(s.crew.refs[0]);
+        const vy = Math.sqrt(2 * 9.81 * 1.25), tUp = vy / 9.81;
+        b.pos = v3(h.x, 2.05, h.z);
+        b.vel = v3(-h.x / tUp, vy, -h.z / tUp);
+      } else {
+        b.pos = v3(0, 2.0, 0);
+        b.vel = v3(0, 4.6, 0);
+      }
       b.aboveRim = {};
       const jumpers = s.agents.filter((a) => a.action.kind === "jumpball");
       for (const j of jumpers) this.startJump(j, 0.55 + this.verticalLeap(j) * 0.2);
@@ -1959,7 +1976,27 @@ export class Match {
         if (Math.abs(Math.cos(ph * Math.PI)) < 0.06 && !d[`b${Math.floor(ph)}`]) { d[`b${Math.floor(ph)}`] = true; this.emit({ t: "floorBounce", speed: 2 }); }
       } else {
         d.routine = false;
-        s.ball.phys.pos = v3(a.pos.x + fx * 0.3, hh * 0.62, a.pos.z + fz * 0.3);
+        const chest = v3(a.pos.x + fx * 0.3, hh * 0.62, a.pos.z + fz * 0.3);
+        s.ball.phys.pos = chest;
+        // before the routine: the lead official bounces the ball to the shooter
+        if (s.crew && !d.started && s.phaseTimer > routine) {
+          d.handStart = (d.handStart as number | undefined) ?? s.phaseTimer;
+          const window = (d.handStart as number) - routine;
+          if (window > 0.3) {
+            const p = clamp(1 - (s.phaseTimer - routine) / window, 0, 1);
+            d.handP = p;
+            const ref = s.crew.refs[s.crew.lead];
+            const h = refHand(ref);
+            if (p < 0.35) s.ball.phys.pos = v3(h.x, h.y, h.z);
+            else {
+              const k = (p - 0.35) / 0.65;
+              if (k < 0.12 && ref.signal !== "handBall") { ref.signal = "handBall"; ref.signalT = 0; ref.signalDur = 0.45; ref.queue = []; }
+              const y = k < 0.5 ? h.y + (s.cfg.court.ballRadius - h.y) * (k / 0.5) : s.cfg.court.ballRadius + (chest.y - s.cfg.court.ballRadius) * ((k - 0.5) / 0.5);
+              s.ball.phys.pos = v3(h.x + (chest.x - h.x) * k, y, h.z + (chest.z - h.z) * k);
+              if (Math.abs(k - 0.5) < 0.03 && !d.handBounce) { d.handBounce = true; this.emit({ t: "floorBounce", speed: 2.5 }); }
+            }
+          } else d.handP = 1;
+        }
       }
       const humanShooter = a.human !== null && s.cfg.shotMeter && !s.cfg.fast;
       if (s.phaseTimer > 0) return;
@@ -2162,6 +2199,8 @@ export class Match {
     s.ball.lastTouch = ib.team;
     s.phase = "inbound";
     ib.timer = 0;
+    // the administering official bounces it in; the five-second count starts once it arrives
+    if (s.crew && crewStartHandoff(s.crew)) ib.timer = -0.55;
     // humans never control the inbounder (the AI inbounds); move control to another player
     if (inbounder.human !== null && !(s as MatchState & { lockHuman?: boolean }).lockHuman) {
       const other = team.find((a) => a !== inbounder && a.human === null && a.role === "ball") ?? team.find((a) => a !== inbounder && a.human === null);

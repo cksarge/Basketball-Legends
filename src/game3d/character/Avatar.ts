@@ -6,7 +6,10 @@ import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { Player, Team } from "@/engine/types";
 import { HAIR_COLORS, HAIR_STYLES, SKIN_TONES } from "@/engine/player";
 import { createSkinMaterial, type MaskSet, type SkinLook } from "./skinMaterial";
-import { drawJersey, drawShorts, makeCanvasTexture, type UniformStyle, uniformColors } from "./uniformTexture";
+import { drawJersey, drawOfficialJersey, drawPlainShorts, drawShorts, drawStaffShirt, makeCanvasTexture, type UniformStyle, uniformColors } from "./uniformTexture";
+
+/** What the person is wearing: a team uniform, a referee's stripes, or a staff polo. */
+export type Outfit = "player" | "official" | "staff";
 
 export const MODEL_HEIGHT = 2.0;
 
@@ -62,10 +65,12 @@ export class Avatar {
   handR = new THREE.Vector3();
   player: Player;
   team: Team;
+  outfit: Outfit;
 
-  constructor(gltf: GLTF, masks: MaskSet, player: Player, team: Team, style: UniformStyle) {
+  constructor(gltf: GLTF, masks: MaskSet, player: Player, team: Team, style: UniformStyle, outfit: Outfit = "player") {
     this.player = player;
     this.team = team;
+    this.outfit = outfit;
     this.root = new THREE.Group();
     this.model = skeletonClone(gltf.scene);
     this.root.add(this.model);
@@ -142,14 +147,23 @@ export class Avatar {
     }
     // uniform
     const col = uniformColors(this.team, style);
-    drawJersey(this.jerseyTex.canvas, this.team, style, p.jersey, p.lastName);
+    if (this.outfit === "official") {
+      drawOfficialJersey(this.jerseyTex.canvas, p.jersey);
+      drawPlainShorts(this.shortsTex.canvas, "#141414");
+    } else if (this.outfit === "staff") {
+      drawStaffShirt(this.jerseyTex.canvas, this.team.colors.primary, this.team.colors.secondary);
+      drawPlainShorts(this.shortsTex.canvas, "#2a2d33");
+    } else {
+      drawJersey(this.jerseyTex.canvas, this.team, style, p.jersey, p.lastName);
+      drawShorts(this.shortsTex.canvas, this.team, style);
+    }
     this.jerseyTex.tex.needsUpdate = true;
-    drawShorts(this.shortsTex.canvas, this.team, style);
     this.shortsTex.tex.needsUpdate = true;
     const cloth = (tex: THREE.Texture) => new THREE.MeshStandardMaterial({ map: tex, roughness: 0.82, side: THREE.DoubleSide });
     if (this.meshes.Jersey) this.meshes.Jersey.material = cloth(this.jerseyTex.tex);
     if (this.meshes.Shorts) this.meshes.Shorts.material = cloth(this.shortsTex.tex);
-    if (this.meshes.Socks) this.meshes.Socks.material = new THREE.MeshStandardMaterial({ color: new THREE.Color(col.trim === col.base ? "#ffffff" : style === "away" ? col.base : "#f4f4f4"), roughness: 0.95, side: THREE.DoubleSide });
+    const sockColor = this.outfit === "official" ? "#141414" : this.outfit === "staff" ? "#2a2d33" : col.trim === col.base ? "#ffffff" : style === "away" ? col.base : "#f4f4f4";
+    if (this.meshes.Socks) this.meshes.Socks.material = new THREE.MeshStandardMaterial({ color: new THREE.Color(sockColor), roughness: 0.95, side: THREE.DoubleSide });
     const accColor = new THREE.Color(col.trim);
     const acc = (name: string, on: boolean) => {
       const m = this.meshes[name];
@@ -157,11 +171,12 @@ export class Avatar {
       m.visible = on;
       if (on) m.material = new THREE.MeshStandardMaterial({ color: accColor, roughness: 0.9, side: THREE.DoubleSide });
     };
-    acc("Acc_Headband", ap.headband);
-    acc("Acc_SleeveL", ap.armSleeve === "left");
-    acc("Acc_SleeveR", ap.armSleeve === "right");
-    acc("Acc_KneeL", ap.kneePads);
-    acc("Acc_KneeR", ap.kneePads);
+    const gear = this.outfit === "player";
+    acc("Acc_Headband", gear && ap.headband);
+    acc("Acc_SleeveL", gear && ap.armSleeve === "left");
+    acc("Acc_SleeveR", gear && ap.armSleeve === "right");
+    acc("Acc_KneeL", gear && ap.kneePads);
+    acc("Acc_KneeR", gear && ap.kneePads);
     // morphs: build (lean/heavy from weight per inch) and face blend
     const bmi = p.weightLb / p.heightIn;
     const heavy = THREE.MathUtils.clamp((bmi - 2.85) / 0.45, 0, 1);
@@ -433,7 +448,83 @@ export class Avatar {
 
     const shootingActs = ["jumper", "fadeaway", "floater", "hook", "freeThrow"];
     const ftIdle = act === "freeThrow" && !p.actionData.started;
-    if (ftIdle && p.actionData.routine && ball) {
+    // officials: whistles and hand signals
+    const sig = act === "official" ? String(p.actionData.signal ?? "") : "";
+    const sigT = Number(p.actionData.signalT ?? 0);
+    if (sig) {
+      const W = (x: number, y: number, z: number) => this.toWorld(x, y + rootY, z, new THREE.Vector3());
+      const elbowOut = (sign: number) => this.toWorld(sign * 0.75, 1.3, -0.2, new THREE.Vector3());
+      const relax = () => { setHand("L", swing("L", 1)); setHand("R", swing("R", -1)); };
+      // a horizontal point in a world direction (for "their ball, that way")
+      const point = (side: "L" | "R", worldAngle: number, y = 1.52) => {
+        const rel = worldAngle - p.facing;
+        setHand(side, W(Math.sin(rel) * 0.66 + (side === "L" ? 0.14 : -0.14), y, Math.cos(rel) * 0.66), elbowOut(side === "L" ? 1 : -1));
+      };
+      const dir = Number(p.actionData.signalDir ?? p.facing);
+      const pointSide: "L" | "R" = Math.sin(dir - p.facing) > 0 ? "L" : "R";
+      const other = (sd: "L" | "R") => (sd === "L" ? "R" : "L");
+      switch (sig) {
+        case "foul": // fist straight up
+          setHand("R", W(-0.1, 2.36, 0.08), elbowOut(-1)); setHand("L", swing("L", 1)); break;
+        case "shootingFoul": // fist up, then both arms out front showing the free throws
+          if (sigT < 0.7) { setHand("R", W(-0.1, 2.36, 0.08), elbowOut(-1)); setHand("L", swing("L", 1)); }
+          else { setHand("R", W(-0.3, 1.58, 0.58), elbowOut(-1)); setHand("L", W(0.3, 1.58, 0.58), elbowOut(1)); }
+          break;
+        case "report": case "outOfBounds": // point the direction of play
+          point(pointSide, dir); setHand(other(pointSide), swing(other(pointSide), other(pointSide) === "L" ? 1 : -1)); break;
+        case "travel": { // roll the forearms
+          const ph = sigT * 13;
+          setHand("R", W(-0.1 + Math.cos(ph) * 0.09, 1.36 + Math.sin(ph) * 0.09, 0.4), elbowOut(-1));
+          setHand("L", W(0.1 + Math.cos(ph + Math.PI) * 0.09, 1.36 + Math.sin(ph + Math.PI) * 0.09, 0.4), elbowOut(1));
+          break;
+        }
+        case "threeSeconds": // arm straight out front, three fingers
+          setHand("R", W(-0.12, 1.55, 0.66)); setHand("L", swing("L", 1)); break;
+        case "shotClock": // tap the top of the head
+          setHand("R", W(-0.04, 2.0 + Math.abs(Math.sin(sigT * 9)) * 0.05, 0.03), elbowOut(-1)); setHand("L", swing("L", 1)); break;
+        case "goaltend": { // finger circling above the head
+          const ph = sigT * 9;
+          setHand("R", W(-0.1 + Math.cos(ph) * 0.07, 2.4, 0.12 + Math.sin(ph) * 0.07), elbowOut(-1)); setHand("L", swing("L", 1));
+          break;
+        }
+        case "backcourt": // wave across the body, low
+          setHand("R", W(-0.32 + Math.sin(sigT * 7) * 0.28, 1.15, 0.45)); setHand("L", swing("L", 1)); break;
+        case "count": case "visibleCount": { // chop the count, one beat a second
+          const beat = Math.abs(Math.sin(Math.PI * sigT));
+          setHand("R", W(-0.5, 1.75 - beat * 0.45, 0.25), elbowOut(-1)); setHand("L", swing("L", 1));
+          break;
+        }
+        case "timeout": // T over the head
+          // right forearm flat across the top (elbow out to the side), left forearm upright beneath it
+          setHand("R", W(0.1, 1.94, 0.6), this.toWorld(-0.9, 1.95 + rootY, 0.45, new THREE.Vector3()));
+          setHand("L", W(-0.02, 1.83, 0.63), this.toWorld(0.1, 1.0 + rootY, 0.95, new THREE.Vector3()));
+          break;
+        case "threeAttempt": // one arm up and out, fingers spread
+          setHand("R", W(-0.42, 2.3, 0.1), elbowOut(-1)); setHand("L", swing("L", 1)); break;
+        case "threeGood": // both arms straight up
+          setHand("R", W(-0.17, 2.46, 0.06), elbowOut(-1)); setHand("L", W(0.17, 2.46, 0.06), elbowOut(1)); break;
+        case "charge": // hand behind the head
+          setHand("R", W(-0.1, 1.86, -0.14), elbowOut(-1)); setHand("L", swing("L", 1)); break;
+        case "block": // hands on the hips
+          setHand("R", W(-0.27, 1.02, 0.02), elbowOut(-1)); setHand("L", W(0.27, 1.02, 0.02), elbowOut(1)); break;
+        case "subs": // wave the sub in
+          setHand("R", W(-0.32 + Math.sin(sigT * 9) * 0.1, 1.95, 0.22), elbowOut(-1)); setHand("L", swing("L", 1)); break;
+        case "holdBall": // ball at the waist, two hands
+          setHand("R", W(-0.12, 1.15, 0.32)); setHand("L", W(0.12, 1.17, 0.32)); break;
+        case "toss": { // up through the chest and overhead
+          const k = THREE.MathUtils.clamp(sigT / 0.32, 0, 1);
+          const y = THREE.MathUtils.lerp(1.2, 2.35, k * k * (3 - 2 * k));
+          setHand("R", W(-0.1, y, THREE.MathUtils.lerp(0.32, 0.2, k))); setHand("L", W(0.1, y, THREE.MathUtils.lerp(0.32, 0.2, k)));
+          break;
+        }
+        case "handBall": { // bounce pass to the player
+          const k = THREE.MathUtils.clamp(sigT / 0.25, 0, 1);
+          setHand("R", W(-0.12, 1.15 - k * 0.15, 0.32 + k * 0.3)); setHand("L", W(0.12, 1.15 - k * 0.15, 0.32 + k * 0.3));
+          break;
+        }
+        default: relax();
+      }
+    } else if (ftIdle && p.actionData.routine && ball) {
       // free-throw routine: bounce the ball with the shooting hand
       const handT = ball.clone();
       handT.y = Math.max(ball.y + 0.12 * scale, 0.55 * scale);
@@ -570,7 +661,10 @@ export class Avatar {
     }
 
     // fingers: curl slightly; more when holding the ball
-    const curl = p.hasBall ? 0.35 : 0.55;
+    // fists for fouls, flat open hands for most other signals
+    const curl = sig === "foul" || sig === "charge" || (sig === "shootingFoul" && sigT < 0.7) ? 1.35
+      : sig && sig !== "holdBall" && sig !== "toss" && sig !== "handBall" && sig !== "none" ? 0.08
+      : p.hasBall ? 0.35 : 0.55;
     for (const side of ["L", "R"] as const) {
       for (const f of ["index", "middle", "ring", "pinky"]) {
         for (const seg of [1, 2]) {

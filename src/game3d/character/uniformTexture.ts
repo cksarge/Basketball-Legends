@@ -151,3 +151,55 @@ export function makeCanvasTexture(w: number, h: number) {
   tex.flipY = false; // glTF UV convention (origin top-left)
   return { canvas, tex };
 }
+
+/** Officials: grey and black vertical stripes, black collar band, number on the back. */
+export function drawOfficialJersey(canvas: HTMLCanvasElement, number: number) {
+  const W = canvas.width, H = canvas.height;
+  const g = canvas.getContext("2d")!;
+  g.fillStyle = "#e9e9e6";
+  g.fillRect(0, 0, W, H);
+  const stripes = 28;
+  g.fillStyle = "#121212";
+  for (let i = 0; i < stripes; i++) g.fillRect((i / stripes) * W, 0, W / stripes / 2, H);
+  // collar and armhole band, hem
+  g.fillStyle = "#121212";
+  g.fillRect(0, 0, W, H * 0.05);
+  g.fillRect(0, H * 0.965, W, H * 0.035);
+  // number on the back in a white patch so it reads over the stripes
+  const cx = W * 0.75, cy = H * 0.55;
+  g.fillStyle = "#e9e9e6";
+  g.fillRect(cx - W * 0.075, cy - H * 0.17, W * 0.15, H * 0.32);
+  g.fillStyle = "#121212";
+  g.font = `900 ${Math.round(H * 0.26)}px ${FONT_STACK()}`;
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  g.fillText(String(number), cx, cy + H * 0.01);
+  // small league crest on the chest
+  g.fillStyle = "#121212";
+  g.beginPath();
+  g.arc(W * 0.31, H * 0.72, H * 0.035, 0, Math.PI * 2);
+  g.fill();
+}
+
+/** Solid team-colored polo for the scorer's table crew. */
+export function drawStaffShirt(canvas: HTMLCanvasElement, color: string, trim: string) {
+  const W = canvas.width, H = canvas.height;
+  const g = canvas.getContext("2d")!;
+  g.fillStyle = color;
+  g.fillRect(0, 0, W, H);
+  g.fillStyle = trim;
+  g.fillRect(0, 0, W, H * 0.06);
+  g.fillRect(W * 0.235, H * 0.06, W * 0.03, H * 0.12); // placket
+  g.globalAlpha = 0.5;
+  g.fillRect(W * 0.3, H * 0.7, W * 0.035, H * 0.06); // chest logo
+  g.globalAlpha = 1;
+}
+
+/** Plain shorts in one color (officials' black, staff slacks). */
+export function drawPlainShorts(canvas: HTMLCanvasElement, color: string) {
+  const g = canvas.getContext("2d")!;
+  g.fillStyle = color;
+  g.fillRect(0, 0, canvas.width, canvas.height);
+  g.fillStyle = "rgba(0,0,0,0.25)";
+  g.fillRect(0, 0, canvas.width, canvas.height * 0.08);
+}

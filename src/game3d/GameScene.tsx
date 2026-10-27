@@ -17,6 +17,7 @@ import { Arena, type ArenaKind } from "./Arena";
 import { Hoop } from "./Hoop";
 import { BallMesh } from "./Ball";
 import { Players } from "./Players";
+import { Officials } from "./Officials";
 import { CameraRig, type CameraState } from "./CameraRig";
 import type { UniformStyle } from "./character/uniformTexture";
 import { rimPos } from "@/game/court";
@@ -359,6 +360,8 @@ function NameTags({ match, replayFrame, visible }: { match: Match; replayFrame: 
     const v = replayFrame.current ?? liveView(match);
     const show = enabled && visible && !replayFrame.current && s.phase !== "final" && s.phase !== "timeout" && s.phase !== "halftime" && s.phase !== "periodEnd";
     const rect = gl.domElement.getBoundingClientRect();
+    // the camera rig moved the camera this frame; refresh its matrices so tags don't trail
+    camera.updateMatrixWorld();
     els.current.forEach((el, i) => {
       const ag = v.agents[i];
       if (!show || !ag) { el.style.display = "none"; return; }
@@ -553,6 +556,7 @@ export function GameScene(props: GameSceneProps) {
         ))}
         <BallMesh ref={ballMesh} radius={court.ballRadius} />
         <Players match={props.match} uniforms={props.uniforms} ballMesh={ballMesh} replayFrame={replayFrame} benchSize={benchSize} benchExcite={benchExcite} />
+        <Officials match={props.match} replayFrame={replayFrame} crewSize={g.preset === "low" ? 0 : 4} />
         <ControlMarkers match={props.match} replayFrame={replayFrame} />
         <NameTags match={props.match} replayFrame={replayFrame} visible={props.overlaysVisible ?? true} />
         <ReadySignal onReady={props.onReady} />

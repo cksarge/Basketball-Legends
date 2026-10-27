@@ -2,7 +2,7 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { BENCH_SEATS, benchSeat, type CourtSpec } from "@/game/court";
+import { BENCH_SEATS, benchSeat, type CourtSpec, tableSeats } from "@/game/court";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { Team } from "@/engine/types";
 import { Rng } from "@/engine/rng";
@@ -377,7 +377,8 @@ function BenchArea({ court, home, away }: { court: CourtSpec; home: Team; away: 
     ])!;
     const cushion = new THREE.BoxGeometry(0.46, 0.08, 0.44).translate(0, 0.46, 0);
     const back = new THREE.BoxGeometry(0.46, 0.4, 0.07).translate(0, 0.82, -0.23);
-    const n = BENCH_SEATS * 2;
+    const crewSeats = tableSeats(court);
+    const n = BENCH_SEATS * 2 + crewSeats.length;
     const frameMesh = new THREE.InstancedMesh(frame, new THREE.MeshStandardMaterial({ color: "#2a2e35", metalness: 0.7, roughness: 0.35 }), n);
     const padMat = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.55 });
     const cushionMesh = new THREE.InstancedMesh(cushion, padMat, n);
@@ -393,6 +394,14 @@ function BenchArea({ court, home, away }: { court: CourtSpec; home: Team; away: 
         cushionMesh.setColorAt(k, col);
         backMesh.setColorAt(k, col);
       }
+    }
+    // the table crew's chairs, in neutral black
+    for (const p of crewSeats) {
+      m.makeTranslation(p.x, 0, p.z);
+      for (const im of [frameMesh, cushionMesh, backMesh]) im.setMatrixAt(k, m);
+      cushionMesh.setColorAt(k, new THREE.Color("#1b1d21"));
+      backMesh.setColorAt(k, new THREE.Color("#1b1d21"));
+      k++;
     }
     for (const im of [frameMesh, cushionMesh, backMesh]) { im.castShadow = true; im.receiveShadow = true; im.instanceMatrix.needsUpdate = true; }
     return [frameMesh, cushionMesh, backMesh];
