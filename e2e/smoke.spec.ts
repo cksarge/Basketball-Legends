@@ -73,7 +73,7 @@ test("site files are published", async ({ request }) => {
   for (const p of ["/play/", "/how-to-play/", "/legal/privacy/"]) expect(sitemap).toContain(p);
 });
 
-test("quick play starts a game that loads and plays", async ({ page }) => {
+test("quick play starts a game that loads and plays @gpu", async ({ page }) => {
   test.setTimeout(150_000);
   const errors = watchErrors(page);
   await lowGraphics(page);
@@ -94,7 +94,7 @@ test("quick play starts a game that loads and plays", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test("save and quit, then resume from the main menu", async ({ page }) => {
+test("save and quit, then resume from the main menu @gpu", async ({ page }) => {
   test.setTimeout(180_000);
   await lowGraphics(page);
   await page.goto("/play/");
@@ -123,7 +123,7 @@ test("settings persist across reloads", async ({ page }) => {
   expect(await page.getByLabel("Big-play banners").isChecked()).toBe(!was);
 });
 
-test("the tutorial starts and advances", async ({ page }) => {
+test("the tutorial starts and advances @gpu", async ({ page }) => {
   test.setTimeout(150_000);
   await lowGraphics(page);
   await page.goto("/");

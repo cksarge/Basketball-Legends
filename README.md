@@ -46,6 +46,7 @@ npm install
 npm run dev          # http://localhost:3000
 npm test             # engine and simulation tests
 npm run test:e2e     # browser smoke tests against the production build (run `npm run build` first; uses your installed Chrome)
+                     # CI runs the page tests only; the full-game @gpu flows need a GPU and run locally
 npm run build        # static export to out/ (also regenerates sitemap.xml)
 ```
 
