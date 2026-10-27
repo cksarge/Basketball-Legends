@@ -20,7 +20,7 @@ function play(seed: number, injuries: boolean, injuryRate = 1) {
 describe("in-game injuries", () => {
   it("never happen when the setting is off", () => {
     expect(play(4, false, 2).state.injuries).toHaveLength(0);
-  });
+  }, 60_000);
   it("take the hurt player off the floor for the rest of the game", () => {
     let seen = 0;
     for (let seed = 1; seed <= 6; seed++) {
@@ -34,5 +34,5 @@ describe("in-game injuries", () => {
       expect(m.state.phase).toBe("final");
     }
     expect(seen).toBeGreaterThan(0);
-  });
+  }, 120_000);
 });

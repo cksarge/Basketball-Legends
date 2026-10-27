@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { InputManager } from "../input";
 import { DEFAULT_KEYS, DEFAULT_PAD } from "@/state/settings";
 
@@ -12,11 +12,13 @@ const press = (b: number, on: boolean) => { pad.buttons[b] = { pressed: on, touc
 describe("gamepad input", () => {
   let input: InputManager;
   beforeEach(() => {
-    Object.defineProperty(globalThis, "navigator", { value: { getGamepads: () => [pad, null, null, null] }, configurable: true });
+    vi.stubGlobal("navigator", { getGamepads: () => [pad, null, null, null] });
     pad.axes = [0, 0, 0, 0];
     pad.buttons.forEach((_, i) => press(i, false));
     input = new InputManager({ keys: DEFAULT_KEYS, pad: DEFAULT_PAD, deadzone: 0.18 });
   });
+
+  afterEach(() => { vi.unstubAllGlobals(); });
 
   it("moves with the left stick and ignores drift inside the deadzone", () => {
     pad.axes = [0.1, -0.1, 0, 0];
