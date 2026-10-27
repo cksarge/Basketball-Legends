@@ -15,6 +15,7 @@ export default function HowToPlay() {
   return (
     <ProsePage title="How to play">
       <p>Basketball Legends plays like a broadcast basketball game: you control one player at a time, and the rest of your team runs plays around you. You can change every binding in Settings, and a controller works as soon as you press a button.</p>
+      <p>New to the game? Choose <b>Tutorial</b> on the main menu for a guided session that walks you through every basic move and checks off each one as you do it.</p>
       <H2>Offense</H2>
       <table className="w-full text-left">
         <thead className="text-sm text-steel"><tr><th className="py-2">Action</th><th>Keyboard</th><th>Controller</th></tr></thead>

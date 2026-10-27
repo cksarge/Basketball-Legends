@@ -12,6 +12,7 @@ A free, open-source 3D basketball game that runs in the browser. Play pro basket
 - **Gameplay sliders:** shot, three-point and layup success, pass accuracy, steals, blocks, fouls, game speed, injuries and CPU aggression.
 - **Team AI** that spaces the floor, runs pick-and-roll, drives and kicks, posts up, cuts, and plays man or zone defense with help rotations.
 - **Quick Play:** any two teams from any league (cross-league exhibitions included), instant simulation, and up to four local players with keyboard and gamepads.
+- **Tutorial:** a ten-step guided session (moving, sprinting, dribble moves, shot timing, layups, threes, passing, pump fakes, replays) that checks off each skill as you do it, using your own key and button bindings.
 - **Practice:** a shootaround with no clock or defense.
 - **Presentation:** broadcast HUD, six cameras, commentary with optional voice, broadcast stat cards for hot scorers and free-throw shooters, a crowd that reacts to the game, and synthesized sound.
 - **Instant replays and highlights:** replay any moment with scrubbing, slow motion and five replay cameras; big plays replay automatically, and a highlight reel is ready at every break and after the game.

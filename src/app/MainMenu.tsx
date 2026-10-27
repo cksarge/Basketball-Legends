@@ -30,10 +30,18 @@ const ITEMS: Item[] = [
   { id: "quick", label: "Quick Play", href: "/play/", blurb: "Any two teams from any league, your rules.", detail: ["1,405 teams: pro, college and every Arizona high school", "Jerseys, arena, difficulty, quarter length", "Up to four local players, or sim instantly"] },
   { id: "career", label: "Career", href: "/career/", soon: true, blurb: "One player, from freshman year to the Hall of Fame.", detail: ["High school, recruiting, college, the draft, the pros", "Interviews and press conferences with real consequences", "Arrives in the next update"] },
   { id: "franchise", label: "Franchise", href: "/franchise/", soon: true, blurb: "Coach and run a program for as many seasons as you like.", detail: ["Rotations, playbooks, trades, recruiting, the draft", "Play or sim every game", "Arrives in a later update"] },
+  { id: "tutorial", label: "Tutorial", blurb: "Learn the controls step by step on an open floor.", detail: ["Moving, sprinting and dribble moves", "Shot timing, layups, threes and passing", "Uses your own key and button bindings"] },
   { id: "practice", label: "Practice", href: "/play/?practice=1", blurb: "Free shootaround in an empty gym.", detail: ["Work on shot timing with the meter", "Try every dribble move and finish", "No clock, no defense"] },
   { id: "settings", label: "Settings", href: "/settings/", blurb: "Graphics, audio, controls and accessibility.", detail: ["Remap every key and button", "Graphics presets with auto-detect", "Colorblind modes, subtitles, UI scale"] },
   { id: "howto", label: "How to play", href: "/how-to-play/", blurb: "Controls, the shot meter and game rules.", detail: ["Offense, defense and dribble moves", "Shot timing explained", "League rule differences"] },
 ];
+
+/** The controller to play with from the menu: the gamepad if that's what was used last. */
+function primaryDevice(device: string): string {
+  if (device === "keyboard" || typeof navigator === "undefined") return "keyboard";
+  const pad = [...(navigator.getGamepads?.() ?? [])].find((p): p is Gamepad => !!p && p.connected);
+  return pad ? `pad${pad.index}` : "keyboard";
+}
 
 export function MainMenu() {
   const router = useRouter();
@@ -79,7 +87,7 @@ export function MainMenu() {
     const [home, away] = [pick[0], pick[1]];
     setPending({
       mode: "quick", league: "pro", arena: "pro",
-      home: { team: home, roster: rosterFor(home), uniform: "home", controllers: ["keyboard"] },
+      home: { team: home, roster: rosterFor(home), uniform: "home", controllers: [primaryDevice(device)] },
       away: { team: away, roster: rosterFor(away), uniform: "away", controllers: [] },
       quarterMinutes: quarter, returnTo: "/", seed: Math.floor(Math.random() * 1e6),
     });
@@ -87,6 +95,20 @@ export function MainMenu() {
   };
 
   // with a saved game, the panel starts on Resume until something else is focused
+  const tutorial = async () => {
+    audio.unlock();
+    const d = await loadLeague("pro");
+    const home = team ?? d.teams[0];
+    const away = d.teams.find((t) => t.id !== home.id) ?? d.teams[1];
+    setPending({
+      mode: "practice", league: "pro", arena: "pro",
+      home: { team: home, roster: rosterFor(home), uniform: "home", controllers: [primaryDevice(device)] },
+      away: { team: away, roster: rosterFor(away), uniform: "away", controllers: [] },
+      quarterMinutes: quarter, returnTo: "/", seed: Math.floor(Math.random() * 1e6), practice: true, tutorial: true,
+    });
+    router.push("/game/");
+  };
+
   const item = useMemo(() => items.find((i) => i.id === focused) ?? items[0], [focused, items]);
 
   return (
@@ -113,6 +135,10 @@ export function MainMenu() {
                     </button>
                   ) : it.id === "resume" ? (
                     <button ref={i === 0 ? first : undefined} onClick={resume} onFocus={() => setFocused(it.id)} onMouseEnter={() => setFocused(it.id)} className={menuCls(focused === it.id)}>
+                      {it.label}
+                    </button>
+                  ) : it.id === "tutorial" ? (
+                    <button onClick={tutorial} onFocus={() => setFocused(it.id)} onMouseEnter={() => setFocused(it.id)} className={menuCls(focused === it.id)}>
                       {it.label}
                     </button>
                   ) : it.id === "playnow" ? (

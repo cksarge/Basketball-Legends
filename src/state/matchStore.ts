@@ -36,6 +36,8 @@ export interface PendingMatch {
   practice?: boolean;
   /** Continue the suspended game saved in local storage instead of starting fresh. */
   resume?: boolean;
+  /** Guided controls tutorial (runs on top of a practice session). */
+  tutorial?: boolean;
 }
 
 export interface MatchResult {

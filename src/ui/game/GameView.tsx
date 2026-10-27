@@ -22,6 +22,7 @@ import { ReplayOverlay, useReplay } from "./ReplayOverlay";
 import { BreakScreen, type BreakKind } from "./BreakScreen";
 import { TacticsPanel } from "../TacticsPanel";
 import { LoadingScreen } from "./LoadingScreen";
+import { TutorialOverlay } from "./TutorialOverlay";
 
 const GameScene = dynamic(() => import("@/game3d/GameScene").then((m) => m.GameScene), { ssr: false });
 
@@ -238,6 +239,7 @@ export function GameView({ pending }: { pending: PendingMatch }) {
         </>
       )}
       <ReplayOverlay director={replay} />
+      {pending.tutorial && ready && (screen === "playing" || replaying) && <TutorialOverlay match={match} replaying={replaying} onFinish={() => router.push("/play/")} />}
       {(screen === "playing" || screen === "break") && !pending.practice && <PlayBannerView />}
       {screen === "playing" && !replaying && !pending.practice && <StatOverlayView />}
       {screen === "break" && !replaying && (
