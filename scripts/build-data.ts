@@ -302,7 +302,7 @@ const IDENTITY_OVERRIDES: Record<string, Partial<Team>> = {
   "hs-brophy-prep": {
     nickname: "Broncos",
     colors: { primary: "#b5121b", secondary: "#ffffff", accent: "#ffffff" },
-    logo: { shape: "shield", icon: "horn", monogram: "BP", stripe: false },
+    logo: { shape: "shield", icon: "horn", monogram: "BP", stripe: false, image: "/logos/brophy.png" },
     arena: { name: "Brophy Gymnasium", capacity: 2200 },
   },
 };
