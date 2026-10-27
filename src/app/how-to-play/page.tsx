@@ -62,6 +62,8 @@ export default function HowToPlay() {
       <p>Gameplay sliders in Settings change the balance of the whole game (shooting, steals, blocks, fouls, speed and more).</p>
       <H2>Game controls</H2>
       <p>Press Esc (or Menu) to pause. From the pause menu you can see the box score and play-by-play, make substitutions, call a timeout, change the camera, simulate the rest of the game or restart. T calls a timeout when your team has the ball, and Y cycles through the cameras.</p>
+      <H2>Saving and resuming</H2>
+      <p>Games save themselves every few seconds. If you close the tab, or choose Save and quit from the pause menu, the main menu shows Resume game with the score and time left. Resumed games start paused so you can get ready. Quit game (or finishing the game) clears the save.</p>
       <H2>Replays and highlights</H2>
       <p>Press R (or the left stick click) at any time to replay the last few seconds. In a replay, Space plays and pauses, the arrow keys scrub back and forth and change the speed, and Y switches between the orbit, baseline, above-the-rim, courtside and broadcast cameras. Press R or Esc to go back to the game.</p>
       <p>Big plays (dunks, blocks, ankle breakers, clutch shots and buzzer beaters) replay automatically in slow motion; press Space to skip one. The best plays are also saved as highlights you can watch from the pause menu, at quarter breaks and after the final buzzer. You can turn automatic replays off in Settings under Presentation.</p>

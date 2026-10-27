@@ -2,7 +2,8 @@
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Match } from "@/game/sim/match";
+import { Match, type MatchSetup } from "@/game/sim/match";
+import { clearSuspended, loadSuspended, saveSuspended } from "@/state/suspended";
 import type { TeamIdx } from "@/game/sim/state";
 import { InputManager, type DeviceId } from "@/game/input";
 import { simulateToEnd } from "@/game/simulate";
@@ -20,6 +21,7 @@ import { ReplayDirector } from "@/game3d/replay";
 import { ReplayOverlay, useReplay } from "./ReplayOverlay";
 import { BreakScreen, type BreakKind } from "./BreakScreen";
 import { TacticsPanel } from "../TacticsPanel";
+import { LoadingScreen } from "./LoadingScreen";
 
 const GameScene = dynamic(() => import("@/game3d/GameScene").then((m) => m.GameScene), { ssr: false });
 
@@ -35,13 +37,20 @@ function buildMatch(p: PendingMatch, quarterMinutes: number, g: ReturnType<typeo
   let h = 0;
   const humansHome = home.controllers.map(() => h++);
   const humansAway = away.controllers.map(() => h++);
-  const match = new Match({
+  const setup: MatchSetup = {
     league: p.league,
     home: { team: home.team, roster: home.roster, tactics: home.tactics, human: humansHome.length > 0, humans: humansHome, starters: home.starters },
     away: { team: away.team, roster: away.roster, tactics: away.tactics, human: humansAway.length > 0, humans: humansAway, starters: away.starters },
     quarterMinutes, difficulty: g.difficulty, shotMeter: g.shotMeter && !tapShots, fatigue: g.fatigue, injuries: g.injuries, fouls: g.fouls,
     seed: p.seed, boundaryAssist: g.boundaryAssist, lockPlayerId: p.lockPlayerId, practice: p.practice, sliders: g.sliders,
-  });
+  };
+  // pick up a suspended game where it left off (falls back to a fresh game if the save is unreadable)
+  let match: Match | null = null;
+  if (p.resume) {
+    const saved = loadSuspended();
+    try { if (saved) match = Match.restore(setup, saved.match); } catch { match = null; }
+  }
+  match ??= new Match(setup);
   const devices = [...home.controllers, ...away.controllers] as DeviceId[];
   // the coach's auto-subs setting applies to human-controlled teams
   for (const t of match.state.teams) if (t.humanControlled) (t as typeof t & { autoSubs?: boolean }).autoSubs = g.autoSubs;
@@ -55,7 +64,7 @@ export function GameView({ pending }: { pending: PendingMatch }) {
   const [runId, setRunId] = useState(0);
   // a restart (runId) builds a fresh game with a new seed
   const { match, devices } = useMemo(() => buildMatch({ ...pending, seed: pending.seed + runId * 7919 }, pending.quarterMinutes, useSettings.getState().gameplay, useSettings.getState().accessibility.holdToTap), [pending, runId]);
-  const [screen, setScreen] = useState<Screen>(settings.presentation.skipIntros || pending.practice ? "playing" : "intro");
+  const [screen, setScreen] = useState<Screen>(pending.resume ? "paused" : settings.presentation.skipIntros || pending.practice ? "playing" : "intro");
   const [camera, setCamera] = useState<CameraMode>(settings.camera.mode);
   const [simProgress, setSimProgress] = useState(0);
   const input = useMemo(() => new InputManager({ keys: settings.controls.keys, pad: settings.controls.pad, deadzone: settings.controls.stickDeadzone }), [settings.controls]);
@@ -64,6 +73,7 @@ export function GameView({ pending }: { pending: PendingMatch }) {
   const replaying = useReplay(replay) !== null;
   const [breakKind, setBreakKind] = useState<BreakKind>("periodEnd");
   const [pauseTab, setPauseTab] = useState<"menu" | "subs">("menu");
+  const [ready, setReady] = useState(false);
   const finished = useRef(false);
 
   // input + "in game" flag (menus ignore keys while playing)
@@ -101,18 +111,28 @@ export function GameView({ pending }: { pending: PendingMatch }) {
     return () => document.removeEventListener("visibilitychange", onVis);
   }, [screen]);
 
-  // intro auto-advances
+  // keep a suspended copy of the game so a closed tab can be resumed from the main menu
   useEffect(() => {
-    if (screen !== "intro") return;
+    if (!ready || pending.practice || screen === "final" || screen === "simming") return;
+    const save = () => { if (!finished.current) saveSuspended(match, pending); };
+    const h = setInterval(save, 4000);
+    window.addEventListener("pagehide", save);
+    return () => { clearInterval(h); window.removeEventListener("pagehide", save); };
+  }, [ready, screen, match, pending]);
+
+  // intro auto-advances (once the arena is on screen)
+  useEffect(() => {
+    if (screen !== "intro" || !ready) return;
     const h = setTimeout(() => setScreen("playing"), 4200);
     const skip = (e: KeyboardEvent) => { if (["Space", "Enter", "Escape"].includes(e.code)) setScreen("playing"); };
     window.addEventListener("keydown", skip);
     return () => { clearTimeout(h); window.removeEventListener("keydown", skip); };
-  }, [screen]);
+  }, [screen, ready]);
 
   const finish = useCallback((simulated: boolean) => {
     if (finished.current) return;
     finished.current = true;
+    clearSuspended();
     const s = match.state;
     const all = [...s.teams[0].roster, ...s.teams[1].roster];
     const potg = all.reduce<{ id: string; gs: number } | null>((best, p) => {
@@ -178,6 +198,7 @@ export function GameView({ pending }: { pending: PendingMatch }) {
   };
 
   const restart = () => {
+    clearSuspended();
     finished.current = false;
     useHud.setState({ hud: null, feed: [] });
     setRunId((r) => r + 1);
@@ -197,13 +218,16 @@ export function GameView({ pending }: { pending: PendingMatch }) {
         devices={devices}
         uniforms={[pending.home.uniform, pending.away.uniform]}
         arena={pending.arena}
-        paused={screen !== "playing" && screen !== "break"}
+        paused={!ready || (screen !== "playing" && screen !== "break")}
         cameraMode={camera}
         onPauseRequest={() => setScreen((s) => (s === "playing" ? "paused" : s === "paused" ? "playing" : s))}
         onCameraCycle={cycleCamera}
         onTimeoutRequest={requestTimeout}
         replay={replay}
+        onReady={() => setReady(true)}
+        overlaysVisible={ready && (screen === "playing" || screen === "break")}
       />
+      <LoadingScreen key={`loading-${runId}`} home={home} away={away} ready={ready} />
       {screen !== "intro" && screen !== "final" && (
         <>
           {pending.practice ? <PracticeStats match={match} /> : <ScoreBug home={home} away={away} />}
@@ -238,7 +262,8 @@ export function GameView({ pending }: { pending: PendingMatch }) {
           onTimeout={requestTimeout}
           onRestart={restart}
           onSim={simToEnd}
-          onQuit={() => router.push(pending.returnTo)}
+          onQuit={() => { clearSuspended(); router.push(pending.returnTo); }}
+          onSaveQuit={pending.practice ? undefined : () => { saveSuspended(match, pending); toast("Game saved. Resume it from the main menu.", "good"); router.push("/"); }}
           onReplay={() => { const c = replay.recentClip(); setScreen("playing"); if (c) replay.play(c); else toast("Nothing to replay yet"); }}
           onHighlights={() => { setScreen("playing"); replay.playReel(); }}
           highlightCount={replay.highlights.length}
@@ -316,9 +341,9 @@ function IntroSplash({ match, occasion, onSkip }: { match: Match; occasion?: str
 }
 
 // ------------------------------------------------------------------- pause
-function PauseMenu({ initialTab, match, camera, setCamera, onResume, onTimeout, onRestart, onSim, onQuit, onReplay, onHighlights, highlightCount }: {
+function PauseMenu({ initialTab, match, camera, setCamera, onResume, onTimeout, onRestart, onSim, onQuit, onSaveQuit, onReplay, onHighlights, highlightCount }: {
   initialTab: "menu" | "subs"; match: Match; camera: CameraMode; setCamera: (c: CameraMode) => void; onResume: () => void; onTimeout: (t: 0 | 1) => void;
-  onRestart: () => void; onSim: () => void; onQuit: () => void; onReplay: () => void; onHighlights: () => void; highlightCount: number;
+  onRestart: () => void; onSim: () => void; onQuit: () => void; onSaveQuit?: () => void; onReplay: () => void; onHighlights: () => void; highlightCount: number;
 }) {
   const [tab, setTab] = useState<"menu" | "box" | "subs" | "tactics" | "controls">(initialTab);
   const [, refresh] = useState(0);
@@ -345,6 +370,7 @@ function PauseMenu({ initialTab, match, camera, setCamera, onResume, onTimeout, 
         {item("Controls", () => setTab("controls"))}
         {item("Sim to end", () => setConfirm("sim"))}
         {item("Restart game", () => setConfirm("restart"))}
+        {onSaveQuit && item("Save and quit", onSaveQuit)}
         {item("Quit game", () => setConfirm("quit"))}
       </aside>
       <section className="scrollbar-thin flex-1 overflow-y-auto p-8">
@@ -364,7 +390,7 @@ function PauseMenu({ initialTab, match, camera, setCamera, onResume, onTimeout, 
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/60" data-nav-scope="modal" role="alertdialog" aria-label="Confirm">
           <div className="w-96 rounded-[var(--radius-panel)] bg-deck p-6 ring-1 ring-line">
             <p className="font-display text-2xl font-bold">{confirm === "quit" ? "Quit this game?" : confirm === "restart" ? "Restart from the opening tip?" : "Simulate the rest of the game?"}</p>
-            <p className="mt-2 text-sm text-steel">{confirm === "quit" ? "Progress in this game will be lost." : confirm === "restart" ? "The score and stats reset to zero." : "The CPU plays out the remaining time for both teams."}</p>
+            <p className="mt-2 text-sm text-steel">{confirm === "quit" ? onSaveQuit ? "This game will be lost. Choose Save and quit to finish it later." : "Progress in this game will be lost." : confirm === "restart" ? "The score and stats reset to zero." : "The CPU plays out the remaining time for both teams."}</p>
             <div className="mt-5 flex justify-end gap-2">
               <button autoFocus onClick={() => setConfirm(null)} className="rounded-[var(--radius-chip)] px-4 py-2 text-steel hover:text-net">Cancel</button>
               <button onClick={() => { const c = confirm; setConfirm(null); if (c === "quit") onQuit(); else if (c === "restart") onRestart(); else onSim(); }}

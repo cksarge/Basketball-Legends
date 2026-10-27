@@ -12,6 +12,7 @@ import { TeamLogo } from "@/ui/TeamLogo";
 import { useInputDevice } from "@/ui/MenuNavigator";
 import { KeyHint } from "@/ui/KeyHint";
 import { toast } from "@/ui/Toaster";
+import { clearSuspended, useSuspended } from "@/state/suspended";
 
 const MenuBackdrop = dynamic(() => import("@/game3d/MenuBackdrop"), { ssr: false });
 
@@ -42,6 +43,13 @@ export function MainMenu() {
   const setPending = useMatchStore((s) => s.setPending);
   const quarter = useSettings((s) => s.gameplay.quarterMinutes);
   const first = useRef<HTMLButtonElement>(null);
+  const suspended = useSuspended();
+  const items = useMemo<Item[]>(() => {
+    if (!suspended) return ITEMS;
+    const g = suspended.summary;
+    const when = new Date(suspended.savedAt).toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" });
+    return [{ id: "resume", label: "Resume game", blurb: `${g.away} ${g.awayScore}, ${g.home} ${g.homeScore}`, detail: [`${g.period}, ${g.clock} left`, `Saved ${when}`, "Picks up exactly where you left off"] }, ...ITEMS];
+  }, [suspended]);
 
   useEffect(() => {
     loadLeague("pro").then((d) => {
@@ -51,6 +59,18 @@ export function MainMenu() {
     });
     first.current?.focus();
   }, []);
+
+  // when a saved game shows up (after hydration), put the cursor on Resume
+  const hasSaved = suspended !== null;
+  useEffect(() => { if (hasSaved) first.current?.focus(); }, [hasSaved]);
+
+  const resume = () => {
+    if (!suspended) return;
+    audio.unlock();
+    setPending({ ...suspended.pending, resume: true });
+    router.push("/game/");
+  };
+  const discard = () => { clearSuspended(); setFocused(ITEMS[0].id); toast("Saved game discarded"); };
 
   const playNow = async () => {
     audio.unlock();
@@ -66,7 +86,8 @@ export function MainMenu() {
     router.push("/game/");
   };
 
-  const item = useMemo(() => ITEMS.find((i) => i.id === focused) ?? ITEMS[0], [focused]);
+  // with a saved game, the panel starts on Resume until something else is focused
+  const item = useMemo(() => items.find((i) => i.id === focused) ?? items[0], [focused, items]);
 
   return (
     <div className="relative min-h-dvh overflow-hidden bg-navy">
@@ -83,12 +104,16 @@ export function MainMenu() {
               Basketball<br />Legends
             </h1>
             <ul className="flex flex-col">
-              {ITEMS.map((it, i) => (
+              {items.map((it, i) => (
                 <li key={it.id}>
                   {it.soon ? (
                     <button onClick={() => toast(`${it.label} arrives in a coming update. Quick Play is ready now.`)} onFocus={() => setFocused(it.id)} onMouseEnter={() => setFocused(it.id)} className={menuCls(focused === it.id)}>
                       {it.label}
                       <span className="ml-3 align-middle font-body text-sm font-semibold text-steel">Coming soon</span>
+                    </button>
+                  ) : it.id === "resume" ? (
+                    <button ref={i === 0 ? first : undefined} onClick={resume} onFocus={() => setFocused(it.id)} onMouseEnter={() => setFocused(it.id)} className={menuCls(focused === it.id)}>
+                      {it.label}
                     </button>
                   ) : it.id === "playnow" ? (
                     <button ref={i === 0 ? first : undefined} onClick={playNow} onFocus={() => setFocused(it.id)} onMouseEnter={() => setFocused(it.id)} className={menuCls(focused === it.id)}>
@@ -110,6 +135,9 @@ export function MainMenu() {
             <ul className="mt-4 flex flex-col gap-2 text-sm">
               {item.detail.map((d) => <li key={d} className="flex gap-2"><span className="mt-1.5 h-1.5 w-1.5 flex-none rounded-full bg-amber" />{d}</li>)}
             </ul>
+            {item.id === "resume" && (
+              <button onClick={discard} className="mt-4 text-sm font-semibold text-steel underline-offset-4 hover:text-bad hover:underline">Discard this game</button>
+            )}
           </aside>
         </div>
         <footer className="flex flex-wrap items-center justify-between gap-4 text-sm text-steel">

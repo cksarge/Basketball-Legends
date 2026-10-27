@@ -39,6 +39,10 @@ export interface GameSceneProps {
   onTimeoutRequest: (team: 0 | 1) => void;
   timeScale?: number;
   replay: ReplayDirector;
+  /** Called once the arena, players and textures have loaded. */
+  onReady?: () => void;
+  /** False while a menu or splash covers the game (hides in-world overlays like name tags). */
+  overlaysVisible?: boolean;
 }
 
 function Environment() {
@@ -79,26 +83,41 @@ function Lights({ kind, shadows }: { kind: ArenaKind; shadows: boolean }) {
   );
 }
 
-/** Floor ring under each controlled player, colored by controller. */
+/** Floor ring under each controlled player, colored by controller. Glides when control switches. */
 function ControlMarkers({ match, replayFrame }: { match: Match; replayFrame: React.RefObject<ViewFrame | null> }) {
   const colors = ["#ffb627", "#4cc3ff", "#7dff8a", "#ff6bd6"];
   const refs = useRef<(THREE.Mesh | null)[]>([]);
-  const geo = useMemo(() => new THREE.RingGeometry(0.42, 0.52, 40), []);
-  useFrame(() => {
+  const smooth = useRef(colors.map(() => ({ x: 0, z: 0, o: 0, id: "" })));
+  const geo = useMemo(() => new THREE.RingGeometry(0.42, 0.52, 48), []);
+  useFrame((_, dtRaw) => {
+    const dt = Math.min(dtRaw, 0.05);
     const s = match.state;
     for (let h = 0; h < 4; h++) {
       const m = refs.current[h];
       if (!m) continue;
+      const sm = smooth.current[h];
       const ag = s.agents.find((a) => a.human === h);
-      m.visible = !!ag && s.phase !== "final" && !replayFrame.current;
-      if (ag) m.position.set(ag.pos.x, 0.012, ag.pos.z);
+      const show = !!ag && !replayFrame.current && (s.phase === "live" || s.phase === "inbound" || s.phase === "deadball" || s.phase === "freethrows" || s.phase === "jumpball");
+      if (ag) {
+        // first sight snaps; a switch to another player glides across quickly
+        if (!sm.id) { sm.x = ag.pos.x; sm.z = ag.pos.z; }
+        sm.id = ag.player.id;
+        const k = 1 - Math.exp(-28 * dt);
+        sm.x += (ag.pos.x - sm.x) * k;
+        sm.z += (ag.pos.z - sm.z) * k;
+      }
+      sm.o = THREE.MathUtils.damp(sm.o, show ? 0.85 : 0, 12, dt);
+      m.visible = sm.o > 0.02;
+      m.position.set(sm.x, 0.015, sm.z);
+      (m.material as THREE.MeshBasicMaterial).opacity = sm.o;
     }
   });
   return (
     <>
       {colors.map((c, i) => (
-        <mesh key={i} ref={(el) => { refs.current[i] = el; }} rotation={[-Math.PI / 2, 0, 0]} geometry={geo}>
-          <meshBasicMaterial color={c} transparent opacity={0.85} toneMapped={false} depthWrite={false} />
+        <mesh key={i} ref={(el) => { refs.current[i] = el; }} rotation={[-Math.PI / 2, 0, 0]} geometry={geo} renderOrder={2}>
+          {/* drawn on top of the floor and its painted lines without z-fighting */}
+          <meshBasicMaterial color={c} transparent opacity={0} toneMapped={false} depthWrite={false} polygonOffset polygonOffsetFactor={-4} polygonOffsetUnits={-4} />
         </mesh>
       ))}
     </>
@@ -302,8 +321,21 @@ function SimDriver(props: GameSceneProps & { camState: React.RefObject<CameraSta
   return null;
 }
 
+/** Mounted inside Suspense, so it fires once every loader above it has resolved. */
+function ReadySignal({ onReady }: { onReady?: () => void }) {
+  const frames = useRef(0);
+  const done = useRef(false);
+  useFrame(() => {
+    // wait a couple of frames so shaders are compiled and the first image is on screen
+    if (done.current || ++frames.current < 3) return;
+    done.current = true;
+    onReady?.();
+  });
+  return null;
+}
+
 /** Jersey number and name floating over each player (DOM, positioned from the 3D scene). */
-function NameTags({ match, replayFrame }: { match: Match; replayFrame: React.RefObject<ViewFrame | null> }) {
+function NameTags({ match, replayFrame, visible }: { match: Match; replayFrame: React.RefObject<ViewFrame | null>; visible: boolean }) {
   const { camera, gl } = useThree();
   const enabled = useSettings((s) => s.gameplay.showPlayerNames);
   const els = useRef<HTMLDivElement[]>([]);
@@ -325,7 +357,7 @@ function NameTags({ match, replayFrame }: { match: Match; replayFrame: React.Ref
   useFrame(() => {
     const s = match.state;
     const v = replayFrame.current ?? liveView(match);
-    const show = enabled && !replayFrame.current && s.phase !== "final" && s.phase !== "timeout" && s.phase !== "halftime" && s.phase !== "periodEnd";
+    const show = enabled && visible && !replayFrame.current && s.phase !== "final" && s.phase !== "timeout" && s.phase !== "halftime" && s.phase !== "periodEnd";
     const rect = gl.domElement.getBoundingClientRect();
     els.current.forEach((el, i) => {
       const ag = v.agents[i];
@@ -522,7 +554,8 @@ export function GameScene(props: GameSceneProps) {
         <BallMesh ref={ballMesh} radius={court.ballRadius} />
         <Players match={props.match} uniforms={props.uniforms} ballMesh={ballMesh} replayFrame={replayFrame} benchSize={benchSize} benchExcite={benchExcite} />
         <ControlMarkers match={props.match} replayFrame={replayFrame} />
-        <NameTags match={props.match} replayFrame={replayFrame} />
+        <NameTags match={props.match} replayFrame={replayFrame} visible={props.overlaysVisible ?? true} />
+        <ReadySignal onReady={props.onReady} />
       </Suspense>
       <CameraRig match={props.match} mode={props.cameraMode} zoom={cam.zoom} heightMul={cam.height} stateRef={camState} focusAgent={() => s.agents.find((a) => a.human === 0)?.idx ?? s.ball.owner} />
       <SimDriver {...props} camState={camState} exciteRef={excite} clockRefs={[clockA, clockB]} rimShake={rimShake} ballPos={ballPos} scoreRef={scoreRef} benchExcite={benchExcite} />

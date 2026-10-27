@@ -13,7 +13,7 @@ import {
   type TeamGameState, type TeamIdx, LEAGUE_TUNING,
 } from "./state";
 import { type BoxScore, emptyLine } from "./stats";
-import { runAI } from "./ai";
+import { exportAIMemory, importAIMemory, runAI } from "./ai";
 
 export const AGENT_RADIUS = 0.32;
 const DT_DECIDE = 0.2;
@@ -160,6 +160,41 @@ export class Match {
     this.buildAgents();
     if (cfg.practice) this.setupPractice();
     else this.setupJumpBall();
+  }
+
+  /** Everything needed to pick this game up later (see Match.restore). */
+  serialize(): string {
+    const s = this.state;
+    return JSON.stringify({
+      v: 1, state: { ...s, events: [], frameEvents: [] }, rng: this.rng.getState(),
+      humanSlots: this.humanSlots, lockPlayerId: this.lockPlayerId, watchdogTrips: this.watchdogTrips,
+      ai: exportAIMemory(this), stall: [this.stallKey, this.stallTime], practiceRetrieve: this.practiceRetrieve,
+    });
+  }
+
+  /** Rebuild a saved game. Players are re-linked by id so roster and on-court objects stay shared. */
+  static restore(setup: MatchSetup, json: string): Match {
+    const m = new Match(setup);
+    const d = JSON.parse(json) as {
+      v: number; state: MatchState; rng: number; humanSlots: [number[], number[]]; lockPlayerId: string | null; watchdogTrips: number;
+      ai?: Parameters<typeof importAIMemory>[1]; stall?: [string, number]; practiceRetrieve?: number;
+    };
+    if (d.v !== 1) throw new Error("Unsupported saved game version");
+    const st = d.state;
+    const byId = new Map<string, Player>();
+    for (const t of st.teams) for (const p of t.roster) byId.set(p.id, p);
+    for (const a of st.agents) a.player = byId.get(a.player.id) ?? a.player;
+    st.events = [];
+    st.frameEvents = [];
+    m.state = st;
+    m.rng.setState(d.rng);
+    m.humanSlots = d.humanSlots;
+    m.lockPlayerId = d.lockPlayerId;
+    m.watchdogTrips = d.watchdogTrips ?? 0;
+    importAIMemory(m, d.ai);
+    if (d.stall) [m.stallKey, m.stallTime] = d.stall;
+    m.practiceRetrieve = d.practiceRetrieve ?? 0;
+    return m;
   }
 
   private practiceRetrieve = 0;
@@ -795,6 +830,7 @@ export class Match {
       // keep players roughly on/near the floor
       a.pos.x = clamp(a.pos.x, -c.halfL - 1.2, c.halfL + 1.2);
       a.pos.z = clamp(a.pos.z, -c.halfW - 1.2, c.halfW + 1.2);
+      this.keepOutOfStanchions(a.pos);
     }
     // collisions
     const ags = s.agents;
@@ -820,6 +856,27 @@ export class Match {
           }
           this.onContact(A, B);
         }
+      }
+    }
+  }
+
+  /**
+   * The padded hoop bases behind each baseline are solid: push anyone standing in one
+   * out to its nearest side (players and officials alike).
+   */
+  keepOutOfStanchions(p: V2, radius = AGENT_RADIUS) {
+    const c = this.state.cfg.court;
+    for (const side of [1, -1] as const) {
+      // base footprint (see Hoop.tsx): x from board+0.9 to board+2.5 behind the board, |z| < 0.625
+      const board = c.halfL - c.boardFromBaseline;
+      const x0 = side * (board + 0.85), x1 = side * (board + 2.55);
+      const minX = Math.min(x0, x1) - radius, maxX = Math.max(x0, x1) + radius;
+      const hz = 0.68 + radius;
+      if (p.x > minX && p.x < maxX && Math.abs(p.z) < hz) {
+        const dz = hz - Math.abs(p.z);
+        const dx = side > 0 ? p.x - minX : maxX - p.x; // distance back toward the court
+        if (dz < dx) p.z = (p.z >= 0 ? 1 : -1) * hz;
+        else p.x = side > 0 ? minX : maxX;
       }
     }
   }
@@ -2064,7 +2121,8 @@ export class Match {
     let spot: V2;
     let backcourt = true;
     if (afterScore) {
-      spot = v2(-side * (c.halfL + 0.5), this.rng.range(-1.5, 1.5));
+      // out of bounds under the basket, beside the hoop's base (never inside it)
+      spot = v2(-side * (c.halfL + 0.5), (this.rng.chance(0.5) ? 1 : -1) * this.rng.range(1.5, 2.6));
     } else {
       const x = clamp(at?.x ?? 0, -c.halfL + 1, c.halfL - 1);
       const z = (at?.z ?? 0) >= 0 ? c.halfW + 0.5 : -c.halfW - 0.5;

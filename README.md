@@ -17,6 +17,8 @@ A free, open-source 3D basketball game that runs in the browser. Play pro basket
 - **Instant replays and highlights:** replay any moment with scrubbing, slow motion and five replay cameras; big plays replay automatically, and a highlight reel is ready at every break and after the game.
 - **Game flow:** quarter, halftime and timeout screens with line scores, team stats and leaders; team huddles; benches full of players who react to big plays; name tags; big-play banners (AND ONE, REJECTED, runs, buzzer beaters).
 - **Injuries (optional):** falls, hard drives and awkward landings can hurt players, with forced substitutions and games-missed estimates.
+- **Never lose a game:** games in progress save automatically every few seconds; close the tab or choose Save and quit, then pick Resume game on the main menu to continue exactly where you left off.
+- **Loading screens** show real progress and gameplay tips that use your own key bindings.
 - **Works offline:** after one visit the whole game is cached and playable without a connection, and it can be installed as an app.
 - **Settings for everyone:** graphics presets with auto-detect, full key and button remapping, colorblind modes, subtitles, reduced motion, UI scale and tap-to-shoot.
 

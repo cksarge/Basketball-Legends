@@ -34,6 +34,8 @@ export interface PendingMatch {
   occasion?: string;
   /** Shootaround with no opponent or clock. */
   practice?: boolean;
+  /** Continue the suspended game saved in local storage instead of starting fresh. */
+  resume?: boolean;
 }
 
 export interface MatchResult {

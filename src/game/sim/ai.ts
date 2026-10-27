@@ -25,6 +25,17 @@ const M = (a: Agent) => {
   return m;
 };
 
+/** AI plans per on-court slot, for saving a game in progress. */
+export function exportAIMemory(match: Match): Record<number, AIMemo> {
+  const out: Record<number, AIMemo> = {};
+  for (const a of match.state.agents) { const m = memo.get(a); if (m) out[a.idx] = { ...m }; }
+  return out;
+}
+export function importAIMemory(match: Match, data: Record<number, AIMemo> | undefined) {
+  if (!data) return;
+  for (const a of match.state.agents) if (data[a.idx]) memo.set(a, { ...data[a.idx] });
+}
+
 export function runAI(match: Match, dt: number, decide: boolean) {
   const s = match.state;
   COURT_HALF = { x: s.cfg.court.halfL, z: s.cfg.court.halfW };
