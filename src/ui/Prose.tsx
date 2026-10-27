@@ -6,7 +6,9 @@ export function ProsePage({ title, updated, children }: { title: string; updated
     <div className="min-h-dvh bg-navy">
       <header className="border-b border-line">
         <div className="mx-auto flex max-w-3xl items-center gap-4 px-5 py-4">
-          <Link href="/" className="text-steel hover:text-net">← Main menu</Link>
+          <Link href="/" className="text-steel hover:text-net">
+            ← Main menu
+          </Link>
         </div>
       </header>
       <main className="mx-auto max-w-3xl px-5 py-10">

@@ -1,5 +1,11 @@
 // Procedural game audio (Web Audio synthesis — no third-party sound assets).
-export interface Mix { master: number; music: number; sfx: number; crowd: number; commentary: number }
+export interface Mix {
+  master: number;
+  music: number;
+  sfx: number;
+  crowd: number;
+  commentary: number;
+}
 
 class AudioEngine {
   ctx: AudioContext | null = null;
@@ -47,8 +53,12 @@ class AudioEngine {
     this.crowdBus.gain.setTargetAtTime(this.mix.crowd, t, 0.05);
   }
 
-  suspend() { void this.ctx?.suspend(); }
-  resume() { void this.ctx?.resume(); }
+  suspend() {
+    void this.ctx?.suspend();
+  }
+  resume() {
+    void this.ctx?.resume();
+  }
 
   private env(g: GainNode, attack: number, decay: number, peak: number) {
     const t = this.ctx!.currentTime;
@@ -63,7 +73,9 @@ class AudioEngine {
     src.buffer = this.noiseBuf;
     src.playbackRate.value = 0.8 + Math.random() * 0.4;
     const f = this.ctx.createBiquadFilter();
-    f.type = filterType; f.frequency.value = freq; f.Q.value = q;
+    f.type = filterType;
+    f.frequency.value = freq;
+    f.Q.value = q;
     const g = this.ctx.createGain();
     const p = this.ctx.createStereoPanner();
     p.pan.value = pan;
@@ -98,11 +110,21 @@ class AudioEngine {
     const f = 1800 + Math.random() * 1600;
     this.tone("sine", f, 0.01, 0.09 + Math.random() * 0.08, 0.06, f * (1.2 + Math.random() * 0.3), pan);
   }
-  swish() { this.noise("bandpass", 3200, 0.6, 0.02, 0.35, 0.35); }
-  netRustle() { this.noise("bandpass", 2400, 0.9, 0.01, 0.22, 0.2); }
+  swish() {
+    this.noise("bandpass", 3200, 0.6, 0.02, 0.35, 0.35);
+  }
+  netRustle() {
+    this.noise("bandpass", 2400, 0.9, 0.01, 0.22, 0.2);
+  }
   rim(speed: number, pan = 0) {
     const s = Math.min(1, speed / 6);
-    for (const [f, a] of [[780, 0.22], [1270, 0.14], [1930, 0.1], [2650, 0.06]] as const) this.tone("triangle", f * (0.97 + Math.random() * 0.06), 0.001, 0.35 + s * 0.4, a * (0.4 + s), undefined, pan);
+    for (const [f, a] of [
+      [780, 0.22],
+      [1270, 0.14],
+      [1930, 0.1],
+      [2650, 0.06],
+    ] as const)
+      this.tone("triangle", f * (0.97 + Math.random() * 0.06), 0.001, 0.35 + s * 0.4, a * (0.4 + s), undefined, pan);
     this.noise("highpass", 2000, 0.5, 0.001, 0.05, 0.2 * s, pan);
   }
   board(speed: number, pan = 0) {
@@ -110,17 +132,32 @@ class AudioEngine {
     this.tone("sine", 170, 0.002, 0.18, 0.35 * (0.4 + s), 110, pan);
     this.noise("bandpass", 600, 1.2, 0.001, 0.12, 0.25 * s, pan);
   }
-  catchBall(pan = 0) { this.noise("lowpass", 1400, 0.8, 0.001, 0.06, 0.18, pan); }
+  catchBall(pan = 0) {
+    this.noise("lowpass", 1400, 0.8, 0.001, 0.06, 0.18, pan);
+  }
   whistle() {
     this.tone("sine", 2900, 0.02, 0.45, 0.2, 3000);
     this.tone("sine", 3150, 0.02, 0.45, 0.12, 3200);
   }
-  buzzer() { this.tone("square", 196, 0.01, 1.3, 0.18); this.tone("sawtooth", 98, 0.01, 1.3, 0.08); }
-  shotClockBeep() { this.tone("square", 880, 0.005, 0.12, 0.08); }
-  uiMove() { this.tone("sine", 660, 0.002, 0.05, 0.05); }
-  uiSelect() { this.tone("sine", 880, 0.002, 0.08, 0.08, 1320); }
-  uiBack() { this.tone("sine", 520, 0.002, 0.08, 0.06, 360); }
-  meterGreen() { this.tone("sine", 1320, 0.005, 0.18, 0.12, 1760); }
+  buzzer() {
+    this.tone("square", 196, 0.01, 1.3, 0.18);
+    this.tone("sawtooth", 98, 0.01, 1.3, 0.08);
+  }
+  shotClockBeep() {
+    this.tone("square", 880, 0.005, 0.12, 0.08);
+  }
+  uiMove() {
+    this.tone("sine", 660, 0.002, 0.05, 0.05);
+  }
+  uiSelect() {
+    this.tone("sine", 880, 0.002, 0.08, 0.08, 1320);
+  }
+  uiBack() {
+    this.tone("sine", 520, 0.002, 0.08, 0.06, 360);
+  }
+  meterGreen() {
+    this.tone("sine", 1320, 0.005, 0.18, 0.12, 1760);
+  }
 
   // ---- crowd bed
   startCrowd() {
@@ -153,7 +190,9 @@ class AudioEngine {
     if (!this.ctx) return;
     this.noise("bandpass", 1100, 0.3, 0.15, 1.6 + level, 0.25 + level * 0.35);
   }
-  groan() { this.noise("lowpass", 500, 0.5, 0.1, 1.0, 0.18); }
+  groan() {
+    this.noise("lowpass", 500, 0.5, 0.1, 1.0, 0.18);
+  }
 }
 
 export const audio = new AudioEngine();

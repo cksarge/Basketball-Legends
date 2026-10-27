@@ -21,7 +21,8 @@ const ICONS: Record<LogoIcon, string> = {
   arrow: '<path d="M14 50h52M50 28l26 22-26 22" stroke="currentColor" stroke-width="10" fill="none" stroke-linejoin="round"/>',
   paw: '<ellipse cx="50" cy="64" rx="18" ry="15" fill="currentColor"/><circle cx="28" cy="42" r="8" fill="currentColor"/><circle cx="42" cy="30" r="8" fill="currentColor"/><circle cx="58" cy="30" r="8" fill="currentColor"/><circle cx="72" cy="42" r="8" fill="currentColor"/>',
   feather: '<path d="M70 12C40 18 26 44 28 76l-8 12 4 2 8-12c30-2 46-30 38-66zM34 68 58 32" fill="currentColor" stroke="var(--bg)" stroke-width="3"/>',
-  anchor: '<circle cx="50" cy="22" r="8" stroke="currentColor" stroke-width="6" fill="none"/><path d="M50 30v52M34 44h32M18 60c2 16 14 22 32 22s30-6 32-22" stroke="currentColor" stroke-width="7" fill="none"/>',
+  anchor:
+    '<circle cx="50" cy="22" r="8" stroke="currentColor" stroke-width="6" fill="none"/><path d="M50 30v52M34 44h32M18 60c2 16 14 22 32 22s30-6 32-22" stroke="currentColor" stroke-width="7" fill="none"/>',
   gear: '<path d="M44 10h12l2 12 9 4 10-7 8 8-7 10 4 9 12 2v12l-12 2-4 9 7 10-8 8-10-7-9 4-2 12H44l-2-12-9-4-10 7-8-8 7-10-4-9-12-2V44l12-2 4-9-7-10 8-8 10 7 9-4z" fill="currentColor"/><circle cx="50" cy="50" r="12" fill="var(--bg)"/>',
   moon: '<path d="M62 12a38 38 0 1 0 26 54A32 32 0 0 1 62 12z" fill="currentColor"/>',
   none: "",
@@ -29,13 +30,20 @@ const ICONS: Record<LogoIcon, string> = {
 
 function shapePath(shape: LogoSpec["shape"]): string {
   switch (shape) {
-    case "circle": return '<circle cx="50" cy="50" r="46"/>';
-    case "roundel": return '<circle cx="50" cy="50" r="46"/>';
-    case "shield": return '<path d="M50 4 92 18v30c0 26-18 42-42 50C26 90 8 74 8 48V18z"/>';
-    case "diamond": return '<path d="M50 3 97 50 50 97 3 50z"/>';
-    case "hex": return '<path d="M50 3 91 26v48L50 97 9 74V26z"/>';
-    case "star": return '<path d="m50 3 13 30 33 3-25 21 8 32-29-17-29 17 8-32L4 36l33-3z"/>';
-    case "badge": return '<rect x="6" y="6" width="88" height="88" rx="22"/>';
+    case "circle":
+      return '<circle cx="50" cy="50" r="46"/>';
+    case "roundel":
+      return '<circle cx="50" cy="50" r="46"/>';
+    case "shield":
+      return '<path d="M50 4 92 18v30c0 26-18 42-42 50C26 90 8 74 8 48V18z"/>';
+    case "diamond":
+      return '<path d="M50 3 97 50 50 97 3 50z"/>';
+    case "hex":
+      return '<path d="M50 3 91 26v48L50 97 9 74V26z"/>';
+    case "star":
+      return '<path d="m50 3 13 30 33 3-25 21 8 32-29-17-29 17 8-32L4 36l33-3z"/>';
+    case "badge":
+      return '<rect x="6" y="6" width="88" height="88" rx="22"/>';
   }
 }
 

@@ -6,10 +6,16 @@ import type { Team } from "@/engine/types";
 
 const teams = (pro as { teams: Team[] }).teams;
 const setup = (): MatchSetup => ({
-  league: "pro", home: { team: teams[3], roster: generateRoster(teams[3]) }, away: { team: teams[12], roster: generateRoster(teams[12]) },
-  fast: true, seed: 77, quarterMinutes: 3,
+  league: "pro",
+  home: { team: teams[3], roster: generateRoster(teams[3]) },
+  away: { team: teams[12], roster: generateRoster(teams[12]) },
+  fast: true,
+  seed: 77,
+  quarterMinutes: 3,
 });
-const run = (m: Match, steps: number) => { for (let i = 0; i < steps && m.state.phase !== "final"; i++) m.step(1 / 60); };
+const run = (m: Match, steps: number) => {
+  for (let i = 0; i < steps && m.state.phase !== "final"; i++) m.step(1 / 60);
+};
 
 describe("suspend and resume", () => {
   it("a restored game continues exactly like the original", () => {

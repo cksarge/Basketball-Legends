@@ -7,7 +7,12 @@ import { displayFont } from "@/lib/fonts";
 
 export type UniformStyle = "home" | "away" | "alt";
 
-export interface UniformColors { base: string; trim: string; text: string; outline: string }
+export interface UniformColors {
+  base: string;
+  trim: string;
+  text: string;
+  outline: string;
+}
 
 export function uniformColors(team: Team, style: UniformStyle): UniformColors {
   const c = team.colors;
@@ -24,7 +29,8 @@ function lighten(hex: string, amt: number) {
 
 /** Luminance distance check so text is always readable on the base color. */
 export function contrastOk(a: string, b: string) {
-  const la = new THREE.Color(a), lb = new THREE.Color(b);
+  const la = new THREE.Color(a),
+    lb = new THREE.Color(b);
   const L = (c: THREE.Color) => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
   return Math.abs(L(la) - L(lb)) > 0.22;
 }
@@ -43,7 +49,8 @@ function teamLogoImage(team: Team): HTMLImageElement {
 }
 
 export function drawJersey(canvas: HTMLCanvasElement, team: Team, style: UniformStyle, number: number, lastName: string) {
-  const W = canvas.width, H = canvas.height;
+  const W = canvas.width,
+    H = canvas.height;
   const g = canvas.getContext("2d")!;
   const col = uniformColors(team, style);
   const text = contrastOk(col.text, col.base) ? col.text : contrastOk(col.outline, col.base) ? col.outline : "#111111";
@@ -51,13 +58,20 @@ export function drawJersey(canvas: HTMLCanvasElement, team: Team, style: Uniform
   g.fillRect(0, 0, W, H);
   // subtle mesh fabric texture
   g.globalAlpha = 0.06;
-  for (let y = 0; y < H; y += 4) for (let x = (y / 4) % 2 ? 2 : 0; x < W; x += 4) { g.fillStyle = "#000"; g.fillRect(x, y, 1, 1); }
+  for (let y = 0; y < H; y += 4)
+    for (let x = (y / 4) % 2 ? 2 : 0; x < W; x += 4) {
+      g.fillStyle = "#000";
+      g.fillRect(x, y, 1, 1);
+    }
   g.globalAlpha = 1;
   // side panels under the arms (u = 0 / 0.5 / 1)
   g.fillStyle = col.trim;
   for (const u of [0, 0.5, 1]) g.fillRect(u * W - W * 0.025, 0, W * 0.05, H);
   g.fillStyle = col.outline;
-  for (const u of [0, 0.5, 1]) { g.fillRect(u * W - W * 0.034, 0, W * 0.007, H); g.fillRect(u * W + W * 0.027, 0, W * 0.007, H); }
+  for (const u of [0, 0.5, 1]) {
+    g.fillRect(u * W - W * 0.034, 0, W * 0.007, H);
+    g.fillRect(u * W + W * 0.027, 0, W * 0.007, H);
+  }
   // neckline / armhole trim band at the top
   g.fillStyle = col.trim;
   g.fillRect(0, 0, W, H * 0.035);
@@ -105,7 +119,8 @@ export function drawJersey(canvas: HTMLCanvasElement, team: Team, style: Uniform
     g.fillText(str, x, y);
   };
 
-  const front = W * 0.25, back = W * 0.75;
+  const front = W * 0.25,
+    back = W * 0.75;
   const word = (team.league === "pro" ? team.name.split(" ").slice(-1)[0] : team.nickname).toUpperCase();
   drawText(word.length > 11 ? team.abbrev : word, front, H * 0.3, H * 0.13, W * 0.34, { arch: H * 0.04 });
   drawText(String(number), front, H * 0.58, H * 0.3, W * 0.22);
@@ -117,7 +132,8 @@ export function drawJersey(canvas: HTMLCanvasElement, team: Team, style: Uniform
 }
 
 export function drawShorts(canvas: HTMLCanvasElement, team: Team, style: UniformStyle) {
-  const W = canvas.width, H = canvas.height;
+  const W = canvas.width,
+    H = canvas.height;
   const g = canvas.getContext("2d")!;
   const col = uniformColors(team, style);
   g.fillStyle = col.base;
@@ -154,7 +170,8 @@ export function makeCanvasTexture(w: number, h: number) {
 
 /** Officials: grey and black vertical stripes, black collar band, number on the back. */
 export function drawOfficialJersey(canvas: HTMLCanvasElement, number: number) {
-  const W = canvas.width, H = canvas.height;
+  const W = canvas.width,
+    H = canvas.height;
   const g = canvas.getContext("2d")!;
   g.fillStyle = "#e9e9e6";
   g.fillRect(0, 0, W, H);
@@ -166,7 +183,8 @@ export function drawOfficialJersey(canvas: HTMLCanvasElement, number: number) {
   g.fillRect(0, 0, W, H * 0.05);
   g.fillRect(0, H * 0.965, W, H * 0.035);
   // number on the back in a white patch so it reads over the stripes
-  const cx = W * 0.75, cy = H * 0.55;
+  const cx = W * 0.75,
+    cy = H * 0.55;
   g.fillStyle = "#e9e9e6";
   g.fillRect(cx - W * 0.075, cy - H * 0.17, W * 0.15, H * 0.32);
   g.fillStyle = "#121212";
@@ -183,7 +201,8 @@ export function drawOfficialJersey(canvas: HTMLCanvasElement, number: number) {
 
 /** Solid team-colored polo for the scorer's table crew. */
 export function drawStaffShirt(canvas: HTMLCanvasElement, color: string, trim: string) {
-  const W = canvas.width, H = canvas.height;
+  const W = canvas.width,
+    H = canvas.height;
   const g = canvas.getContext("2d")!;
   g.fillStyle = color;
   g.fillRect(0, 0, W, H);

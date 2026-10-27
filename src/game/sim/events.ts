@@ -29,6 +29,8 @@ export type GameEvent =
   | { t: "injury"; player: number; name: string; games: number }
   | { t: "foulOut"; player: number };
 
-export type TurnoverReason = "steal" | "badPass" | "outOfBounds" | "travel" | "offensiveFoul" | "shotClock" | "threeSeconds" | "backcourt" | "tenSeconds" | "fiveSeconds" | "lostBall";
+export type TurnoverReason =
+  "steal" | "badPass" | "outOfBounds" | "travel" | "offensiveFoul" | "shotClock" | "threeSeconds" | "backcourt" | "tenSeconds" | "fiveSeconds" | "lostBall";
 export type FoulKind = "shooting" | "reach" | "blocking" | "charge" | "loose" | "intentional";
-export type ViolationKind = "shotClock" | "threeSeconds" | "backcourt" | "tenSeconds" | "eightSeconds" | "fiveSeconds" | "outOfBounds" | "travel" | "goaltending" | "laneViolation";
+export type ViolationKind =
+  "shotClock" | "threeSeconds" | "backcourt" | "tenSeconds" | "eightSeconds" | "fiveSeconds" | "outOfBounds" | "travel" | "goaltending" | "laneViolation";

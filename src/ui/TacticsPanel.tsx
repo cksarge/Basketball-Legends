@@ -30,7 +30,12 @@ export function TacticsPanel({ value, onChange, compact }: { value: Partial<Team
       <Slider label="Pace" value={t.pace} min={0} max={1} step={0.05} format={pace} onChange={(v) => set({ pace: v })} />
       <Slider label="Three-point emphasis" value={t.threeRate} min={0} max={1} step={0.05} format={pct} onChange={(v) => set({ threeRate: v })} />
       <Slider label="Crash the offensive glass" value={t.crashBoards} min={0} max={1} step={0.05} format={pct} onChange={(v) => set({ crashBoards: v })} />
-      <Toggle label="Double-team stars" hint="Send help at the other team's best scorer" checked={t.doubleTeamStars} onChange={(v) => set({ doubleTeamStars: v })} />
+      <Toggle
+        label="Double-team stars"
+        hint="Send help at the other team's best scorer"
+        checked={t.doubleTeamStars}
+        onChange={(v) => set({ doubleTeamStars: v })}
+      />
     </div>
   );
 }

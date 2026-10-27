@@ -9,36 +9,123 @@ export type PromptStyle = "auto" | "keyboard" | "xbox" | "playstation";
 export type ColorblindMode = "off" | "protanopia" | "deuteranopia" | "tritanopia";
 
 export type ActionName =
-  | "up" | "down" | "left" | "right" | "sprint" | "shoot" | "pass" | "lob" | "bounce" | "iconPass"
-  | "dribbleLeft" | "dribbleRight" | "dribbleBack" | "dribbleSpin" | "pumpFake" | "post" | "callScreen"
-  | "steal" | "block" | "switchPlayer" | "intenseD" | "takeCharge" | "timeout" | "pause" | "camera"
-  | "replay" | "callForBall";
+  | "up"
+  | "down"
+  | "left"
+  | "right"
+  | "sprint"
+  | "shoot"
+  | "pass"
+  | "lob"
+  | "bounce"
+  | "iconPass"
+  | "dribbleLeft"
+  | "dribbleRight"
+  | "dribbleBack"
+  | "dribbleSpin"
+  | "pumpFake"
+  | "post"
+  | "callScreen"
+  | "steal"
+  | "block"
+  | "switchPlayer"
+  | "intenseD"
+  | "takeCharge"
+  | "timeout"
+  | "pause"
+  | "camera"
+  | "replay"
+  | "callForBall";
 
 export const ACTION_LABELS: Record<ActionName, string> = {
-  up: "Move up", down: "Move down", left: "Move left", right: "Move right", sprint: "Sprint",
-  shoot: "Shoot (hold, release)", pass: "Pass", lob: "Lob / alley-oop", bounce: "Bounce pass",
-  iconPass: "Icon pass (hold + number)", dribbleLeft: "Crossover left", dribbleRight: "Crossover right",
-  dribbleBack: "Stepback / hesitation", dribbleSpin: "Spin move", pumpFake: "Pump fake", post: "Post up",
-  callScreen: "Call pick and roll", steal: "Steal", block: "Block / rebound", switchPlayer: "Switch player",
-  intenseD: "Intense defense", takeCharge: "Take charge", timeout: "Call timeout", pause: "Pause",
-  camera: "Change camera", replay: "Instant replay", callForBall: "Call for the ball",
+  up: "Move up",
+  down: "Move down",
+  left: "Move left",
+  right: "Move right",
+  sprint: "Sprint",
+  shoot: "Shoot (hold, release)",
+  pass: "Pass",
+  lob: "Lob / alley-oop",
+  bounce: "Bounce pass",
+  iconPass: "Icon pass (hold + number)",
+  dribbleLeft: "Crossover left",
+  dribbleRight: "Crossover right",
+  dribbleBack: "Stepback / hesitation",
+  dribbleSpin: "Spin move",
+  pumpFake: "Pump fake",
+  post: "Post up",
+  callScreen: "Call pick and roll",
+  steal: "Steal",
+  block: "Block / rebound",
+  switchPlayer: "Switch player",
+  intenseD: "Intense defense",
+  takeCharge: "Take charge",
+  timeout: "Call timeout",
+  pause: "Pause",
+  camera: "Change camera",
+  replay: "Instant replay",
+  callForBall: "Call for the ball",
 };
 
 export const DEFAULT_KEYS: Record<ActionName, string[]> = {
-  up: ["KeyW"], down: ["KeyS"], left: ["KeyA"], right: ["KeyD"], sprint: ["ShiftLeft", "ShiftRight"],
-  shoot: ["Space", "KeyJ"], pass: ["KeyK"], lob: ["KeyL"], bounce: ["KeyO"], iconPass: ["Tab"],
-  dribbleLeft: ["ArrowLeft"], dribbleRight: ["ArrowRight"], dribbleBack: ["ArrowDown"], dribbleSpin: ["ArrowUp"],
-  pumpFake: ["KeyU"], post: ["KeyC"], callScreen: ["KeyV"], steal: ["KeyK"], block: ["Space", "KeyJ"],
-  switchPlayer: ["KeyQ"], intenseD: ["KeyC"], takeCharge: ["KeyF"], timeout: ["KeyT"], pause: ["Escape", "KeyP"],
-  camera: ["KeyY"], replay: ["KeyR"], callForBall: ["KeyK"],
+  up: ["KeyW"],
+  down: ["KeyS"],
+  left: ["KeyA"],
+  right: ["KeyD"],
+  sprint: ["ShiftLeft", "ShiftRight"],
+  shoot: ["Space", "KeyJ"],
+  pass: ["KeyK"],
+  lob: ["KeyL"],
+  bounce: ["KeyO"],
+  iconPass: ["Tab"],
+  dribbleLeft: ["ArrowLeft"],
+  dribbleRight: ["ArrowRight"],
+  dribbleBack: ["ArrowDown"],
+  dribbleSpin: ["ArrowUp"],
+  pumpFake: ["KeyU"],
+  post: ["KeyC"],
+  callScreen: ["KeyV"],
+  steal: ["KeyK"],
+  block: ["Space", "KeyJ"],
+  switchPlayer: ["KeyQ"],
+  intenseD: ["KeyC"],
+  takeCharge: ["KeyF"],
+  timeout: ["KeyT"],
+  pause: ["Escape", "KeyP"],
+  camera: ["KeyY"],
+  replay: ["KeyR"],
+  callForBall: ["KeyK"],
 };
 
 /** Standard-mapping gamepad button indices. */
 export const DEFAULT_PAD: Record<ActionName, number[]> = {
-  up: [12], down: [13], left: [14], right: [15], sprint: [7], shoot: [2], pass: [0], lob: [3], bounce: [1],
-  iconPass: [4], dribbleLeft: [], dribbleRight: [], dribbleBack: [], dribbleSpin: [], pumpFake: [11], post: [6],
-  callScreen: [5], steal: [2], block: [3], switchPlayer: [0], intenseD: [6], takeCharge: [1], timeout: [8],
-  pause: [9], camera: [8], replay: [10], callForBall: [0],
+  up: [12],
+  down: [13],
+  left: [14],
+  right: [15],
+  sprint: [7],
+  shoot: [2],
+  pass: [0],
+  lob: [3],
+  bounce: [1],
+  iconPass: [4],
+  dribbleLeft: [],
+  dribbleRight: [],
+  dribbleBack: [],
+  dribbleSpin: [],
+  pumpFake: [11],
+  post: [6],
+  callScreen: [5],
+  steal: [2],
+  block: [3],
+  switchPlayer: [0],
+  intenseD: [6],
+  takeCharge: [1],
+  timeout: [8],
+  pause: [9],
+  camera: [8],
+  replay: [10],
+  callForBall: [0],
 };
 
 export interface Settings {
@@ -74,13 +161,46 @@ export interface Settings {
   camera: { mode: CameraMode; zoom: number; height: number; shake: boolean };
   controls: { keys: Record<ActionName, string[]>; pad: Record<ActionName, number[]>; prompts: PromptStyle; stickDeadzone: number; invertCamera: boolean };
   accessibility: { colorblind: ColorblindMode; subtitles: boolean; reducedMotion: boolean; uiScale: number; highContrastHud: boolean; holdToTap: boolean };
-  presentation: { commentary: boolean; replays: boolean; playBanners: boolean; statOverlays: boolean; breakScreens: boolean; skipIntros: boolean; showTips: boolean };
+  presentation: {
+    commentary: boolean;
+    replays: boolean;
+    playBanners: boolean;
+    statOverlays: boolean;
+    breakScreens: boolean;
+    skipIntros: boolean;
+    showTips: boolean;
+  };
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  graphics: { preset: "high", autoDetected: false, resolutionScale: 1, shadows: true, bloom: true, ambientOcclusion: true, antialias: true, crowdDensity: 0.8, fpsCap: 60, showFps: false },
+  graphics: {
+    preset: "high",
+    autoDetected: false,
+    resolutionScale: 1,
+    shadows: true,
+    bloom: true,
+    ambientOcclusion: true,
+    antialias: true,
+    crowdDensity: 0.8,
+    fpsCap: 60,
+    showFps: false,
+  },
   audio: { master: 0.8, music: 0.5, sfx: 0.9, crowd: 0.7, commentary: 0.9, voiceCommentary: false, muteOnBlur: true },
-  gameplay: { difficulty: "allstar", quarterMinutes: 6, shotMeter: true, fatigue: true, injuries: false, fouls: true, autoSubs: true, boundaryAssist: true, showPlayerNames: true, showShotFeedback: true, vibration: true, lockToPlayer: false, sliders: DEFAULT_SLIDERS },
+  gameplay: {
+    difficulty: "allstar",
+    quarterMinutes: 6,
+    shotMeter: true,
+    fatigue: true,
+    injuries: false,
+    fouls: true,
+    autoSubs: true,
+    boundaryAssist: true,
+    showPlayerNames: true,
+    showShotFeedback: true,
+    vibration: true,
+    lockToPlayer: false,
+    sliders: DEFAULT_SLIDERS,
+  },
   camera: { mode: "broadcast", zoom: 1, height: 1, shake: true },
   controls: { keys: DEFAULT_KEYS, pad: DEFAULT_PAD, prompts: "auto", stickDeadzone: 0.18, invertCamera: false },
   accessibility: { colorblind: "off", subtitles: true, reducedMotion: false, uiScale: 1, highContrastHud: false, holdToTap: false },
@@ -104,9 +224,27 @@ interface SettingsStore extends Settings {
 }
 
 const safeStorage = createJSONStorage(() => ({
-  getItem: (k: string) => { try { return localStorage.getItem(k); } catch { return null; } },
-  setItem: (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* storage blocked */ } },
-  removeItem: (k: string) => { try { localStorage.removeItem(k); } catch { /* storage blocked */ } },
+  getItem: (k: string) => {
+    try {
+      return localStorage.getItem(k);
+    } catch {
+      return null;
+    }
+  },
+  setItem: (k: string, v: string) => {
+    try {
+      localStorage.setItem(k, v);
+    } catch {
+      /* storage blocked */
+    }
+  },
+  removeItem: (k: string) => {
+    try {
+      localStorage.removeItem(k);
+    } catch {
+      /* storage blocked */
+    }
+  },
 }));
 
 export const useSettings = create<SettingsStore>()(
@@ -147,7 +285,9 @@ export function detectPreset(): GraphicsPreset {
     const gl = document.createElement("canvas").getContext("webgl2");
     const ext = gl?.getExtension("WEBGL_debug_renderer_info");
     if (gl && ext) gpu = String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)).toLowerCase();
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   if (/rtx|radeon rx|apple m[2-9]|apple gpu/.test(gpu) && cores >= 8) return "ultra";
   if (/intel|uhd|iris|mali|adreno|swiftshader|llvmpipe/.test(gpu) || cores <= 4 || mem <= 4) return "medium";
   return "high";

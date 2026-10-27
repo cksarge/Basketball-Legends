@@ -30,13 +30,20 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) return;
     const firstInstall = !navigator.serviceWorker.controller;
-    navigator.serviceWorker.register("/sw.js").then((reg) => {
-      if (!firstInstall) return;
-      reg.addEventListener("updatefound", () => {
-        const w = reg.installing;
-        w?.addEventListener("statechange", () => { if (w.state === "activated") toast("Basketball Legends now works offline", "good"); });
+    navigator.serviceWorker
+      .register("/sw.js")
+      .then((reg) => {
+        if (!firstInstall) return;
+        reg.addEventListener("updatefound", () => {
+          const w = reg.installing;
+          w?.addEventListener("statechange", () => {
+            if (w.state === "activated") toast("Basketball Legends now works offline", "good");
+          });
+        });
+      })
+      .catch(() => {
+        /* offline support is optional */
       });
-    }).catch(() => { /* offline support is optional */ });
   }, []);
 
   return (

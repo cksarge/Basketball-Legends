@@ -26,14 +26,66 @@ interface Item {
 }
 
 const ITEMS: Item[] = [
-  { id: "playnow", label: "Play now", blurb: "Jump straight into a game with a random matchup.", detail: ["Picks two teams from the same league", "Uses your saved difficulty and quarter length", "Keyboard or controller, no setup"] },
-  { id: "quick", label: "Quick Play", href: "/play/", blurb: "Any two teams from any league, your rules.", detail: ["1,405 teams: pro, college and every Arizona high school", "Jerseys, arena, difficulty, quarter length", "Up to four local players, or sim instantly"] },
-  { id: "career", label: "Career", href: "/career/", soon: true, blurb: "One player, from freshman year to the Hall of Fame.", detail: ["High school, recruiting, college, the draft, the pros", "Interviews and press conferences with real consequences", "Arrives in the next update"] },
-  { id: "franchise", label: "Franchise", href: "/franchise/", soon: true, blurb: "Coach and run a program for as many seasons as you like.", detail: ["Rotations, playbooks, trades, recruiting, the draft", "Play or sim every game", "Arrives in a later update"] },
-  { id: "tutorial", label: "Tutorial", blurb: "Learn the controls step by step on an open floor.", detail: ["Moving, sprinting and dribble moves", "Shot timing, layups, threes and passing", "Uses your own key and button bindings"] },
-  { id: "practice", label: "Practice", href: "/play/?practice=1", blurb: "Free shootaround in an empty gym.", detail: ["Work on shot timing with the meter", "Try every dribble move and finish", "No clock, no defense"] },
-  { id: "settings", label: "Settings", href: "/settings/", blurb: "Graphics, audio, controls and accessibility.", detail: ["Remap every key and button", "Graphics presets with auto-detect", "Colorblind modes, subtitles, UI scale"] },
-  { id: "howto", label: "How to play", href: "/how-to-play/", blurb: "Controls, the shot meter and game rules.", detail: ["Offense, defense and dribble moves", "Shot timing explained", "League rule differences"] },
+  {
+    id: "playnow",
+    label: "Play now",
+    blurb: "Jump straight into a game with a random matchup.",
+    detail: ["Picks two teams from the same league", "Uses your saved difficulty and quarter length", "Keyboard or controller, no setup"],
+  },
+  {
+    id: "quick",
+    label: "Quick Play",
+    href: "/play/",
+    blurb: "Any two teams from any league, your rules.",
+    detail: [
+      "1,405 teams: pro, college and every Arizona high school",
+      "Jerseys, arena, difficulty, quarter length",
+      "Up to four local players, or sim instantly",
+    ],
+  },
+  {
+    id: "career",
+    label: "Career",
+    href: "/career/",
+    soon: true,
+    blurb: "One player, from freshman year to the Hall of Fame.",
+    detail: ["High school, recruiting, college, the draft, the pros", "Interviews and press conferences with real consequences", "Arrives in the next update"],
+  },
+  {
+    id: "franchise",
+    label: "Franchise",
+    href: "/franchise/",
+    soon: true,
+    blurb: "Coach and run a program for as many seasons as you like.",
+    detail: ["Rotations, playbooks, trades, recruiting, the draft", "Play or sim every game", "Arrives in a later update"],
+  },
+  {
+    id: "tutorial",
+    label: "Tutorial",
+    blurb: "Learn the controls step by step on an open floor.",
+    detail: ["Moving, sprinting and dribble moves", "Shot timing, layups, threes and passing", "Uses your own key and button bindings"],
+  },
+  {
+    id: "practice",
+    label: "Practice",
+    href: "/play/?practice=1",
+    blurb: "Free shootaround in an empty gym.",
+    detail: ["Work on shot timing with the meter", "Try every dribble move and finish", "No clock, no defense"],
+  },
+  {
+    id: "settings",
+    label: "Settings",
+    href: "/settings/",
+    blurb: "Graphics, audio, controls and accessibility.",
+    detail: ["Remap every key and button", "Graphics presets with auto-detect", "Colorblind modes, subtitles, UI scale"],
+  },
+  {
+    id: "howto",
+    label: "How to play",
+    href: "/how-to-play/",
+    blurb: "Controls, the shot meter and game rules.",
+    detail: ["Offense, defense and dribble moves", "Shot timing explained", "League rule differences"],
+  },
 ];
 
 /** The controller to play with from the menu: the gamepad if that's what was used last. */
@@ -56,13 +108,26 @@ export function MainMenu() {
     if (!suspended) return ITEMS;
     const g = suspended.summary;
     const when = new Date(suspended.savedAt).toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" });
-    return [{ id: "resume", label: "Resume game", blurb: `${g.away} ${g.awayScore}, ${g.home} ${g.homeScore}`, detail: [`${g.period}, ${g.clock} left`, `Saved ${when}`, "Picks up exactly where you left off"] }, ...ITEMS];
+    return [
+      {
+        id: "resume",
+        label: "Resume game",
+        blurb: `${g.away} ${g.awayScore}, ${g.home} ${g.homeScore}`,
+        detail: [`${g.period}, ${g.clock} left`, `Saved ${when}`, "Picks up exactly where you left off"],
+      },
+      ...ITEMS,
+    ];
   }, [suspended]);
 
   useEffect(() => {
     loadLeague("pro").then((d) => {
       let idx = 0;
-      try { idx = Number(sessionStorage.getItem("bl-menu-team") ?? Math.floor(Math.random() * d.teams.length)); sessionStorage.setItem("bl-menu-team", String(idx)); } catch { idx = 23; }
+      try {
+        idx = Number(sessionStorage.getItem("bl-menu-team") ?? Math.floor(Math.random() * d.teams.length));
+        sessionStorage.setItem("bl-menu-team", String(idx));
+      } catch {
+        idx = 23;
+      }
       setTeam(d.teams[idx % d.teams.length]);
     });
     first.current?.focus();
@@ -70,7 +135,9 @@ export function MainMenu() {
 
   // when a saved game shows up (after hydration), put the cursor on Resume
   const hasSaved = suspended !== null;
-  useEffect(() => { if (hasSaved) first.current?.focus(); }, [hasSaved]);
+  useEffect(() => {
+    if (hasSaved) first.current?.focus();
+  }, [hasSaved]);
 
   const resume = () => {
     if (!suspended) return;
@@ -78,7 +145,11 @@ export function MainMenu() {
     setPending({ ...suspended.pending, resume: true });
     router.push("/game/");
   };
-  const discard = () => { clearSuspended(); setFocused(ITEMS[0].id); toast("Saved game discarded"); };
+  const discard = () => {
+    clearSuspended();
+    setFocused(ITEMS[0].id);
+    toast("Saved game discarded");
+  };
 
   const playNow = async () => {
     audio.unlock();
@@ -86,10 +157,14 @@ export function MainMenu() {
     const pick = [...d.teams].sort(() => Math.random() - 0.5);
     const [home, away] = [pick[0], pick[1]];
     setPending({
-      mode: "quick", league: "pro", arena: "pro",
+      mode: "quick",
+      league: "pro",
+      arena: "pro",
       home: { team: home, roster: rosterFor(home), uniform: "home", controllers: [primaryDevice(device)] },
       away: { team: away, roster: rosterFor(away), uniform: "away", controllers: [] },
-      quarterMinutes: quarter, returnTo: "/", seed: Math.floor(Math.random() * 1e6),
+      quarterMinutes: quarter,
+      returnTo: "/",
+      seed: Math.floor(Math.random() * 1e6),
     });
     router.push("/game/");
   };
@@ -101,10 +176,16 @@ export function MainMenu() {
     const home = team ?? d.teams[0];
     const away = d.teams.find((t) => t.id !== home.id) ?? d.teams[1];
     setPending({
-      mode: "practice", league: "pro", arena: "pro",
+      mode: "practice",
+      league: "pro",
+      arena: "pro",
       home: { team: home, roster: rosterFor(home), uniform: "home", controllers: [primaryDevice(device)] },
       away: { team: away, roster: rosterFor(away), uniform: "away", controllers: [] },
-      quarterMinutes: quarter, returnTo: "/", seed: Math.floor(Math.random() * 1e6), practice: true, tutorial: true,
+      quarterMinutes: quarter,
+      returnTo: "/",
+      seed: Math.floor(Math.random() * 1e6),
+      practice: true,
+      tutorial: true,
     });
     router.push("/game/");
   };
@@ -113,7 +194,9 @@ export function MainMenu() {
 
   return (
     <div className="relative min-h-dvh overflow-hidden bg-navy">
-      <div className="absolute inset-0" aria-hidden>{team && <MenuBackdrop team={team} kind="pro" />}</div>
+      <div className="absolute inset-0" aria-hidden>
+        {team && <MenuBackdrop team={team} kind="pro" />}
+      </div>
       <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/75 to-transparent" aria-hidden />
       <div className="relative flex min-h-dvh flex-col px-6 py-[3vh] sm:px-12">
         <header className="flex items-center gap-4">
@@ -123,18 +206,31 @@ export function MainMenu() {
         <div className="flex flex-1 flex-col justify-center gap-10 lg:flex-row lg:items-center lg:justify-between">
           <nav aria-label="Main menu" className="flex flex-col">
             <h1 className="mb-[2.5vh] font-display text-[clamp(3rem,min(9vw,11vh),7.5rem)] font-black leading-[0.85] tracking-tight">
-              Basketball<br />Legends
+              Basketball
+              <br />
+              Legends
             </h1>
             <ul className="flex flex-col">
               {items.map((it, i) => (
                 <li key={it.id}>
                   {it.soon ? (
-                    <button onClick={() => toast(`${it.label} arrives in a coming update. Quick Play is ready now.`)} onFocus={() => setFocused(it.id)} onMouseEnter={() => setFocused(it.id)} className={menuCls(focused === it.id)}>
+                    <button
+                      onClick={() => toast(`${it.label} arrives in a coming update. Quick Play is ready now.`)}
+                      onFocus={() => setFocused(it.id)}
+                      onMouseEnter={() => setFocused(it.id)}
+                      className={menuCls(focused === it.id)}
+                    >
                       {it.label}
                       <span className="ml-3 align-middle font-body text-sm font-semibold text-steel">Coming soon</span>
                     </button>
                   ) : it.id === "resume" ? (
-                    <button ref={i === 0 ? first : undefined} onClick={resume} onFocus={() => setFocused(it.id)} onMouseEnter={() => setFocused(it.id)} className={menuCls(focused === it.id)}>
+                    <button
+                      ref={i === 0 ? first : undefined}
+                      onClick={resume}
+                      onFocus={() => setFocused(it.id)}
+                      onMouseEnter={() => setFocused(it.id)}
+                      className={menuCls(focused === it.id)}
+                    >
                       {it.label}
                     </button>
                   ) : it.id === "tutorial" ? (
@@ -142,7 +238,13 @@ export function MainMenu() {
                       {it.label}
                     </button>
                   ) : it.id === "playnow" ? (
-                    <button ref={i === 0 ? first : undefined} onClick={playNow} onFocus={() => setFocused(it.id)} onMouseEnter={() => setFocused(it.id)} className={menuCls(focused === it.id)}>
+                    <button
+                      ref={i === 0 ? first : undefined}
+                      onClick={playNow}
+                      onFocus={() => setFocused(it.id)}
+                      onMouseEnter={() => setFocused(it.id)}
+                      className={menuCls(focused === it.id)}
+                    >
                       {it.label}
                     </button>
                   ) : (
@@ -159,23 +261,46 @@ export function MainMenu() {
             <p className="font-display text-3xl font-black">{item.label}</p>
             <p className="mt-2 text-steel">{item.blurb}</p>
             <ul className="mt-4 flex flex-col gap-2 text-sm">
-              {item.detail.map((d) => <li key={d} className="flex gap-2"><span className="mt-1.5 h-1.5 w-1.5 flex-none rounded-full bg-amber" />{d}</li>)}
+              {item.detail.map((d) => (
+                <li key={d} className="flex gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 flex-none rounded-full bg-amber" />
+                  {d}
+                </li>
+              ))}
             </ul>
             {item.id === "resume" && (
-              <button onClick={discard} className="mt-4 text-sm font-semibold text-steel underline-offset-4 hover:text-bad hover:underline">Discard this game</button>
+              <button onClick={discard} className="mt-4 text-sm font-semibold text-steel underline-offset-4 hover:text-bad hover:underline">
+                Discard this game
+              </button>
             )}
           </aside>
         </div>
         <footer className="flex flex-wrap items-center justify-between gap-4 text-sm text-steel">
           <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1.5"><KeyHint action="up" device={device} /><KeyHint action="down" device={device} /> or arrows to move</span>
-            <span className="flex items-center gap-1.5"><kbd className="rounded border border-line bg-deck px-1.5 py-0.5 text-[11px]">{device === "keyboard" ? "Enter" : device === "playstation" ? "✕" : "A"}</kbd> to select</span>
+            <span className="flex items-center gap-1.5">
+              <KeyHint action="up" device={device} />
+              <KeyHint action="down" device={device} /> or arrows to move
+            </span>
+            <span className="flex items-center gap-1.5">
+              <kbd className="rounded border border-line bg-deck px-1.5 py-0.5 text-[11px]">
+                {device === "keyboard" ? "Enter" : device === "playstation" ? "✕" : "A"}
+              </kbd>{" "}
+              to select
+            </span>
           </div>
           <nav aria-label="Site" className="flex gap-4">
-            <Link href="/credits/" className="hover:text-net">Credits</Link>
-            <Link href="/legal/terms/" className="hover:text-net">Terms</Link>
-            <Link href="/legal/privacy/" className="hover:text-net">Privacy</Link>
-            <a href="https://github.com/cksarge/Basketball-Legends" className="hover:text-net" rel="noreferrer">Source code</a>
+            <Link href="/credits/" className="hover:text-net">
+              Credits
+            </Link>
+            <Link href="/legal/terms/" className="hover:text-net">
+              Terms
+            </Link>
+            <Link href="/legal/privacy/" className="hover:text-net">
+              Privacy
+            </Link>
+            <a href="https://github.com/cksarge/Basketball-Legends" className="hover:text-net" rel="noreferrer">
+              Source code
+            </a>
           </nav>
         </footer>
       </div>

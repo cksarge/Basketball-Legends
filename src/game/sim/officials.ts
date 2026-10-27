@@ -8,9 +8,27 @@ import type { Match } from "./match";
 import type { TeamIdx } from "./state";
 
 export type RefSignal =
-  | "none" | "foul" | "shootingFoul" | "report" | "outOfBounds" | "travel" | "threeSeconds" | "shotClock"
-  | "goaltend" | "backcourt" | "count" | "visibleCount" | "timeout" | "threeAttempt" | "threeGood"
-  | "charge" | "block" | "subs" | "holdBall" | "toss" | "handBall";
+  | "none"
+  | "foul"
+  | "shootingFoul"
+  | "report"
+  | "outOfBounds"
+  | "travel"
+  | "threeSeconds"
+  | "shotClock"
+  | "goaltend"
+  | "backcourt"
+  | "count"
+  | "visibleCount"
+  | "timeout"
+  | "threeAttempt"
+  | "threeGood"
+  | "charge"
+  | "block"
+  | "subs"
+  | "holdBall"
+  | "toss"
+  | "handBall";
 
 export interface Official {
   idx: number;
@@ -48,8 +66,16 @@ export function createCrew(match: Match): Crew {
   const nums = [12, 27, 41, 8, 63, 19, 35, 54];
   const seed = match.state.cfg.seed;
   const refs: Official[] = [0, 1, 2].map((i) => ({
-    idx: i, number: nums[(seed + i * 3) % nums.length], pos: v2(0, 0), vel: v2(), facing: 0,
-    signal: "none", signalT: 0, signalDur: 0, signalDir: 0, queue: [],
+    idx: i,
+    number: nums[(seed + i * 3) % nums.length],
+    pos: v2(0, 0),
+    vel: v2(),
+    facing: 0,
+    signal: "none",
+    signalT: 0,
+    signalDur: 0,
+    signalDir: 0,
+    queue: [],
   }));
   // jump ball: crew chief at center court, the others on the sidelines
   refs[0].pos = v2(0, -0.8);
@@ -68,11 +94,15 @@ const angleTo = (from: V2, x: number, z: number) => Math.atan2(x - from.x, z - f
 const dirFor = (match: Match, team: TeamIdx) => (match.attackSide(team) > 0 ? Math.PI / 2 : -Math.PI / 2);
 
 function nearest(crew: Crew, x: number, z: number, exclude: number[] = []) {
-  let best = crew.refs[0], bd = Infinity;
+  let best = crew.refs[0],
+    bd = Infinity;
   for (const o of crew.refs) {
     if (exclude.includes(o.idx)) continue;
     const d = Math.hypot(o.pos.x - x, o.pos.z - z);
-    if (d < bd) { bd = d; best = o; }
+    if (d < bd) {
+      bd = d;
+      best = o;
+    }
   }
   return best;
 }
@@ -96,7 +126,7 @@ export function crewOnEvent(match: Match, crew: Crew, e: GameEvent) {
       if (!f) break;
       const o = nearest(crew, f.pos.x, f.pos.z);
       const first: RefSignal = e.kind === "charge" ? "charge" : e.kind === "blocking" ? "block" : "foul";
-      const ballTeam = e.kind === "charge" ? other(f.team) : s.agents[e.on]?.team ?? other(f.team);
+      const ballTeam = e.kind === "charge" ? other(f.team) : (s.agents[e.on]?.team ?? other(f.team));
       signal(o, [{ signal: first, dur: 1.0 }, e.fts > 0 ? { signal: "shootingFoul", dur: 1.4 } : { signal: "report", dur: 1.1, dir: dirFor(match, ballTeam) }]);
       break;
     }
@@ -105,11 +135,26 @@ export function crewOnEvent(match: Match, crew: Crew, e: GameEvent) {
       const o = nearest(crew, b.x, b.z);
       const dir = dirFor(match, other(e.team));
       const map: Partial<Record<typeof e.kind, RefSignal>> = {
-        travel: "travel", threeSeconds: "threeSeconds", shotClock: "shotClock", goaltending: "goaltend",
-        backcourt: "backcourt", eightSeconds: "count", tenSeconds: "count", fiveSeconds: "count", outOfBounds: "outOfBounds",
+        travel: "travel",
+        threeSeconds: "threeSeconds",
+        shotClock: "shotClock",
+        goaltending: "goaltend",
+        backcourt: "backcourt",
+        eightSeconds: "count",
+        tenSeconds: "count",
+        fiveSeconds: "count",
+        outOfBounds: "outOfBounds",
       };
       const sig = map[e.kind] ?? "report";
-      signal(o, sig === "outOfBounds" ? [{ signal: "outOfBounds", dur: 1.3, dir }] : [{ signal: sig, dur: 1.2 }, { signal: "outOfBounds", dur: 1.0, dir }]);
+      signal(
+        o,
+        sig === "outOfBounds"
+          ? [{ signal: "outOfBounds", dur: 1.3, dir }]
+          : [
+              { signal: sig, dur: 1.2 },
+              { signal: "outOfBounds", dur: 1.0, dir },
+            ],
+      );
       break;
     }
     case "turnover":
@@ -134,7 +179,10 @@ export function crewOnEvent(match: Match, crew: Crew, e: GameEvent) {
         const sh = s.agents[e.shooter];
         if (!sh) break;
         const o = nearest(crew, sh.pos.x, sh.pos.z);
-        if (o.signal === "none" || o.signal === "threeAttempt") { signal(o, [{ signal: "threeAttempt", dur: 2.4 }]); crew.threeRef = o.idx; }
+        if (o.signal === "none" || o.signal === "threeAttempt") {
+          signal(o, [{ signal: "threeAttempt", dur: 2.4 }]);
+          crew.threeRef = o.idx;
+        }
       }
       break;
     case "make":
@@ -143,7 +191,10 @@ export function crewOnEvent(match: Match, crew: Crew, e: GameEvent) {
       break;
     case "miss":
     case "block":
-      if (crew.threeRef !== null) { const o = crew.refs[crew.threeRef]; if (o.signal === "threeAttempt") signal(o, [{ signal: "none", dur: 0 }]); }
+      if (crew.threeRef !== null) {
+        const o = crew.refs[crew.threeRef];
+        if (o.signal === "threeAttempt") signal(o, [{ signal: "none", dur: 0 }]);
+      }
       crew.threeRef = null;
       break;
     default:
@@ -161,10 +212,16 @@ export function crewStep(match: Match, crew: Crew, dt: number) {
     crew.lastOffense = s.offense;
   }
   // "holding the ball" and the visible count only last while their situation does: the phase logic below re-asserts them
-  for (const o of crew.refs) if (o.signal === "holdBall" || o.signal === "visibleCount") { o.signal = "none"; o.signalDur = 0; }
+  for (const o of crew.refs)
+    if (o.signal === "holdBall" || o.signal === "visibleCount") {
+      o.signal = "none";
+      o.signalDur = 0;
+    }
   const side = match.attackSide(s.offense);
   const b = s.ball.phys.pos;
-  const lead = crew.refs[crew.lead], trail = crew.refs[crew.trail], center = crew.refs[crew.center];
+  const lead = crew.refs[crew.lead],
+    trail = crew.refs[crew.trail],
+    center = crew.refs[crew.center];
   const targets = new Map<Official, { p: V2; face?: V2 }>();
   const ballXZ = v2(b.x, b.z);
 
@@ -183,7 +240,10 @@ export function crewStep(match: Match, crew: Crew, dt: number) {
       // the toss: hold the ball, then send it straight up between the jumpers
       if (s.ball.mode === "dead") {
         if (s.phaseTimer < 0.95 && chief.signal !== "toss") signal(chief, [{ signal: "toss", dur: 0.7 }]);
-        else if (chief.signal !== "toss") { chief.signal = "holdBall"; chief.signalDur = 0; }
+        else if (chief.signal !== "toss") {
+          chief.signal = "holdBall";
+          chief.signalDur = 0;
+        }
         const h = refHand(chief);
         if (chief.signal !== "toss" || chief.signalT < 0.3) s.ball.phys.pos = { x: h.x, y: chief.signal === "toss" ? h.y + chief.signalT * 3.2 : h.y, z: h.z };
       }
@@ -200,7 +260,10 @@ export function crewStep(match: Match, crew: Crew, dt: number) {
       targets.set(lead, handing ? { p: v2(rimX - fside * 1.9, -1.15), face: shooter?.pos } : { p: v2(fside * (c.halfL + 0.8), -2.4), face: v2(rimX, 0) });
       targets.set(trail, { p: v2(fside * (c.halfL - 6.6), c.halfW + 0.55), face: v2(rimX, 0) });
       targets.set(center, { p: v2(fside * (c.halfL - 5.6), -(c.halfW + 0.55)), face: v2(rimX, 0) });
-      if (handing && lead.signal === "none") { lead.signal = "holdBall"; lead.signalDur = 0; }
+      if (handing && lead.signal === "none") {
+        lead.signal = "holdBall";
+        lead.signalDur = 0;
+      }
       break;
     }
     case "timeout":
@@ -228,7 +291,10 @@ export function crewStep(match: Match, crew: Crew, dt: number) {
         const sp = s.inbound.spot;
         const inward = sp.z > 0 ? -1.25 : 1.25;
         targets.set(o, { p: v2(sp.x, sp.z + inward), face: sp });
-        if (o.signal === "none" || o.signal === "holdBall") { o.signal = "holdBall"; o.signalDur = 0; }
+        if (o.signal === "none" || o.signal === "holdBall") {
+          o.signal = "holdBall";
+          o.signalDur = 0;
+        }
         const h = refHand(o);
         s.ball.phys.pos = { x: h.x, y: h.y, z: h.z };
         s.ball.phys.vel = { x: 0, y: 0, z: 0 };
@@ -239,7 +305,9 @@ export function crewStep(match: Match, crew: Crew, dt: number) {
         targets.set(o, { p: v2(sp.x + (sp.x > 0 ? -1.4 : 1.4), sp.z + (sp.z > 0 ? -1.0 : 1.0)), face: sp });
         // visible five-second count once the ball is in the inbounder's hands
         if (s.inbound.timer > 0 && (o.signal === "none" || o.signal === "visibleCount" || o.signal === "handBall")) {
-          o.signal = "visibleCount"; o.signalT = s.inbound.timer; o.signalDur = 0;
+          o.signal = "visibleCount";
+          o.signalT = s.inbound.timer;
+          o.signalDur = 0;
         }
       }
     }
@@ -269,30 +337,47 @@ export function crewStep(match: Match, crew: Crew, dt: number) {
       o.signalT += dt;
       if (o.signalDur > 0 && o.signalT >= o.signalDur) {
         const next = o.queue.shift();
-        if (next) { o.signal = next.signal; o.signalDur = next.dur; o.signalT = 0; if (next.dir !== undefined) o.signalDir = next.dir; }
-        else { o.signal = "none"; o.signalT = 0; }
+        if (next) {
+          o.signal = next.signal;
+          o.signalDur = next.dur;
+          o.signalT = 0;
+          if (next.dir !== undefined) o.signalDir = next.dir;
+        } else {
+          o.signal = "none";
+          o.signalT = 0;
+        }
       }
     }
     const busySignal = o.signal !== "none" && o.signal !== "threeAttempt" && o.signal !== "holdBall" && o.signal !== "visibleCount";
-    let tx = o.pos.x, tz = o.pos.z;
-    if (t && !busySignal) { tx = t.p.x; tz = t.p.z; }
-    const dx = tx - o.pos.x, dz = tz - o.pos.z;
+    let tx = o.pos.x,
+      tz = o.pos.z;
+    if (t && !busySignal) {
+      tx = t.p.x;
+      tz = t.p.z;
+    }
+    const dx = tx - o.pos.x,
+      dz = tz - o.pos.z;
     const dist = Math.hypot(dx, dz);
     const want = dist > 0.12 ? Math.min(REF_SPEED, dist * 2.2) : 0;
-    const vx = dist > 1e-3 ? (dx / dist) * want : 0, vz = dist > 1e-3 ? (dz / dist) * want : 0;
+    const vx = dist > 1e-3 ? (dx / dist) * want : 0,
+      vz = dist > 1e-3 ? (dz / dist) * want : 0;
     const k = 1 - Math.exp(-6 * dt);
     o.vel = v2(o.vel.x + (vx - o.vel.x) * k, o.vel.z + (vz - o.vel.z) * k);
     o.pos.x += o.vel.x * dt;
     o.pos.z += o.vel.z * dt;
     // give the players room, and never stand inside the hoop bases
     for (const a of s.agents) {
-      const ax = o.pos.x - a.pos.x, az = o.pos.z - a.pos.z;
+      const ax = o.pos.x - a.pos.x,
+        az = o.pos.z - a.pos.z;
       const ad = Math.hypot(ax, az);
-      if (ad < 0.7 && ad > 1e-4) { o.pos.x += (ax / ad) * (0.7 - ad); o.pos.z += (az / ad) * (0.7 - ad); }
+      if (ad < 0.7 && ad > 1e-4) {
+        o.pos.x += (ax / ad) * (0.7 - ad);
+        o.pos.z += (az / ad) * (0.7 - ad);
+      }
     }
     match.keepOutOfStanchions(o.pos, 0.35);
     // face the play (or the direction being signalled)
-    const look = busySignal && (o.signal === "report" || o.signal === "outOfBounds") ? null : t?.face ?? ballXZ;
+    const look = busySignal && (o.signal === "report" || o.signal === "outOfBounds") ? null : (t?.face ?? ballXZ);
     const faceTo = look ? angleTo(o.pos, look.x, look.z) : o.facing;
     let df = faceTo - o.facing;
     df = Math.atan2(Math.sin(df), Math.cos(df));
@@ -305,6 +390,9 @@ export function crewStartHandoff(crew: Crew) {
   if (crew.admin === null) return false;
   crew.handoff = { ref: crew.admin, t: 0, dur: 0.5 };
   const o = crew.refs[crew.admin];
-  if (o.signal === "holdBall") { o.signal = "none"; o.signalT = 0; }
+  if (o.signal === "holdBall") {
+    o.signal = "none";
+    o.signalT = 0;
+  }
   return true;
 }

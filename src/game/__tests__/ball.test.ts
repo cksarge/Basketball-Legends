@@ -20,12 +20,19 @@ function shoot(from: { x: number; z: number }, releaseH: number, angleDeg: numbe
 describe("ball physics", () => {
   it("perfectly aimed jumpers go in from many spots", () => {
     const spots = [
-      { x: rim.x - 4.5, z: 0 }, { x: rim.x - 6.5, z: 2 }, { x: rim.x - 1.5, z: -6.6 },
-      { x: rim.x - 7.3, z: 0 }, { x: rim.x - 3, z: 3 }, { x: rim.x - 0.5, z: 1.2 },
+      { x: rim.x - 4.5, z: 0 },
+      { x: rim.x - 6.5, z: 2 },
+      { x: rim.x - 1.5, z: -6.6 },
+      { x: rim.x - 7.3, z: 0 },
+      { x: rim.x - 3, z: 3 },
+      { x: rim.x - 0.5, z: 1.2 },
     ];
     for (const s of spots) {
       const ev = shoot(s, 2.6, 50);
-      expect(ev.some((e) => e.type === "score"), JSON.stringify(s)).toBe(true);
+      expect(
+        ev.some((e) => e.type === "score"),
+        JSON.stringify(s),
+      ).toBe(true);
     }
   });
   it("badly aimed shots miss", () => {

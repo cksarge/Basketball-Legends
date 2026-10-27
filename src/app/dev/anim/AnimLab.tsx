@@ -18,7 +18,8 @@ export function AnimLab() {
       setPick({ player: roster[idx % roster.length], team });
     });
   }, []);
-  if (process.env.NODE_ENV === "production") return <main className="grid min-h-dvh place-items-center text-steel">Developer tools are only available in development builds.</main>;
+  if (process.env.NODE_ENV === "production")
+    return <main className="grid min-h-dvh place-items-center text-steel">Developer tools are only available in development builds.</main>;
   if (!pick) return <main className="grid min-h-dvh place-items-center text-steel">Loading…</main>;
   return <PoseLab player={pick.player} team={pick.team} />;
 }

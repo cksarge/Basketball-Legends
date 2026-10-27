@@ -28,12 +28,16 @@ const routes = walk(APP).sort((a, b) => (PRIORITY[b] ?? 0.4) - (PRIORITY[a] ?? 0
 const today = new Date().toISOString().slice(0, 10);
 const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${routes.map((r) => `  <url>
+${routes
+  .map(
+    (r) => `  <url>
     <loc>${SITE}${r}</loc>
     <lastmod>${today}</lastmod>
     <changefreq>${r === "/" ? "weekly" : "monthly"}</changefreq>
     <priority>${(PRIORITY[r] ?? 0.4).toFixed(1)}</priority>
-  </url>`).join("\n")}
+  </url>`,
+  )
+  .join("\n")}
 </urlset>
 `;
 fs.writeFileSync(path.join(__dirname, "..", "public", "sitemap.xml"), xml);

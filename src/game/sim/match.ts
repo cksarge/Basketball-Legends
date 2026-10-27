@@ -8,9 +8,22 @@ import { overall } from "@/engine/player";
 import { LEAGUE_RULES, type LeagueId, type Player, type RatingKey, type Team, type TeamTactics } from "@/engine/types";
 import type { FoulKind, GameEvent, TurnoverReason, ViolationKind } from "./events";
 import {
-  type ActionKind, type Agent, type AgentIntent, type BallState, DEFAULT_SLIDERS, DIFFICULTY_LEVELS, type Difficulty,
-  type DribbleMoveKind, type FreeThrowState, type InboundState, type MatchConfig, type Phase, type ShotKind,
-  type TeamGameState, type TeamIdx, LEAGUE_TUNING,
+  type ActionKind,
+  type Agent,
+  type AgentIntent,
+  type BallState,
+  DEFAULT_SLIDERS,
+  DIFFICULTY_LEVELS,
+  type Difficulty,
+  type DribbleMoveKind,
+  type FreeThrowState,
+  type InboundState,
+  type MatchConfig,
+  type Phase,
+  type ShotKind,
+  type TeamGameState,
+  type TeamIdx,
+  LEAGUE_TUNING,
 } from "./state";
 import { type BoxScore, emptyLine } from "./stats";
 import { exportAIMemory, importAIMemory, runAI } from "./ai";
@@ -137,9 +150,18 @@ export class Match {
     const mkTeam = (s: MatchSetup["home"], side: 1 | -1): TeamGameState => {
       const starters = s.starters && s.starters.length === 5 ? s.starters : pickStarters(s.roster);
       return {
-        team: s.team, roster: s.roster, onCourt: starters, score: 0, periodScores: [], fouls: 0,
-        timeouts: rules.periods === 2 ? 4 : 7, tactics: { ...DEFAULT_TACTICS, ...(s.tactics ?? {}) },
-        attackSide: side, humanControlled: !!s.human, minutes: {}, rotation: defaultRotation(s.roster, starters, cfg),
+        team: s.team,
+        roster: s.roster,
+        onCourt: starters,
+        score: 0,
+        periodScores: [],
+        fouls: 0,
+        timeouts: rules.periods === 2 ? 4 : 7,
+        tactics: { ...DEFAULT_TACTICS, ...(s.tactics ?? {}) },
+        attackSide: side,
+        humanControlled: !!s.human,
+        minutes: {},
+        rotation: defaultRotation(s.roster, starters, cfg),
         playCall: null,
       };
     };
@@ -150,15 +172,47 @@ export class Match {
     for (const t of teams) for (const p of t.roster) box[p.id] = emptyLine();
 
     this.state = {
-      cfg, teams, agents: [], ball: {
-        phys: newBallPhys(), mode: "dead", owner: null, lastTouch: 0, lastToucher: null, shot: null, pass: null,
-        dribblePhase: 0, lastPasser: null, lastPassTime: -99,
+      cfg,
+      teams,
+      agents: [],
+      ball: {
+        phys: newBallPhys(),
+        mode: "dead",
+        owner: null,
+        lastTouch: 0,
+        lastToucher: null,
+        shot: null,
+        pass: null,
+        dribblePhase: 0,
+        lastPasser: null,
+        lastPassTime: -99,
       },
-      phase: "pregame", phaseTimer: 0, period: 1, clock: cfg.quarterMinutes * 60, shotClock: rules.shotClock ?? 999,
-      offense: 0, frontcourt: false, backcourtTimer: 0, possessionArrow: 0, inbound: null, freeThrows: null,
-      box, events: [], frameEvents: [], time: 0, lastScoreTime: 0, run: { team: 0, pts: 0 }, winner: null,
-      timeoutTeam: null, aiClock: 0, playByPlay: [], possessions: [0, 0], pendingAndOne: null,
-      injuries: [], pendingInjury: null, crew: null,
+      phase: "pregame",
+      phaseTimer: 0,
+      period: 1,
+      clock: cfg.quarterMinutes * 60,
+      shotClock: rules.shotClock ?? 999,
+      offense: 0,
+      frontcourt: false,
+      backcourtTimer: 0,
+      possessionArrow: 0,
+      inbound: null,
+      freeThrows: null,
+      box,
+      events: [],
+      frameEvents: [],
+      time: 0,
+      lastScoreTime: 0,
+      run: { team: 0, pts: 0 },
+      winner: null,
+      timeoutTeam: null,
+      aiClock: 0,
+      playByPlay: [],
+      possessions: [0, 0],
+      pendingAndOne: null,
+      injuries: [],
+      pendingInjury: null,
+      crew: null,
     };
     this.buildAgents();
     if (!cfg.fast && !cfg.practice) this.state.crew = createCrew(this);
@@ -170,9 +224,15 @@ export class Match {
   serialize(): string {
     const s = this.state;
     return JSON.stringify({
-      v: 1, state: { ...s, events: [], frameEvents: [] }, rng: this.rng.getState(),
-      humanSlots: this.humanSlots, lockPlayerId: this.lockPlayerId, watchdogTrips: this.watchdogTrips,
-      ai: exportAIMemory(this), stall: [this.stallKey, this.stallTime], practiceRetrieve: this.practiceRetrieve,
+      v: 1,
+      state: { ...s, events: [], frameEvents: [] },
+      rng: this.rng.getState(),
+      humanSlots: this.humanSlots,
+      lockPlayerId: this.lockPlayerId,
+      watchdogTrips: this.watchdogTrips,
+      ai: exportAIMemory(this),
+      stall: [this.stallKey, this.stallTime],
+      practiceRetrieve: this.practiceRetrieve,
     });
   }
 
@@ -180,8 +240,15 @@ export class Match {
   static restore(setup: MatchSetup, json: string): Match {
     const m = new Match(setup);
     const d = JSON.parse(json) as {
-      v: number; state: MatchState; rng: number; humanSlots: [number[], number[]]; lockPlayerId: string | null; watchdogTrips: number;
-      ai?: Parameters<typeof importAIMemory>[1]; stall?: [string, number]; practiceRetrieve?: number;
+      v: number;
+      state: MatchState;
+      rng: number;
+      humanSlots: [number[], number[]];
+      lockPlayerId: string | null;
+      watchdogTrips: number;
+      ai?: Parameters<typeof importAIMemory>[1];
+      stall?: [string, number];
+      practiceRetrieve?: number;
     };
     if (d.v !== 1) throw new Error("Unsupported saved game version");
     const st = d.state;
@@ -229,7 +296,10 @@ export class Match {
     const s = this.state;
     this.aiAndMove(dt);
     // keep the other team parked by the bench
-    for (const a of this.agentsOf(1)) { a.vel = v2(); a.intent = { moveX: 0, moveZ: 0, sprint: false }; }
+    for (const a of this.agentsOf(1)) {
+      a.vel = v2();
+      a.intent = { moveX: 0, moveZ: 0, sprint: false };
+    }
     this.stepBallLive(dt);
     if (s.phase !== "live") s.phase = "live";
     // return the ball to the human after a shot settles
@@ -269,7 +339,10 @@ export class Match {
         if (this.lockPlayerId) ag = s.agents.find((a) => a.player.id === this.lockPlayerId && a.team === ti);
         if (!ag && this.lockPlayerId) continue; // career player is on the bench
         ag = ag ?? s.agents.find((a) => a.team === ti && a.human === null);
-        if (ag) { ag.human = h; taken.add(h); }
+        if (ag) {
+          ag.human = h;
+          taken.add(h);
+        }
       }
     }
     (s as MatchState & { lockHuman?: boolean }).lockHuman = !!this.lockPlayerId;
@@ -320,11 +393,22 @@ export class Match {
   }
 
   // ---------------------------------------------------------------- helpers
-  team(ti: TeamIdx) { return this.state.teams[ti]; }
-  agentsOf(ti: TeamIdx) { return this.state.agents.filter((a) => a.team === ti); }
-  handler(): Agent | null { const o = this.state.ball.owner; return o === null ? null : this.state.agents[o]; }
-  attackSide(ti: TeamIdx) { return this.state.teams[ti].attackSide; }
-  rim(ti: TeamIdx) { return rimPos(this.state.cfg.court, this.attackSide(ti)); }
+  team(ti: TeamIdx) {
+    return this.state.teams[ti];
+  }
+  agentsOf(ti: TeamIdx) {
+    return this.state.agents.filter((a) => a.team === ti);
+  }
+  handler(): Agent | null {
+    const o = this.state.ball.owner;
+    return o === null ? null : this.state.agents[o];
+  }
+  attackSide(ti: TeamIdx) {
+    return this.state.teams[ti].attackSide;
+  }
+  rim(ti: TeamIdx) {
+    return rimPos(this.state.cfg.court, this.attackSide(ti));
+  }
 
   /** Effective rating with fatigue, difficulty and heat applied. */
   r(a: Agent, k: RatingKey): number {
@@ -338,9 +422,15 @@ export class Match {
     return clamp(v, 20, 110);
   }
 
-  heightM(a: Agent) { return a.player.heightIn * 0.0254; }
-  reach(a: Agent) { return this.heightM(a) * 1.33 + (a.player.wingspanIn - a.player.heightIn) * 0.0254 * 0.5; }
-  verticalLeap(a: Agent) { return 0.42 + (this.r(a, "vertical") - 40) * 0.0055; }
+  heightM(a: Agent) {
+    return a.player.heightIn * 0.0254;
+  }
+  reach(a: Agent) {
+    return this.heightM(a) * 1.33 + (a.player.wingspanIn - a.player.heightIn) * 0.0254 * 0.5;
+  }
+  verticalLeap(a: Agent) {
+    return 0.42 + (this.r(a, "vertical") - 40) * 0.0055;
+  }
 
   emit(e: GameEvent) {
     this.state.events.push(e);
@@ -430,9 +520,16 @@ export class Match {
    */
   private watchdog(dt: number) {
     const s = this.state;
-    if (s.phase === "timeout" || s.phase === "halftime" || s.phase === "periodEnd" || s.phase === "pregame" || s.cfg.practice) { this.stallTime = 0; return; }
+    if (s.phase === "timeout" || s.phase === "halftime" || s.phase === "periodEnd" || s.phase === "pregame" || s.cfg.practice) {
+      this.stallTime = 0;
+      return;
+    }
     const key = `${s.phase}|${s.ball.mode}|${s.ball.owner}|${Math.floor(s.clock * 2)}|${Math.floor(s.shotClock * 2)}|${s.teams[0].score}|${s.teams[1].score}|${s.freeThrows?.attempt ?? ""}`;
-    if (key !== this.stallKey) { this.stallKey = key; this.stallTime = 0; return; }
+    if (key !== this.stallKey) {
+      this.stallKey = key;
+      this.stallTime = 0;
+      return;
+    }
     this.stallTime += dt;
     if (this.stallTime < 12) return;
     this.stallTime = 0;
@@ -440,8 +537,13 @@ export class Match {
     switch (s.phase) {
       case "freethrows": {
         const ft = s.freeThrows;
-        if (ft && s.ball.mode === "dead") { s.phaseTimer = 0; this.startFreeThrowStroke(s.agents[ft.shooter], false); }
-        else if (ft) { s.ball.mode = "dead"; s.phaseTimer = 0.2; }
+        if (ft && s.ball.mode === "dead") {
+          s.phaseTimer = 0;
+          this.startFreeThrowStroke(s.agents[ft.shooter], false);
+        } else if (ft) {
+          s.ball.mode = "dead";
+          s.phaseTimer = 0.2;
+        }
         break;
       }
       case "inbound": {
@@ -449,8 +551,13 @@ export class Match {
         if (ib) this.violation(ib.team, "fiveSeconds", ib.inbounder);
         break;
       }
-      case "deadball": s.phaseTimer = 0; break;
-      case "jumpball": this.setupJumpBall(); s.phaseTimer = 0.6; break;
+      case "deadball":
+        s.phaseTimer = 0;
+        break;
+      case "jumpball":
+        this.setupJumpBall();
+        s.phaseTimer = 0.6;
+        break;
       default: {
         // live ball nobody can reach (e.g. stuck): award it to the team that didn't touch it last
         if (s.ball.owner === null) {
@@ -485,10 +592,12 @@ export class Match {
     }
     if (s.ball.mode === "dead") {
       // toss: from the official's hands, peaking between the jumpers
-      s.ball.mode = "loose"; s.ball.looseCause = "jumpball";
+      s.ball.mode = "loose";
+      s.ball.looseCause = "jumpball";
       if (s.crew) {
         const h = refHand(s.crew.refs[0]);
-        const vy = Math.sqrt(2 * 9.81 * 1.25), tUp = vy / 9.81;
+        const vy = Math.sqrt(2 * 9.81 * 1.25),
+          tUp = vy / 9.81;
         b.pos = v3(h.x, 2.05, h.z);
         b.vel = v3(-h.x / tUp, vy, -h.z / tUp);
       } else {
@@ -528,7 +637,10 @@ export class Match {
   private stepLive(dt: number) {
     const s = this.state;
     const r = s.cfg.rules;
-    if (s.cfg.practice) { this.stepPractice(dt); return; }
+    if (s.cfg.practice) {
+      this.stepPractice(dt);
+      return;
+    }
     // clocks
     const ballInPlay = s.ball.mode !== "dead";
     if (ballInPlay) {
@@ -577,7 +689,10 @@ export class Match {
     const p = 0.011 * risk * (1.6 - dur / 100) * s.cfg.sliders.injuryRate;
     if (!this.rng.chance(p)) return;
     const table = INJURY_TABLE.filter((i) => fall || !i.fallOnly);
-    const inj = this.rng.weighted(table, table.map((i) => i.w));
+    const inj = this.rng.weighted(
+      table,
+      table.map((i) => i.w),
+    );
     const gamesOut = Math.round(this.rng.range(inj.min, inj.max) * (1.25 - dur / 200));
     s.injuries.push({ playerId: a.player.id, team: a.team, name: inj.name, gamesOut, period: s.period, clock: s.clock });
     this.emit({ t: "injury", player: a.idx, name: inj.name, games: gamesOut });
@@ -604,14 +719,14 @@ export class Match {
     const s = this.state;
     if (!s.cfg.fouls) return;
     const h = this.handler();
-    if (!h || s.ball.mode !== "dribble" && s.ball.mode !== "held") return;
+    if (!h || (s.ball.mode !== "dribble" && s.ball.mode !== "held")) return;
     const tune = LEAGUE_TUNING[s.cfg.league];
     for (const d of this.agentsOf(h.team === 0 ? 1 : 0)) {
       const dd = dist2(d.pos, h.pos);
       if (dd > 1.1) continue;
       const handsy = 1.25 - this.r(d, "iq") / 200 - this.r(d, "perimeterD") / 400;
       const rate = 0.0045 * handsy * (h.action.kind === "dribbleMove" || h.action.kind === "post" ? 2.2 : 1) * tune.fouls * s.cfg.sliders.foulFrequency;
-      if (this.rng.chance(rate * dt * 60 / 60)) {
+      if (this.rng.chance((rate * dt * 60) / 60)) {
         this.foul(d, h, "reach", false);
         return;
       }
@@ -650,7 +765,12 @@ export class Match {
 
   isBusy(a: Agent) {
     const k = a.action.kind;
-    return ["gather", "jumper", "layup", "dunk", "floater", "hook", "fadeaway", "pass", "block", "steal", "fall", "dribbleMove", "rebound", "freeThrow"].includes(k) && (a.action.dur === 0 || a.action.t < a.action.dur);
+    return (
+      ["gather", "jumper", "layup", "dunk", "floater", "hook", "fadeaway", "pass", "block", "steal", "fall", "dribbleMove", "rebound", "freeThrow"].includes(
+        k,
+      ) &&
+      (a.action.dur === 0 || a.action.t < a.action.dur)
+    );
   }
 
   private stepActions(dt: number) {
@@ -665,12 +785,18 @@ export class Match {
         a.y += a.vy * dt;
         if (a.y <= 0) {
           if (a.vy < -3.2) this.injuryRoll(a, 0.04, false);
-          a.y = 0; a.vy = 0;
+          a.y = 0;
+          a.vy = 0;
         }
       }
       this.handleIntentAct(a);
       switch (ac.kind) {
-        case "jumper": case "fadeaway": case "floater": case "hook": case "layup": case "dunk":
+        case "jumper":
+        case "fadeaway":
+        case "floater":
+        case "hook":
+        case "layup":
+        case "dunk":
           this.progressShot(a, dt);
           break;
         case "pass":
@@ -680,7 +806,13 @@ export class Match {
         case "dribbleMove":
           if (ac.t >= ac.dur) a.action = act("idle");
           break;
-        case "steal": case "block": case "rebound": case "fall": case "celebrate": case "dejected": case "catch":
+        case "steal":
+        case "block":
+        case "rebound":
+        case "fall":
+        case "celebrate":
+        case "dejected":
+        case "catch":
           if (ac.dur && ac.t >= ac.dur && a.y === 0) a.action = act("idle");
           break;
         default:
@@ -715,7 +847,11 @@ export class Match {
       }
       return;
     }
-    if (a.human !== null && this.isBusy(a) && (ia.type === "shoot" && ia.phase === "press" || ia.type === "pass" || ia.type === "dribbleMove" || ia.type === "steal" || ia.type === "block")) {
+    if (
+      a.human !== null &&
+      this.isBusy(a) &&
+      ((ia.type === "shoot" && ia.phase === "press") || ia.type === "pass" || ia.type === "dribbleMove" || ia.type === "steal" || ia.type === "block")
+    ) {
       const shooting = ["jumper", "fadeaway", "floater", "hook", "layup", "dunk"].includes(a.action.kind);
       if (!(ia.type === "pass" && shooting)) {
         a.buffered = { act: ia, until: s.time + 0.35 };
@@ -734,9 +870,11 @@ export class Match {
       case "shoot":
         if (ia.phase === "press" && hasBall && !this.isBusy(a)) {
           this.beginShot(a);
-          if (a.quickRelease) { a.quickRelease = false; a.action.data.pendingQuick = true; }
-        }
-        else if (ia.phase === "release" && ["jumper", "fadeaway", "floater", "hook", "layup"].includes(a.action.kind)) this.humanRelease(a);
+          if (a.quickRelease) {
+            a.quickRelease = false;
+            a.action.data.pendingQuick = true;
+          }
+        } else if (ia.phase === "release" && ["jumper", "fadeaway", "floater", "hook", "layup"].includes(a.action.kind)) this.humanRelease(a);
         break;
       case "pass":
         if (hasBall && !this.isBusy(a) && a.action.kind !== "dunk") this.startPass(a, ia.to, ia.kind);
@@ -775,7 +913,7 @@ export class Match {
   maxSpeed(a: Agent, sprint: boolean) {
     const s = this.state;
     const hasBall = s.ball.owner === a.idx;
-    const spd = hasBall ? (this.r(a, "speedWithBall") * 0.6 + this.r(a, "speed") * 0.4) : this.r(a, "speed");
+    const spd = hasBall ? this.r(a, "speedWithBall") * 0.6 + this.r(a, "speed") * 0.4 : this.r(a, "speed");
     let v = 3.3 + spd * 0.03;
     if (sprint) v *= 1.32 * (0.75 + 0.25 * a.stamina);
     if (a.action.kind === "post") v *= 0.45;
@@ -792,17 +930,21 @@ export class Match {
       const busyGround = ["gather", "pass", "freeThrow", "inbound", "jumpball"].includes(a.action.kind) && a.action.kind !== "inbound";
       const shooting = ["jumper", "fadeaway", "hook", "floater"].includes(a.action.kind);
       const moving = a.intent;
-      let tx = moving.moveX, tz = moving.moveZ;
+      let tx = moving.moveX,
+        tz = moving.moveZ;
       const mag = Math.hypot(tx, tz);
-      if (mag > 1) { tx /= mag; tz /= mag; }
+      if (mag > 1) {
+        tx /= mag;
+        tz /= mag;
+      }
       let maxV = this.maxSpeed(a, moving.sprint) * Math.min(1, mag);
       if (busyGround) maxV *= 0.15;
       if (shooting) maxV = 0;
       if (a.action.kind === "fall") maxV = 0;
       // the CPU pivots in place once its dribble is picked up (humans can travel)
       if (a.human === null && a.pickedUp && s.ball.owner === a.idx && !this.isBusy(a)) maxV = 0;
-      const desiredX = tx * (mag > 0.01 ? maxV / Math.max(Math.min(1, mag), 0.01) * Math.min(1, mag) : 0);
-      const desiredZ = tz * (mag > 0.01 ? maxV / Math.max(Math.min(1, mag), 0.01) * Math.min(1, mag) : 0);
+      const desiredX = tx * (mag > 0.01 ? (maxV / Math.max(Math.min(1, mag), 0.01)) * Math.min(1, mag) : 0);
+      const desiredZ = tz * (mag > 0.01 ? (maxV / Math.max(Math.min(1, mag), 0.01)) * Math.min(1, mag) : 0);
       const accel = (5.5 + this.r(a, "accel") * 0.085) * (a.y > 0 ? 0.08 : 1);
       // dribble move burst
       if (a.action.kind === "dribbleMove") {
@@ -814,11 +956,17 @@ export class Match {
       if (["layup", "dunk"].includes(a.action.kind) && a.y > 0) {
         // carry momentum through the air
       } else {
-        const dvx = desiredX - a.vel.x, dvz = desiredZ - a.vel.z;
+        const dvx = desiredX - a.vel.x,
+          dvz = desiredZ - a.vel.z;
         const dl = Math.hypot(dvx, dvz);
         const maxDv = accel * dt;
-        if (dl > maxDv) { a.vel.x += (dvx / dl) * maxDv; a.vel.z += (dvz / dl) * maxDv; }
-        else { a.vel.x = desiredX; a.vel.z = desiredZ; }
+        if (dl > maxDv) {
+          a.vel.x += (dvx / dl) * maxDv;
+          a.vel.z += (dvz / dl) * maxDv;
+        } else {
+          a.vel.x = desiredX;
+          a.vel.z = desiredZ;
+        }
       }
       // boundary assist: ball handlers plant before the line instead of drifting out
       if (s.ball.owner === a.idx && a.y === 0 && s.phase === "live" && (a.human === null || s.cfg.boundaryAssist)) {
@@ -853,23 +1001,31 @@ export class Match {
     const ags = s.agents;
     for (let i = 0; i < ags.length; i++) {
       for (let j = i + 1; j < ags.length; j++) {
-        const A = ags[i], B = ags[j];
-        const dx = B.pos.x - A.pos.x, dz = B.pos.z - A.pos.z;
+        const A = ags[i],
+          B = ags[j];
+        const dx = B.pos.x - A.pos.x,
+          dz = B.pos.z - A.pos.z;
         const d = Math.hypot(dx, dz);
         const minD = AGENT_RADIUS * 2;
         if (d < minD && d > 1e-5) {
-          const push = (minD - d);
+          const push = minD - d;
           const sa = this.r(A, "strength") + (A.action.kind === "screen" ? 40 : 0) + (A.action.kind === "post" ? 15 : 0);
           const sb = this.r(B, "strength") + (B.action.kind === "screen" ? 40 : 0) + (B.action.kind === "post" ? 15 : 0);
-          const wa = sb / (sa + sb), wb = sa / (sa + sb);
-          const nx = dx / d, nz = dz / d;
-          A.pos.x -= nx * push * wa; A.pos.z -= nz * push * wa;
-          B.pos.x += nx * push * wb; B.pos.z += nz * push * wb;
+          const wa = sb / (sa + sb),
+            wb = sa / (sa + sb);
+          const nx = dx / d,
+            nz = dz / d;
+          A.pos.x -= nx * push * wa;
+          A.pos.z -= nz * push * wa;
+          B.pos.x += nx * push * wb;
+          B.pos.z += nz * push * wb;
           // bleed velocity into each other (screens stop defenders)
           const rel = (B.vel.x - A.vel.x) * nx + (B.vel.z - A.vel.z) * nz;
           if (rel < 0) {
-            A.vel.x += nx * rel * wa; A.vel.z += nz * rel * wa;
-            B.vel.x -= nx * rel * wb; B.vel.z -= nz * rel * wb;
+            A.vel.x += nx * rel * wa;
+            A.vel.z += nz * rel * wa;
+            B.vel.x -= nx * rel * wb;
+            B.vel.z -= nz * rel * wb;
           }
           this.onContact(A, B);
         }
@@ -886,8 +1042,10 @@ export class Match {
     for (const side of [1, -1] as const) {
       // base footprint (see Hoop.tsx): x from board+0.9 to board+2.5 behind the board, |z| < 0.625
       const board = c.halfL - c.boardFromBaseline;
-      const x0 = side * (board + 0.85), x1 = side * (board + 2.55);
-      const minX = Math.min(x0, x1) - radius, maxX = Math.max(x0, x1) + radius;
+      const x0 = side * (board + 0.85),
+        x1 = side * (board + 2.55);
+      const minX = Math.min(x0, x1) - radius,
+        maxX = Math.max(x0, x1) + radius;
       const hz = 0.68 + radius;
       if (p.x > minX && p.x < maxX && Math.abs(p.z) < hz) {
         const dz = hz - Math.abs(p.z);
@@ -926,12 +1084,24 @@ export class Match {
     const durs: Record<DribbleMoveKind, number> = { crossover: 0.42, behindBack: 0.5, spin: 0.62, hesitation: 0.55, stepback: 0.55, betweenLegs: 0.45 };
     // burst direction: lateral relative to facing (dir = -1 left / +1 right), stepback = backwards
     const f = a.facing;
-    const fx = Math.sin(f), fz = Math.cos(f);
-    const lx = Math.cos(f) * dir, lz = -Math.sin(f) * dir;
-    let bx = lx, bz = lz;
-    if (move === "stepback") { bx = -fx; bz = -fz; }
-    if (move === "hesitation") { bx = fx * 0.6; bz = fz * 0.6; }
-    if (move === "spin") { bx = (lx + fx) * 0.7; bz = (lz + fz) * 0.7; }
+    const fx = Math.sin(f),
+      fz = Math.cos(f);
+    const lx = Math.cos(f) * dir,
+      lz = -Math.sin(f) * dir;
+    let bx = lx,
+      bz = lz;
+    if (move === "stepback") {
+      bx = -fx;
+      bz = -fz;
+    }
+    if (move === "hesitation") {
+      bx = fx * 0.6;
+      bz = fz * 0.6;
+    }
+    if (move === "spin") {
+      bx = (lx + fx) * 0.7;
+      bz = (lz + fz) * 0.7;
+    }
     this.startAction(a, "dribbleMove", durs[move], { move, dir, bx, bz });
     a.lastMove = { move, at: this.state.time + durs[move] };
     a.hand = (move === "crossover" || move === "behindBack" || move === "betweenLegs" ? -a.hand : a.hand) as 1 | -1;
@@ -943,7 +1113,10 @@ export class Match {
       if (this.rng.chance(p)) {
         def.stun = this.rng.range(0.55, 1.1);
         broke = def.idx;
-        if (this.rng.chance(0.18)) { this.startAction(def, "fall", 1.3); this.injuryRoll(def, 0.6, true); }
+        if (this.rng.chance(0.18)) {
+          this.startAction(def, "fall", 1.3);
+          this.injuryRoll(def, 0.6, true);
+        }
       }
     }
     // loose handle under pressure
@@ -956,7 +1129,10 @@ export class Match {
 
   pumpFake(a: Agent) {
     // faking out of a live dribble ends it: now it's pivot, pass or shoot
-    if (this.state.ball.mode === "dribble" && !a.pickedUp) { a.pickedUp = true; a.pivot = { ...a.pos }; }
+    if (this.state.ball.mode === "dribble" && !a.pickedUp) {
+      a.pickedUp = true;
+      a.pivot = { ...a.pos };
+    }
     this.startAction(a, "gather", 0.35, { fake: true });
     const def = this.nearestOpponent(a);
     if (def && dist2(def.pos, a.pos) < 2.2 && def.y === 0 && this.rng.chance(clamp(0.45 - this.r(def, "iq") * 0.004, 0.08, 0.4))) {
@@ -965,11 +1141,15 @@ export class Match {
   }
 
   nearestOpponent(a: Agent): Agent | null {
-    let best: Agent | null = null, bd = 1e9;
+    let best: Agent | null = null,
+      bd = 1e9;
     for (const o of this.state.agents) {
       if (o.team === a.team) continue;
       const d = dist2(o.pos, a.pos);
-      if (d < bd) { bd = d; best = o; }
+      if (d < bd) {
+        bd = d;
+        best = o;
+      }
     }
     return best;
   }
@@ -984,7 +1164,8 @@ export class Match {
     const dunker = this.r(a, "dunk");
     if (d < 2.4 && canDunk && dunker > 55 && ((speed > 3 && towardRim > 0.35) || (d < 1.1 && dunker > 70))) return "dunk";
     // runners and teardrops when a big is waiting at the rim
-    const rimHelp = this.contestOn(a) > 0.3 || this.agentsOf(a.team === 0 ? 1 : 0).some((o) => distToRim(s.cfg.court, this.attackSide(a.team), o.pos.x, o.pos.z) < 1.8);
+    const rimHelp =
+      this.contestOn(a) > 0.3 || this.agentsOf(a.team === 0 ? 1 : 0).some((o) => distToRim(s.cfg.court, this.attackSide(a.team), o.pos.x, o.pos.z) < 1.8);
     if (d > 2.2 && d < 4.6 && speed > 2 && towardRim > 0.3 && rimHelp && this.r(a, "closeShot") > 50) return "floater";
     if (d < 2.9 && (speed > 2.2 || d < 1.4)) return "layup";
     if (d < 3.4 && a.action.kind === "post") return "hook";
@@ -1000,7 +1181,8 @@ export class Match {
 
   towardRim(a: Agent) {
     const rim = this.rim(a.team);
-    const dx = rim.x - a.pos.x, dz = rim.z - a.pos.z;
+    const dx = rim.x - a.pos.x,
+      dz = rim.z - a.pos.z;
     const d = Math.hypot(dx, dz) || 1;
     const sp = Math.hypot(a.vel.x, a.vel.z) || 1;
     return (a.vel.x * dx + a.vel.z * dz) / (d * sp);
@@ -1013,7 +1195,10 @@ export class Match {
     // an extra step on the gather: weaker ball handlers (and younger leagues) get called more
     if ((kind === "layup" || kind === "dunk" || kind === "floater") && !forceKind && s.phase === "live" && Math.hypot(a.vel.x, a.vel.z) > 3) {
       const p = 0.02 * Math.max(0.2, 1.45 - this.r(a, "ballHandle") / 100) * LEAGUE_TUNING[s.cfg.league].travels;
-      if (this.rng.chance(p)) { this.violation(a.team, "travel", a.idx); return; }
+      if (this.rng.chance(p)) {
+        this.violation(a.team, "travel", a.idx);
+        return;
+      }
     }
     const lv = this.verticalLeap(a);
     // shooting rhythm: a deliberate gather; good shooters and catch-and-shoot looks are a touch quicker
@@ -1034,14 +1219,24 @@ export class Match {
     const apexT = tm.jumpAt + Math.sqrt(2 * 9.81 * Math.max(0.05, tm.jump)) / 9.81;
     const release = kind === "layup" ? apexT - 0.03 : kind === "dunk" ? apexT : apexT - 0.02;
     this.startAction(a, kind as ActionKind, tm.dur, {
-      jumpAt: tm.jumpAt, jumpH: tm.jump, release, released: false, ideal: release,
-      human: a.human !== null, pressT: s.time, releasedAt: -1, quality: NaN, fromX: a.pos.x, fromZ: a.pos.z,
+      jumpAt: tm.jumpAt,
+      jumpH: tm.jump,
+      release,
+      released: false,
+      ideal: release,
+      human: a.human !== null,
+      pressT: s.time,
+      releasedAt: -1,
+      quality: NaN,
+      fromX: a.pos.x,
+      fromZ: a.pos.z,
     });
     a.pickedUp = true;
     if (kind === "layup" || kind === "dunk") {
       // drive momentum toward the rim
       const rim = this.rim(a.team);
-      const dx = rim.x - a.pos.x, dz = rim.z - a.pos.z;
+      const dx = rim.x - a.pos.x,
+        dz = rim.z - a.pos.z;
       const d = Math.hypot(dx, dz) || 1;
       const v = Math.min(4.2, d / (release + 0.05));
       a.vel.x = (dx / d) * v * 0.9 + a.vel.x * 0.1;
@@ -1052,7 +1247,10 @@ export class Match {
       const rim = this.rim(a.team);
       const face = Math.atan2(rim.x - a.pos.x, rim.z - a.pos.z);
       a.action.data.faceTo = face;
-      if (kind === "fadeaway") { a.vel.x = -Math.sin(face) * 1.2; a.vel.z = -Math.cos(face) * 1.2; }
+      if (kind === "fadeaway") {
+        a.vel.x = -Math.sin(face) * 1.2;
+        a.vel.z = -Math.cos(face) * 1.2;
+      }
     }
     // defenders react
     for (const d of this.agentsOf(a.team === 0 ? 1 : 0)) d.intent.act = undefined;
@@ -1062,7 +1260,7 @@ export class Match {
   humanRelease(a: Agent) {
     a.quickRelease = false;
     const ac = a.action;
-    if (ac.data.released || ac.data.releasedAt as number >= 0) return;
+    if (ac.data.released || (ac.data.releasedAt as number) >= 0) return;
     ac.data.releasedAt = ac.t;
     const ideal = ac.data.ideal as number;
     // window scales with shooting skill: better shooters get bigger green windows
@@ -1078,14 +1276,20 @@ export class Match {
       d.jumped = true;
       this.startJump(a, d.jumpH as number);
     }
-    if (d.pendingQuick && ac.t >= (d.ideal as number) - 0.04) { d.pendingQuick = false; this.humanRelease(a); }
+    if (d.pendingQuick && ac.t >= (d.ideal as number) - 0.04) {
+      d.pendingQuick = false;
+      this.humanRelease(a);
+    }
     // human never released: auto-release late
     if (d.human && !d.released && (d.releasedAt as number) < 0 && ac.t >= (d.ideal as number) + 0.18 && s.cfg.shotMeter) {
       d.releasedAt = ac.t;
       d.quality = (ac.t - (d.ideal as number)) / 0.22;
       d.release = ac.t;
     }
-    if (s.ball.owner !== a.idx && !d.released) { a.action = act("idle"); return; }
+    if (s.ball.owner !== a.idx && !d.released) {
+      a.action = act("idle");
+      return;
+    }
     if (!d.released && ac.t >= (d.release as number) && !d.fake) {
       if (d.human && s.cfg.shotMeter && (d.releasedAt as number) < 0) return; // waiting for release
       d.released = true;
@@ -1127,13 +1331,27 @@ export class Match {
     const sl = s.cfg.sliders;
     let p: number;
     switch (kind) {
-      case "dunk": p = 0.9 + (this.r(a, "dunk") - 50) * 0.0022; break;
-      case "layup": p = 0.54 + (this.r(a, "layup") - 50) * 0.0058 - Math.max(0, dist - 1.2) * 0.03; break;
-      case "tip": p = 0.4 + (this.r(a, "closeShot") - 50) * 0.004; break;
-      case "floater": p = 0.44 + (this.r(a, "closeShot") - 50) * 0.0048; break;
-      case "hook": p = 0.36 + (this.r(a, "postControl") * 0.5 + this.r(a, "closeShot") * 0.5 - 50) * 0.005; break;
-      case "fadeaway": p = 0.3 + (this.r(a, "midRange") * 0.6 + this.r(a, "postControl") * 0.4 - 50) * 0.0045; break;
-      case "freeThrow": p = 0.33 + this.r(a, "freeThrow") * 0.0059; break;
+      case "dunk":
+        p = 0.9 + (this.r(a, "dunk") - 50) * 0.0022;
+        break;
+      case "layup":
+        p = 0.54 + (this.r(a, "layup") - 50) * 0.0058 - Math.max(0, dist - 1.2) * 0.03;
+        break;
+      case "tip":
+        p = 0.4 + (this.r(a, "closeShot") - 50) * 0.004;
+        break;
+      case "floater":
+        p = 0.44 + (this.r(a, "closeShot") - 50) * 0.0048;
+        break;
+      case "hook":
+        p = 0.36 + (this.r(a, "postControl") * 0.5 + this.r(a, "closeShot") * 0.5 - 50) * 0.005;
+        break;
+      case "fadeaway":
+        p = 0.3 + (this.r(a, "midRange") * 0.6 + this.r(a, "postControl") * 0.4 - 50) * 0.0045;
+        break;
+      case "freeThrow":
+        p = 0.33 + this.r(a, "freeThrow") * 0.0059;
+        break;
       default: {
         if (three) {
           const extra = Math.max(0, dist - s.cfg.court.threeRadius - 0.45);
@@ -1198,10 +1416,25 @@ export class Match {
     const blocker = this.checkBlock(a, kind, dist);
     const willMake = !blocker && this.rng.chance(pMake);
     const points = (three ? 3 : 2) as 2 | 3;
-    const assistFrom = s.ball.lastPasser !== null && s.ball.lastPasser !== a.idx && s.time - s.ball.lastPassTime < 4 && this.state.agents[s.ball.lastPasser].team === a.team ? s.ball.lastPasser : null;
+    const assistFrom =
+      s.ball.lastPasser !== null && s.ball.lastPasser !== a.idx && s.time - s.ball.lastPassTime < 4 && this.state.agents[s.ball.lastPasser].team === a.team
+        ? s.ball.lastPasser
+        : null;
     s.ball.shot = {
-      shooter: a.idx, team: a.team, kind, points, willMake, contest, quality, fouled, fromX: d.fromX as number, fromZ: d.fromZ as number,
-      blocked: !!blocker, assistFrom, releaseTime: s.time, side,
+      shooter: a.idx,
+      team: a.team,
+      kind,
+      points,
+      willMake,
+      contest,
+      quality,
+      fouled,
+      fromX: d.fromX as number,
+      fromZ: d.fromZ as number,
+      blocked: !!blocker,
+      assistFrom,
+      releaseTime: s.time,
+      side,
     };
     s.ball.mode = "shot";
     s.ball.owner = null;
@@ -1215,7 +1448,8 @@ export class Match {
 
     // release point (hands above head)
     const h = this.heightM(a);
-    const fx = Math.sin(a.facing), fz = Math.cos(a.facing);
+    const fx = Math.sin(a.facing),
+      fz = Math.cos(a.facing);
     const handH = kind === "dunk" ? c.rimHeight + 0.15 : a.y + h * (kind === "layup" ? 1.18 : 1.13);
     s.ball.phys.pos = v3(a.pos.x + fx * 0.25, handH, a.pos.z + fz * 0.25);
     if (blocker) {
@@ -1243,8 +1477,10 @@ export class Match {
       // miss: short/long/left/right off the rim
       const kindMiss = this.rng.weighted(["short", "long", "left", "right"], [3, 4, 2, 2]);
       const off = this.rng.range(0.19, 0.3);
-      const ax = Math.sin(towardShooter), az = Math.cos(towardShooter);
-      const px = Math.cos(towardShooter), pz = -Math.sin(towardShooter);
+      const ax = Math.sin(towardShooter),
+        az = Math.cos(towardShooter);
+      const px = Math.cos(towardShooter),
+        pz = -Math.sin(towardShooter);
       if (kindMiss === "short") target = v3(rim.x + ax * off, rim.y, rim.z + az * off);
       else if (kindMiss === "long") target = v3(rim.x - ax * off, rim.y, rim.z - az * off);
       else if (kindMiss === "left") target = v3(rim.x + px * off, rim.y, rim.z + pz * off);
@@ -1261,7 +1497,8 @@ export class Match {
     const s = this.state;
     const h = this.heightM(a);
     const ballH = a.y + h * 1.13;
-    let best: Agent | null = null, bp = 0;
+    let best: Agent | null = null,
+      bp = 0;
     for (const o of this.agentsOf(a.team === 0 ? 1 : 0)) {
       if (o.action.kind !== "block" && o.action.kind !== "rebound") continue;
       const d = dist2(o.pos, a.pos);
@@ -1269,9 +1506,17 @@ export class Match {
       const handH = o.y + this.reach(o);
       if (handH < ballH - 0.15) continue;
       // timing: best near the defender's apex
-      const p = 0.26 * (this.r(o, "block") / 80) * clamp(1.4 - d, 0.2, 1) * clamp(1 + (handH - ballH) * 0.6, 0.5, 1.4)
-        * (kind === "jumper" ? 0.55 : kind === "fadeaway" ? 0.35 : kind === "dunk" ? 0.5 : 1) * s.cfg.sliders.blockSuccess;
-      if (p > bp) { bp = p; best = o; }
+      const p =
+        0.26 *
+        (this.r(o, "block") / 80) *
+        clamp(1.4 - d, 0.2, 1) *
+        clamp(1 + (handH - ballH) * 0.6, 0.5, 1.4) *
+        (kind === "jumper" ? 0.55 : kind === "fadeaway" ? 0.35 : kind === "dunk" ? 0.5 : 1) *
+        s.cfg.sliders.blockSuccess;
+      if (p > bp) {
+        bp = p;
+        best = o;
+      }
     }
     void dist;
     if (best && this.rng.chance(bp)) return best;
@@ -1285,7 +1530,8 @@ export class Match {
     const away = Math.atan2(blocker.pos.x - shooter.pos.x, blocker.pos.z - shooter.pos.z);
     const sp = this.rng.range(3.5, 7.5);
     b.vel = v3(Math.sin(away) * sp + this.rng.range(-1.5, 1.5), this.rng.range(-1.5, 2.5), Math.cos(away) * sp + this.rng.range(-1.5, 1.5));
-    s.ball.mode = "loose"; s.ball.looseCause = "block";
+    s.ball.mode = "loose";
+    s.ball.looseCause = "block";
     s.ball.lastTouch = blocker.team;
     s.ball.lastToucher = blocker.idx;
     s.box[blocker.player.id].blk++;
@@ -1303,7 +1549,7 @@ export class Match {
     if (to === a.idx || !s.agents[to] || s.agents[to].team !== a.team) return;
     const release = fromAir ? 0.05 : kind === "lob" || kind === "alley" ? 0.22 : 0.14;
     this.startAction(a, "pass", release + 0.25, { to, kind, release, thrown: false });
-    if (fromAir) a.action.dur = Math.max(0.35, 0.05 + a.vy / 9.81 * 2);
+    if (fromAir) a.action.dur = Math.max(0.35, 0.05 + (a.vy / 9.81) * 2);
   }
 
   private releasePass(a: Agent) {
@@ -1337,7 +1583,8 @@ export class Match {
     }
     const dur = Math.max(0.18, dist2(a.pos, target) / speed) * (kind === "lob" || kind === "alley" ? 1.35 : 1);
     const b = s.ball.phys;
-    const fx = Math.sin(a.facing), fz = Math.cos(a.facing);
+    const fx = Math.sin(a.facing),
+      fz = Math.cos(a.facing);
     b.pos = v3(a.pos.x + fx * 0.35, a.y + this.heightM(a) * (kind === "lob" || kind === "alley" ? 1.05 : 0.72), a.pos.z + fz * 0.35);
     const catchH = kind === "alley" ? s.cfg.court.rimHeight + 0.35 : this.heightM(to) * 0.72;
     if (kind === "bounce") {
@@ -1385,7 +1632,12 @@ export class Match {
     const angleToD = Math.atan2(d.pos.x - h.pos.x, d.pos.z - h.pos.z);
     const handSide = Math.sin(angDiff(h.facing, angleToD)) * h.hand; // >0 ball exposed
     const exposed = clamp(0.5 + handSide * 0.5, 0.15, 1);
-    let p = (0.05 + (this.r(d, "steal") - this.r(h, "ballHandle")) * 0.0028) * exposed * (h.action.kind === "dribbleMove" ? 1.4 : 1) * s.cfg.sliders.stealSuccess * LEAGUE_TUNING[s.cfg.league].steals;
+    let p =
+      (0.05 + (this.r(d, "steal") - this.r(h, "ballHandle")) * 0.0028) *
+      exposed *
+      (h.action.kind === "dribbleMove" ? 1.4 : 1) *
+      s.cfg.sliders.stealSuccess *
+      LEAGUE_TUNING[s.cfg.league].steals;
     if (h.action.kind === "post") p *= 0.6;
     if (this.rng.chance(clamp(p, 0.005, 0.32))) {
       s.box[d.player.id].stl++;
@@ -1393,7 +1645,8 @@ export class Match {
       this.emit({ t: "steal", player: d.idx, from: h.idx });
       this.log(`${this.name(d)} steals the ball from ${this.name(h)}`, d.team);
       // ball pops loose toward the defender
-      s.ball.mode = "loose"; s.ball.looseCause = "steal";
+      s.ball.mode = "loose";
+      s.ball.looseCause = "steal";
       s.ball.owner = null;
       s.ball.lastTouch = d.team;
       s.ball.lastToucher = d.idx;
@@ -1401,7 +1654,12 @@ export class Match {
       b.pos = v3(h.pos.x, 0.8, h.pos.z);
       b.vel = v3(Math.sin(angleToD) * 2.5, 1.5, Math.cos(angleToD) * 2.5);
       this.changePossessionTracking(d.team);
-    } else if (s.cfg.fouls && this.rng.chance(clamp(0.1 - this.r(d, "iq") * 0.0006 + (dist < 0.7 ? 0.05 : 0), 0.02, 0.15) * s.cfg.sliders.foulFrequency * LEAGUE_TUNING[s.cfg.league].fouls)) {
+    } else if (
+      s.cfg.fouls &&
+      this.rng.chance(
+        clamp(0.1 - this.r(d, "iq") * 0.0006 + (dist < 0.7 ? 0.05 : 0), 0.02, 0.15) * s.cfg.sliders.foulFrequency * LEAGUE_TUNING[s.cfg.league].fouls,
+      )
+    ) {
       this.foul(d, h, "reach", false);
     } else {
       d.stun = Math.max(d.stun, 0.25); // off balance after a gamble
@@ -1432,8 +1690,17 @@ export class Match {
           const h = s.agents[b.owner];
           h.holdTime += dt;
           // traveling: after the dribble is picked up, one step off the pivot is all you get
-          if (h.pickedUp && h.pivot && h.y === 0 && s.phase === "live" && !["jumper", "layup", "dunk", "fadeaway", "floater", "hook", "pass"].includes(h.action.kind)) {
-            if (dist2(h.pos, h.pivot) > 0.95) { this.violation(h.team, "travel", h.idx); break; }
+          if (
+            h.pickedUp &&
+            h.pivot &&
+            h.y === 0 &&
+            s.phase === "live" &&
+            !["jumper", "layup", "dunk", "fadeaway", "floater", "hook", "pass"].includes(h.action.kind)
+          ) {
+            if (dist2(h.pos, h.pivot) > 0.95) {
+              this.violation(h.team, "travel", h.idx);
+              break;
+            }
           }
           // out of bounds with ball
           if (!inBounds(s.cfg.court, h.pos.x, h.pos.z, -0.05) && h.y === 0 && s.phase === "live") {
@@ -1467,11 +1734,16 @@ export class Match {
     const h = s.agents[b.owner];
     const moving = Math.hypot(h.vel.x, h.vel.z);
     const rate = 1.6 + moving * 0.28;
-    const dribbling = !h.pickedUp && !["gather", "jumper", "layup", "dunk", "fadeaway", "floater", "hook", "pass", "freeThrow", "inbound"].includes(h.action.kind) && h.action.kind !== "post";
+    const dribbling =
+      !h.pickedUp &&
+      !["gather", "jumper", "layup", "dunk", "fadeaway", "floater", "hook", "pass", "freeThrow", "inbound"].includes(h.action.kind) &&
+      h.action.kind !== "post";
     b.mode = dribbling ? "dribble" : "held";
     if (dribbling) b.dribblePhase = (b.dribblePhase + dt * rate) % 1;
-    const fx = Math.sin(h.facing), fz = Math.cos(h.facing);
-    const sx = Math.cos(h.facing) * h.hand, sz = -Math.sin(h.facing) * h.hand;
+    const fx = Math.sin(h.facing),
+      fz = Math.cos(h.facing);
+    const sx = Math.cos(h.facing) * h.hand,
+      sz = -Math.sin(h.facing) * h.hand;
     const hh = this.heightM(h);
     if (dribbling) {
       // ball height follows |sin| bounce between hand (~waist) and floor
@@ -1481,7 +1753,10 @@ export class Match {
       b.phys.pos = v3(h.pos.x + fx * 0.32 + sx * 0.3, y, h.pos.z + fz * 0.32 + sz * 0.3);
     } else {
       const k = h.action.kind;
-      const y = k === "jumper" || k === "fadeaway" ? h.y + hh * (0.95 + 0.2 * clamp(h.action.t / Math.max(0.01, h.action.data.release as number), 0, 1)) : h.y + hh * 0.62;
+      const y =
+        k === "jumper" || k === "fadeaway"
+          ? h.y + hh * (0.95 + 0.2 * clamp(h.action.t / Math.max(0.01, h.action.data.release as number), 0, 1))
+          : h.y + hh * 0.62;
       b.phys.pos = v3(h.pos.x + fx * 0.3, y, h.pos.z + fz * 0.3);
     }
     b.phys.vel = v3(h.vel.x, 0, h.vel.z);
@@ -1493,8 +1768,12 @@ export class Match {
     stepBall(s.ball.phys, s.cfg.court, dt, this.ballEvents);
     for (const e of this.ballEvents) {
       switch (e.type) {
-        case "rim": this.emit({ t: "rimHit", speed: e.speed }); break;
-        case "board": this.emit({ t: "boardHit", speed: e.speed }); break;
+        case "rim":
+          this.emit({ t: "rimHit", speed: e.speed });
+          break;
+        case "board":
+          this.emit({ t: "boardHit", speed: e.speed });
+          break;
         case "floor":
           this.emit({ t: "floorBounce", speed: e.speed });
           if (s.ball.mode === "shot") this.shotMissed();
@@ -1505,7 +1784,8 @@ export class Match {
         case "score":
           if (s.ball.mode === "shot" && s.ball.shot && e.side === s.ball.shot.side) this.shotMade();
           break;
-        default: break;
+        default:
+          break;
       }
     }
     // shot fell away without scoring (descending well below rim & away)
@@ -1555,8 +1835,13 @@ export class Match {
       if (d < 0.5 + this.r(o, "steal") * 0.003 && b.pos.y < reachH && b.pos.y > 0.25) {
         p.rolled.push(o.idx);
         const facing = Math.cos(angDiff(o.facing, Math.atan2(b.pos.x - o.pos.x, b.pos.z - o.pos.z)));
-        const pr = 0.12 * (this.r(o, "steal") / 80) * s.cfg.sliders.stealSuccess * (p.kind === "lob" ? 0.5 : p.kind === "bounce" ? 0.8 : 1)
-          * (0.4 + 0.6 * Math.max(0, facing)) * clamp(1.2 - d, 0.3, 1);
+        const pr =
+          0.12 *
+          (this.r(o, "steal") / 80) *
+          s.cfg.sliders.stealSuccess *
+          (p.kind === "lob" ? 0.5 : p.kind === "bounce" ? 0.8 : 1) *
+          (0.4 + 0.6 * Math.max(0, facing)) *
+          clamp(1.2 - d, 0.3, 1);
         if (this.rng.chance(pr)) {
           const passer = s.agents[p.from];
           if (this.rng.chance(0.6)) {
@@ -1569,7 +1854,8 @@ export class Match {
           } else {
             // deflection
             b.vel = v3(this.rng.range(-3, 3), this.rng.range(0, 2), this.rng.range(-3, 3));
-            s.ball.mode = "loose"; s.ball.looseCause = "deflect";
+            s.ball.mode = "loose";
+            s.ball.looseCause = "deflect";
             s.ball.lastTouch = o.team;
             s.ball.lastToucher = o.idx;
           }
@@ -1599,7 +1885,8 @@ export class Match {
         const fumble = clamp(0.03 - this.r(r, "hustle") * 0.0002, 0.002, 0.02);
         if (this.rng.chance(fumble)) {
           b.vel = v3(this.rng.range(-2, 2), 1, this.rng.range(-2, 2));
-          s.ball.mode = "loose"; s.ball.looseCause = "fumble";
+          s.ball.mode = "loose";
+          s.ball.looseCause = "fumble";
           s.ball.lastTouch = r.team;
           return;
         }
@@ -1613,7 +1900,8 @@ export class Match {
     }
     // pass sailed past
     if (p.t > p.dur + 0.6) {
-      s.ball.mode = "loose"; s.ball.looseCause = "sailed";
+      s.ball.mode = "loose";
+      s.ball.looseCause = "sailed";
     }
   }
 
@@ -1659,7 +1947,10 @@ export class Match {
       s.backcourtTimer = 0;
       if (s.cfg.rules.shotClock) s.shotClock = s.cfg.rules.shotClock;
       s.possessions[newOffense]++;
-      for (const a of s.agents) { a.laneTime = 0; a.pickedUp = false; }
+      for (const a of s.agents) {
+        a.laneTime = 0;
+        a.pickedUp = false;
+      }
       s.teams[0].playCall = null;
       s.teams[1].playCall = null;
       // defensive human controller moves to the nearest defender of the ball
@@ -1674,12 +1965,19 @@ export class Match {
     const h = s.agents.find((a) => a.team === team && a.human !== null);
     if (!h) return;
     const bp = s.ball.phys.pos;
-    let best = h, bd = 1e9;
+    let best = h,
+      bd = 1e9;
     for (const a of this.agentsOf(team)) {
       const d = Math.hypot(a.pos.x - bp.x, a.pos.z - bp.z);
-      if (d < bd) { bd = d; best = a; }
+      if (d < bd) {
+        bd = d;
+        best = a;
+      }
     }
-    if (best !== h) { best.human = h.human; h.human = null; }
+    if (best !== h) {
+      best.human = h.human;
+      h.human = null;
+    }
   }
 
   /** Manual switch to the defender closest to the ball (human pressed switch). */
@@ -1721,7 +2019,10 @@ export class Match {
     // probability someone secures it this tick
     const total = cands.reduce((x, c) => x + c.w, 0);
     if (!this.rng.chance(clamp(total * 0.12, 0.05, 0.9))) return;
-    const winner = this.rng.weighted(cands.map((c) => c.a), cands.map((c) => c.w));
+    const winner = this.rng.weighted(
+      cands.map((c) => c.a),
+      cands.map((c) => c.w),
+    );
     // loose-ball foul in a crowded scrum
     if (s.cfg.fouls && cands.length >= 2 && this.rng.chance(0.045 * s.cfg.sliders.foulFrequency * LEAGUE_TUNING[s.cfg.league].fouls)) {
       const other = cands.find((c) => c.a.team !== winner.team);
@@ -1736,7 +2037,8 @@ export class Match {
     if (wasShot) {
       const line = s.box[winner.player.id];
       const isOff = winner.team === shotTeam;
-      if (isOff) line.oreb++; else line.dreb++;
+      if (isOff) line.oreb++;
+      else line.dreb++;
       this.emit({ t: "rebound", player: winner.idx, offensive: isOff });
       if (this.rng.chance(0.35)) this.log(`${this.name(winner)} ${isOff ? "offensive" : "defensive"} rebound`, winner.team);
       if (isOff && s.cfg.rules.shotClock && s.ball.phys.touchedRim) {
@@ -1764,7 +2066,8 @@ export class Match {
 
   private looseBall(from: Agent, reason: TurnoverReason) {
     const s = this.state;
-    s.ball.mode = "loose"; s.ball.looseCause = "lostBall";
+    s.ball.mode = "loose";
+    s.ball.looseCause = "lostBall";
     s.ball.owner = null;
     s.ball.lastTouch = from.team;
     s.ball.lastToucher = from.idx;
@@ -1786,7 +2089,10 @@ export class Match {
     line.pts += pts;
     line.fgm++;
     line.fga++;
-    if (pts === 3) { line.tpm++; line.tpa++; }
+    if (pts === 3) {
+      line.tpm++;
+      line.tpa++;
+    }
     if (sh.kind === "dunk") line.dunks++;
     if (sh.assistFrom !== null) s.box[s.agents[sh.assistFrom].player.id].ast++;
     this.addPlusMinus(sh.team, pts);
@@ -1794,10 +2100,17 @@ export class Match {
     const dist = Math.hypot(sh.fromX - rimPos(s.cfg.court, sh.side).x, sh.fromZ);
     const swish = !s.ball.phys.touchedRim && !s.ball.phys.touchedBoard;
     this.emit({ t: "make", shooter: sh.shooter, kind: sh.kind, points: pts, assist: sh.assistFrom, andOne: sh.fouled, distance: dist, swish });
-    this.log(`${this.name(shooter)} ${describeShot(sh.kind, pts, dist)}${sh.assistFrom !== null ? ` (assist ${this.name(sh.assistFrom)})` : ""}${goaltend ? " (goaltending)" : ""}`, sh.team);
+    this.log(
+      `${this.name(shooter)} ${describeShot(sh.kind, pts, dist)}${sh.assistFrom !== null ? ` (assist ${this.name(sh.assistFrom)})` : ""}${goaltend ? " (goaltending)" : ""}`,
+      sh.team,
+    );
     this.trackRun(sh.team, pts);
     s.lastScoreTime = s.time;
-    if (s.cfg.practice) { s.ball.mode = "loose"; s.ball.shot = null; return; }
+    if (s.cfg.practice) {
+      s.ball.mode = "loose";
+      s.ball.shot = null;
+      return;
+    }
     s.ball.mode = "dead";
     if (sh.fouled) {
       s.ball.shot = null;
@@ -1828,7 +2141,8 @@ export class Match {
       return;
     }
     // airball / brick → live rebound
-    s.ball.mode = "loose"; s.ball.looseCause = "miss";
+    s.ball.mode = "loose";
+    s.ball.looseCause = "miss";
     s.ball.shot = null;
     if (s.cfg.rules.shotClock && !s.ball.phys.touchedRim) {
       // shot clock keeps running if the rim wasn't hit
@@ -1890,7 +2204,7 @@ export class Match {
 
   inBonus(foulingTeam: TeamIdx) {
     const s = this.state;
-    return s.teams[foulingTeam].fouls >= (s.cfg.rules.bonusFouls);
+    return s.teams[foulingTeam].fouls >= s.cfg.rules.bonusFouls;
   }
 
   private awardFreeThrows(shooter: Agent, total: number, oneAndOne: boolean) {
@@ -1924,10 +2238,19 @@ export class Match {
     const offense = this.agentsOf(ft.team).filter((a) => a !== shooter);
     // defense gets the lowest two spots, then alternate
     const order = [...defenders.slice(0, 2), ...offense.slice(0, 2), ...defenders.slice(2, 3)];
-    order.forEach((a, i) => { if (laneSpots[i]) { a.pos = { ...laneSpots[i] }; a.vel = v2(); a.facing = Math.atan2(rim.x - a.pos.x, -a.pos.z); } });
+    order.forEach((a, i) => {
+      if (laneSpots[i]) {
+        a.pos = { ...laneSpots[i] };
+        a.vel = v2();
+        a.facing = Math.atan2(rim.x - a.pos.x, -a.pos.z);
+      }
+    });
     // remaining players behind the arc / back for transition
     const rest = [...defenders.slice(3), ...offense.slice(2)];
-    rest.forEach((a, i) => { a.pos = v2(spot.x - side * (2.5 + i * 1.5), (i % 2 ? 1 : -1) * 3.5); a.vel = v2(); });
+    rest.forEach((a, i) => {
+      a.pos = v2(spot.x - side * (2.5 + i * 1.5), (i % 2 ? 1 : -1) * 3.5);
+      a.vel = v2();
+    });
     for (const a of s.agents) if (a !== shooter) a.action = act("idle");
     s.ball.phys.pos = v3(shooter.pos.x, 1.2, shooter.pos.z);
   }
@@ -1951,7 +2274,10 @@ export class Match {
       else this.startFreeThrowStroke(a, true);
     } else if (phase === "release") {
       if (d.started && (d.releasedAt as number) < 0) d.releasedAt = a.action.t;
-      else if (d.queuedPress) { d.queuedPress = false; d.queuedRelease = true; }
+      else if (d.queuedPress) {
+        d.queuedPress = false;
+        d.queuedRelease = true;
+      }
     }
   }
 
@@ -1963,7 +2289,8 @@ export class Match {
     if (s.ball.mode === "dead") {
       s.phaseTimer -= dt;
       const d = a.action.data;
-      const fx = Math.sin(a.facing), fz = Math.cos(a.facing);
+      const fx = Math.sin(a.facing),
+        fz = Math.cos(a.facing);
       const hh = this.heightM(a);
       // pre-shot routine: two bounces, then the ball comes up to the shooter's chest
       const routine = s.cfg.fast ? 0 : 1.3;
@@ -1973,7 +2300,10 @@ export class Match {
         const y = s.cfg.court.ballRadius + (hh * 0.5 - s.cfg.court.ballRadius) * Math.abs(Math.cos(ph * Math.PI));
         s.ball.phys.pos = v3(a.pos.x + fx * 0.35 + Math.cos(a.facing) * -0.12, y, a.pos.z + fz * 0.35 - Math.sin(a.facing) * -0.12);
         d.routine = true;
-        if (Math.abs(Math.cos(ph * Math.PI)) < 0.06 && !d[`b${Math.floor(ph)}`]) { d[`b${Math.floor(ph)}`] = true; this.emit({ t: "floorBounce", speed: 2 }); }
+        if (Math.abs(Math.cos(ph * Math.PI)) < 0.06 && !d[`b${Math.floor(ph)}`]) {
+          d[`b${Math.floor(ph)}`] = true;
+          this.emit({ t: "floorBounce", speed: 2 });
+        }
       } else {
         d.routine = false;
         const chest = v3(a.pos.x + fx * 0.3, hh * 0.62, a.pos.z + fz * 0.3);
@@ -1990,10 +2320,19 @@ export class Match {
             if (p < 0.35) s.ball.phys.pos = v3(h.x, h.y, h.z);
             else {
               const k = (p - 0.35) / 0.65;
-              if (k < 0.12 && ref.signal !== "handBall") { ref.signal = "handBall"; ref.signalT = 0; ref.signalDur = 0.45; ref.queue = []; }
-              const y = k < 0.5 ? h.y + (s.cfg.court.ballRadius - h.y) * (k / 0.5) : s.cfg.court.ballRadius + (chest.y - s.cfg.court.ballRadius) * ((k - 0.5) / 0.5);
+              if (k < 0.12 && ref.signal !== "handBall") {
+                ref.signal = "handBall";
+                ref.signalT = 0;
+                ref.signalDur = 0.45;
+                ref.queue = [];
+              }
+              const y =
+                k < 0.5 ? h.y + (s.cfg.court.ballRadius - h.y) * (k / 0.5) : s.cfg.court.ballRadius + (chest.y - s.cfg.court.ballRadius) * ((k - 0.5) / 0.5);
               s.ball.phys.pos = v3(h.x + (chest.x - h.x) * k, y, h.z + (chest.z - h.z) * k);
-              if (Math.abs(k - 0.5) < 0.03 && !d.handBounce) { d.handBounce = true; this.emit({ t: "floorBounce", speed: 2.5 }); }
+              if (Math.abs(k - 0.5) < 0.03 && !d.handBounce) {
+                d.handBounce = true;
+                this.emit({ t: "floorBounce", speed: 2.5 });
+              }
             }
           } else d.handP = 1;
         }
@@ -2004,9 +2343,15 @@ export class Match {
         d.waiting = ((d.waiting as number) ?? 0) + dt;
         if (!humanShooter && (d.waiting as number) > 0.35) this.startFreeThrowStroke(a, false);
         else if (humanShooter && d.queuedPress) this.startFreeThrowStroke(a, true);
-        else if (humanShooter && d.queuedRelease) { this.startFreeThrowStroke(a, true); a.action.data.releasedAt = Match.FT_IDEAL; }
+        else if (humanShooter && d.queuedRelease) {
+          this.startFreeThrowStroke(a, true);
+          a.action.data.releasedAt = Match.FT_IDEAL;
+        }
         // watchdog: never wait forever at the line
-        else if (humanShooter && (d.waiting as number) > 8) { this.startFreeThrowStroke(a, false); this.emit({ t: "crowd", level: 0.2 }); }
+        else if (humanShooter && (d.waiting as number) > 8) {
+          this.startFreeThrowStroke(a, false);
+          this.emit({ t: "crowd", level: 0.2 });
+        }
       }
       if (!a.action.data.started) return;
       // the ball rises with the shooting motion
@@ -2077,7 +2422,8 @@ export class Match {
       this.toDeadBall(ft.team === 0 ? 1 : 0, true);
     } else {
       // live rebound off the last miss
-      s.ball.mode = "loose"; s.ball.looseCause = "ftMiss";
+      s.ball.mode = "loose";
+      s.ball.looseCause = "ftMiss";
       s.ball.lastTouch = ft.team;
       s.ball.phys.touchedRim = true;
       s.phase = "live";
@@ -2123,14 +2469,34 @@ export class Match {
     if (s.phase !== "live" && s.phase !== "inbound") return;
     this.emit({ t: "violation", team, kind, player });
     const labels: Record<ViolationKind, string> = {
-      shotClock: "Shot clock violation", threeSeconds: "Three seconds", backcourt: "Backcourt violation",
-      tenSeconds: "10-second violation", eightSeconds: "8-second violation", fiveSeconds: "5-second violation",
-      outOfBounds: "Out of bounds", travel: "Traveling", goaltending: "Goaltending", laneViolation: "Lane violation",
+      shotClock: "Shot clock violation",
+      threeSeconds: "Three seconds",
+      backcourt: "Backcourt violation",
+      tenSeconds: "10-second violation",
+      eightSeconds: "8-second violation",
+      fiveSeconds: "5-second violation",
+      outOfBounds: "Out of bounds",
+      travel: "Traveling",
+      goaltending: "Goaltending",
+      laneViolation: "Lane violation",
     };
     this.log(`${labels[kind]}${player !== null ? ` on ${this.name(player)}` : ""}`, team);
     if (player !== null && kind !== "outOfBounds" && team === s.offense) {
       s.box[s.agents[player].player.id].tov++;
-      this.emit({ t: "turnover", player, reason: kind === "shotClock" ? "shotClock" : kind === "threeSeconds" ? "threeSeconds" : kind === "backcourt" ? "backcourt" : kind === "travel" ? "travel" : "tenSeconds" });
+      this.emit({
+        t: "turnover",
+        player,
+        reason:
+          kind === "shotClock"
+            ? "shotClock"
+            : kind === "threeSeconds"
+              ? "threeSeconds"
+              : kind === "backcourt"
+                ? "backcourt"
+                : kind === "travel"
+                  ? "travel"
+                  : "tenSeconds",
+      });
     }
     s.ball.mode = "dead";
     s.ball.owner = null;
@@ -2180,9 +2546,15 @@ export class Match {
 
   private afterDeadBall() {
     const s = this.state;
-    if (s.clock <= 0 && s.phase === "deadball") { this.endPeriod(); return; }
+    if (s.clock <= 0 && s.phase === "deadball") {
+      this.endPeriod();
+      return;
+    }
     const ib = s.inbound;
-    if (!ib) { s.phase = "live"; return; }
+    if (!ib) {
+      s.phase = "live";
+      return;
+    }
     // choose inbounder: closest non-PG (or the C after scores)
     const team = this.agentsOf(ib.team);
     const byDist = [...team].sort((a, b) => dist2(a.pos, ib.spot) - dist2(b.pos, ib.spot));
@@ -2204,7 +2576,10 @@ export class Match {
     // humans never control the inbounder (the AI inbounds); move control to another player
     if (inbounder.human !== null && !(s as MatchState & { lockHuman?: boolean }).lockHuman) {
       const other = team.find((a) => a !== inbounder && a.human === null && a.role === "ball") ?? team.find((a) => a !== inbounder && a.human === null);
-      if (other) { other.human = inbounder.human; inbounder.human = null; }
+      if (other) {
+        other.human = inbounder.human;
+        inbounder.human = null;
+      }
     }
   }
 
@@ -2214,7 +2589,12 @@ export class Match {
     ib.timer += dt;
     if (s.ball.mode === "pass" || s.ball.mode === "loose") {
       if (s.ball.mode === "pass") this.stepPass(dt);
-      else { this.stepBallFlight(dt); this.tryLooseRecovery(); if (s.ball.owner !== null) this.inboundComplete(); this.checkLooseOOB(); }
+      else {
+        this.stepBallFlight(dt);
+        this.tryLooseRecovery();
+        if (s.ball.owner !== null) this.inboundComplete();
+        this.checkLooseOOB();
+      }
       return;
     }
     if (ib.timer > 5 && s.ball.owner === ib.inbounder) {
@@ -2276,7 +2656,8 @@ export class Match {
     for (const a of s.agents) {
       const slot = this.agentsOf(a.team).indexOf(a);
       const h = huddleSpot(s.cfg.court, a.team, slot);
-      const dx = h.x - a.pos.x, dz = h.z - a.pos.z;
+      const dx = h.x - a.pos.x,
+        dz = h.z - a.pos.z;
       const d = Math.hypot(dx, dz);
       const v = d > 0.08 ? Math.min(2.6, d * 2) : 0;
       a.vel = v2(d > 0.001 ? (dx / d) * v : 0, d > 0.001 ? (dz / d) * v : 0);
@@ -2438,11 +2819,16 @@ export class Match {
     const R = c.threeRadius + 0.6;
     const at = (ang: number, r = R) => v2(rim.x - side * Math.cos(ang) * r, Math.sin(ang) * r);
     switch (role) {
-      case "ball": return at(0);
-      case "wing": return at(variant ? -1.0 : 1.0);
-      case "slot": return at(variant ? 1.0 : -1.0);
-      case "corner": return v2(rim.x - side * 0.6, (variant ? -1 : 1) * (c.halfW - 1.0));
-      case "post": return v2(rim.x - side * 2.2, (variant ? 1 : -1) * (c.laneWidth / 2 + 1.0));
+      case "ball":
+        return at(0);
+      case "wing":
+        return at(variant ? -1.0 : 1.0);
+      case "slot":
+        return at(variant ? 1.0 : -1.0);
+      case "corner":
+        return v2(rim.x - side * 0.6, (variant ? -1 : 1) * (c.halfW - 1.0));
+      case "post":
+        return v2(rim.x - side * 2.2, (variant ? 1 : -1) * (c.laneWidth / 2 + 1.0));
     }
   }
 
@@ -2471,10 +2857,27 @@ type ActionState = import("./state").ActionState;
 
 function newAgent(idx: number, team: TeamIdx, p: Player): Agent {
   return {
-    idx, team, player: p, pos: v2(), vel: v2(), facing: 0, y: 0, vy: 0, action: act("idle"),
-    stamina: (p as Player & { _stamina?: number })._stamina ?? 1, fatigueDebt: 0,
-    intent: { moveX: 0, moveZ: 0, sprint: false }, laneTime: 0, guarding: null, human: null, hand: 1,
-    holdTime: 0, pickedUp: false, stun: 0, heat: 0, role: "wing",
+    idx,
+    team,
+    player: p,
+    pos: v2(),
+    vel: v2(),
+    facing: 0,
+    y: 0,
+    vy: 0,
+    action: act("idle"),
+    stamina: (p as Player & { _stamina?: number })._stamina ?? 1,
+    fatigueDebt: 0,
+    intent: { moveX: 0, moveZ: 0, sprint: false },
+    laneTime: 0,
+    guarding: null,
+    human: null,
+    hand: 1,
+    holdTime: 0,
+    pickedUp: false,
+    stun: 0,
+    heat: 0,
+    role: "wing",
   };
 }
 
@@ -2488,7 +2891,8 @@ export function pickStarters(roster: Player[]): string[] {
   const avail = roster.filter((p) => !p.injury);
   const chosen: Player[] = [];
   for (const pos of ["PG", "SG", "SF", "PF", "C"] as const) {
-    const best = avail.filter((p) => !chosen.includes(p) && (p.pos === pos || p.secondaryPos === pos))
+    const best = avail
+      .filter((p) => !chosen.includes(p) && (p.pos === pos || p.secondaryPos === pos))
       .sort((a, b) => overall(b.ratings, pos) - overall(a.ratings, pos))[0];
     if (best) chosen.push(best);
   }
@@ -2505,7 +2909,10 @@ function defaultRotation(roster: Player[], starters: string[], cfg: MatchConfig)
   let benchRank = 0;
   for (const p of sorted) {
     if (starters.includes(p.id)) rot[p.id] = 33;
-    else { rot[p.id] = [22, 18, 14, 10, 6, 0, 0, 0, 0, 0][benchRank] ?? 0; benchRank++; }
+    else {
+      rot[p.id] = [22, 18, 14, 10, 6, 0, 0, 0, 0, 0][benchRank] ?? 0;
+      benchRank++;
+    }
   }
   void cfg;
   return rot;
@@ -2520,11 +2927,17 @@ function posFit(candidate: Player, out: Player) {
 function describeShot(kind: ShotKind, pts: number, dist: number) {
   const ft = Math.round(dist / 0.3048);
   switch (kind) {
-    case "dunk": return "throws it down";
-    case "layup": return "finishes at the rim";
-    case "floater": return `hits a ${ft}-foot floater`;
-    case "hook": return "drops in a hook shot";
-    case "fadeaway": return `buries a ${ft}-foot fadeaway`;
-    default: return pts === 3 ? `drains a ${ft}-foot three` : `hits a ${ft}-foot jumper`;
+    case "dunk":
+      return "throws it down";
+    case "layup":
+      return "finishes at the rim";
+    case "floater":
+      return `hits a ${ft}-foot floater`;
+    case "hook":
+      return "drops in a hook shot";
+    case "fadeaway":
+      return `buries a ${ft}-foot fadeaway`;
+    default:
+      return pts === 3 ? `drains a ${ft}-foot three` : `hits a ${ft}-foot jumper`;
   }
 }

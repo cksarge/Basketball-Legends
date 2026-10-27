@@ -17,7 +17,8 @@ export function CourtFloor({ court, home, quality, kind }: { court: CourtSpec; h
   const [tex, setTex] = useState<THREE.CanvasTexture | null>(null);
   const rough = useMemo(() => {
     const c = document.createElement("canvas");
-    c.width = 512; c.height = 256;
+    c.width = 512;
+    c.height = 256;
     drawRoughness(c);
     const t = new THREE.CanvasTexture(c);
     return t;
@@ -46,13 +47,24 @@ export function CourtFloor({ court, home, quality, kind }: { court: CourtSpec; h
       t.needsUpdate = true;
       setTex(t);
     });
-    return () => { cancelled = true; t.dispose(); };
+    return () => {
+      cancelled = true;
+      t.dispose();
+    };
   }, [court, home, quality, kind, w, h]);
   return (
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[w, h]} />
-        <meshStandardMaterial key={tex ? tex.uuid : "pending"} map={tex} roughnessMap={rough} roughness={0.5} metalness={0.02} envMapIntensity={0.7} color={tex ? "#ffffff" : "#c99055"} />
+        <meshStandardMaterial
+          key={tex ? tex.uuid : "pending"}
+          map={tex}
+          roughnessMap={rough}
+          roughness={0.5}
+          metalness={0.02}
+          envMapIntensity={0.7}
+          color={tex ? "#ffffff" : "#c99055"}
+        />
       </mesh>
       {/* surrounding floor */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.08, 0]} receiveShadow>
@@ -64,11 +76,20 @@ export function CourtFloor({ court, home, quality, kind }: { court: CourtSpec; h
 }
 
 // --------------------------------------------------------------- bowl
-interface SeatSpot { pos: THREE.Vector3; face: number; row: number }
+interface SeatSpot {
+  pos: THREE.Vector3;
+  face: number;
+  row: number;
+}
 
 function roundedRectPath(hx: number, hz: number, r: number, n = 18): THREE.Vector2[] {
   const pts: THREE.Vector2[] = [];
-  const corners = [[hx - r, hz - r, 0], [-(hx - r), hz - r, Math.PI / 2], [-(hx - r), -(hz - r), Math.PI], [hx - r, -(hz - r), Math.PI * 1.5]];
+  const corners = [
+    [hx - r, hz - r, 0],
+    [-(hx - r), hz - r, Math.PI / 2],
+    [-(hx - r), -(hz - r), Math.PI],
+    [hx - r, -(hz - r), Math.PI * 1.5],
+  ];
   for (const [cx, cz, a0] of corners) {
     for (let i = 0; i <= n; i++) {
       const a = a0 + (i / n) * (Math.PI / 2);
@@ -85,7 +106,10 @@ function buildBowl(opts: { hx: number; hz: number; radius: number; rows: number;
   const seats: SeatSpot[] = [];
   let vi = 0;
   const quad = (a: THREE.Vector3, b: THREE.Vector3, c: THREE.Vector3, d: THREE.Vector3, n: THREE.Vector3) => {
-    for (const v of [a, b, c, d]) { positions.push(v.x, v.y, v.z); normals.push(n.x, n.y, n.z); }
+    for (const v of [a, b, c, d]) {
+      positions.push(v.x, v.y, v.z);
+      normals.push(n.x, n.y, n.z);
+    }
     indices.push(vi, vi + 1, vi + 2, vi, vi + 2, vi + 3);
     vi += 4;
   };
@@ -96,19 +120,24 @@ function buildBowl(opts: { hx: number; hz: number; radius: number; rows: number;
     const y = opts.y0 + r * opts.rise;
     for (let i = 0; i < path.length; i++) {
       const j = (i + 1) % path.length;
-      const a = new THREE.Vector3(path[i].x, y, path[i].y), b = new THREE.Vector3(path[j].x, y, path[j].y);
-      const c = new THREE.Vector3(path2[j].x, y, path2[j].y), d = new THREE.Vector3(path2[i].x, y, path2[i].y);
+      const a = new THREE.Vector3(path[i].x, y, path[i].y),
+        b = new THREE.Vector3(path[j].x, y, path[j].y);
+      const c = new THREE.Vector3(path2[j].x, y, path2[j].y),
+        d = new THREE.Vector3(path2[i].x, y, path2[i].y);
       quad(a, b, c, d, new THREE.Vector3(0, 1, 0));
       // riser to the next row
-      const c2 = c.clone().setY(y + opts.rise), d2 = d.clone().setY(y + opts.rise);
+      const c2 = c.clone().setY(y + opts.rise),
+        d2 = d.clone().setY(y + opts.rise);
       const nrm = new THREE.Vector3(-(path2[i].x + path2[j].x), 0, -(path2[i].y + path2[j].y)).normalize();
       quad(d, c, c2, d2, nrm);
     }
     // seats along the row centre, every 0.55 m of arc length (gaps for aisles)
     const mid = path.map((pt, i) => new THREE.Vector2().lerpVectors(pt, path2[i], 0.55));
-    let carry = 0, count = 0;
+    let carry = 0,
+      count = 0;
     for (let i = 0; i < mid.length; i++) {
-      const pa = mid[i], pb = mid[(i + 1) % mid.length];
+      const pa = mid[i],
+        pb = mid[(i + 1) % mid.length];
       const segLen = pa.distanceTo(pb);
       let d = carry;
       while (d < segLen) {
@@ -129,14 +158,21 @@ function buildBowl(opts: { hx: number; hz: number; radius: number; rows: number;
 // --------------------------------------------------------------- crowd
 function crowdTexture() {
   const c = document.createElement("canvas");
-  c.width = 64; c.height = 128;
+  c.width = 64;
+  c.height = 128;
   const g = c.getContext("2d")!;
   g.fillStyle = "#fff";
   // head
-  g.beginPath(); g.arc(32, 26, 13, 0, Math.PI * 2); g.fill();
+  g.beginPath();
+  g.arc(32, 26, 13, 0, Math.PI * 2);
+  g.fill();
   // torso + shoulders
   g.beginPath();
-  g.moveTo(10, 128); g.lineTo(12, 62); g.quadraticCurveTo(14, 44, 32, 44); g.quadraticCurveTo(50, 44, 52, 62); g.lineTo(54, 128);
+  g.moveTo(10, 128);
+  g.lineTo(12, 62);
+  g.quadraticCurveTo(14, 44, 32, 44);
+  g.quadraticCurveTo(50, 44, 52, 62);
+  g.lineTo(54, 128);
   g.fill();
   const t = new THREE.CanvasTexture(c);
   return t;
@@ -186,8 +222,21 @@ function Crowd({ seats, home, away, density, exciteRef }: { seats: SeatSpot[]; h
     const g = new THREE.PlaneGeometry(0.5, 1.0);
     g.translate(0, 0.62, 0);
     const n = chosen.length;
-    const col = new Float32Array(n * 3), ph = new Float32Array(n), skin = new Float32Array(n);
-    const palette = [home.colors.primary, home.colors.primary, home.colors.secondary, "#ffffff", "#20252e", "#3a4a63", "#7a2b2b", away.colors.primary, "#d9d4c7", "#556b2f"];
+    const col = new Float32Array(n * 3),
+      ph = new Float32Array(n),
+      skin = new Float32Array(n);
+    const palette = [
+      home.colors.primary,
+      home.colors.primary,
+      home.colors.secondary,
+      "#ffffff",
+      "#20252e",
+      "#3a4a63",
+      "#7a2b2b",
+      away.colors.primary,
+      "#d9d4c7",
+      "#556b2f",
+    ];
     chosen.forEach((_, i) => {
       const c = new THREE.Color(palette[Math.floor(rng.next() * palette.length)]);
       c.offsetHSL(0, 0, rng.range(-0.08, 0.06));
@@ -200,10 +249,15 @@ function Crowd({ seats, home, away, density, exciteRef }: { seats: SeatSpot[]; h
     g.setAttribute("iSkin", new THREE.InstancedBufferAttribute(skin, 1));
     return g;
   }, [chosen, home, away, rng]);
-  const mat = useMemo(() => new THREE.ShaderMaterial({
-    vertexShader: crowdVertex, fragmentShader: crowdFragment,
-    uniforms: { uTime: { value: 0 }, uExcite: { value: 0.2 }, uMap: { value: crowdTexture() } },
-  }), []);
+  const mat = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        vertexShader: crowdVertex,
+        fragmentShader: crowdFragment,
+        uniforms: { uTime: { value: 0 }, uExcite: { value: 0.2 }, uMap: { value: crowdTexture() } },
+      }),
+    [],
+  );
   useEffect(() => {
     const m = mesh.current;
     if (!m) return;
@@ -227,10 +281,21 @@ function Crowd({ seats, home, away, density, exciteRef }: { seats: SeatSpot[]; h
 }
 
 // --------------------------------------------------------------- jumbotron
-function Jumbotron({ y, scoreRef, home, away }: { y: number; scoreRef: React.RefObject<{ h: number; a: number; period: string; clock: string }>; home: Team; away: Team }) {
+function Jumbotron({
+  y,
+  scoreRef,
+  home,
+  away,
+}: {
+  y: number;
+  scoreRef: React.RefObject<{ h: number; a: number; period: string; clock: string }>;
+  home: Team;
+  away: Team;
+}) {
   const { canvas, tex } = useMemo(() => {
     const canvas = document.createElement("canvas");
-    canvas.width = 512; canvas.height = 288;
+    canvas.width = 512;
+    canvas.height = 288;
     const tex = new THREE.CanvasTexture(canvas);
     tex.colorSpace = THREE.SRGBColorSpace;
     return { canvas, tex };
@@ -266,7 +331,9 @@ function Jumbotron({ y, scoreRef, home, away }: { y: number; scoreRef: React.Ref
   const frameMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#11151c", roughness: 0.5, metalness: 0.5 }), []);
   return (
     <group position={[0, y, 0]}>
-      <mesh material={frameMat}><boxGeometry args={[5.6, 3.4, 4.4]} /></mesh>
+      <mesh material={frameMat}>
+        <boxGeometry args={[5.6, 3.4, 4.4]} />
+      </mesh>
       {[0, 1, 2, 3].map((k) => {
         const ang = (k * Math.PI) / 2;
         const d = k % 2 === 0 ? 2.21 : 2.81;
@@ -278,7 +345,9 @@ function Jumbotron({ y, scoreRef, home, away }: { y: number; scoreRef: React.Ref
           </mesh>
         );
       })}
-      <mesh position={[0, -2.1, 0]} material={frameMat}><cylinderGeometry args={[2.2, 2.6, 0.8, 24]} /></mesh>
+      <mesh position={[0, -2.1, 0]} material={frameMat}>
+        <cylinderGeometry args={[2.2, 2.6, 0.8, 24]} />
+      </mesh>
     </group>
   );
 }
@@ -297,18 +366,47 @@ export interface ArenaProps {
 
 export function Arena({ court, home, away, kind, quality, crowdDensity, exciteRef, scoreRef }: ArenaProps) {
   const { w, h } = floorSize(court);
-  const lower = useMemo(() => buildBowl({ hx: w / 2 + 1.6, hz: h / 2 + 1.6, radius: 4, rows: kind === "gym" ? 9 : kind === "college" ? 16 : 20, depth: 0.82, rise: kind === "gym" ? 0.38 : 0.42, y0: 0.45 }), [w, h, kind]);
-  const upper = useMemo(() => (kind === "gym" ? null : buildBowl({ hx: w / 2 + 1.6 + 20 * 0.82 + 2.5, hz: h / 2 + 1.6 + 20 * 0.82 + 2.5, radius: 10, rows: kind === "pro" ? 18 : 10, depth: 0.85, rise: 0.6, y0: 12.5 })), [w, h, kind]);
+  const lower = useMemo(
+    () =>
+      buildBowl({
+        hx: w / 2 + 1.6,
+        hz: h / 2 + 1.6,
+        radius: 4,
+        rows: kind === "gym" ? 9 : kind === "college" ? 16 : 20,
+        depth: 0.82,
+        rise: kind === "gym" ? 0.38 : 0.42,
+        y0: 0.45,
+      }),
+    [w, h, kind],
+  );
+  const upper = useMemo(
+    () =>
+      kind === "gym"
+        ? null
+        : buildBowl({
+            hx: w / 2 + 1.6 + 20 * 0.82 + 2.5,
+            hz: h / 2 + 1.6 + 20 * 0.82 + 2.5,
+            radius: 10,
+            rows: kind === "pro" ? 18 : 10,
+            depth: 0.85,
+            rise: 0.6,
+            y0: 12.5,
+          }),
+    [w, h, kind],
+  );
   const seatMat = useMemo(() => new THREE.MeshStandardMaterial({ color: kind === "gym" ? "#9a7b55" : "#1d2430", roughness: 0.85 }), [kind]);
   const seats = useMemo(() => [...lower.seats, ...(upper?.seats ?? [])], [lower, upper]);
   const roofY = kind === "gym" ? 11 : 32;
   // Courtside boards: each panel is 4:1 on the canvas and drawn 3.6 m x 0.9 m on the
   // board, so the text keeps its proportions instead of being squeezed.
-  const BOARD_H = 0.9, PANEL_W = BOARD_H * 4;
+  const BOARD_H = 0.9,
+    PANEL_W = BOARD_H * 4;
   const ribbonTex = useMemo(() => {
     const c = document.createElement("canvas");
-    const pw = 1024, ph = 256;
-    c.width = pw * 2; c.height = ph;
+    const pw = 1024,
+      ph = 256;
+    c.width = pw * 2;
+    c.height = ph;
     const g = c.getContext("2d")!;
     const panels: [string, string, string][] = [
       ["#0b0f15", home.colors.secondary === "#ffffff" ? home.colors.primary : home.colors.secondary, "BASKETBALL LEGENDS"],
@@ -323,7 +421,10 @@ export function Arena({ court, home, away, kind, quality, crowdDensity, exciteRe
       g.textBaseline = "middle";
       let size = 150;
       g.font = `900 ${size}px ${displayFont()}`;
-      while (g.measureText(text).width > pw * 0.88 && size > 60) { size -= 6; g.font = `900 ${size}px ${displayFont()}`; }
+      while (g.measureText(text).width > pw * 0.88 && size > 60) {
+        size -= 6;
+        g.font = `900 ${size}px ${displayFont()}`;
+      }
       g.fillText(text, x0 + pw / 2, ph / 2 + size * 0.04);
       // thin LED-style top and bottom rails
       g.fillStyle = "rgba(255,255,255,0.12)";
@@ -370,7 +471,10 @@ function BenchArea({ court, home, away }: { court: CourtSpec; home: Team; away: 
     // one chair = metal frame + cushion + back pad, instanced 2 x BENCH_SEATS
     const leg = (x: number, z: number) => new THREE.BoxGeometry(0.035, 0.42, 0.035).translate(x, 0.21, z);
     const frame = mergeGeometries([
-      leg(-0.2, -0.19), leg(0.2, -0.19), leg(-0.2, 0.19), leg(0.2, 0.19),
+      leg(-0.2, -0.19),
+      leg(0.2, -0.19),
+      leg(-0.2, 0.19),
+      leg(0.2, 0.19),
       new THREE.BoxGeometry(0.035, 0.6, 0.035).translate(-0.2, 0.72, -0.21),
       new THREE.BoxGeometry(0.035, 0.6, 0.035).translate(0.2, 0.72, -0.21),
       new THREE.BoxGeometry(0.46, 0.04, 0.44).translate(0, 0.42, 0),
@@ -403,14 +507,27 @@ function BenchArea({ court, home, away }: { court: CourtSpec; home: Team; away: 
       backMesh.setColorAt(k, new THREE.Color("#1b1d21"));
       k++;
     }
-    for (const im of [frameMesh, cushionMesh, backMesh]) { im.castShadow = true; im.receiveShadow = true; im.instanceMatrix.needsUpdate = true; }
+    for (const im of [frameMesh, cushionMesh, backMesh]) {
+      im.castShadow = true;
+      im.receiveShadow = true;
+      im.instanceMatrix.needsUpdate = true;
+    }
     return [frameMesh, cushionMesh, backMesh];
   }, [court, home, away]);
-  useEffect(() => () => { for (const c of chairs) { c.geometry.dispose(); (c.material as THREE.Material).dispose(); } }, [chairs]);
+  useEffect(
+    () => () => {
+      for (const c of chairs) {
+        c.geometry.dispose();
+        (c.material as THREE.Material).dispose();
+      }
+    },
+    [chairs],
+  );
 
   const tableTex = useMemo(() => {
     const c = document.createElement("canvas");
-    c.width = 2048; c.height = 256;
+    c.width = 2048;
+    c.height = 256;
     const g = c.getContext("2d")!;
     g.fillStyle = "#07090d";
     g.fillRect(0, 0, 2048, 256);
@@ -428,7 +545,10 @@ function BenchArea({ court, home, away }: { court: CourtSpec; home: Team; away: 
       g.textBaseline = "middle";
       let size = 120;
       g.font = `900 ${size}px ${displayFont()}`;
-      while (g.measureText(text).width > third * 0.86 && size > 40) { size -= 4; g.font = `900 ${size}px ${displayFont()}`; }
+      while (g.measureText(text).width > third * 0.86 && size > 40) {
+        size -= 4;
+        g.font = `900 ${size}px ${displayFont()}`;
+      }
       g.fillText(text, i * third + third / 2, 132);
     });
     const t = new THREE.CanvasTexture(c);
@@ -440,7 +560,9 @@ function BenchArea({ court, home, away }: { court: CourtSpec; home: Team; away: 
   const tableW = Math.min(7, court.halfL * 0.75);
   return (
     <group>
-      {chairs.map((c, i) => <primitive key={i} object={c} />)}
+      {chairs.map((c, i) => (
+        <primitive key={i} object={c} />
+      ))}
       {/* scorer's table: LED front, dark top, a row of monitors */}
       <mesh position={[0, 0.39, tableZ]} castShadow receiveShadow>
         <boxGeometry args={[tableW, 0.78, 0.7]} />
@@ -490,7 +612,8 @@ function GymDressing({ w, h, home }: { w: number; h: number; home: Team }) {
   }, [home.id, w]);
   const tex = (txt: string) => {
     const c = document.createElement("canvas");
-    c.width = 128; c.height = 256;
+    c.width = 128;
+    c.height = 256;
     const g = c.getContext("2d")!;
     g.fillStyle = home.colors.primary;
     g.fillRect(0, 0, 128, 256);

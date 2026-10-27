@@ -9,7 +9,13 @@ const teams = (pro as { teams: Team[] }).teams;
 
 function humanMatch(seed = 4) {
   const [h, a] = [teams[2], teams[9]];
-  return new Match({ league: "pro", home: { team: h, roster: generateRoster(h), human: true, humans: [0] }, away: { team: a, roster: generateRoster(a) }, seed, shotMeter: true });
+  return new Match({
+    league: "pro",
+    home: { team: h, roster: generateRoster(h), human: true, humans: [0] },
+    away: { team: a, roster: generateRoster(a) },
+    seed,
+    shotMeter: true,
+  });
 }
 
 /** Put the human's agent on the line for two shots. */
@@ -35,7 +41,10 @@ describe("human free throws", () => {
       const it = idle();
       // press shortly after each attempt is set up (during the lineup), release ~0.7 s later
       const t = i % 240;
-      if (t === 20) { it.act = { type: "shoot", phase: "press" }; pressed++; }
+      if (t === 20) {
+        it.act = { type: "shoot", phase: "press" };
+        pressed++;
+      }
       if (t === 62) it.act = { type: "shoot", phase: "release" };
       m.step(1 / 60, [it]);
     }
@@ -58,7 +67,14 @@ describe("watchdog", () => {
   it("full AI games never stall", () => {
     for (const seed of [1, 2, 3]) {
       const [h, a] = [teams[seed], teams[seed + 10]];
-      const m = new Match({ league: "pro", home: { team: h, roster: generateRoster(h) }, away: { team: a, roster: generateRoster(a) }, seed, fast: true, quarterMinutes: 4 });
+      const m = new Match({
+        league: "pro",
+        home: { team: h, roster: generateRoster(h) },
+        away: { team: a, roster: generateRoster(a) },
+        seed,
+        fast: true,
+        quarterMinutes: 4,
+      });
       for (let i = 0; i < 60 * 60 * 60 && m.state.phase !== "final"; i++) m.step(1 / 60);
       expect(m.state.phase).toBe("final");
       expect(m.watchdogTrips).toBe(0);

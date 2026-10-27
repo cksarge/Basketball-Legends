@@ -24,9 +24,33 @@ export interface Bindings {
 }
 
 const ACTIONS: ActionName[] = [
-  "up", "down", "left", "right", "sprint", "shoot", "pass", "lob", "bounce", "iconPass", "dribbleLeft", "dribbleRight",
-  "dribbleBack", "dribbleSpin", "pumpFake", "post", "callScreen", "steal", "block", "switchPlayer", "intenseD",
-  "takeCharge", "timeout", "pause", "camera", "replay", "callForBall",
+  "up",
+  "down",
+  "left",
+  "right",
+  "sprint",
+  "shoot",
+  "pass",
+  "lob",
+  "bounce",
+  "iconPass",
+  "dribbleLeft",
+  "dribbleRight",
+  "dribbleBack",
+  "dribbleSpin",
+  "pumpFake",
+  "post",
+  "callScreen",
+  "steal",
+  "block",
+  "switchPlayer",
+  "intenseD",
+  "takeCharge",
+  "timeout",
+  "pause",
+  "camera",
+  "replay",
+  "callForBall",
 ];
 
 export class InputManager {
@@ -65,8 +89,12 @@ export class InputManager {
   };
   /** Keys pressed since the last keyboard read: a tap shorter than a frame still counts once. */
   private tapped = new Set<string>();
-  private onUp = (e: KeyboardEvent) => { this.keys.delete(e.code); };
-  private onBlur = () => { this.keys.clear(); };
+  private onUp = (e: KeyboardEvent) => {
+    this.keys.delete(e.code);
+  };
+  private onBlur = () => {
+    this.keys.clear();
+  };
 
   /** Gamepads currently connected (indexes). */
   connectedPads(): number[] {
@@ -77,32 +105,40 @@ export class InputManager {
   /** Read one frame for a device. */
   read(device: DeviceId): ControllerFrame {
     const held = new Set<ActionName>();
-    let mx = 0, my = 0, stickMove: ControllerFrame["stickMove"] = null;
+    let mx = 0,
+      my = 0,
+      stickMove: ControllerFrame["stickMove"] = null;
     if (device === "keyboard") {
       for (const a of ACTIONS) if (this.bindings.keys[a]?.some((k) => this.keys.has(k) || this.tapped.has(k))) held.add(a);
       this.tapped.clear();
       mx = (held.has("right") ? 1 : 0) - (held.has("left") ? 1 : 0);
       my = (held.has("up") ? 1 : 0) - (held.has("down") ? 1 : 0);
       const l = Math.hypot(mx, my);
-      if (l > 1) { mx /= l; my /= l; }
+      if (l > 1) {
+        mx /= l;
+        my /= l;
+      }
     } else {
       const idx = Number(device.slice(3));
       const pad = navigator.getGamepads?.()[idx];
       if (pad && pad.connected) {
         for (const a of ACTIONS) if (this.bindings.pad[a]?.some((b) => pad.buttons[b]?.pressed || (pad.buttons[b]?.value ?? 0) > 0.5)) held.add(a);
         const dz = this.bindings.deadzone;
-        const ax = pad.axes[0] ?? 0, ay = pad.axes[1] ?? 0;
+        const ax = pad.axes[0] ?? 0,
+          ay = pad.axes[1] ?? 0;
         const m = Math.hypot(ax, ay);
         if (m > dz) {
           const k = Math.min(1, (m - dz) / (1 - dz)) / m;
-          mx = ax * k; my = -ay * k;
+          mx = ax * k;
+          my = -ay * k;
         }
         if (held.has("up")) my = 1;
         if (held.has("down")) my = -1;
         if (held.has("left")) mx = -1;
         if (held.has("right")) mx = 1;
         // right stick gestures -> dribble moves
-        const rx = pad.axes[2] ?? 0, ry = pad.axes[3] ?? 0;
+        const rx = pad.axes[2] ?? 0,
+          ry = pad.axes[3] ?? 0;
         let g: string | null = null;
         if (Math.hypot(rx, ry) > 0.7) g = Math.abs(rx) > Math.abs(ry) ? (rx > 0 ? "right" : "left") : ry > 0 ? "back" : "spin";
         const prevG = this.stickPrev.get(device) ?? null;
@@ -120,7 +156,13 @@ export class InputManager {
       this.numberPressed = null;
     } else if (device !== "keyboard" && held.has("iconPass")) {
       // face buttons pick teammates while icon pass is held: A,B,X,Y,RB
-      const map: [ActionName, number][] = [["pass", 0], ["bounce", 1], ["shoot", 2], ["lob", 3], ["callScreen", 4]];
+      const map: [ActionName, number][] = [
+        ["pass", 0],
+        ["bounce", 1],
+        ["shoot", 2],
+        ["lob", 3],
+        ["callScreen", 4],
+      ];
       for (const [a, slot] of map) if (pressed.has(a)) iconTarget = slot;
     }
     return { moveX: mx, moveY: my, sprint: held.has("sprint"), held, pressed, released, iconTarget, stickMove, device };
@@ -128,7 +170,8 @@ export class InputManager {
 
   rumble(device: DeviceId, strong: number, weak: number, ms: number) {
     if (device === "keyboard") return;
-    const pad = navigator.getGamepads?.()[Number(device.slice(3))] as (Gamepad & { vibrationActuator?: { playEffect: (t: string, p: object) => Promise<unknown> } }) | null;
+    const pad = navigator.getGamepads?.()[Number(device.slice(3))] as
+      (Gamepad & { vibrationActuator?: { playEffect: (t: string, p: object) => Promise<unknown> } }) | null;
     pad?.vibrationActuator?.playEffect("dual-rumble", { duration: ms, strongMagnitude: strong, weakMagnitude: weak }).catch(() => undefined);
   }
 }

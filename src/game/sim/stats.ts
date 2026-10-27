@@ -3,18 +3,41 @@
 export interface StatLine {
   min: number; // seconds played
   pts: number;
-  fgm: number; fga: number;
-  tpm: number; tpa: number;
-  ftm: number; fta: number;
-  oreb: number; dreb: number;
-  ast: number; stl: number; blk: number; tov: number; pf: number;
+  fgm: number;
+  fga: number;
+  tpm: number;
+  tpa: number;
+  ftm: number;
+  fta: number;
+  oreb: number;
+  dreb: number;
+  ast: number;
+  stl: number;
+  blk: number;
+  tov: number;
+  pf: number;
   plusMinus: number;
   dunks: number;
 }
 
 export const emptyLine = (): StatLine => ({
-  min: 0, pts: 0, fgm: 0, fga: 0, tpm: 0, tpa: 0, ftm: 0, fta: 0, oreb: 0, dreb: 0,
-  ast: 0, stl: 0, blk: 0, tov: 0, pf: 0, plusMinus: 0, dunks: 0,
+  min: 0,
+  pts: 0,
+  fgm: 0,
+  fga: 0,
+  tpm: 0,
+  tpa: 0,
+  ftm: 0,
+  fta: 0,
+  oreb: 0,
+  dreb: 0,
+  ast: 0,
+  stl: 0,
+  blk: 0,
+  tov: 0,
+  pf: 0,
+  plusMinus: 0,
+  dunks: 0,
 });
 
 export type BoxScore = Record<string, StatLine>; // player id -> line

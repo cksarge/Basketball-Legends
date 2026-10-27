@@ -5,10 +5,14 @@ import { generateRoster } from "@/engine/player";
 import type { Team, TeamTactics } from "@/engine/types";
 
 const teams = (pro as { teams: Team[] }).teams;
-const make = (tactics?: Partial<TeamTactics>, seed = 5) => new Match({
-  league: "pro", home: { team: teams[1], roster: generateRoster(teams[1]), human: true, humans: [0], tactics },
-  away: { team: teams[8], roster: generateRoster(teams[8]) }, seed, quarterMinutes: 4,
-});
+const make = (tactics?: Partial<TeamTactics>, seed = 5) =>
+  new Match({
+    league: "pro",
+    home: { team: teams[1], roster: generateRoster(teams[1]), human: true, humans: [0], tactics },
+    away: { team: teams[8], roster: generateRoster(teams[8]) },
+    seed,
+    quarterMinutes: 4,
+  });
 
 function toLiveWithBall(m: Match) {
   for (let i = 0; i < 60 * 30 && !(m.state.phase === "live" && m.state.ball.mode === "dribble" && m.handler()?.human === 0); i++) m.step(1 / 60);
@@ -46,9 +50,19 @@ describe("traveling", () => {
 describe("defensive tactics", () => {
   it("every scheme plays complete games", () => {
     for (const defense of ["man", "zone23", "zone32", "press"] as const) {
-      const m = new Match({ league: "pro", home: { team: teams[2], roster: generateRoster(teams[2]), tactics: { defense } }, away: { team: teams[4], roster: generateRoster(teams[4]) }, fast: true, seed: 2, quarterMinutes: 4 });
+      const m = new Match({
+        league: "pro",
+        home: { team: teams[2], roster: generateRoster(teams[2]), tactics: { defense } },
+        away: { team: teams[4], roster: generateRoster(teams[4]) },
+        fast: true,
+        seed: 2,
+        quarterMinutes: 4,
+      });
       let n = 0;
-      while (m.state.phase !== "final" && n < 60 * 60 * 60) { m.step(1 / 60); n++; }
+      while (m.state.phase !== "final" && n < 60 * 60 * 60) {
+        m.step(1 / 60);
+        n++;
+      }
       expect(m.state.phase).toBe("final");
       expect(m.watchdogTrips).toBeLessThan(3);
     }

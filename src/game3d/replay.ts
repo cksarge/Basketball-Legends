@@ -24,7 +24,14 @@ export interface AgentView {
 export interface ViewFrame {
   time: number;
   agents: AgentView[];
-  ball: { pos: { x: number; y: number; z: number }; vel: { x: number; y: number; z: number }; mode: BallMode; owner: number | null; dribblePhase: number; passTo?: number | null };
+  ball: {
+    pos: { x: number; y: number; z: number };
+    vel: { x: number; y: number; z: number };
+    mode: BallMode;
+    owner: number | null;
+    dribblePhase: number;
+    passTo?: number | null;
+  };
   offense: TeamIdx;
   phase: string;
   /** Rim x for each team's attacking basket at this moment. */
@@ -50,8 +57,11 @@ export interface Clip {
 
 export type ReplayCam = "broadcast" | "baseline" | "orbit" | "courtside" | "rim";
 export const REPLAY_CAMS: { id: ReplayCam; label: string }[] = [
-  { id: "orbit", label: "Orbit" }, { id: "baseline", label: "Baseline" }, { id: "rim", label: "Above the rim" },
-  { id: "courtside", label: "Courtside" }, { id: "broadcast", label: "Broadcast" },
+  { id: "orbit", label: "Orbit" },
+  { id: "baseline", label: "Baseline" },
+  { id: "rim", label: "Above the rim" },
+  { id: "courtside", label: "Courtside" },
+  { id: "broadcast", label: "Broadcast" },
 ];
 
 export interface ReplayPlayback {
@@ -77,7 +87,14 @@ export function liveView(match: Match): ViewFrame {
   return {
     time: s.time,
     agents: s.agents,
-    ball: { pos: s.ball.phys.pos, vel: s.ball.phys.vel, mode: s.ball.mode, owner: s.ball.owner, dribblePhase: s.ball.dribblePhase, passTo: s.ball.pass?.to ?? null },
+    ball: {
+      pos: s.ball.phys.pos,
+      vel: s.ball.phys.vel,
+      mode: s.ball.mode,
+      owner: s.ball.owner,
+      dribblePhase: s.ball.dribblePhase,
+      passTo: s.ball.pass?.to ?? null,
+    },
     offense: s.offense,
     phase: s.phase,
     rimX: [match.rim(0).x, match.rim(1).x],
@@ -90,12 +107,25 @@ function snapshot(match: Match): ViewFrame {
   return {
     time: s.time,
     agents: s.agents.map((a) => ({
-      idx: a.idx, team: a.team, player: a.player, pos: { x: a.pos.x, z: a.pos.z }, vel: { x: a.vel.x, z: a.vel.z },
-      facing: a.facing, y: a.y, action: { kind: a.action.kind, t: a.action.t, dur: a.action.dur, data: { ...a.action.data } },
-      hand: a.hand, stamina: a.stamina, human: a.human,
+      idx: a.idx,
+      team: a.team,
+      player: a.player,
+      pos: { x: a.pos.x, z: a.pos.z },
+      vel: { x: a.vel.x, z: a.vel.z },
+      facing: a.facing,
+      y: a.y,
+      action: { kind: a.action.kind, t: a.action.t, dur: a.action.dur, data: { ...a.action.data } },
+      hand: a.hand,
+      stamina: a.stamina,
+      human: a.human,
     })),
     ball: {
-      pos: { ...s.ball.phys.pos }, vel: { ...s.ball.phys.vel }, mode: s.ball.mode, owner: s.ball.owner, dribblePhase: s.ball.dribblePhase, passTo: s.ball.pass?.to ?? null,
+      pos: { ...s.ball.phys.pos },
+      vel: { ...s.ball.phys.vel },
+      mode: s.ball.mode,
+      owner: s.ball.owner,
+      dribblePhase: s.ball.dribblePhase,
+      passTo: s.ball.pass?.to ?? null,
     },
     offense: s.offense,
     phase: s.phase,
@@ -104,7 +134,15 @@ function snapshot(match: Match): ViewFrame {
   };
 }
 
-interface PendingCut { at: number; label: string; weight: number; focus: number | null; team: TeamIdx | null; period: number; clock: number }
+interface PendingCut {
+  at: number;
+  label: string;
+  weight: number;
+  focus: number | null;
+  team: TeamIdx | null;
+  period: number;
+  clock: number;
+}
 
 export class ReplayDirector {
   private buf: ViewFrame[] = [];
@@ -119,10 +157,18 @@ export class ReplayDirector {
 
   constructor(private match: Match) {}
 
-  subscribe(fn: () => void) { this.listeners.add(fn); return () => { this.listeners.delete(fn); }; }
+  subscribe(fn: () => void) {
+    this.listeners.add(fn);
+    return () => {
+      this.listeners.delete(fn);
+    };
+  }
   /** Bumped on every change so UI can subscribe cheaply. */
   version = 0;
-  private notify() { this.version++; for (const fn of this.listeners) fn(); }
+  private notify() {
+    this.version++;
+    for (const fn of this.listeners) fn();
+  }
 
   /** Call after every sim step. */
   record() {
@@ -149,20 +195,47 @@ export class ReplayDirector {
     const late = s.period >= s.cfg.rules.periods && s.clock < 30 && Math.abs(s.teams[0].score - s.teams[1].score) <= 3;
     const nm = (i: number | null) => (i !== null && s.agents[i] ? `${s.agents[i].player.firstName[0]}. ${s.agents[i].player.lastName}` : "");
     for (const e of events) {
-      let label = "", weight = 0, focus: number | null = null;
+      let label = "",
+        weight = 0,
+        focus: number | null = null;
       switch (e.t) {
         case "make":
           focus = e.shooter;
-          if (e.kind === "dunk") { label = `${nm(e.shooter)} slam`; weight = e.andOne ? 4 : 3; }
-          else if (e.points === 3) { label = `${nm(e.shooter)} from deep`; weight = late ? 4 : e.andOne ? 3 : 2; }
-          else { label = `${nm(e.shooter)} scores`; weight = e.andOne ? 3 : late ? 3 : 1; }
+          if (e.kind === "dunk") {
+            label = `${nm(e.shooter)} slam`;
+            weight = e.andOne ? 4 : 3;
+          } else if (e.points === 3) {
+            label = `${nm(e.shooter)} from deep`;
+            weight = late ? 4 : e.andOne ? 3 : 2;
+          } else {
+            label = `${nm(e.shooter)} scores`;
+            weight = e.andOne ? 3 : late ? 3 : 1;
+          }
           if (e.andOne) label += ", and one";
-          if (s.clock <= 1 && s.period >= 1) { label = `${nm(e.shooter)} at the buzzer`; weight = 5; }
+          if (s.clock <= 1 && s.period >= 1) {
+            label = `${nm(e.shooter)} at the buzzer`;
+            weight = 5;
+          }
           break;
-        case "block": focus = e.blocker; label = `${nm(e.blocker)} rejection`; weight = 3; break;
-        case "steal": focus = e.player; label = `${nm(e.player)} steal`; weight = 1; break;
-        case "dribbleMove": if (e.broke !== null) { focus = e.player; label = `${nm(e.player)} breaks ankles`; weight = 3; } break;
-        default: break;
+        case "block":
+          focus = e.blocker;
+          label = `${nm(e.blocker)} rejection`;
+          weight = 3;
+          break;
+        case "steal":
+          focus = e.player;
+          label = `${nm(e.player)} steal`;
+          weight = 1;
+          break;
+        case "dribbleMove":
+          if (e.broke !== null) {
+            focus = e.player;
+            label = `${nm(e.player)} breaks ankles`;
+            weight = 3;
+          }
+          break;
+        default:
+          break;
       }
       if (!weight || !s.agents[focus ?? 0]) continue;
       const team = focus !== null ? s.agents[focus].team : null;
@@ -175,7 +248,10 @@ export class ReplayDirector {
     if (from < 0) return null;
     const frames = this.buf.slice(from).filter((f) => f.time <= p.at + 1.6);
     if (frames.length < 30) return null;
-    const keyIndex = Math.max(0, frames.findIndex((f) => f.time >= p.at));
+    const keyIndex = Math.max(
+      0,
+      frames.findIndex((f) => f.time >= p.at),
+    );
     // follow the player by id (agent slots can shift after substitutions)
     return { id: this.nextId++, label: p.label, weight: p.weight, frames, keyIndex, focus: p.focus, team: p.team, period: p.period, clock: p.clock };
   }
@@ -197,15 +273,30 @@ export class ReplayDirector {
   recentClip(): Clip | null {
     if (this.buf.length < 30) return null;
     const frames = this.buf.slice();
-    return { id: this.nextId++, label: "Instant replay", weight: 0, frames, keyIndex: frames.length - 1, focus: null, team: null, period: this.match.state.period, clock: this.match.state.clock };
+    return {
+      id: this.nextId++,
+      label: "Instant replay",
+      weight: 0,
+      frames,
+      keyIndex: frames.length - 1,
+      focus: null,
+      team: null,
+      period: this.match.state.period,
+      clock: this.match.state.clock,
+    };
   }
 
   play(clip: Clip, opts: { auto?: boolean; queue?: Clip[]; fromStart?: boolean } = {}) {
     if (opts.auto) this.lastAutoAt = performance.now() / 1000;
     const startAt = opts.auto || opts.fromStart ? Math.max(0, clip.keyIndex - Math.round(2.6 / STEP)) : 0;
     this.playback = {
-      clip, t: startAt, speed: opts.auto ? 0.6 : 1, playing: true,
-      cam: clip.focus !== null ? 0 : 4, auto: !!opts.auto, queue: opts.queue ?? [],
+      clip,
+      t: startAt,
+      speed: opts.auto ? 0.6 : 1,
+      playing: true,
+      cam: clip.focus !== null ? 0 : 4,
+      auto: !!opts.auto,
+      queue: opts.queue ?? [],
     };
     this.autoCandidate = null;
     this.notify();
@@ -238,7 +329,10 @@ export class ReplayDirector {
         this.playback!.speed = speed;
         return this.frameAt(this.playback!);
       }
-      if (pb.auto) { this.stop(); return null; }
+      if (pb.auto) {
+        this.stop();
+        return null;
+      }
       pb.t = last;
       pb.playing = false;
       this.notify();
@@ -256,9 +350,33 @@ export class ReplayDirector {
     return f[Math.min(f.length - 1, Math.max(0, Math.floor(pb.t)))];
   }
 
-  setPlaying(on: boolean) { if (this.playback) { this.playback.playing = on; if (on && this.playback.t >= this.playback.clip.frames.length - 1) this.playback.t = 0; this.notify(); } }
-  scrub(seconds: number) { if (this.playback) { this.playback.t = Math.max(0, Math.min(this.playback.clip.frames.length - 1, this.playback.t + seconds / STEP)); this.notify(); } }
-  setSpeed(speed: number) { if (this.playback) { this.playback.speed = speed; this.notify(); } }
-  cycleCam(dir = 1) { if (this.playback) { this.playback.cam = (this.playback.cam + dir + REPLAY_CAMS.length) % REPLAY_CAMS.length; this.notify(); } }
-  progress() { const pb = this.playback; return pb ? pb.t / Math.max(1, pb.clip.frames.length - 1) : 0; }
+  setPlaying(on: boolean) {
+    if (this.playback) {
+      this.playback.playing = on;
+      if (on && this.playback.t >= this.playback.clip.frames.length - 1) this.playback.t = 0;
+      this.notify();
+    }
+  }
+  scrub(seconds: number) {
+    if (this.playback) {
+      this.playback.t = Math.max(0, Math.min(this.playback.clip.frames.length - 1, this.playback.t + seconds / STEP));
+      this.notify();
+    }
+  }
+  setSpeed(speed: number) {
+    if (this.playback) {
+      this.playback.speed = speed;
+      this.notify();
+    }
+  }
+  cycleCam(dir = 1) {
+    if (this.playback) {
+      this.playback.cam = (this.playback.cam + dir + REPLAY_CAMS.length) % REPLAY_CAMS.length;
+      this.notify();
+    }
+  }
+  progress() {
+    const pb = this.playback;
+    return pb ? pb.t / Math.max(1, pb.clip.frames.length - 1) : 0;
+  }
 }

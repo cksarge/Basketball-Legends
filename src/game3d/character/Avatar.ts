@@ -6,7 +6,16 @@ import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { Player, Team } from "@/engine/types";
 import { HAIR_COLORS, HAIR_STYLES, SKIN_TONES } from "@/engine/player";
 import { createSkinMaterial, type MaskSet, type SkinLook } from "./skinMaterial";
-import { drawJersey, drawOfficialJersey, drawPlainShorts, drawShorts, drawStaffShirt, makeCanvasTexture, type UniformStyle, uniformColors } from "./uniformTexture";
+import {
+  drawJersey,
+  drawOfficialJersey,
+  drawPlainShorts,
+  drawShorts,
+  drawStaffShirt,
+  makeCanvasTexture,
+  type UniformStyle,
+  uniformColors,
+} from "./uniformTexture";
 
 /** What the person is wearing: a team uniform, a referee's stripes, or a staff polo. */
 export type Outfit = "player" | "official" | "staff";
@@ -25,15 +34,28 @@ interface BoneInfo {
   length: number;
 }
 
-const _v = new THREE.Vector3(), _v2 = new THREE.Vector3(), _v3 = new THREE.Vector3();
-const _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _q3 = new THREE.Quaternion();
+const _v = new THREE.Vector3(),
+  _v2 = new THREE.Vector3(),
+  _v3 = new THREE.Vector3();
+const _q = new THREE.Quaternion(),
+  _q2 = new THREE.Quaternion(),
+  _q3 = new THREE.Quaternion();
 
 export interface PoseInput {
   /** World transform of the player (already from sim). */
-  x: number; y: number; z: number; facing: number;
-  vx: number; vz: number;
-  action: string; actionT: number; actionDur: number; actionData: Record<string, unknown>;
-  hasBall: boolean; dribbling: boolean; hand: 1 | -1;
+  x: number;
+  y: number;
+  z: number;
+  facing: number;
+  vx: number;
+  vz: number;
+  action: string;
+  actionT: number;
+  actionDur: number;
+  actionData: Record<string, unknown>;
+  hasBall: boolean;
+  dribbling: boolean;
+  hand: 1 | -1;
   ballWorld: THREE.Vector3 | null;
   lookAt: THREE.Vector3 | null;
   stance: boolean; // defensive stance
@@ -92,15 +114,41 @@ export class Avatar {
     });
     // rest directions from primary children
     const primaryChild: Record<string, string> = {
-      hips: "spine", spine: "chest", chest: "upperchest", upperchest: "neck", neck: "head",
-      clavicleL: "upperarmL", upperarmL: "forearmL", forearmL: "handL", handL: "middle1L",
-      clavicleR: "upperarmR", upperarmR: "forearmR", forearmR: "handR", handR: "middle1R",
-      thighL: "shinL", shinL: "footL", footL: "toeL", thighR: "shinR", shinR: "footR", footR: "toeR",
-      middle1L: "middle2L", middle1R: "middle2R", index1L: "index2L", index1R: "index2R", ring1L: "ring2L", ring1R: "ring2R",
-      pinky1L: "pinky2L", pinky1R: "pinky2R", thumb1L: "thumb2L", thumb2L: "thumb3L", thumb1R: "thumb2R", thumb2R: "thumb3R",
+      hips: "spine",
+      spine: "chest",
+      chest: "upperchest",
+      upperchest: "neck",
+      neck: "head",
+      clavicleL: "upperarmL",
+      upperarmL: "forearmL",
+      forearmL: "handL",
+      handL: "middle1L",
+      clavicleR: "upperarmR",
+      upperarmR: "forearmR",
+      forearmR: "handR",
+      handR: "middle1R",
+      thighL: "shinL",
+      shinL: "footL",
+      footL: "toeL",
+      thighR: "shinR",
+      shinR: "footR",
+      footR: "toeR",
+      middle1L: "middle2L",
+      middle1R: "middle2R",
+      index1L: "index2L",
+      index1R: "index2R",
+      ring1L: "ring2L",
+      ring1R: "ring2R",
+      pinky1L: "pinky2L",
+      pinky1R: "pinky2R",
+      thumb1L: "thumb2L",
+      thumb2L: "thumb3L",
+      thumb1R: "thumb2R",
+      thumb2R: "thumb3R",
     };
     for (const [n, c] of Object.entries(primaryChild)) {
-      const b = this.bones[n], ch = this.bones[c];
+      const b = this.bones[n],
+        ch = this.bones[c];
       if (b && ch) {
         b.restDir.copy(ch.restPos).normalize();
         b.length = ch.restPos.length();
@@ -113,13 +161,15 @@ export class Avatar {
 
   /** Materials, hair, morphs and uniform for this player. */
   applyLook(masks: MaskSet, style: UniformStyle) {
-    const p = this.player, ap = p.appearance;
+    const p = this.player,
+      ap = p.appearance;
     const styleName = HAIR_STYLES[ap.hairStyle] ?? "Short";
     const tone = new THREE.Color(SKIN_TONES[ap.skinTone] ?? SKIN_TONES[4]);
     const hairColor = new THREE.Color(HAIR_COLORS[ap.hairColor] ?? HAIR_COLORS[0]);
     const fh = ap.facialHair;
     const look: SkinLook = {
-      tone, hairColor,
+      tone,
+      hairColor,
       scalp: ["Buzz", "Short", "Twists", "Afro", "Locs", "Man Bun", "Mohawk", "Curly Top"].includes(styleName) ? 1 : styleName === "Waves" ? 0 : 0,
       fade: styleName === "Fade" || styleName === "Curly Top" ? 1 : 0,
       cornrows: styleName === "Braids" ? 1 : 0,
@@ -135,8 +185,11 @@ export class Avatar {
     for (const m of this.allMeshes) {
       const mat = m.material as THREE.MeshStandardMaterial;
       if (mat.name === "Skin") m.material = this.skinMat;
-      else if (mat.name === "Upper") { const c = mat.clone(); c.color = shoeColor.clone(); m.material = c; }
-      else if (mat.name === "Eye" || mat.name === "Iris" || mat.name === "Sole") m.material = mat.clone();
+      else if (mat.name === "Upper") {
+        const c = mat.clone();
+        c.color = shoeColor.clone();
+        m.material = c;
+      } else if (mat.name === "Eye" || mat.name === "Iris" || mat.name === "Sole") m.material = mat.clone();
     }
     // hair geometry
     for (const [idx, name] of Object.entries(HAIR_MESH)) {
@@ -164,8 +217,18 @@ export class Avatar {
     const cloth = (tex: THREE.Texture) => new THREE.MeshStandardMaterial({ map: tex, roughness: 0.82, side: THREE.DoubleSide });
     if (this.meshes.Jersey) this.meshes.Jersey.material = cloth(this.jerseyTex.tex);
     if (this.meshes.Shorts) this.meshes.Shorts.material = cloth(this.shortsTex.tex);
-    const sockColor = this.outfit === "official" ? "#141414" : this.outfit === "staff" ? "#2a2d33" : col.trim === col.base ? "#ffffff" : style === "away" ? col.base : "#f4f4f4";
-    if (this.meshes.Socks) this.meshes.Socks.material = new THREE.MeshStandardMaterial({ color: new THREE.Color(sockColor), roughness: 0.95, side: THREE.DoubleSide });
+    const sockColor =
+      this.outfit === "official"
+        ? "#141414"
+        : this.outfit === "staff"
+          ? "#2a2d33"
+          : col.trim === col.base
+            ? "#ffffff"
+            : style === "away"
+              ? col.base
+              : "#f4f4f4";
+    if (this.meshes.Socks)
+      this.meshes.Socks.material = new THREE.MeshStandardMaterial({ color: new THREE.Color(sockColor), roughness: 0.95, side: THREE.DoubleSide });
     const accColor = new THREE.Color(col.trim);
     const acc = (name: string, on: boolean) => {
       const m = this.meshes[name];
@@ -190,7 +253,9 @@ export class Avatar {
       const dict = m.morphTargetDictionary;
       const inf = m.morphTargetInfluences;
       if (!dict || !inf) continue;
-      const set = (k: string, v: number) => { if (dict[k] !== undefined) inf[dict[k]] = v; };
+      const set = (k: string, v: number) => {
+        if (dict[k] !== undefined) inf[dict[k]] = v;
+      };
       set("Lean", lean);
       set("Heavy", heavy);
       // FaceA/B/C hold (shape_i - neutral); neutral is their average, so weights summing to 1 stay in range
@@ -200,7 +265,9 @@ export class Avatar {
     }
   }
 
-  setUniformStyle(masks: MaskSet, style: UniformStyle) { this.applyLook(masks, style); }
+  setUniformStyle(masks: MaskSet, style: UniformStyle) {
+    this.applyLook(masks, style);
+  }
 
   dispose() {
     this.jerseyTex.tex.dispose();
@@ -215,7 +282,9 @@ export class Avatar {
   }
 
   // ---------------------------------------------------------------- posing
-  private b(name: string) { return this.bones[name]; }
+  private b(name: string) {
+    return this.bones[name];
+  }
 
   private resetPose() {
     for (const k in this.bones) {
@@ -273,7 +342,9 @@ export class Avatar {
     const perp = poleDir.sub(dir.clone().multiplyScalar(poleDir.dot(dir)));
     if (perp.lengthSq() < 1e-8) perp.set(0, 0, 1);
     perp.normalize();
-    const joint = A.clone().addScaledVector(dir, cosA * la).addScaledVector(perp, sinA * la);
+    const joint = A.clone()
+      .addScaledVector(dir, cosA * la)
+      .addScaledVector(perp, sinA * la);
     this.aim(upper, joint.clone().sub(A));
     const J = this.worldPos(lower, new THREE.Vector3());
     const end = A.clone().addScaledVector(dir, d);
@@ -309,10 +380,14 @@ export class Avatar {
     this.resetPose();
     this.model.updateMatrixWorld(true);
     if (this.hipRestH < 0) this.hipRestH = this.worldPos("hips", new THREE.Vector3()).y / scale;
-    if (p.seatY !== undefined) { this.updateSeated(p, scale, dt); return; }
+    if (p.seatY !== undefined) {
+      this.updateSeated(p, scale, dt);
+      return;
+    }
 
     // local velocity (model space, per model unit)
-    const cos = Math.cos(-p.facing), sin = Math.sin(-p.facing);
+    const cos = Math.cos(-p.facing),
+      sin = Math.sin(-p.facing);
     const lvx = (p.vx * cos + p.vz * sin) / scale;
     const lvz = (-p.vx * sin + p.vz * cos) / scale;
     const speed = Math.hypot(p.vx, p.vz);
@@ -320,7 +395,17 @@ export class Avatar {
     const tN = p.actionDur > 0 ? THREE.MathUtils.clamp(p.actionT / p.actionDur, 0, 1) : 0;
 
     // ----- body posture
-    let targetCrouch = p.stance ? 0.22 : act === "post" ? 0.18 : act === "screen" ? 0.13 : p.dribbling ? 0.1 : act === "fall" ? 0 : 0.03 + Math.min(speed, 8) * 0.008;
+    let targetCrouch = p.stance
+      ? 0.22
+      : act === "post"
+        ? 0.18
+        : act === "screen"
+          ? 0.13
+          : p.dribbling
+            ? 0.1
+            : act === "fall"
+              ? 0
+              : 0.03 + Math.min(speed, 8) * 0.008;
     // shooting gather: bend the knees before rising into the shot
     const jumpAt = Number(p.actionData.jumpAt ?? 0);
     if (["jumper", "fadeaway", "floater", "hook"].includes(act) && !p.airborne && jumpAt > 0 && p.actionT < jumpAt + 0.05) {
@@ -334,8 +419,12 @@ export class Avatar {
     const winded = act === "idle" && !p.hasBall && !p.stance && p.stamina < 0.45 && speed < 0.25;
     if (winded) targetCrouch = 0.2;
     s.crouch = THREE.MathUtils.damp(s.crouch, p.airborne ? 0.02 : targetCrouch, 14, dt);
-    const targetLean = THREE.MathUtils.clamp(lvz * 0.035, -0.12, 0.3) + (p.stance ? 0.18 : 0) + (p.dribbling ? 0.1 : 0)
-      + (act === "steal" ? 0.3 * Math.sin(Math.PI * tN) : 0) + (act === "post" ? 0.12 : 0);
+    const targetLean =
+      THREE.MathUtils.clamp(lvz * 0.035, -0.12, 0.3) +
+      (p.stance ? 0.18 : 0) +
+      (p.dribbling ? 0.1 : 0) +
+      (act === "steal" ? 0.3 * Math.sin(Math.PI * tN) : 0) +
+      (act === "post" ? 0.12 : 0);
     s.lean = THREE.MathUtils.damp(s.lean, targetLean, 8, dt);
     s.sideLean = THREE.MathUtils.damp(s.sideLean, THREE.MathUtils.clamp(-lvx * 0.03, -0.15, 0.15), 8, dt);
 
@@ -348,13 +437,16 @@ export class Avatar {
     // fall: drop onto the hips, catch with the hands behind, then get back up (hurt players stay down)
     let fallK = 0;
     if (act === "fall") {
-      const ss = (x: number) => { const c = THREE.MathUtils.clamp(x, 0, 1); return c * c * (3 - 2 * c); };
+      const ss = (x: number) => {
+        const c = THREE.MathUtils.clamp(x, 0, 1);
+        return c * c * (3 - 2 * c);
+      };
       const down = ss(p.actionT / 0.38);
       const up = p.actionData.injured ? 0 : ss((p.actionT - (p.actionDur - 0.5)) / 0.5);
       fallK = down * (1 - up);
     }
     const hips = this.b("hips");
-    const rootY = THREE.MathUtils.lerp((p.y / scale) - s.crouch * 0.55 - bob, 0.16 - this.hipRestH, fallK);
+    const rootY = THREE.MathUtils.lerp(p.y / scale - s.crouch * 0.55 - bob, 0.16 - this.hipRestH, fallK);
     hips.bone.position.copy(hips.restPos);
     // hips parent may be the armature node: move along its local up
     hips.bone.position.y += rootY * (1 / (this.modelScale() || 1));
@@ -368,7 +460,7 @@ export class Avatar {
     };
     // spine lean and twist
     const twistToBall = 0;
-    this.rotateWorld("hips", worldRot(s.lean * 0.4, (moving ? Math.sin(this.gait * Math.PI * 2) * 0.12 : 0), s.sideLean * 0.5));
+    this.rotateWorld("hips", worldRot(s.lean * 0.4, moving ? Math.sin(this.gait * Math.PI * 2) * 0.12 : 0, s.sideLean * 0.5));
     this.rotateWorld("spine", worldRot(s.lean * 0.35, twistToBall, s.sideLean * 0.3));
     this.rotateWorld("chest", worldRot(s.lean * 0.25 + Math.sin(s.idleT * 2.2) * 0.01, moving ? -Math.sin(this.gait * Math.PI * 2) * 0.16 : 0, 0));
     if (fallK > 0) {
@@ -377,15 +469,22 @@ export class Avatar {
     }
 
     // ----- legs
-    const hipW = 0.11, stanceW = p.stance ? 0.24 : act === "post" ? 0.2 : act === "screen" ? 0.23 : 0.13;
+    const hipW = 0.11,
+      stanceW = p.stance ? 0.24 : act === "post" ? 0.2 : act === "screen" ? 0.23 : 0.13;
     const dirX = speed > 0.1 ? lvx / (Math.hypot(lvx, lvz) || 1) : 0;
     const dirZ = speed > 0.1 ? lvz / (Math.hypot(lvx, lvz) || 1) : 1;
     const half = strideLen / scale / 4;
-    for (const [side, sign, off] of [["L", 1, 0], ["R", -1, 0.5]] as const) {
+    for (const [side, sign, off] of [
+      ["L", 1, 0],
+      ["R", -1, 0.5],
+    ] as const) {
       const ph = (this.gait + off) * Math.PI * 2;
-      let fx = sign * stanceW, fz = 0.02, fy = 0.09;
+      let fx = sign * stanceW,
+        fz = 0.02,
+        fy = 0.09;
       if (moving) {
-        const sw = Math.sin(ph), cw = Math.cos(ph);
+        const sw = Math.sin(ph),
+          cw = Math.cos(ph);
         const amp = half * Math.min(1, speed / 1.5) * (p.stance ? 0.6 : 1);
         fx += dirX * amp * sw;
         fz += dirZ * amp * sw;
@@ -399,15 +498,17 @@ export class Avatar {
       }
       if (p.airborne) {
         // legs in the air: jump shots stay long and relaxed; rebounds/blocks tuck a little more
-        const tuck = ["jumper", "fadeaway", "freeThrow", "floater", "hook"].includes(act) ? 0.05
-          : ["rebound", "block", "jumpball"].includes(act) ? 0.15 : 0.1;
+        const tuck = ["jumper", "fadeaway", "freeThrow", "floater", "hook"].includes(act) ? 0.05 : ["rebound", "block", "jumpball"].includes(act) ? 0.15 : 0.1;
         fy = 0.09 + tuck + (p.y / scale) * 0.12;
         fz = (side === "L" ? 0.06 : -0.03) + tuck * 0.3;
         fx = sign * 0.13;
       }
       if (act === "layup" || act === "dunk") {
         // one-leg takeoff: drive knee up
-        if (side === (p.hand === 1 ? "L" : "R") && p.airborne) { fy += 0.35; fz += 0.25; }
+        if (side === (p.hand === 1 ? "L" : "R") && p.airborne) {
+          fy += 0.35;
+          fz += 0.25;
+        }
       }
       if (fallK > 0) {
         // sitting on the floor: legs out in front, knees a little bent
@@ -415,7 +516,7 @@ export class Avatar {
         fz = THREE.MathUtils.lerp(fz, side === "L" ? 0.62 : 0.5, fallK);
         fy = THREE.MathUtils.lerp(fy, 0.07, fallK);
       }
-      const footT = this.toWorld(fx, fy + (p.y / scale), fz, new THREE.Vector3());
+      const footT = this.toWorld(fx, fy + p.y / scale, fz, new THREE.Vector3());
       if (!p.airborne) footT.y = fy * scale; // planted relative to the floor
       const knee = this.toWorld(sign * hipW, 0.6 + p.y / scale + fallK * 0.5, 1.2, new THREE.Vector3());
       this.ik2(`thigh${side}`, `shin${side}`, footT, knee);
@@ -444,7 +545,8 @@ export class Avatar {
         new THREE.Vector3(),
       );
     };
-    const shoot = (sign: number) => sign; void shoot;
+    const shoot = (sign: number) => sign;
+    void shoot;
     const sh = p.hand === 1 ? "R" : "L"; // shooting / dribble hand (hand: 1 = right)
     const off = sh === "R" ? "L" : "R";
     const shSign = sh === "L" ? 1 : -1;
@@ -457,7 +559,10 @@ export class Avatar {
     if (sig) {
       const W = (x: number, y: number, z: number) => this.toWorld(x, y + rootY, z, new THREE.Vector3());
       const elbowOut = (sign: number) => this.toWorld(sign * 0.75, 1.3, -0.2, new THREE.Vector3());
-      const relax = () => { setHand("L", swing("L", 1)); setHand("R", swing("R", -1)); };
+      const relax = () => {
+        setHand("L", swing("L", 1));
+        setHand("R", swing("R", -1));
+      };
       // a horizontal point in a world direction (for "their ball, that way")
       const point = (side: "L" | "R", worldAngle: number, y = 1.52) => {
         const rel = worldAngle - p.facing;
@@ -468,33 +573,55 @@ export class Avatar {
       const other = (sd: "L" | "R") => (sd === "L" ? "R" : "L");
       switch (sig) {
         case "foul": // fist straight up
-          setHand("R", W(-0.1, 2.36, 0.08), elbowOut(-1)); setHand("L", swing("L", 1)); break;
-        case "shootingFoul": // fist up, then both arms out front showing the free throws
-          if (sigT < 0.7) { setHand("R", W(-0.1, 2.36, 0.08), elbowOut(-1)); setHand("L", swing("L", 1)); }
-          else { setHand("R", W(-0.3, 1.58, 0.58), elbowOut(-1)); setHand("L", W(0.3, 1.58, 0.58), elbowOut(1)); }
+          setHand("R", W(-0.1, 2.36, 0.08), elbowOut(-1));
+          setHand("L", swing("L", 1));
           break;
-        case "report": case "outOfBounds": // point the direction of play
-          point(pointSide, dir); setHand(other(pointSide), swing(other(pointSide), other(pointSide) === "L" ? 1 : -1)); break;
-        case "travel": { // roll the forearms
+        case "shootingFoul": // fist up, then both arms out front showing the free throws
+          if (sigT < 0.7) {
+            setHand("R", W(-0.1, 2.36, 0.08), elbowOut(-1));
+            setHand("L", swing("L", 1));
+          } else {
+            setHand("R", W(-0.3, 1.58, 0.58), elbowOut(-1));
+            setHand("L", W(0.3, 1.58, 0.58), elbowOut(1));
+          }
+          break;
+        case "report":
+        case "outOfBounds": // point the direction of play
+          point(pointSide, dir);
+          setHand(other(pointSide), swing(other(pointSide), other(pointSide) === "L" ? 1 : -1));
+          break;
+        case "travel": {
+          // roll the forearms
           const ph = sigT * 13;
           setHand("R", W(-0.1 + Math.cos(ph) * 0.09, 1.36 + Math.sin(ph) * 0.09, 0.4), elbowOut(-1));
           setHand("L", W(0.1 + Math.cos(ph + Math.PI) * 0.09, 1.36 + Math.sin(ph + Math.PI) * 0.09, 0.4), elbowOut(1));
           break;
         }
         case "threeSeconds": // arm straight out front, three fingers
-          setHand("R", W(-0.12, 1.55, 0.66)); setHand("L", swing("L", 1)); break;
+          setHand("R", W(-0.12, 1.55, 0.66));
+          setHand("L", swing("L", 1));
+          break;
         case "shotClock": // tap the top of the head
-          setHand("R", W(-0.04, 2.0 + Math.abs(Math.sin(sigT * 9)) * 0.05, 0.03), elbowOut(-1)); setHand("L", swing("L", 1)); break;
-        case "goaltend": { // finger circling above the head
+          setHand("R", W(-0.04, 2.0 + Math.abs(Math.sin(sigT * 9)) * 0.05, 0.03), elbowOut(-1));
+          setHand("L", swing("L", 1));
+          break;
+        case "goaltend": {
+          // finger circling above the head
           const ph = sigT * 9;
-          setHand("R", W(-0.1 + Math.cos(ph) * 0.07, 2.4, 0.12 + Math.sin(ph) * 0.07), elbowOut(-1)); setHand("L", swing("L", 1));
+          setHand("R", W(-0.1 + Math.cos(ph) * 0.07, 2.4, 0.12 + Math.sin(ph) * 0.07), elbowOut(-1));
+          setHand("L", swing("L", 1));
           break;
         }
         case "backcourt": // wave across the body, low
-          setHand("R", W(-0.32 + Math.sin(sigT * 7) * 0.28, 1.15, 0.45)); setHand("L", swing("L", 1)); break;
-        case "count": case "visibleCount": { // chop the count, one beat a second
+          setHand("R", W(-0.32 + Math.sin(sigT * 7) * 0.28, 1.15, 0.45));
+          setHand("L", swing("L", 1));
+          break;
+        case "count":
+        case "visibleCount": {
+          // chop the count, one beat a second
           const beat = Math.abs(Math.sin(Math.PI * sigT));
-          setHand("R", W(-0.5, 1.75 - beat * 0.45, 0.25), elbowOut(-1)); setHand("L", swing("L", 1));
+          setHand("R", W(-0.5, 1.75 - beat * 0.45, 0.25), elbowOut(-1));
+          setHand("L", swing("L", 1));
           break;
         }
         case "timeout": // T over the head
@@ -503,29 +630,46 @@ export class Avatar {
           setHand("L", W(-0.02, 1.83, 0.63), this.toWorld(0.1, 1.0 + rootY, 0.95, new THREE.Vector3()));
           break;
         case "threeAttempt": // one arm up and out, fingers spread
-          setHand("R", W(-0.42, 2.3, 0.1), elbowOut(-1)); setHand("L", swing("L", 1)); break;
+          setHand("R", W(-0.42, 2.3, 0.1), elbowOut(-1));
+          setHand("L", swing("L", 1));
+          break;
         case "threeGood": // both arms straight up
-          setHand("R", W(-0.17, 2.46, 0.06), elbowOut(-1)); setHand("L", W(0.17, 2.46, 0.06), elbowOut(1)); break;
+          setHand("R", W(-0.17, 2.46, 0.06), elbowOut(-1));
+          setHand("L", W(0.17, 2.46, 0.06), elbowOut(1));
+          break;
         case "charge": // hand behind the head
-          setHand("R", W(-0.1, 1.86, -0.14), elbowOut(-1)); setHand("L", swing("L", 1)); break;
+          setHand("R", W(-0.1, 1.86, -0.14), elbowOut(-1));
+          setHand("L", swing("L", 1));
+          break;
         case "block": // hands on the hips
-          setHand("R", W(-0.27, 1.02, 0.02), elbowOut(-1)); setHand("L", W(0.27, 1.02, 0.02), elbowOut(1)); break;
+          setHand("R", W(-0.27, 1.02, 0.02), elbowOut(-1));
+          setHand("L", W(0.27, 1.02, 0.02), elbowOut(1));
+          break;
         case "subs": // wave the sub in
-          setHand("R", W(-0.32 + Math.sin(sigT * 9) * 0.1, 1.95, 0.22), elbowOut(-1)); setHand("L", swing("L", 1)); break;
+          setHand("R", W(-0.32 + Math.sin(sigT * 9) * 0.1, 1.95, 0.22), elbowOut(-1));
+          setHand("L", swing("L", 1));
+          break;
         case "holdBall": // ball at the waist, two hands
-          setHand("R", W(-0.12, 1.15, 0.32)); setHand("L", W(0.12, 1.17, 0.32)); break;
-        case "toss": { // up through the chest and overhead
+          setHand("R", W(-0.12, 1.15, 0.32));
+          setHand("L", W(0.12, 1.17, 0.32));
+          break;
+        case "toss": {
+          // up through the chest and overhead
           const k = THREE.MathUtils.clamp(sigT / 0.32, 0, 1);
           const y = THREE.MathUtils.lerp(1.2, 2.35, k * k * (3 - 2 * k));
-          setHand("R", W(-0.1, y, THREE.MathUtils.lerp(0.32, 0.2, k))); setHand("L", W(0.1, y, THREE.MathUtils.lerp(0.32, 0.2, k)));
+          setHand("R", W(-0.1, y, THREE.MathUtils.lerp(0.32, 0.2, k)));
+          setHand("L", W(0.1, y, THREE.MathUtils.lerp(0.32, 0.2, k)));
           break;
         }
-        case "handBall": { // bounce pass to the player
+        case "handBall": {
+          // bounce pass to the player
           const k = THREE.MathUtils.clamp(sigT / 0.25, 0, 1);
-          setHand("R", W(-0.12, 1.15 - k * 0.15, 0.32 + k * 0.3)); setHand("L", W(0.12, 1.15 - k * 0.15, 0.32 + k * 0.3));
+          setHand("R", W(-0.12, 1.15 - k * 0.15, 0.32 + k * 0.3));
+          setHand("L", W(0.12, 1.15 - k * 0.15, 0.32 + k * 0.3));
           break;
         }
-        default: relax();
+        default:
+          relax();
       }
     } else if (p.catchBall && !p.hasBall && !shootingActs.includes(act) && act !== "layup" && act !== "dunk" && act !== "fall") {
       // target the ball with a soft two-hand pocket, stronger as it arrives
@@ -593,7 +737,11 @@ export class Avatar {
         const r = Math.min(1, (k - 0.45) / 0.55);
         const rr = r * r * (3 - 2 * r);
         const y = THREE.MathUtils.lerp(1.45, top, rr) + rootY;
-        setHand(sh, this.toWorld(shSign * 0.1, after > 0 && act === "dunk" ? 2.38 + rootY : y, THREE.MathUtils.lerp(0.3, 0.5, rr), new THREE.Vector3()), elbowIn(y - 0.45));
+        setHand(
+          sh,
+          this.toWorld(shSign * 0.1, after > 0 && act === "dunk" ? 2.38 + rootY : y, THREE.MathUtils.lerp(0.3, 0.5, rr), new THREE.Vector3()),
+          elbowIn(y - 0.45),
+        );
         setHand(off, this.toWorld(-shSign * 0.3, 1.5 + rootY, 0.35, new THREE.Vector3()), this.toWorld(-shSign * 0.8, 1.2 + rootY, 0.1, new THREE.Vector3()));
       } else {
         setHand("L", swing("L", 1));
@@ -626,7 +774,10 @@ export class Avatar {
         setHand("R", this.toWorld(-0.12 * (1 + k * 0.4), y, z, new THREE.Vector3()), elbows(-1));
         setHand("L", this.toWorld(0.12 * (1 + k * 0.4), y, z, new THREE.Vector3()), elbows(1));
         // thumbs snap down through the release
-        if (k >= 1) { this.rotateWorld("handR", worldRot(0.6, 0, 0)); this.rotateWorld("handL", worldRot(0.6, 0, 0)); }
+        if (k >= 1) {
+          this.rotateWorld("handR", worldRot(0.6, 0, 0));
+          this.rotateWorld("handL", worldRot(0.6, 0, 0));
+        }
       }
     } else if (act === "steal") {
       // low swipe across the ball with a lunge; the other hand stays out for balance
@@ -688,9 +839,14 @@ export class Avatar {
 
     // fingers: curl slightly; more when holding the ball
     // fists for fouls, flat open hands for most other signals
-    const curl = sig === "foul" || sig === "charge" || (sig === "shootingFoul" && sigT < 0.7) ? 1.35
-      : sig && sig !== "holdBall" && sig !== "toss" && sig !== "handBall" && sig !== "none" ? 0.08
-      : p.hasBall ? 0.35 : 0.55;
+    const curl =
+      sig === "foul" || sig === "charge" || (sig === "shootingFoul" && sigT < 0.7)
+        ? 1.35
+        : sig && sig !== "holdBall" && sig !== "toss" && sig !== "handBall" && sig !== "none"
+          ? 0.08
+          : p.hasBall
+            ? 0.35
+            : 0.55;
     for (const side of ["L", "R"] as const) {
       for (const f of ["index", "middle", "ring", "pinky"]) {
         for (const seg of [1, 2]) {
@@ -744,7 +900,10 @@ export class Avatar {
     const breathe = Math.sin(s.idleT * 1.8) * 0.012;
     this.rotateWorld("spine", worldRot(0.16 * (1 - k) + breathe, 0, 0));
     this.rotateWorld("chest", worldRot(0.08 * (1 - k), 0, 0));
-    for (const [side, sign] of [["L", 1], ["R", -1]] as const) {
+    for (const [side, sign] of [
+      ["L", 1],
+      ["R", -1],
+    ] as const) {
       const foot = this.toWorld(sign * 0.17, 0.09, THREE.MathUtils.lerp(0.5, 0.06, k), new THREE.Vector3());
       foot.y = 0.09 * scale;
       this.ik2(`thigh${side}`, `shin${side}`, foot, this.toWorld(sign * 0.2, 1.1, 1.6, new THREE.Vector3()));
@@ -753,8 +912,18 @@ export class Avatar {
     if (k > 0.5) {
       // on their feet: arms up, waving a towel-less fist
       const pump = Math.abs(Math.sin(s.idleT * 5 + this.player.jersey));
-      this.ik2("upperarmR", "forearmR", this.toWorld(-0.3, 2.0 + pump * 0.3 + rootY, 0.15, new THREE.Vector3()), this.toWorld(-0.8, 1.2, -0.3, new THREE.Vector3()));
-      this.ik2("upperarmL", "forearmL", this.toWorld(0.3, 1.9 + (1 - pump) * 0.3 + rootY, 0.15, new THREE.Vector3()), this.toWorld(0.8, 1.2, -0.3, new THREE.Vector3()));
+      this.ik2(
+        "upperarmR",
+        "forearmR",
+        this.toWorld(-0.3, 2.0 + pump * 0.3 + rootY, 0.15, new THREE.Vector3()),
+        this.toWorld(-0.8, 1.2, -0.3, new THREE.Vector3()),
+      );
+      this.ik2(
+        "upperarmL",
+        "forearmL",
+        this.toWorld(0.3, 1.9 + (1 - pump) * 0.3 + rootY, 0.15, new THREE.Vector3()),
+        this.toWorld(0.8, 1.2, -0.3, new THREE.Vector3()),
+      );
     } else {
       // forearms resting on the thighs
       const pole = (sign: number) => this.toWorld(sign * 0.6, 0.9 + rootY, -0.5, new THREE.Vector3());
@@ -791,7 +960,10 @@ export class Avatar {
     for (const name in this.bones) {
       const bone = this.bones[name].bone;
       const prev = this.prevQ.get(name);
-      if (!prev) { this.prevQ.set(name, bone.quaternion.clone()); continue; }
+      if (!prev) {
+        this.prevQ.set(name, bone.quaternion.clone());
+        continue;
+      }
       const leg = /^(thigh|shin|foot|toe)/.test(name);
       const core = /^(spine|chest|upperchest|neck|head)$/.test(name);
       const rate = leg ? 32 : name === "hips" ? 24 : core ? 14 : 17;
@@ -800,7 +972,10 @@ export class Avatar {
     }
     const hips = this.bones.hips.bone;
     if (!this.prevHips) this.prevHips = hips.position.clone();
-    else { this.prevHips.lerp(hips.position, 1 - Math.exp(-26 * dt)); hips.position.copy(this.prevHips); }
+    else {
+      this.prevHips.lerp(hips.position, 1 - Math.exp(-26 * dt));
+      hips.position.copy(this.prevHips);
+    }
   }
 }
 

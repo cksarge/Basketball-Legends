@@ -9,11 +9,20 @@ const teams = (pro as { teams: Team[] }).teams;
 function play(seed: number, injuries: boolean, injuryRate = 1) {
   const [h, a] = [teams[2], teams[9]];
   const m = new Match({
-    league: "pro", home: { team: h, roster: generateRoster(h) }, away: { team: a, roster: generateRoster(a) },
-    fast: true, seed, injuries, quarterMinutes: 6, sliders: { injuryRate },
+    league: "pro",
+    home: { team: h, roster: generateRoster(h) },
+    away: { team: a, roster: generateRoster(a) },
+    fast: true,
+    seed,
+    injuries,
+    quarterMinutes: 6,
+    sliders: { injuryRate },
   });
   let steps = 0;
-  while (m.state.phase !== "final" && steps < 60 * 60 * 80) { m.step(1 / 60); steps++; }
+  while (m.state.phase !== "final" && steps < 60 * 60 * 80) {
+    m.step(1 / 60);
+    steps++;
+  }
   return m;
 }
 

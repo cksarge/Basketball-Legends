@@ -71,7 +71,7 @@ export function Players({ match, uniforms, ballMesh, avatarsRef, replayFrame, be
     const g = group.current;
     if (!g) return;
     const live = new Set<string>();
-    const handler = v.ball.owner !== null ? v.agents[v.ball.owner] ?? null : null;
+    const handler = v.ball.owner !== null ? (v.agents[v.ball.owner] ?? null) : null;
     for (const ag of v.agents) {
       const id = ag.player.id;
       live.add(id);
@@ -84,14 +84,34 @@ export function Players({ match, uniforms, ballMesh, avatarsRef, replayFrame, be
       }
       const hasBall = v.ball.owner === ag.idx;
       const ballP = v.ball.pos;
-      const lookTarget = hasBall ? new THREE.Vector3(v.rimX[ag.team], 3, 0) : handler ? new THREE.Vector3(handler.pos.x, 1.6, handler.pos.z) : new THREE.Vector3(ballP.x, ballP.y, ballP.z);
+      const lookTarget = hasBall
+        ? new THREE.Vector3(v.rimX[ag.team], 3, 0)
+        : handler
+          ? new THREE.Vector3(handler.pos.x, 1.6, handler.pos.z)
+          : new THREE.Vector3(ballP.x, ballP.y, ballP.z);
       const pose: PoseInput = {
-        x: ag.pos.x, y: ag.y, z: ag.pos.z, facing: ag.facing, vx: ag.vel.x, vz: ag.vel.z,
-        action: ag.action.kind, actionT: ag.action.t, actionDur: ag.action.dur, actionData: ag.action.data,
-        hasBall, dribbling: hasBall && v.ball.mode === "dribble", hand: ag.hand,
-        ballWorld: new THREE.Vector3(ballP.x, ballP.y, ballP.z), lookAt: lookTarget,
-        stance: ag.action.kind === "stance" || (ag.team !== v.offense && v.phase === "live" && handler !== null && Math.hypot(handler.pos.x - ag.pos.x, handler.pos.z - ag.pos.z) < 2.5),
-        stamina: ag.stamina, dt, heightM: ag.player.heightIn * 0.0254, airborne: ag.y > 0.02,
+        x: ag.pos.x,
+        y: ag.y,
+        z: ag.pos.z,
+        facing: ag.facing,
+        vx: ag.vel.x,
+        vz: ag.vel.z,
+        action: ag.action.kind,
+        actionT: ag.action.t,
+        actionDur: ag.action.dur,
+        actionData: ag.action.data,
+        hasBall,
+        dribbling: hasBall && v.ball.mode === "dribble",
+        hand: ag.hand,
+        ballWorld: new THREE.Vector3(ballP.x, ballP.y, ballP.z),
+        lookAt: lookTarget,
+        stance:
+          ag.action.kind === "stance" ||
+          (ag.team !== v.offense && v.phase === "live" && handler !== null && Math.hypot(handler.pos.x - ag.pos.x, handler.pos.z - ag.pos.z) < 2.5),
+        stamina: ag.stamina,
+        dt,
+        heightM: ag.player.heightIn * 0.0254,
+        airborne: ag.y > 0.02,
         celebrate: ag.action.kind === "celebrate",
         catchBall: v.ball.mode === "pass" && v.ball.passTo === ag.idx ? new THREE.Vector3(ballP.x, ballP.y, ballP.z) : null,
       };
@@ -109,7 +129,10 @@ export function Players({ match, uniforms, ballMesh, avatarsRef, replayFrame, be
     // bench players sit in the chairs and follow the ball; updated a third of the frames each
     benchTick.current++;
     const ex = benchExcite?.current;
-    if (ex) { ex[0] = Math.max(0, ex[0] - dt); ex[1] = Math.max(0, ex[1] - dt); }
+    if (ex) {
+      ex[0] = Math.max(0, ex[0] - dt);
+      ex[1] = Math.max(0, ex[1] - dt);
+    }
     const onFloor = new Set(v.agents.map((a) => a.player.id));
     for (const ti of [0, 1] as const) {
       if (benchSize <= 0) break;
@@ -124,15 +147,37 @@ export function Players({ match, uniforms, ballMesh, avatarsRef, replayFrame, be
           g.add(av.root);
         }
         const acc = (benchDt.current.get(p.id) ?? 0) + dt;
-        if ((benchTick.current + i) % 3 !== 0 && av.root.visible) { benchDt.current.set(p.id, acc); return; }
+        if ((benchTick.current + i) % 3 !== 0 && av.root.visible) {
+          benchDt.current.set(p.id, acc);
+          return;
+        }
         benchDt.current.set(p.id, 0);
         const seat = benchSeat(s.cfg.court, ti, i);
         av.root.visible = true;
         av.update({
-          x: seat.x, y: 0, z: seat.z, facing: 0, vx: 0, vz: 0, action: "bench", actionT: 0, actionDur: 0, actionData: {},
-          hasBall: false, dribbling: false, hand: 1, ballWorld: null, lookAt: new THREE.Vector3(v.ball.pos.x, Math.max(1, v.ball.pos.y), v.ball.pos.z),
-          stance: false, stamina: 1, dt: Math.min(acc, 0.15), heightM: p.heightIn * 0.0254, airborne: false, celebrate: false,
-          seatY: SEAT_HEIGHT, benchExcite: ex && ex[ti] > 0 && ((i * 7 + p.jersey) % 3 !== 0) ? 1 : 0,
+          x: seat.x,
+          y: 0,
+          z: seat.z,
+          facing: 0,
+          vx: 0,
+          vz: 0,
+          action: "bench",
+          actionT: 0,
+          actionDur: 0,
+          actionData: {},
+          hasBall: false,
+          dribbling: false,
+          hand: 1,
+          ballWorld: null,
+          lookAt: new THREE.Vector3(v.ball.pos.x, Math.max(1, v.ball.pos.y), v.ball.pos.z),
+          stance: false,
+          stamina: 1,
+          dt: Math.min(acc, 0.15),
+          heightM: p.heightIn * 0.0254,
+          airborne: false,
+          celebrate: false,
+          seatY: SEAT_HEIGHT,
+          benchExcite: ex && ex[ti] > 0 && (i * 7 + p.jersey) % 3 !== 0 ? 1 : 0,
         });
       });
     }

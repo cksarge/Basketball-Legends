@@ -18,7 +18,10 @@ function Env() {
     const env = pm.fromScene(new RoomEnvironment(), 0.04).texture;
     scene.environment = env;
     scene.environmentIntensity = 0.5;
-    return () => { env.dispose(); pm.dispose(); };
+    return () => {
+      env.dispose();
+      pm.dispose();
+    };
   }, [gl, scene]);
   return null;
 }
@@ -44,17 +47,36 @@ export default function MenuBackdrop({ team, kind }: { team: Team; kind: ArenaKi
   const ball = useRef<THREE.Vector3 | null>(null);
   const shake = useRef([0, 0]);
   return (
-    <Canvas dpr={Math.min(1.5, typeof window !== "undefined" ? window.devicePixelRatio : 1)} camera={{ fov: 38, near: 0.5, far: 300 }} gl={{ antialias: false, powerPreference: "high-performance" }}
-      onCreated={({ gl }) => { gl.toneMapping = THREE.NoToneMapping; }}>
+    <Canvas
+      dpr={Math.min(1.5, typeof window !== "undefined" ? window.devicePixelRatio : 1)}
+      camera={{ fov: 38, near: 0.5, far: 300 }}
+      gl={{ antialias: false, powerPreference: "high-performance" }}
+      onCreated={({ gl }) => {
+        gl.toneMapping = THREE.NoToneMapping;
+      }}
+    >
       <color attach="background" args={["#05070a"]} />
       <fog attach="fog" args={["#05070a", 40, 120]} />
       <Env />
       <hemisphereLight args={["#cfd9ff", "#1a1410", 0.6]} />
       <directionalLight position={[3, 26, 6]} intensity={2.2} />
-      {[-10, 0, 10].map((x) => <pointLight key={x} position={[x, 18, 0]} intensity={240} distance={46} decay={2} />)}
+      {[-10, 0, 10].map((x) => (
+        <pointLight key={x} position={[x, 18, 0]} intensity={240} distance={46} decay={2} />
+      ))}
       <Suspense fallback={null}>
-        <Arena court={court} home={team} away={team} kind={kind} quality={g.preset === "ultra" ? "high" : g.preset} crowdDensity={g.crowdDensity * 0.85} exciteRef={excite} scoreRef={score} />
-        {([1, -1] as const).map((side) => <Hoop key={side} court={court} side={side} team={team} ceilingHung={kind === "gym"} ballRef={ball} clockRef={clock} rimShake={shake} />)}
+        <Arena
+          court={court}
+          home={team}
+          away={team}
+          kind={kind}
+          quality={g.preset === "ultra" ? "high" : g.preset}
+          crowdDensity={g.crowdDensity * 0.85}
+          exciteRef={excite}
+          scoreRef={score}
+        />
+        {([1, -1] as const).map((side) => (
+          <Hoop key={side} court={court} side={side} team={team} ceilingHung={kind === "gym"} ballRef={ball} clockRef={clock} rimShake={shake} />
+        ))}
       </Suspense>
       <Orbit reduced={reduced} />
       <EffectComposer multisampling={0}>

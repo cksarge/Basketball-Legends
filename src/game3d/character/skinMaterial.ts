@@ -6,16 +6,31 @@ export interface SkinLook {
   tone: THREE.Color;
   hairColor: THREE.Color;
   /** 0..1 weights for each mask channel. */
-  scalp: number; fade: number; cornrows: number; waves: number;
-  brows: number; stubble: number; goatee: number; mustache: number; fullBeard: number;
+  scalp: number;
+  fade: number;
+  cornrows: number;
+  waves: number;
+  brows: number;
+  stubble: number;
+  goatee: number;
+  mustache: number;
+  fullBeard: number;
 }
 
-export interface MaskSet { A: THREE.Texture; B: THREE.Texture; C: THREE.Texture; D: THREE.Texture }
+export interface MaskSet {
+  A: THREE.Texture;
+  B: THREE.Texture;
+  C: THREE.Texture;
+  D: THREE.Texture;
+}
 
 export function createSkinMaterial(masks: MaskSet, look: SkinLook): THREE.MeshStandardMaterial {
   const mat = new THREE.MeshStandardMaterial({ color: look.tone, roughness: 0.52, metalness: 0 });
   const uniforms = {
-    uMaskA: { value: masks.A }, uMaskB: { value: masks.B }, uMaskC: { value: masks.C }, uMaskD: { value: masks.D },
+    uMaskA: { value: masks.A },
+    uMaskB: { value: masks.B },
+    uMaskC: { value: masks.C },
+    uMaskD: { value: masks.D },
     uHair: { value: look.hairColor.clone() },
     uHairW1: { value: new THREE.Vector4(look.scalp, look.fade, look.cornrows, look.waves) },
     uHairW2: { value: new THREE.Vector4(look.brows, look.stubble, look.goatee, look.mustache) },

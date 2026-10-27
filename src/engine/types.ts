@@ -23,9 +23,26 @@ export interface LogoSpec {
 }
 
 export type LogoIcon =
-  | "ball" | "flame" | "bolt" | "star" | "crown" | "wing" | "claw" | "mountain"
-  | "wave" | "sun" | "tree" | "horn" | "shield" | "arrow" | "paw" | "feather"
-  | "anchor" | "gear" | "moon" | "none";
+  | "ball"
+  | "flame"
+  | "bolt"
+  | "star"
+  | "crown"
+  | "wing"
+  | "claw"
+  | "mountain"
+  | "wave"
+  | "sun"
+  | "tree"
+  | "horn"
+  | "shield"
+  | "arrow"
+  | "paw"
+  | "feather"
+  | "anchor"
+  | "gear"
+  | "moon"
+  | "none";
 
 export interface Team {
   id: string;
@@ -103,20 +120,48 @@ export const RATING_GROUPS: Record<string, RatingKey[]> = {
 };
 
 export const RATING_LABELS: Record<RatingKey, string> = {
-  speed: "Speed", accel: "Acceleration", strength: "Strength", vertical: "Vertical",
-  stamina: "Stamina", durability: "Durability", closeShot: "Close Shot", layup: "Layup",
-  dunk: "Dunk", midRange: "Mid-Range", three: "Three-Point", freeThrow: "Free Throw",
-  postControl: "Post Control", drawFoul: "Draw Foul", ballHandle: "Ball Handle",
-  speedWithBall: "Speed w/ Ball", passAccuracy: "Pass Accuracy", passVision: "Pass Vision",
-  interiorD: "Interior D", perimeterD: "Perimeter D", steal: "Steal", block: "Block",
-  offReb: "Off. Rebound", defReb: "Def. Rebound", iq: "Basketball IQ", hustle: "Hustle",
+  speed: "Speed",
+  accel: "Acceleration",
+  strength: "Strength",
+  vertical: "Vertical",
+  stamina: "Stamina",
+  durability: "Durability",
+  closeShot: "Close Shot",
+  layup: "Layup",
+  dunk: "Dunk",
+  midRange: "Mid-Range",
+  three: "Three-Point",
+  freeThrow: "Free Throw",
+  postControl: "Post Control",
+  drawFoul: "Draw Foul",
+  ballHandle: "Ball Handle",
+  speedWithBall: "Speed w/ Ball",
+  passAccuracy: "Pass Accuracy",
+  passVision: "Pass Vision",
+  interiorD: "Interior D",
+  perimeterD: "Perimeter D",
+  steal: "Steal",
+  block: "Block",
+  offReb: "Off. Rebound",
+  defReb: "Def. Rebound",
+  iq: "Basketball IQ",
+  hustle: "Hustle",
   clutch: "Clutch",
 };
 
 export type Archetype =
-  | "Floor General" | "Shot Creator" | "Sharpshooter" | "Slasher" | "3&D Wing"
-  | "Two-Way Wing" | "Stretch Big" | "Post Scorer" | "Rim Protector" | "Glass Cleaner"
-  | "Playmaking Big" | "Athletic Finisher";
+  | "Floor General"
+  | "Shot Creator"
+  | "Sharpshooter"
+  | "Slasher"
+  | "3&D Wing"
+  | "Two-Way Wing"
+  | "Stretch Big"
+  | "Post Scorer"
+  | "Rim Protector"
+  | "Glass Cleaner"
+  | "Playmaking Big"
+  | "Athletic Finisher";
 
 export interface Appearance {
   skinTone: number; // index into SKIN_TONES
@@ -196,7 +241,37 @@ export interface LeagueRules {
 }
 
 export const LEAGUE_RULES: Record<LeagueId, LeagueRules> = {
-  pro: { quarterMinutes: 12, periods: 4, shotClock: 24, threePointFt: 23.75, cornerThreeFt: 22, overtimeMinutes: 5, foulOutLimit: 6, bonusFouls: 5, backcourtSeconds: 8 },
-  college: { quarterMinutes: 20, periods: 2, shotClock: 30, threePointFt: 22.15, cornerThreeFt: 21.65, overtimeMinutes: 5, foulOutLimit: 5, bonusFouls: 7, backcourtSeconds: 10 },
-  hs: { quarterMinutes: 8, periods: 4, shotClock: 35, threePointFt: 19.75, cornerThreeFt: 19.75, overtimeMinutes: 4, foulOutLimit: 5, bonusFouls: 5, backcourtSeconds: 10 },
+  pro: {
+    quarterMinutes: 12,
+    periods: 4,
+    shotClock: 24,
+    threePointFt: 23.75,
+    cornerThreeFt: 22,
+    overtimeMinutes: 5,
+    foulOutLimit: 6,
+    bonusFouls: 5,
+    backcourtSeconds: 8,
+  },
+  college: {
+    quarterMinutes: 20,
+    periods: 2,
+    shotClock: 30,
+    threePointFt: 22.15,
+    cornerThreeFt: 21.65,
+    overtimeMinutes: 5,
+    foulOutLimit: 5,
+    bonusFouls: 7,
+    backcourtSeconds: 10,
+  },
+  hs: {
+    quarterMinutes: 8,
+    periods: 4,
+    shotClock: 35,
+    threePointFt: 19.75,
+    cornerThreeFt: 19.75,
+    overtimeMinutes: 4,
+    foulOutLimit: 5,
+    bonusFouls: 5,
+    backcourtSeconds: 10,
+  },
 };

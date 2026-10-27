@@ -6,7 +6,12 @@ import { add3, cross3, dot3, len3, scale3, sub3, type V3, v3 } from "./vec";
 export const GRAVITY = 9.81;
 
 export type BallEventType = "floor" | "rim" | "board" | "net" | "score" | "outOfBounds" | "stanchion";
-export interface BallEvent { type: BallEventType; side?: 1 | -1; speed: number; pos: V3 }
+export interface BallEvent {
+  type: BallEventType;
+  side?: 1 | -1;
+  speed: number;
+  pos: V3;
+}
 
 export interface BallPhys {
   pos: V3;
@@ -118,7 +123,8 @@ function collideHoop(b: BallPhys, c: CourtSpec, side: 1 | -1, prevY: number, out
   }
 
   // --- rim torus: closest point on the rim circle
-  const dx = b.pos.x - rim.x, dz = b.pos.z - rim.z;
+  const dx = b.pos.x - rim.x,
+    dz = b.pos.z - rim.z;
   const horiz = Math.hypot(dx, dz) || 1e-6;
   const cx = rim.x + (dx / horiz) * c.rimRadius;
   const cz = rim.z + (dz / horiz) * c.rimRadius;
@@ -173,17 +179,19 @@ export function solveArc(p0: V3, target: V3, apexAbove: number): { vel: V3; t: n
   const apexY = Math.max(p0.y, target.y) + apexAbove;
   const up = Math.sqrt(2 * GRAVITY * Math.max(0.01, apexY - p0.y));
   const t1 = up / GRAVITY;
-  const t2 = Math.sqrt(2 * Math.max(0.0001, apexY - target.y) / GRAVITY);
+  const t2 = Math.sqrt((2 * Math.max(0.0001, apexY - target.y)) / GRAVITY);
   const t = t1 + t2;
   return { vel: v3((target.x - p0.x) / t, up, (target.z - p0.z) / t), t };
 }
 
 /** Launch velocity for a given angle (radians above horizontal) to hit target. */
 export function solveAngle(p0: V3, target: V3, angle: number): { vel: V3; t: number } | null {
-  const dx = target.x - p0.x, dz = target.z - p0.z;
+  const dx = target.x - p0.x,
+    dz = target.z - p0.z;
   const dh = Math.hypot(dx, dz);
   const dy = target.y - p0.y;
-  const cos = Math.cos(angle), tan = Math.tan(angle);
+  const cos = Math.cos(angle),
+    tan = Math.tan(angle);
   const denom = 2 * cos * cos * (dh * tan - dy);
   if (denom <= 0) return null;
   const v = Math.sqrt((GRAVITY * dh * dh) / denom);
@@ -198,12 +206,17 @@ export function solveAngle(p0: V3, target: V3, angle: number): { vel: V3; t: num
  * while descending. Returns null if unreachable.
  */
 export function aimAt(p0: V3, target: V3, angle: number, spin: V3 = v3()): { vel: V3; t: number } | null {
-  const dx = target.x - p0.x, dz = target.z - p0.z;
+  const dx = target.x - p0.x,
+    dz = target.z - p0.z;
   const dh = Math.hypot(dx, dz);
   if (dh < 0.05) return { vel: v3(0, 3, 0), t: 0.6 };
-  const ux = dx / dh, uz = dz / dh;
+  const ux = dx / dh,
+    uz = dz / dh;
   const heightAt = (v: number): { y: number; t: number; desc: boolean } | null => {
-    let px = 0, py = p0.y, vx = v * Math.cos(angle), vy = v * Math.sin(angle);
+    let px = 0,
+      py = p0.y,
+      vx = v * Math.cos(angle),
+      vy = v * Math.sin(angle);
     let sp = { ...spin };
     const h = 1 / 480;
     for (let t = 0; t < 4; t += h) {
@@ -227,13 +240,17 @@ export function aimAt(p0: V3, target: V3, angle: number, spin: V3 = v3()): { vel
     }
     return null;
   };
-  let lo = 1, hi = 30;
+  let lo = 1,
+    hi = 30;
   let best: { v: number; t: number } | null = null;
   for (let i = 0; i < 40; i++) {
     const mid = (lo + hi) / 2;
     const r = heightAt(mid);
     if (!r || r.y < target.y) lo = mid;
-    else { hi = mid; best = { v: mid, t: r.t }; }
+    else {
+      hi = mid;
+      best = { v: mid, t: r.t };
+    }
   }
   if (!best) return null;
   const v = best.v;

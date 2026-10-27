@@ -17,6 +17,8 @@ walk(path.join(out, "_next", "static"));
 const hash = crypto.createHash("sha1").update(files.sort().join("\n")).digest("hex").slice(0, 10);
 const swPath = path.join(out, "sw.js");
 let sw = fs.readFileSync(swPath, "utf8");
-sw = sw.replace('const VERSION = "bl-v1";', `const VERSION = "bl-${hash}";`).replace("const BUILD_ASSETS = [];", `const BUILD_ASSETS = ${JSON.stringify(files)};`);
+sw = sw
+  .replace('const VERSION = "bl-v1";', `const VERSION = "bl-${hash}";`)
+  .replace("const BUILD_ASSETS = [];", `const BUILD_ASSETS = ${JSON.stringify(files)};`);
 fs.writeFileSync(swPath, sw);
 console.log(`sw.js: version bl-${hash}, ${files.length} build assets`);

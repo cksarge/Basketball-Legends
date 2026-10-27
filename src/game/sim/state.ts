@@ -7,10 +7,31 @@ import type { LeagueRules, Player, Team, TeamTactics } from "@/engine/types";
 export type TeamIdx = 0 | 1;
 
 export type ActionKind =
-  | "idle" | "move" | "stance"
-  | "dribbleMove" | "gather" | "jumper" | "layup" | "dunk" | "floater" | "hook" | "fadeaway"
-  | "pass" | "catch" | "block" | "steal" | "rebound" | "post" | "screen" | "fall"
-  | "celebrate" | "inbound" | "freeThrow" | "jumpball" | "dejected" | "bench";
+  | "idle"
+  | "move"
+  | "stance"
+  | "dribbleMove"
+  | "gather"
+  | "jumper"
+  | "layup"
+  | "dunk"
+  | "floater"
+  | "hook"
+  | "fadeaway"
+  | "pass"
+  | "catch"
+  | "block"
+  | "steal"
+  | "rebound"
+  | "post"
+  | "screen"
+  | "fall"
+  | "celebrate"
+  | "inbound"
+  | "freeThrow"
+  | "jumpball"
+  | "dejected"
+  | "bench";
 
 export type DribbleMoveKind = "crossover" | "behindBack" | "spin" | "hesitation" | "stepback" | "betweenLegs";
 export type ShotKind = "jumper" | "layup" | "dunk" | "floater" | "hook" | "fadeaway" | "freeThrow" | "tip";
@@ -138,9 +159,7 @@ export interface BallState {
   looseCause?: string;
 }
 
-export type Phase =
-  | "pregame" | "jumpball" | "live" | "deadball" | "inbound" | "freethrows"
-  | "timeout" | "periodEnd" | "halftime" | "final";
+export type Phase = "pregame" | "jumpball" | "live" | "deadball" | "inbound" | "freethrows" | "timeout" | "periodEnd" | "halftime" | "final";
 
 export interface FreeThrowState {
   shooter: number;
@@ -243,8 +262,16 @@ export interface GameplaySliders {
 }
 
 export const DEFAULT_SLIDERS: GameplaySliders = {
-  shotSuccess: 1, threeSuccess: 1, layupSuccess: 1, passAccuracy: 1, stealSuccess: 1,
-  blockSuccess: 1, foulFrequency: 1, speed: 1, injuryRate: 1, aiAggression: 1,
+  shotSuccess: 1,
+  threeSuccess: 1,
+  layupSuccess: 1,
+  passAccuracy: 1,
+  stealSuccess: 1,
+  blockSuccess: 1,
+  foulFrequency: 1,
+  speed: 1,
+  injuryRate: 1,
+  aiAggression: 1,
 };
 
 export const DIFFICULTY_LEVELS: { id: Difficulty; label: string; user: number; cpu: number }[] = [

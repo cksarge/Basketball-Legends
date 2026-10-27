@@ -27,25 +27,52 @@ export function commentFor(match: Match, e: GameEvent): string | null {
     }
     case "miss":
       if (rng.chance(0.55)) return null;
-      return e.points === 3 ? pick([`${nm(e.shooter)} from three... no good.`, `Off the mark from deep.`]) : pick([`${nm(e.shooter)} can't get it to fall.`, `Rims out.`]);
-    case "block": return pick([`Rejected by ${nm(e.blocker)}!`, `${nm(e.blocker)} sends it back!`, `Get that out of here! ${nm(e.blocker)} with the block.`]);
-    case "steal": return pick([`Picked off by ${nm(e.player)}!`, `${nm(e.player)} with the steal.`, `${nm(e.player)} jumps the lane!`]);
-    case "dribbleMove": return e.broke !== null ? pick([`${nm(e.player)} breaks his man down!`, `Ankles! ${nm(e.player)} with a filthy move.`]) : null;
-    case "foul": return e.fts ? `Foul on ${nm(e.player)}. ${e.fts} shots coming.` : rng.chance(0.4) ? `Whistle. Foul on ${nm(e.player)}.` : null;
+      return e.points === 3
+        ? pick([`${nm(e.shooter)} from three... no good.`, `Off the mark from deep.`])
+        : pick([`${nm(e.shooter)} can't get it to fall.`, `Rims out.`]);
+    case "block":
+      return pick([`Rejected by ${nm(e.blocker)}!`, `${nm(e.blocker)} sends it back!`, `Get that out of here! ${nm(e.blocker)} with the block.`]);
+    case "steal":
+      return pick([`Picked off by ${nm(e.player)}!`, `${nm(e.player)} with the steal.`, `${nm(e.player)} jumps the lane!`]);
+    case "dribbleMove":
+      return e.broke !== null ? pick([`${nm(e.player)} breaks his man down!`, `Ankles! ${nm(e.player)} with a filthy move.`]) : null;
+    case "foul":
+      return e.fts ? `Foul on ${nm(e.player)}. ${e.fts} shots coming.` : rng.chance(0.4) ? `Whistle. Foul on ${nm(e.player)}.` : null;
     case "violation":
-      return e.kind === "shotClock" ? "Shot clock violation." : e.kind === "threeSeconds" ? "Three seconds in the lane." : e.kind === "goaltending" ? "Goaltending is called!" : e.kind === "backcourt" ? "Over and back. Backcourt violation." : e.kind === "travel" ? pick(["Whistle. That's a travel.", `Traveling on ${e.player !== null ? nm(e.player) : "the offense"}.`]) : null;
-    case "timeout": return `${s.teams[e.team].team.name} calls timeout.`;
-    case "periodEnd": return s.cfg.rules.periods === 2 && e.period === 1 ? "That's the half." : `End of the ${ordinal(e.period)}.`;
-    case "final": return `That's the ballgame. ${s.teams[e.winner].team.name} win it.`;
-    case "injury": return pick([`${nm(e.player)} is slow to get up. That looks like a ${e.name.toLowerCase()}.`, `Trouble here: ${nm(e.player)} is hurt, ${e.name.toLowerCase()}.`]);
-    case "foulOut": return `${nm(e.player)} has fouled out.`;
-    case "rebound": return e.offensive && rng.chance(0.35) ? `Offensive board, ${nm(e.player)}.` : null;
-    default: return null;
+      return e.kind === "shotClock"
+        ? "Shot clock violation."
+        : e.kind === "threeSeconds"
+          ? "Three seconds in the lane."
+          : e.kind === "goaltending"
+            ? "Goaltending is called!"
+            : e.kind === "backcourt"
+              ? "Over and back. Backcourt violation."
+              : e.kind === "travel"
+                ? pick(["Whistle. That's a travel.", `Traveling on ${e.player !== null ? nm(e.player) : "the offense"}.`])
+                : null;
+    case "timeout":
+      return `${s.teams[e.team].team.name} calls timeout.`;
+    case "periodEnd":
+      return s.cfg.rules.periods === 2 && e.period === 1 ? "That's the half." : `End of the ${ordinal(e.period)}.`;
+    case "final":
+      return `That's the ballgame. ${s.teams[e.winner].team.name} win it.`;
+    case "injury":
+      return pick([
+        `${nm(e.player)} is slow to get up. That looks like a ${e.name.toLowerCase()}.`,
+        `Trouble here: ${nm(e.player)} is hurt, ${e.name.toLowerCase()}.`,
+      ]);
+    case "foulOut":
+      return `${nm(e.player)} has fouled out.`;
+    case "rebound":
+      return e.offensive && rng.chance(0.35) ? `Offensive board, ${nm(e.player)}.` : null;
+    default:
+      return null;
   }
 }
 
 export function ordinal(n: number) {
-  const s = ["th", "st", "nd", "rd"], v = n % 100;
+  const s = ["th", "st", "nd", "rd"],
+    v = n % 100;
   return n + (s[(v - 20) % 10] || s[v] || s[0]) + (n > 4 ? "" : " quarter");
 }
 

@@ -27,19 +27,35 @@ export function LoadingScreen({ home, away, ready }: { home: Team; away: Team; r
   const pct = ready ? 100 : active ? Math.min(99, Math.round(progress)) : Math.max(5, Math.round(progress));
   const label = (a: string) => keyLabel(keys[a as ActionName]?.[0] ?? "");
   return (
-    <div className={`fixed inset-0 z-50 flex flex-col items-center justify-center gap-10 bg-navy transition-opacity duration-400 ${ready ? "opacity-0" : "opacity-100"}`} role="status" aria-live="polite">
+    <div
+      className={`fixed inset-0 z-50 flex flex-col items-center justify-center gap-10 bg-navy transition-opacity duration-400 ${ready ? "opacity-0" : "opacity-100"}`}
+      role="status"
+      aria-live="polite"
+    >
       <div className="flex items-center gap-10">
-        <div className="flex flex-col items-center gap-2"><TeamLogo team={away} size={110} /><span className="font-display text-2xl font-bold">{away.name}</span></div>
+        <div className="flex flex-col items-center gap-2">
+          <TeamLogo team={away} size={110} />
+          <span className="font-display text-2xl font-bold">{away.name}</span>
+        </div>
         <span className="font-display text-4xl font-black text-steel">at</span>
-        <div className="flex flex-col items-center gap-2"><TeamLogo team={home} size={110} /><span className="font-display text-2xl font-bold">{home.name}</span></div>
+        <div className="flex flex-col items-center gap-2">
+          <TeamLogo team={home} size={110} />
+          <span className="font-display text-2xl font-bold">{home.name}</span>
+        </div>
       </div>
       <div className="w-[min(520px,85vw)]">
-        <div className="mb-2 flex justify-between text-sm text-steel"><span>{ready ? "Ready" : "Loading the arena"}</span><span className="tabular-nums">{pct}%</span></div>
-        <div className="h-2 overflow-hidden rounded-full bg-deck"><div className="h-full bg-amber transition-[width] duration-300" style={{ width: `${pct}%` }} /></div>
+        <div className="mb-2 flex justify-between text-sm text-steel">
+          <span>{ready ? "Ready" : "Loading the arena"}</span>
+          <span className="tabular-nums">{pct}%</span>
+        </div>
+        <div className="h-2 overflow-hidden rounded-full bg-deck">
+          <div className="h-full bg-amber transition-[width] duration-300" style={{ width: `${pct}%` }} />
+        </div>
       </div>
       {showTips && (
         <p key={tip} className="max-w-xl px-6 text-center text-lg text-net">
-          <span className="mr-2 font-display font-bold text-amber">TIP</span>{formatTip(TIPS[tip], label)}
+          <span className="mr-2 font-display font-bold text-amber">TIP</span>
+          {formatTip(TIPS[tip], label)}
         </p>
       )}
     </div>

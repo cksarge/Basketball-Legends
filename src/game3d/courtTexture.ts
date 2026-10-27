@@ -30,7 +30,8 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 
 export async function drawCourt(canvas: HTMLCanvasElement, c: CourtSpec, home: Team, opts: { woodTone?: "light" | "honey" | "dark"; gym?: boolean } = {}) {
   const { w: FW, h: FH } = floorSize(c);
-  const W = canvas.width, H = canvas.height;
+  const W = canvas.width,
+    H = canvas.height;
   const ppm = W / FW; // pixels per meter
   const g = canvas.getContext("2d")!;
   const rng = new Rng(`court:${home.id}`);
@@ -75,7 +76,8 @@ export async function drawCourt(canvas: HTMLCanvasElement, c: CourtSpec, home: T
     g.globalAlpha = 1;
   }
 
-  const pri = home.colors.primary, sec = home.colors.secondary;
+  const pri = home.colors.primary,
+    sec = home.colors.secondary;
   const lineCol = "#f6f4ef";
   const lw = Math.max(2, 0.05 * ppm);
 
@@ -187,7 +189,9 @@ export async function drawCourt(canvas: HTMLCanvasElement, c: CourtSpec, home: T
       g.drawImage(img, X(side * c.halfL * 0.48) - s2 / 2, Z(-c.halfW * 0.62) - s2 / 2, s2, s2);
     }
     g.globalAlpha = 1;
-  } catch { /* logo failed to rasterize; court still renders */ }
+  } catch {
+    /* logo failed to rasterize; court still renders */
+  }
 
   // baseline wordmarks (read from the sidelines' perspective)
   g.fillStyle = lineCol;
@@ -219,14 +223,17 @@ export async function drawCourt(canvas: HTMLCanvasElement, c: CourtSpec, home: T
 /** A low-frequency roughness map so reflections break up like real lacquer. */
 export function drawRoughness(canvas: HTMLCanvasElement) {
   const g = canvas.getContext("2d")!;
-  const W = canvas.width, H = canvas.height;
+  const W = canvas.width,
+    H = canvas.height;
   const rng = new Rng("rough");
   g.fillStyle = "rgb(90,90,90)";
   g.fillRect(0, 0, W, H);
   for (let i = 0; i < 900; i++) {
     const v = 70 + rng.int(0, 60);
     g.fillStyle = `rgba(${v},${v},${v},0.25)`;
-    const x = rng.range(0, W), y = rng.range(0, H), r = rng.range(6, 40);
+    const x = rng.range(0, W),
+      y = rng.range(0, H),
+      r = rng.range(6, 40);
     g.beginPath();
     g.ellipse(x, y, r * 3, r, 0, 0, Math.PI * 2);
     g.fill();

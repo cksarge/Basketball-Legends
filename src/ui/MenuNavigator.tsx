@@ -24,26 +24,37 @@ export function moveFocus(dir: "up" | "down" | "left" | "right") {
   const els = visibleFocusables();
   if (!els.length) return;
   const cur = document.activeElement as HTMLElement | null;
-  if (!cur || !els.includes(cur)) { els[0].focus(); return; }
+  if (!cur || !els.includes(cur)) {
+    els[0].focus();
+    return;
+  }
   // sliders/selects keep left/right for themselves
   if ((dir === "left" || dir === "right") && cur instanceof HTMLInputElement && cur.type === "range") {
-    if (dir === "right") cur.stepUp(); else cur.stepDown();
+    if (dir === "right") cur.stepUp();
+    else cur.stepDown();
     cur.dispatchEvent(new Event("input", { bubbles: true }));
     return;
   }
   const a = cur.getBoundingClientRect();
-  const ax = a.left + a.width / 2, ay = a.top + a.height / 2;
-  let best: HTMLElement | null = null, bestScore = Infinity;
+  const ax = a.left + a.width / 2,
+    ay = a.top + a.height / 2;
+  let best: HTMLElement | null = null,
+    bestScore = Infinity;
   for (const el of els) {
     if (el === cur) continue;
     const b = el.getBoundingClientRect();
-    const bx = b.left + b.width / 2, by = b.top + b.height / 2;
-    const dx = bx - ax, dy = by - ay;
+    const bx = b.left + b.width / 2,
+      by = b.top + b.height / 2;
+    const dx = bx - ax,
+      dy = by - ay;
     const along = dir === "up" ? -dy : dir === "down" ? dy : dir === "left" ? -dx : dx;
     const across = dir === "up" || dir === "down" ? Math.abs(dx) : Math.abs(dy);
     if (along <= 2) continue;
     const score = along + across * 2.2;
-    if (score < bestScore) { bestScore = score; best = el; }
+    if (score < bestScore) {
+      bestScore = score;
+      best = el;
+    }
   }
   if (best) {
     best.focus();
@@ -84,7 +95,8 @@ export function MenuNavigator() {
       if (!pad) return;
       const id = pad.id.toLowerCase();
       const anyPressed = pad.buttons.some((b) => b.pressed) || pad.axes.some((v) => Math.abs(v) > 0.5);
-      if (anyPressed) useInputDevice.getState().set(/054c|playstation|dualsense|dualshock/.test(id) ? "playstation" : /xbox|xinput|045e/.test(id) ? "xbox" : "gamepad");
+      if (anyPressed)
+        useInputDevice.getState().set(/054c|playstation|dualsense|dualshock/.test(id) ? "playstation" : /xbox|xinput|045e/.test(id) ? "xbox" : "gamepad");
       if (inGame()) return;
       const btn = (i: number) => !!pad.buttons[i]?.pressed;
       const dirs = {
@@ -100,13 +112,18 @@ export function MenuNavigator() {
         }
         prev[d] = on;
       }
-      const a = btn(0), b = btn(1);
+      const a = btn(0),
+        b = btn(1);
       if (a && !prev.a) (document.activeElement as HTMLElement | null)?.click();
       if (b && !prev.b) window.dispatchEvent(new CustomEvent(BACK_EVENT));
-      prev.a = a; prev.b = b;
+      prev.a = a;
+      prev.b = b;
     };
     raf = requestAnimationFrame(poll);
-    return () => { window.removeEventListener("keydown", onKey); cancelAnimationFrame(raf); };
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      cancelAnimationFrame(raf);
+    };
   }, []);
   return null;
 }

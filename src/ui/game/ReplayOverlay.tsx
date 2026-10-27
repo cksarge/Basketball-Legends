@@ -24,7 +24,10 @@ export function ReplayOverlay({ director }: { director: ReplayDirector }) {
   useEffect(() => {
     if (!pb) return;
     let raf = 0;
-    const loop = () => { setProgress(director.progress()); raf = requestAnimationFrame(loop); };
+    const loop = () => {
+      setProgress(director.progress());
+      raf = requestAnimationFrame(loop);
+    };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
   }, [pb, director]);
@@ -47,19 +50,35 @@ export function ReplayOverlay({ director }: { director: ReplayDirector }) {
         <p className="pointer-events-none fixed bottom-[110px] right-6 z-30 text-sm text-steel">Press {k("shoot")} to skip</p>
       ) : (
         <div className="fixed inset-x-0 bottom-[104px] z-30 mx-auto flex w-[min(720px,92vw)] flex-col gap-2" data-nav-scope="replay">
-          <div className="h-1.5 overflow-hidden rounded-full bg-deck/80"><div className="h-full bg-amber" style={{ width: `${progress * 100}%` }} /></div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-deck/80">
+            <div className="h-full bg-amber" style={{ width: `${progress * 100}%` }} />
+          </div>
           <div className="flex flex-wrap items-center justify-center gap-2">
-            <button className={btn} onClick={() => director.scrub(-2)} aria-label="Back two seconds">-2s</button>
-            <button className={btn} onClick={() => director.setPlaying(!pb.playing)}>{pb.playing ? "Pause" : "Play"} <kbd className="ml-1 text-xs text-steel">{k("shoot")}</kbd></button>
-            <button className={btn} onClick={() => director.scrub(2)} aria-label="Forward two seconds">+2s</button>
+            <button className={btn} onClick={() => director.scrub(-2)} aria-label="Back two seconds">
+              -2s
+            </button>
+            <button className={btn} onClick={() => director.setPlaying(!pb.playing)}>
+              {pb.playing ? "Pause" : "Play"} <kbd className="ml-1 text-xs text-steel">{k("shoot")}</kbd>
+            </button>
+            <button className={btn} onClick={() => director.scrub(2)} aria-label="Forward two seconds">
+              +2s
+            </button>
             <span className="mx-1 text-sm text-steel">Speed</span>
             {SPEEDS.map((sp) => (
-              <button key={sp} className={pb.speed === sp ? hot : btn} onClick={() => director.setSpeed(sp)}>{sp === 1 ? "1x" : sp === 0.5 ? "½x" : sp === 0.25 ? "¼x" : "⅛x"}</button>
+              <button key={sp} className={pb.speed === sp ? hot : btn} onClick={() => director.setSpeed(sp)}>
+                {sp === 1 ? "1x" : sp === 0.5 ? "½x" : sp === 0.25 ? "¼x" : "⅛x"}
+              </button>
             ))}
-            <button className={btn} onClick={() => director.cycleCam(1)}>Camera: {REPLAY_CAMS[pb.cam].label} <kbd className="ml-1 text-xs text-steel">{k("camera")}</kbd></button>
-            <button className={hot} onClick={() => director.stop()}>Exit <kbd className="ml-1 text-xs">{k("replay")}</kbd></button>
+            <button className={btn} onClick={() => director.cycleCam(1)}>
+              Camera: {REPLAY_CAMS[pb.cam].label} <kbd className="ml-1 text-xs text-steel">{k("camera")}</kbd>
+            </button>
+            <button className={hot} onClick={() => director.stop()}>
+              Exit <kbd className="ml-1 text-xs">{k("replay")}</kbd>
+            </button>
           </div>
-          <p className="text-center text-xs text-steel">{k("dribbleLeft")} / {k("dribbleRight")} scrub · {k("dribbleBack")} / {k("dribbleSpin")} slower / faster</p>
+          <p className="text-center text-xs text-steel">
+            {k("dribbleLeft")} / {k("dribbleRight")} scrub · {k("dribbleBack")} / {k("dribbleSpin")} slower / faster
+          </p>
         </div>
       )}
     </>

@@ -1,10 +1,12 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import prettier from "eslint-config-prettier/flat";
 
 export default defineConfig([
   ...nextVitals,
   ...nextTs,
+  prettier,
   {
     // React Three Fiber's frame loop and the match engine are imperative by design:
     // useFrame mutates three.js objects, refs and the simulation every frame.

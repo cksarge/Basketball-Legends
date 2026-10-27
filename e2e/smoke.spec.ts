@@ -7,13 +7,27 @@ import { expect, test, type Page } from "@playwright/test";
 async function lowGraphics(page: Page) {
   await page.addInitScript(() => {
     if (localStorage.getItem("bl-settings")) return;
-    localStorage.setItem("bl-settings", JSON.stringify({
-      version: 1,
-      state: {
-        graphics: { preset: "low", autoDetected: true, resolutionScale: 0.5, shadows: false, bloom: false, ambientOcclusion: false, antialias: false, crowdDensity: 0.05, fpsCap: 0, showFps: false },
-        presentation: { skipIntros: true, replays: false },
-      },
-    }));
+    localStorage.setItem(
+      "bl-settings",
+      JSON.stringify({
+        version: 1,
+        state: {
+          graphics: {
+            preset: "low",
+            autoDetected: true,
+            resolutionScale: 0.5,
+            shadows: false,
+            bloom: false,
+            ambientOcclusion: false,
+            antialias: false,
+            crowdDensity: 0.05,
+            fpsCap: 0,
+            showFps: false,
+          },
+          presentation: { skipIntros: true, replays: false },
+        },
+      }),
+    );
   });
 }
 
@@ -114,12 +128,20 @@ test("save and quit, then resume from the main menu @gpu", async ({ page }) => {
 
 test("settings persist across reloads", async ({ page }) => {
   await page.goto("/settings/");
-  await page.getByRole("tab", { name: "Presentation" }).or(page.getByRole("button", { name: "Presentation" })).first().click();
+  await page
+    .getByRole("tab", { name: "Presentation" })
+    .or(page.getByRole("button", { name: "Presentation" }))
+    .first()
+    .click();
   const toggle = page.getByLabel("Big-play banners");
   const was = await toggle.isChecked();
   await toggle.click();
   await page.reload();
-  await page.getByRole("tab", { name: "Presentation" }).or(page.getByRole("button", { name: "Presentation" })).first().click();
+  await page
+    .getByRole("tab", { name: "Presentation" })
+    .or(page.getByRole("button", { name: "Presentation" }))
+    .first()
+    .click();
   expect(await page.getByLabel("Big-play banners").isChecked()).toBe(!was);
 });
 
@@ -133,8 +155,17 @@ test("the tutorial starts and advances @gpu", async ({ page }) => {
   await expect(panel).toBeVisible({ timeout: 60_000 });
   await expect(panel).toContainText("Step 1 of 10");
   // walk back and forth until the first step checks off
-  await expect.poll(async () => {
-    for (const k of ["KeyD", "KeyW", "KeyA", "KeyS"]) { await page.keyboard.down(k); await page.waitForTimeout(700); await page.keyboard.up(k); }
-    return panel.textContent();
-  }, { timeout: 90_000, intervals: [0] }).toContain("Step 2 of 10");
+  await expect
+    .poll(
+      async () => {
+        for (const k of ["KeyD", "KeyW", "KeyA", "KeyS"]) {
+          await page.keyboard.down(k);
+          await page.waitForTimeout(700);
+          await page.keyboard.up(k);
+        }
+        return panel.textContent();
+      },
+      { timeout: 90_000, intervals: [0] },
+    )
+    .toContain("Step 2 of 10");
 });

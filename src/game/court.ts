@@ -98,7 +98,8 @@ export function inBounds(c: CourtSpec, x: number, z: number, margin = 0) {
 export function inLane(c: CourtSpec, side: 1 | -1, x: number, z: number) {
   const base = side * c.halfL;
   const ft = side * (c.halfL - c.laneLength);
-  const lo = Math.min(base, ft), hi = Math.max(base, ft);
+  const lo = Math.min(base, ft),
+    hi = Math.max(base, ft);
   return x >= lo && x <= hi && Math.abs(z) <= c.laneWidth / 2;
 }
 
@@ -126,7 +127,8 @@ export function benchSeat(c: CourtSpec, team: 0 | 1, i: number) {
 /** Where the five players stand during a timeout huddle (a half ring in front of the bench). */
 export function huddleSpot(c: CourtSpec, team: 0 | 1, i: number) {
   const s = team === 0 ? 1 : -1;
-  const cx = s * (Math.min(6.5, c.halfL * 0.5) + 2.6), cz = -(c.halfW + 0.2);
+  const cx = s * (Math.min(6.5, c.halfL * 0.5) + 2.6),
+    cz = -(c.halfW + 0.2);
   const a = (i - 2) * 0.62; // fan out on the court side of the center
   return { x: cx + Math.sin(a) * 1.15, z: cz + Math.cos(a) * 1.15, cx, cz };
 }

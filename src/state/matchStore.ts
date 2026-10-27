@@ -67,7 +67,11 @@ export const useMatchStore = create<MatchStore>((set) => ({
   lastResult: null,
   setPending: (pending) => {
     set({ pending });
-    try { if (pending) sessionStorage.setItem("bl-pending", JSON.stringify(pending)); } catch { /* ignore */ }
+    try {
+      if (pending) sessionStorage.setItem("bl-pending", JSON.stringify(pending));
+    } catch {
+      /* ignore */
+    }
   },
   setResult: (lastResult) => set({ lastResult }),
 }));
@@ -84,21 +88,41 @@ export function restorePending(): PendingMatch | null {
 
 /** Snapshot of the live game for the DOM HUD (updated from the render loop). */
 export interface HudSnapshot {
-  homeScore: number; awayScore: number;
-  period: number; periods: number; clock: number; shotClock: number | null;
+  homeScore: number;
+  awayScore: number;
+  period: number;
+  periods: number;
+  clock: number;
+  shotClock: number | null;
   phase: string;
-  homeFouls: number; awayFouls: number;
-  homeTimeouts: number; awayTimeouts: number;
+  homeFouls: number;
+  awayFouls: number;
+  homeTimeouts: number;
+  awayTimeouts: number;
   possession: 0 | 1;
   bonus: [boolean, boolean];
   meter: { active: boolean; fill: number; ideal: number; result: "green" | "good" | "early" | "late" | null; side: 0 | 1 } | null;
   controlled: { name: string; number: number; stamina: number; team: 0 | 1 } | null;
 }
 
-export interface PlayBanner { id: number; title: string; sub?: string; color: string; accent: string }
+export interface PlayBanner {
+  id: number;
+  title: string;
+  sub?: string;
+  color: string;
+  accent: string;
+}
 
 /** Broadcast lower-third stat card ("SHEPHERD 18 PTS · 7/10 FG"). */
-export interface StatOverlay { id: number; jersey: number; name: string; team: string; color: string; accent: string; lines: string[] }
+export interface StatOverlay {
+  id: number;
+  jersey: number;
+  name: string;
+  team: string;
+  color: string;
+  accent: string;
+  lines: string[];
+}
 
 export const useHud = create<{
   hud: HudSnapshot | null;

@@ -2,7 +2,10 @@
 import type { Conference, LeagueId, Player, Team } from "@/engine/types";
 import { generateRoster } from "@/engine/player";
 
-export interface LeagueData { conferences: Conference[]; teams: Team[] }
+export interface LeagueData {
+  conferences: Conference[];
+  teams: Team[];
+}
 
 export const LEAGUES: { id: LeagueId; name: string; short: string; blurb: string }[] = [
   { id: "pro", name: "Pro Basketball League", short: "Pro", blurb: "30 cities, 82-game grind, championship or bust." },
@@ -14,8 +17,9 @@ const cache: Partial<Record<LeagueId, Promise<LeagueData>>> = {};
 
 export function loadLeague(id: LeagueId): Promise<LeagueData> {
   if (!cache[id]) {
-    cache[id] = (id === "pro" ? import("./generated/pro.json") : id === "college" ? import("./generated/college.json") : import("./generated/hs.json"))
-      .then((m) => (m.default ?? m) as unknown as LeagueData);
+    cache[id] = (id === "pro" ? import("./generated/pro.json") : id === "college" ? import("./generated/college.json") : import("./generated/hs.json")).then(
+      (m) => (m.default ?? m) as unknown as LeagueData,
+    );
   }
   return cache[id]!;
 }

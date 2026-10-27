@@ -21,14 +21,20 @@ interface AIMemo {
 const memo = new WeakMap<Agent, AIMemo>();
 const M = (a: Agent) => {
   let m = memo.get(a);
-  if (!m) { m = { variant: a.idx % 2 }; memo.set(a, m); }
+  if (!m) {
+    m = { variant: a.idx % 2 };
+    memo.set(a, m);
+  }
   return m;
 };
 
 /** AI plans per on-court slot, for saving a game in progress. */
 export function exportAIMemory(match: Match): Record<number, AIMemo> {
   const out: Record<number, AIMemo> = {};
-  for (const a of match.state.agents) { const m = memo.get(a); if (m) out[a.idx] = { ...m }; }
+  for (const a of match.state.agents) {
+    const m = memo.get(a);
+    if (m) out[a.idx] = { ...m };
+  }
   return out;
 }
 export function importAIMemory(match: Match, data: Record<number, AIMemo> | undefined) {
@@ -41,7 +47,10 @@ export function runAI(match: Match, dt: number, decide: boolean) {
   COURT_HALF = { x: s.cfg.court.halfL, z: s.cfg.court.halfW };
   for (const a of s.agents) {
     if (a.human !== null) continue;
-    if (s.cfg.practice && a.team === 1) { holdStill(a); continue; }
+    if (s.cfg.practice && a.team === 1) {
+      holdStill(a);
+      continue;
+    }
     const intent = a.intent;
     intent.act = undefined;
     switch (s.phase) {
@@ -94,14 +103,20 @@ function goTo(a: Agent, t: V2, opts: { sprint?: boolean; face?: V2; slow?: numbe
     const inside = inLane(c, side, a.pos.x, a.pos.z);
     if (inside) {
       if (m.exitZ === undefined) m.exitZ = (t.z >= 0 ? 1 : -1) * (c.laneWidth / 2 + 1.4);
-      if (a.laneTime > 0.7 || inLane(c, side, t.x, t.z)) { t = v2(a.pos.x - side * 0.4, m.exitZ); opts = { ...opts, sprint: true, precision: 0.3 }; }
+      if (a.laneTime > 0.7 || inLane(c, side, t.x, t.z)) {
+        t = v2(a.pos.x - side * 0.4, m.exitZ);
+        opts = { ...opts, sprint: true, precision: 0.3 };
+      }
     } else {
       m.exitZ = undefined;
       // reroute around the top of the key instead of walking through the paint
       let crosses = false;
       for (let k = 1; k <= 8; k++) {
         const f = k / 8;
-        if (inLane(c, side, a.pos.x + (t.x - a.pos.x) * f, a.pos.z + (t.z - a.pos.z) * f)) { crosses = true; break; }
+        if (inLane(c, side, a.pos.x + (t.x - a.pos.x) * f, a.pos.z + (t.z - a.pos.z) * f)) {
+          crosses = true;
+          break;
+        }
       }
       if (crosses && !inLane(c, side, t.x, t.z)) {
         const topX = side * (c.halfL - c.laneLength - 1.2);
@@ -111,20 +126,27 @@ function goTo(a: Agent, t: V2, opts: { sprint?: boolean; face?: V2; slow?: numbe
       }
     }
   }
-  const dx = t.x - a.pos.x, dz = t.z - a.pos.z;
+  const dx = t.x - a.pos.x,
+    dz = t.z - a.pos.z;
   const d = Math.hypot(dx, dz);
   const slow = opts.slow ?? 1.4;
   const prec = opts.precision ?? 0.12;
   if (d < prec) {
-    a.intent.moveX = 0; a.intent.moveZ = 0;
+    a.intent.moveX = 0;
+    a.intent.moveZ = 0;
   } else {
     const k = Math.min(1, d / slow);
     a.intent.moveX = (dx / d) * k;
     a.intent.moveZ = (dz / d) * k;
   }
   a.intent.sprint = !!opts.sprint && d > 2.5;
-  if (opts.face) { a.intent.faceX = opts.face.x; a.intent.faceZ = opts.face.z; }
-  else { a.intent.faceX = undefined; a.intent.faceZ = undefined; }
+  if (opts.face) {
+    a.intent.faceX = opts.face.x;
+    a.intent.faceZ = opts.face.z;
+  } else {
+    a.intent.faceX = undefined;
+    a.intent.faceZ = undefined;
+  }
 }
 
 /** Move to meet the ball on its way. */
@@ -144,15 +166,18 @@ function receivePass(match: Match, a: Agent) {
 function deadBallMove(match: Match, a: Agent) {
   const s = match.state;
   const ib = s.inbound;
-  if (!ib) { holdStill(a); return; }
+  if (!ib) {
+    holdStill(a);
+    return;
+  }
   const side = match.attackSide(ib.team);
   if (a.team === ib.team) {
     // jog toward own backcourt / spacing
-    const spot = ib.afterScore ? v2(-side * 6 + (a.idx % 5 - 2) * 1.2, (a.idx % 5 - 2) * 2.4) : match.spacingSpot(a.role, side, M(a).variant);
+    const spot = ib.afterScore ? v2(-side * 6 + ((a.idx % 5) - 2) * 1.2, ((a.idx % 5) - 2) * 2.4) : match.spacingSpot(a.role, side, M(a).variant);
     goTo(a, spot, { slow: 2.5 });
   } else {
     const myRim = rimPos(s.cfg.court, match.attackSide(a.team === 0 ? 1 : 0));
-    const spot = v2(myRim.x - match.attackSide(ib.team) * (3 + (a.idx % 5)), (a.idx % 5 - 2) * 2.2);
+    const spot = v2(myRim.x - match.attackSide(ib.team) * (3 + (a.idx % 5)), ((a.idx % 5) - 2) * 2.2);
     goTo(a, spot, { slow: 2.5 });
   }
 }
@@ -164,16 +189,21 @@ function inboundAI(match: Match, a: Agent, decide: boolean) {
   const side = match.attackSide(ib.team);
   if (a.idx === ib.inbounder) {
     holdStill(a);
-    a.intent.faceX = 0; a.intent.faceZ = 0;
+    a.intent.faceX = 0;
+    a.intent.faceZ = 0;
     if (decide && s.ball.owner === a.idx && ib.timer > (s.cfg.fast ? 0.2 : 1.1)) {
       // pass to the most open teammate, preferring the point guard
       const mates = match.agentsOf(a.team).filter((m) => m !== a);
-      let best: Agent | null = null, bv = -1;
+      let best: Agent | null = null,
+        bv = -1;
       for (const m of mates) {
         const open = openness(match, m);
         const dist = dist2(m.pos, a.pos);
         const v = open * (m.role === "ball" ? 1.6 : 1) * (dist < 12 ? 1 : 0.4) * (passLaneClear(match, a, m) ? 1 : 0.2);
-        if (v > bv) { bv = v; best = m; }
+        if (v > bv) {
+          bv = v;
+          best = m;
+        }
       }
       if (best && (bv > 0.35 || ib.timer > 3.6)) a.intent.act = { type: "pass", to: best.idx, kind: "chest" };
     }
@@ -211,7 +241,10 @@ function offenseAI(match: Match, a: Agent, decide: boolean) {
   const aggression = s.cfg.sliders.aiAggression;
 
   if (hasBall) {
-    if (match.isBusy(a)) { holdStill(a); return; }
+    if (match.isBusy(a)) {
+      holdStill(a);
+      return;
+    }
     const front = a.pos.x * side > 0;
     const dRim = distToRim(c, side, a.pos.x, a.pos.z);
     const shotClock = s.cfg.rules.shotClock ? s.shotClock : 99;
@@ -235,14 +268,18 @@ function offenseAI(match: Match, a: Agent, decide: boolean) {
       goTo(a, v2(side * 4, lane), { sprint: push, slow: 0.5 });
       if (decide && push) {
         // ahead pass to a streaking teammate
-        const ahead = match.agentsOf(a.team).filter((t) => t !== a && (t.pos.x - a.pos.x) * side > (urgent ? 3 : 6) && openness(match, t) > (urgent ? 0.6 : 0.8));
+        const ahead = match
+          .agentsOf(a.team)
+          .filter((t) => t !== a && (t.pos.x - a.pos.x) * side > (urgent ? 3 : 6) && openness(match, t) > (urgent ? 0.6 : 0.8));
         if (ahead.length && match.rng.chance(urgent ? 0.55 : 0.35)) a.intent.act = { type: "pass", to: ahead[0].idx, kind: "chest" };
       }
       return;
     }
 
     // fast break: attack the rim if numbers
-    const defendersAhead = match.agentsOf(a.team === 0 ? 1 : 0).filter((d) => (rim.x - d.pos.x) * side < (rim.x - a.pos.x) * side + 1 && Math.abs(d.pos.z - a.pos.z) < 6).length;
+    const defendersAhead = match
+      .agentsOf(a.team === 0 ? 1 : 0)
+      .filter((d) => (rim.x - d.pos.x) * side < (rim.x - a.pos.x) * side + 1 && Math.abs(d.pos.z - a.pos.z) < 6).length;
     if (dRim < 11 && defendersAhead === 0) m.plan = "drive";
 
     if (decide) {
@@ -265,10 +302,16 @@ function offenseAI(match: Match, a: Agent, decide: boolean) {
         a.intent.act = { type: "shoot", phase: "press" };
         return;
       }
-      if (shotClock < 2.2) { a.intent.act = { type: "shoot", phase: "press" }; return; }
+      if (shotClock < 2.2) {
+        a.intent.act = { type: "shoot", phase: "press" };
+        return;
+      }
       // don't camp in the lane with the ball
       if (a.laneTime > 1.7) {
-        if (dRim < 3.2) { a.intent.act = { type: "shoot", phase: "press" }; return; }
+        if (dRim < 3.2) {
+          a.intent.act = { type: "shoot", phase: "press" };
+          return;
+        }
         m.plan = "kick";
         m.planUntil = s.time + 1;
       }
@@ -279,13 +322,17 @@ function offenseAI(match: Match, a: Agent, decide: boolean) {
       }
       // pass to a better option
       if ((m.nextPassOk ?? 0) < s.time && a.holdTime > 0.35) {
-        let best: Agent | null = null, bv = 0;
+        let best: Agent | null = null,
+          bv = 0;
         for (const t of match.agentsOf(a.team)) {
           if (t === a) continue;
           if (!passLaneClear(match, a, t)) continue;
           const open = openness(match, t);
           const val = match.shotValue(t) * (0.55 + 0.45 * open) + (t.human !== null ? 0.08 : 0) - dist2(a.pos, t.pos) * 0.008;
-          if (val > bv) { bv = val; best = t; }
+          if (val > bv) {
+            bv = val;
+            best = t;
+          }
         }
         const myVal = ev + (m.plan === "drive" ? 0.25 : 0);
         if (best && bv > myVal + 0.12 && (a.holdTime > 1.2 || bv > 1.1)) {
@@ -295,8 +342,16 @@ function offenseAI(match: Match, a: Agent, decide: boolean) {
           return;
         }
         // lob to a cutting big
-        const lobT = match.agentsOf(a.team).find((t) => t !== a && distToRim(c, side, t.pos.x, t.pos.z) < 2.2 && openness(match, t) > 0.7
-          && match.reach(t) + match.verticalLeap(t) > c.rimHeight + 0.15 && (t.vel.x * side > 1));
+        const lobT = match
+          .agentsOf(a.team)
+          .find(
+            (t) =>
+              t !== a &&
+              distToRim(c, side, t.pos.x, t.pos.z) < 2.2 &&
+              openness(match, t) > 0.7 &&
+              match.reach(t) + match.verticalLeap(t) > c.rimHeight + 0.15 &&
+              t.vel.x * side > 1,
+          );
         if (lobT && match.rng.chance(0.25 * aggression)) {
           a.intent.act = { type: "pass", to: lobT.idx, kind: "alley" };
           return;
@@ -316,7 +371,10 @@ function offenseAI(match: Match, a: Agent, decide: boolean) {
           ["post", post ? 1.6 : 0],
           ["hold", 0.5],
         ];
-        m.plan = match.rng.weighted(opts.map((o) => o[0]), opts.map((o) => o[1]));
+        m.plan = match.rng.weighted(
+          opts.map((o) => o[0]),
+          opts.map((o) => o[1]),
+        );
         m.planUntil = s.time + 1.5 + match.rng.range(0, 1.5);
         if (m.plan === "pnr") requestScreen(match, a);
       }
@@ -326,7 +384,8 @@ function offenseAI(match: Match, a: Agent, decide: boolean) {
         const moves = ["crossover", "behindBack", "hesitation", "stepback", "spin", "betweenLegs"] as const;
         const w = [3, 1.5, 2, three ? 0.6 : 1.5, 1, 1.5];
         // pick the side that moves away from the nearest sideline
-        const lx = Math.cos(a.facing), lz = -Math.sin(a.facing);
+        const lx = Math.cos(a.facing),
+          lz = -Math.sin(a.facing);
         const towardMiddle = -(a.pos.z * lz + 0 * lx) > 0 ? 1 : -1;
         const dir = Math.abs(a.pos.z) > c.halfW - 2.2 ? towardMiddle : match.rng.chance(0.5) ? 1 : -1;
         a.intent.act = { type: "dribbleMove", move: match.rng.weighted([...moves], w), dir };
@@ -374,21 +433,30 @@ function offenseAI(match: Match, a: Agent, decide: boolean) {
       }
     }
     // avoid backcourt / out of bounds
-    if (a.pos.x * side < 0.6 && s.frontcourt) { a.intent.moveX = Math.abs(a.intent.moveX) * side; }
+    if (a.pos.x * side < 0.6 && s.frontcourt) {
+      a.intent.moveX = Math.abs(a.intent.moveX) * side;
+    }
     keepInBounds(match, a);
     return;
   }
 
   // ---- off-ball offense
   LANE = { match, side };
-  try { offBall(match, a, decide, side, rim, m); } finally { LANE = null; }
+  try {
+    offBall(match, a, decide, side, rim, m);
+  } finally {
+    LANE = null;
+  }
 }
 
 function offBall(match: Match, a: Agent, decide: boolean, side: 1 | -1, rim: { x: number; y: number; z: number }, m: AIMemo) {
   const s = match.state;
   const c = s.cfg.court;
   const handler = match.handler();
-  if (!handler) { goTo(a, match.spacingSpot(a.role, side, m.variant)); return; }
+  if (!handler) {
+    goTo(a, match.spacingSpot(a.role, side, m.variant));
+    return;
+  }
   // transition: sprint to frontcourt
   if (!s.frontcourt && a.pos.x * side < 2) {
     const lane = (a.role === "corner" ? 1 : a.role === "wing" ? -1 : a.role === "post" ? 0.3 : 0.6) * (c.halfW - 2);
@@ -405,7 +473,10 @@ function offBall(match: Match, a: Agent, decide: boolean, side: 1 | -1, rim: { x
       let perp = v2(-hd.z, hd.x);
       if (perp.z * -Math.sign(user.pos.z || 1) < 0) perp = v2(-perp.x, -perp.z);
       const screenSpot = v2(def.pos.x + perp.x * 0.7, def.pos.z + perp.z * 0.7);
-      if (inLane(c, side, screenSpot.x, screenSpot.z)) { m.screenFor = undefined; return; }
+      if (inLane(c, side, screenSpot.x, screenSpot.z)) {
+        m.screenFor = undefined;
+        return;
+      }
       goTo(a, screenSpot, { slow: 0.4, face: user.pos });
       if (dist2(a.pos, screenSpot) < 0.6 && a.action.kind !== "screen") match.startAction(a, "screen", 1.4);
       return;
@@ -474,10 +545,14 @@ function defenseAI(match: Match, a: Agent, decide: boolean) {
   const handler = match.handler();
   const tactics = s.teams[a.team].tactics;
   const aggression = s.cfg.sliders.aiAggression;
-  if (match.isBusy(a)) { holdStill(a); return; }
+  if (match.isBusy(a)) {
+    holdStill(a);
+    return;
+  }
 
   // full-court press: pick up the ball in the backcourt and trap it before half court
-  const pressing = tactics.defense === "press" && handler !== null && handler.team === offTeam && !s.frontcourt && (s.phase === "live" || s.phase === "inbound");
+  const pressing =
+    tactics.defense === "press" && handler !== null && handler.team === offTeam && !s.frontcourt && (s.phase === "live" || s.phase === "inbound");
   // transition defense: get back
   if (!pressing && handler && (handler.pos.x - a.pos.x) * side > 1 && Math.abs(a.pos.x - rim.x) > 6) {
     goTo(a, v2(rim.x - side * 3, clamp(handler.pos.z * 0.5, -3, 3)), { sprint: true });
@@ -485,8 +560,13 @@ function defenseAI(match: Match, a: Agent, decide: boolean) {
   }
 
   let man = a.guarding !== null ? s.agents[a.guarding] : null;
-  if (!man || man.team === a.team) { man = match.nearestOpponent(a); }
-  if (!man) { holdStill(a); return; }
+  if (!man || man.team === a.team) {
+    man = match.nearestOpponent(a);
+  }
+  if (!man) {
+    holdStill(a);
+    return;
+  }
 
   // in a zone, whoever is closest to the ball takes it; the others guard their area
   const zone = tactics.defense === "zone23" || tactics.defense === "zone32";
@@ -502,7 +582,10 @@ function defenseAI(match: Match, a: Agent, decide: boolean) {
 
   let target: V2;
   if (pressing && handler) {
-    const helpers = match.agentsOf(a.team).filter((d) => d.guarding !== handler.idx).sort((x, y) => dist2(x.pos, handler.pos) - dist2(y.pos, handler.pos));
+    const helpers = match
+      .agentsOf(a.team)
+      .filter((d) => d.guarding !== handler.idx)
+      .sort((x, y) => dist2(x.pos, handler.pos) - dist2(y.pos, handler.pos));
     const toR = norm(v2(rim.x - handler.pos.x, rim.z - handler.pos.z));
     if (onBall) {
       target = v2(handler.pos.x + toR.x * 0.75, handler.pos.z + toR.z * 0.75);
@@ -517,7 +600,9 @@ function defenseAI(match: Match, a: Agent, decide: boolean) {
   } else if (zone && !onBall) {
     const spot = zoneSpot(match, a, side);
     // close out on anyone who drifts into my area (not the ball, someone else has it)
-    const intruder = match.agentsOf(offTeam).filter((o) => o !== handler && dist2(o.pos, spot) < 3.4)
+    const intruder = match
+      .agentsOf(offTeam)
+      .filter((o) => o !== handler && dist2(o.pos, spot) < 3.4)
       .sort((x, y) => dist2(x.pos, spot) - dist2(y.pos, spot))[0];
     const backLine = distToRim(c, side, spot.x, spot.z) < 3.2;
     const hRim = handler ? distToRim(c, side, handler.pos.x, handler.pos.z) : 99;
@@ -647,12 +732,18 @@ function reboundAI(match: Match, a: Agent, decide: boolean) {
 export function predictLanding(match: Match): V2 {
   const b = match.state.ball.phys;
   // simple ballistic estimate to reach ~1.4 m height
-  let x = b.pos.x, y = b.pos.y, z = b.pos.z, vy = b.vel.y;
-  const vx = b.vel.x, vz = b.vel.z;
+  let x = b.pos.x,
+    y = b.pos.y,
+    z = b.pos.z,
+    vy = b.vel.y;
+  const vx = b.vel.x,
+    vz = b.vel.z;
   for (let i = 0; i < 180; i++) {
     const h = 1 / 60;
     vy -= 9.81 * h;
-    x += vx * h; y += vy * h; z += vz * h;
+    x += vx * h;
+    y += vy * h;
+    z += vz * h;
     if (vy < 0 && y < 1.5) break;
   }
   return v2(x, z);
@@ -691,7 +782,10 @@ function keepInBounds(match: Match, a: Agent) {
   if (Math.abs(a.pos.x) > c.halfL - 0.5 && Math.sign(a.intent.moveX) === Math.sign(a.pos.x)) a.intent.moveX = -Math.sign(a.pos.x) * 0.3;
 }
 
-const norm = (p: V2): V2 => { const l = Math.hypot(p.x, p.z) || 1; return v2(p.x / l, p.z / l); };
+const norm = (p: V2): V2 => {
+  const l = Math.hypot(p.x, p.z) || 1;
+  return v2(p.x / l, p.z / l);
+};
 function angleBetween(a: number, b: number) {
   let d = (b - a) % (Math.PI * 2);
   if (d > Math.PI) d -= Math.PI * 2;

@@ -9,13 +9,14 @@ import { KeyHint } from "../KeyHint";
 
 function fmtClock(sec: number) {
   if (sec < 60) return Math.max(0, sec).toFixed(1);
-  const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+  const m = Math.floor(sec / 60),
+    s = Math.floor(sec % 60);
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
 function periodLabel(p: number, periods: number) {
   if (p > periods) return p - periods > 1 ? `OT${p - periods}` : "OT";
-  return periods === 2 ? (p === 1 ? "1st half" : "2nd half") : ["1st", "2nd", "3rd", "4th"][p - 1] ?? `${p}th`;
+  return periods === 2 ? (p === 1 ? "1st half" : "2nd half") : (["1st", "2nd", "3rd", "4th"][p - 1] ?? `${p}th`);
 }
 
 export function ScoreBug({ home, away }: { home: Team; away: Team }) {
@@ -26,12 +27,18 @@ export function ScoreBug({ home, away }: { home: Team; away: Team }) {
     <div className={`flex items-center gap-2 ${right ? "flex-row-reverse" : ""}`}>
       <div className="flex h-12 items-center gap-2 px-3" style={{ background: t.colors.primary }}>
         <TeamLogo team={t} size={30} />
-        <span className="font-display text-2xl font-extrabold tracking-wide" style={{ color: t.colors.accent }}>{t.abbrev}</span>
+        <span className="font-display text-2xl font-extrabold tracking-wide" style={{ color: t.colors.accent }}>
+          {t.abbrev}
+        </span>
       </div>
-      <span className="led w-14 text-center text-4xl font-black text-net" style={{ color: contrast ? "#fff" : undefined }}>{score}</span>
+      <span className="led w-14 text-center text-4xl font-black text-net" style={{ color: contrast ? "#fff" : undefined }}>
+        {score}
+      </span>
       <div className={`flex flex-col gap-1 text-[11px] text-steel ${right ? "items-end" : ""}`}>
         <div className="flex gap-0.5" aria-label={`${tos} timeouts left`}>
-          {Array.from({ length: Math.min(7, tos) }, (_, i) => <span key={i} className="h-1 w-2.5 rounded-sm bg-amber/80" />)}
+          {Array.from({ length: Math.min(7, tos) }, (_, i) => (
+            <span key={i} className="h-1 w-2.5 rounded-sm bg-amber/80" />
+          ))}
         </div>
         <span>{bonus ? <b className="text-amber">Bonus</b> : `Fouls ${fouls}`}</span>
       </div>
@@ -50,7 +57,9 @@ export function ScoreBug({ home, away }: { home: Team; away: Team }) {
         {side(home, hud.homeScore, hud.homeFouls, hud.homeTimeouts, hud.bonus[0], hud.possession === 0, true)}
         {sc !== null && (
           <div className={`flex w-14 items-center justify-center bg-black ${sc <= 5 ? "text-bad" : "text-amber"}`}>
-            <span className="led text-3xl" style={{ color: "inherit" }}>{sc < 10 && sc > 0 ? sc.toFixed(0) : Math.ceil(Math.max(0, sc))}</span>
+            <span className="led text-3xl" style={{ color: "inherit" }}>
+              {sc < 10 && sc > 0 ? sc.toFixed(0) : Math.ceil(Math.max(0, sc))}
+            </span>
           </div>
         )}
       </div>
@@ -75,7 +84,16 @@ export function ShotMeter() {
   if (!show) return null;
   const fill = meter?.fill ?? 1;
   const ideal = meter?.ideal ?? 0.74;
-  const label = flash === "green" ? "Perfect release" : flash === "good" ? "Good release" : flash === "early" ? "Slightly early" : flash === "late" ? "Slightly late" : null;
+  const label =
+    flash === "green"
+      ? "Perfect release"
+      : flash === "good"
+        ? "Good release"
+        : flash === "early"
+          ? "Slightly early"
+          : flash === "late"
+            ? "Slightly late"
+            : null;
   const color = flash === "green" ? "var(--color-good)" : flash === "good" ? "var(--color-amber)" : flash ? "var(--color-bad)" : "var(--color-net)";
   return (
     <div className="pointer-events-none fixed right-[18%] top-1/2 z-20 flex -translate-y-1/2 flex-col items-center gap-2">
@@ -83,7 +101,11 @@ export function ShotMeter() {
         <div className="absolute inset-x-0 h-3 bg-good/80" style={{ bottom: `calc(${ideal * 100}% - 6px)` }} />
         <div className="absolute inset-x-0 bottom-0 rounded-full" style={{ height: `${fill * 100}%`, background: color, transition: "background 120ms" }} />
       </div>
-      {label && <span className="font-display text-lg font-bold" style={{ color }}>{label}</span>}
+      {label && (
+        <span className="font-display text-lg font-bold" style={{ color }}>
+          {label}
+        </span>
+      )}
     </div>
   );
 }
@@ -97,7 +119,13 @@ export function PlayerTag() {
       <div className="flex flex-col">
         <span className="font-display text-lg font-bold leading-tight">{c.name}</span>
         <div className="h-1.5 w-28 overflow-hidden rounded-full bg-deck" aria-label={`Stamina ${Math.round(c.stamina * 100)} percent`}>
-          <div className="h-full rounded-full" style={{ width: `${c.stamina * 100}%`, background: c.stamina > 0.6 ? "var(--color-good)" : c.stamina > 0.4 ? "var(--color-amber)" : "var(--color-bad)" }} />
+          <div
+            className="h-full rounded-full"
+            style={{
+              width: `${c.stamina * 100}%`,
+              background: c.stamina > 0.6 ? "var(--color-good)" : c.stamina > 0.4 ? "var(--color-amber)" : "var(--color-bad)",
+            }}
+          />
         </div>
       </div>
     </div>
@@ -120,7 +148,11 @@ export function CommentaryFeed() {
   return (
     <div className="pointer-events-none fixed left-1/2 top-6 z-20 flex w-[min(720px,90vw)] -translate-x-1/2 flex-col items-center gap-1" aria-live="polite">
       {visible.map((f, i) => (
-        <p key={f.id} className="rounded-md bg-navy/75 px-3 py-1 text-center text-[15px] text-net backdrop-blur" style={{ opacity: i === visible.length - 1 ? 1 : 0.55 }}>
+        <p
+          key={f.id}
+          className="rounded-md bg-navy/75 px-3 py-1 text-center text-[15px] text-net backdrop-blur"
+          style={{ opacity: i === visible.length - 1 ? 1 : 0.55 }}
+        >
           {f.text}
         </p>
       ))}
@@ -134,12 +166,29 @@ export function ControlsStrip({ onOffense }: { onOffense: boolean }) {
   const show = useSettings((s) => s.presentation.showTips);
   if (!show) return null;
   const items: [string, string][] = onOffense
-    ? [["shoot", "Shoot"], ["pass", "Pass"], ["lob", "Lob"], ["sprint", "Sprint"], ["dribbleLeft", "Moves"], ["pause", "Pause"]]
-    : [["block", "Block"], ["steal", "Steal"], ["intenseD", "Intense D"], ["switchPlayer", "Switch"], ["sprint", "Sprint"], ["pause", "Pause"]];
+    ? [
+        ["shoot", "Shoot"],
+        ["pass", "Pass"],
+        ["lob", "Lob"],
+        ["sprint", "Sprint"],
+        ["dribbleLeft", "Moves"],
+        ["pause", "Pause"],
+      ]
+    : [
+        ["block", "Block"],
+        ["steal", "Steal"],
+        ["intenseD", "Intense D"],
+        ["switchPlayer", "Switch"],
+        ["sprint", "Sprint"],
+        ["pause", "Pause"],
+      ];
   return (
     <div className="pointer-events-none fixed right-5 top-5 z-20 flex max-w-md flex-wrap justify-end gap-x-3 gap-y-1 rounded-[var(--radius-chip)] bg-navy/70 px-3 py-2 text-xs text-steel backdrop-blur">
       {items.map(([a, label]) => (
-        <span key={a} className="flex items-center gap-1.5"><KeyHint action={a as never} device={prompts === "auto" ? device : prompts === "keyboard" ? "keyboard" : prompts} />{label}</span>
+        <span key={a} className="flex items-center gap-1.5">
+          <KeyHint action={a as never} device={prompts === "auto" ? device : prompts === "keyboard" ? "keyboard" : prompts} />
+          {label}
+        </span>
       ))}
     </div>
   );
@@ -159,7 +208,9 @@ export function PlayBannerView() {
   return (
     <div key={shown.id} className="bl-banner pointer-events-none fixed left-1/2 top-[14vh] z-20 select-none text-center" role="status">
       <div className="px-10 py-2 shadow-2xl" style={{ background: `linear-gradient(90deg, transparent, ${shown.color} 12%, ${shown.color} 88%, transparent)` }}>
-        <p className="font-display text-6xl font-black italic tracking-wide" style={{ color: shown.accent, textShadow: "0 3px 0 rgb(0 0 0 / 0.35)" }}>{shown.title}</p>
+        <p className="font-display text-6xl font-black italic tracking-wide" style={{ color: shown.accent, textShadow: "0 3px 0 rgb(0 0 0 / 0.35)" }}>
+          {shown.title}
+        </p>
       </div>
       {shown.sub && <p className="mt-1 font-display text-xl font-bold text-net drop-shadow">{shown.sub}</p>}
     </div>
@@ -178,11 +229,23 @@ export function StatOverlayView() {
   const o = overlay && overlay.id !== doneId ? overlay : null;
   if (!o) return null;
   return (
-    <div key={o.id} className="bl-lower-third pointer-events-none fixed bottom-24 left-6 z-20 flex select-none overflow-hidden rounded-[var(--radius-chip)] shadow-2xl ring-1 ring-line" role="status">
-      <div className="flex w-14 items-center justify-center font-display text-3xl font-black" style={{ background: o.color, color: o.accent }}>{o.jersey}</div>
+    <div
+      key={o.id}
+      className="bl-lower-third pointer-events-none fixed bottom-24 left-6 z-20 flex select-none overflow-hidden rounded-[var(--radius-chip)] shadow-2xl ring-1 ring-line"
+      role="status"
+    >
+      <div className="flex w-14 items-center justify-center font-display text-3xl font-black" style={{ background: o.color, color: o.accent }}>
+        {o.jersey}
+      </div>
       <div className="bg-navy/95 px-4 py-2 backdrop-blur">
-        <p className="font-display text-xl font-black uppercase leading-tight tracking-wide">{o.name} <span className="ml-1 text-sm font-bold text-steel">{o.team}</span></p>
-        {o.lines.map((l) => <p key={l} className="text-sm tabular-nums text-net">{l}</p>)}
+        <p className="font-display text-xl font-black uppercase leading-tight tracking-wide">
+          {o.name} <span className="ml-1 text-sm font-bold text-steel">{o.team}</span>
+        </p>
+        {o.lines.map((l) => (
+          <p key={l} className="text-sm tabular-nums text-net">
+            {l}
+          </p>
+        ))}
       </div>
     </div>
   );

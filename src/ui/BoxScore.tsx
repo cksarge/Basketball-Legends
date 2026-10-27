@@ -22,14 +22,24 @@ const COLS: { key: string; label: string; title: string; get: (s: StatLine) => s
 export function BoxScoreTable({ teams, box, onCourt }: { teams: { team: Team; roster: Player[] }[]; box: BoxScore; onCourt?: string[] }) {
   const [tab, setTab] = useState(0);
   const t = teams[tab];
-  const rows = [...t.roster].filter((p) => box[p.id]).sort((a, b) => (box[b.id].min > 0 ? 1 : 0) - (box[a.id].min > 0 ? 1 : 0) || box[b.id].pts - box[a.id].pts);
-  const tot = teamTotals(box, t.roster.map((p) => p.id));
+  const rows = [...t.roster]
+    .filter((p) => box[p.id])
+    .sort((a, b) => (box[b.id].min > 0 ? 1 : 0) - (box[a.id].min > 0 ? 1 : 0) || box[b.id].pts - box[a.id].pts);
+  const tot = teamTotals(
+    box,
+    t.roster.map((p) => p.id),
+  );
   return (
     <div className="flex flex-col gap-3">
       <div className="flex gap-2" role="tablist" aria-label="Team">
         {teams.map((x, i) => (
-          <button key={x.team.id} role="tab" aria-selected={tab === i} onClick={() => setTab(i)}
-            className={`flex items-center gap-2 rounded-[var(--radius-chip)] px-3 py-2 font-display text-lg font-bold ${tab === i ? "bg-deck-2 text-net ring-1 ring-amber" : "bg-deck text-steel hover:text-net"}`}>
+          <button
+            key={x.team.id}
+            role="tab"
+            aria-selected={tab === i}
+            onClick={() => setTab(i)}
+            className={`flex items-center gap-2 rounded-[var(--radius-chip)] px-3 py-2 font-display text-lg font-bold ${tab === i ? "bg-deck-2 text-net ring-1 ring-amber" : "bg-deck text-steel hover:text-net"}`}
+          >
             <TeamLogo team={x.team} size={24} /> {x.team.name}
           </button>
         ))}
@@ -39,7 +49,11 @@ export function BoxScoreTable({ teams, box, onCourt }: { teams: { team: Team; ro
           <thead className="bg-deck text-steel">
             <tr>
               <th className="px-3 py-2 text-left font-semibold">Player</th>
-              {COLS.map((c) => <th key={c.key} title={c.title} className="px-2 py-2 text-right font-semibold">{c.label}</th>)}
+              {COLS.map((c) => (
+                <th key={c.key} title={c.title} className="px-2 py-2 text-right font-semibold">
+                  {c.label}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
@@ -50,16 +64,32 @@ export function BoxScoreTable({ teams, box, onCourt }: { teams: { team: Team; ro
                 <tr key={p.id} className="border-t border-line/60 odd:bg-navy even:bg-deck/40">
                   <td className="px-3 py-1.5">
                     <span className="mr-2 inline-block w-6 text-right text-steel">{p.jersey}</span>
-                    <span className={onCourt?.includes(p.id) ? "text-amber" : ""}>{p.firstName[0]}. {p.lastName}</span>
+                    <span className={onCourt?.includes(p.id) ? "text-amber" : ""}>
+                      {p.firstName[0]}. {p.lastName}
+                    </span>
                     <span className="ml-2 text-xs text-steel">{p.pos}</span>
                   </td>
-                  {dnp ? <td colSpan={COLS.length} className="px-2 text-right text-steel">Did not play</td> : COLS.map((c) => <td key={c.key} className="px-2 py-1.5 text-right tabular-nums">{c.get(s)}</td>)}
+                  {dnp ? (
+                    <td colSpan={COLS.length} className="px-2 text-right text-steel">
+                      Did not play
+                    </td>
+                  ) : (
+                    COLS.map((c) => (
+                      <td key={c.key} className="px-2 py-1.5 text-right tabular-nums">
+                        {c.get(s)}
+                      </td>
+                    ))
+                  )}
                 </tr>
               );
             })}
             <tr className="border-t-2 border-line bg-deck font-semibold">
               <td className="px-3 py-2">Team</td>
-              {COLS.map((c) => <td key={c.key} className="px-2 py-2 text-right tabular-nums">{c.key === "min" || c.key === "pm" ? "" : c.get(tot)}</td>)}
+              {COLS.map((c) => (
+                <td key={c.key} className="px-2 py-2 text-right tabular-nums">
+                  {c.key === "min" || c.key === "pm" ? "" : c.get(tot)}
+                </td>
+              ))}
             </tr>
           </tbody>
         </table>

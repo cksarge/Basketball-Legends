@@ -125,11 +125,25 @@ html[data-reduced-motion="true"] *::after {
 
 /* Big-play banner (AND ONE, REJECTED, ...). */
 @keyframes bl-banner {
-  0% { opacity: 0; transform: translateX(-50%) skewX(-12deg) scaleX(0.4); }
-  12% { opacity: 1; transform: translateX(-50%) skewX(-12deg) scaleX(1.04); }
-  20% { transform: translateX(-50%) skewX(-12deg) scaleX(1); }
-  82% { opacity: 1; transform: translateX(-50%) skewX(-12deg) scaleX(1); }
-  100% { opacity: 0; transform: translateX(-50%) skewX(-12deg) scaleX(1.1); }
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) skewX(-12deg) scaleX(0.4);
+  }
+  12% {
+    opacity: 1;
+    transform: translateX(-50%) skewX(-12deg) scaleX(1.04);
+  }
+  20% {
+    transform: translateX(-50%) skewX(-12deg) scaleX(1);
+  }
+  82% {
+    opacity: 1;
+    transform: translateX(-50%) skewX(-12deg) scaleX(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) skewX(-12deg) scaleX(1.1);
+  }
 }
 .bl-banner {
   animation: bl-banner 2.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
@@ -137,10 +151,22 @@ html[data-reduced-motion="true"] *::after {
 
 /* Lower-third stat card slides in from the left. */
 @keyframes bl-lower-third {
-  0% { opacity: 0; transform: translateX(-24px); }
-  8% { opacity: 1; transform: translateX(0); }
-  92% { opacity: 1; transform: translateX(0); }
-  100% { opacity: 0; transform: translateX(-12px); }
+  0% {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  8% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  92% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
 }
 .bl-lower-third {
   animation: bl-lower-third 4.2s ease-out forwards;

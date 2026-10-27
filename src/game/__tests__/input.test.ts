@@ -4,10 +4,17 @@ import { DEFAULT_KEYS, DEFAULT_PAD } from "@/state/settings";
 
 // A standard-mapping gamepad we can poke between reads.
 const pad = {
-  id: "Test pad (STANDARD GAMEPAD)", index: 0, connected: true, mapping: "standard", timestamp: 0,
-  axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, touched: false, value: 0 })),
+  id: "Test pad (STANDARD GAMEPAD)",
+  index: 0,
+  connected: true,
+  mapping: "standard",
+  timestamp: 0,
+  axes: [0, 0, 0, 0],
+  buttons: Array.from({ length: 17 }, () => ({ pressed: false, touched: false, value: 0 })),
 };
-const press = (b: number, on: boolean) => { pad.buttons[b] = { pressed: on, touched: on, value: on ? 1 : 0 }; };
+const press = (b: number, on: boolean) => {
+  pad.buttons[b] = { pressed: on, touched: on, value: on ? 1 : 0 };
+};
 
 describe("gamepad input", () => {
   let input: InputManager;
@@ -18,7 +25,9 @@ describe("gamepad input", () => {
     input = new InputManager({ keys: DEFAULT_KEYS, pad: DEFAULT_PAD, deadzone: 0.18 });
   });
 
-  afterEach(() => { vi.unstubAllGlobals(); });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
 
   it("moves with the left stick and ignores drift inside the deadzone", () => {
     pad.axes = [0.1, -0.1, 0, 0];
@@ -74,7 +83,12 @@ describe("gamepad input", () => {
 describe("keyboard input", () => {
   it("never drops a tap that starts and ends between two reads", () => {
     const listeners: Record<string, (e: unknown) => void> = {};
-    vi.stubGlobal("window", { addEventListener: (t: string, f: (e: unknown) => void) => { listeners[t] = f; }, removeEventListener: () => {} });
+    vi.stubGlobal("window", {
+      addEventListener: (t: string, f: (e: unknown) => void) => {
+        listeners[t] = f;
+      },
+      removeEventListener: () => {},
+    });
     const input = new InputManager({ keys: DEFAULT_KEYS, pad: DEFAULT_PAD, deadzone: 0.18 });
     input.attach();
     const ev = (code: string) => ({ code, target: null, preventDefault: () => {} });

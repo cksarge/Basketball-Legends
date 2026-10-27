@@ -27,9 +27,20 @@ export interface CameraState {
   cut?: boolean;
 }
 
-export function CameraRig({ match, mode, zoom, heightMul, stateRef, focusAgent }: {
-  match: Match; mode: CameraMode; zoom: number; heightMul: number;
-  stateRef: React.RefObject<CameraState>; focusAgent: () => number | null;
+export function CameraRig({
+  match,
+  mode,
+  zoom,
+  heightMul,
+  stateRef,
+  focusAgent,
+}: {
+  match: Match;
+  mode: CameraMode;
+  zoom: number;
+  heightMul: number;
+  stateRef: React.RefObject<CameraState>;
+  focusAgent: () => number | null;
 }) {
   const { camera } = useThree();
   const look = useRef(new THREE.Vector3(0, 1, 0));
@@ -45,7 +56,9 @@ export function CameraRig({ match, mode, zoom, heightMul, stateRef, focusAgent }
     const off = s.offense;
     const side = match.attackSide(off);
     const cam = camera as THREE.PerspectiveCamera;
-    let targetPos: THREE.Vector3, targetLook: THREE.Vector3, fov = 32 / zoom;
+    let targetPos: THREE.Vector3,
+      targetLook: THREE.Vector3,
+      fov = 32 / zoom;
 
     if (cs.override) {
       targetPos = cs.override.pos;
@@ -93,7 +106,7 @@ export function CameraRig({ match, mode, zoom, heightMul, stateRef, focusAgent }
         }
         case "player": {
           if (ag) {
-            const behind = new THREE.Vector3(ag.pos.x - side * 6.5 / zoom, 3.8 * heightMul, ag.pos.z * 0.85);
+            const behind = new THREE.Vector3(ag.pos.x - (side * 6.5) / zoom, 3.8 * heightMul, ag.pos.z * 0.85);
             targetPos = behind;
             targetLook = new THREE.Vector3(ag.pos.x + side * 6, 1.4, ag.pos.z * 0.6);
             fov = 50;
@@ -105,7 +118,7 @@ export function CameraRig({ match, mode, zoom, heightMul, stateRef, focusAgent }
         }
         case "skycam": {
           targetLook = new THREE.Vector3(fx, 0, fz);
-          targetPos = new THREE.Vector3(fx - side * 2, 22 * heightMul / zoom, c.halfW + 4);
+          targetPos = new THREE.Vector3(fx - side * 2, (22 * heightMul) / zoom, c.halfW + 4);
           fov = 45;
           break;
         }

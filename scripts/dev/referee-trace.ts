@@ -5,9 +5,17 @@ import { generateRoster } from "../../src/engine/player";
 
 const seed = Number(process.argv[2] ?? 9);
 const teams = JSON.parse(fs.readFileSync("src/data/generated/pro.json", "utf8")).teams;
-const m = new Match({ league: "pro", home: { team: teams[0], roster: generateRoster(teams[0]) }, away: { team: teams[1], roster: generateRoster(teams[1]) }, seed, quarterMinutes: 3 });
+const m = new Match({
+  league: "pro",
+  home: { team: teams[0], roster: generateRoster(teams[0]) },
+  away: { team: teams[1], roster: generateRoster(teams[1]) },
+  seed,
+  quarterMinutes: 3,
+});
 const seen = new Map<string, number>();
-let handoffs = 0, inBase = 0, minDist = 99;
+let handoffs = 0,
+  inBase = 0,
+  minDist = 99;
 const board = m.state.cfg.court.halfL - m.state.cfg.court.boardFromBaseline;
 const inside = (x: number, z: number) => Math.abs(x) > board + 0.85 && Math.abs(x) < board + 2.55 && Math.abs(z) < 0.68;
 for (let i = 0; i < 60 * 60 * 6 && m.state.phase !== "final"; i++) {

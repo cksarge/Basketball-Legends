@@ -10,7 +10,10 @@ function play(league: "pro" | "hs", teams: Team[], seed: number) {
   const [h, a] = [teams[0], teams[5]];
   const m = new Match({ league, home: { team: h, roster: generateRoster(h) }, away: { team: a, roster: generateRoster(a) }, fast: true, seed });
   let steps = 0;
-  while (m.state.phase !== "final" && steps < 60 * 60 * 120) { m.step(1 / 60); steps++; }
+  while (m.state.phase !== "final" && steps < 60 * 60 * 120) {
+    m.step(1 / 60);
+    steps++;
+  }
   return m;
 }
 
@@ -22,7 +25,10 @@ describe("real-time match", () => {
     for (const t of s.teams) {
       expect(t.score).toBeGreaterThan(70);
       expect(t.score).toBeLessThan(170);
-      const tot = teamTotals(s.box, t.roster.map((p) => p.id));
+      const tot = teamTotals(
+        s.box,
+        t.roster.map((p) => p.id),
+      );
       expect(tot.pts).toBe(t.score);
       expect(tot.fga).toBeGreaterThan(50);
     }

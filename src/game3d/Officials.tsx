@@ -23,8 +23,13 @@ function person(seed: string, kind: "official" | "staff", number: number): Playe
   p.jersey = number;
   p.lastName = "";
   p.appearance = {
-    ...p.appearance, headband: false, armSleeve: "none", kneePads: false,
-    hairStyle: rng.pick([0, 1, 3, 4]), facialHair: rng.pick([0, 0, 1, 2, 4]), shoeColor: "#111111",
+    ...p.appearance,
+    headband: false,
+    armSleeve: "none",
+    kneePads: false,
+    hairStyle: rng.pick([0, 1, 3, 4]),
+    facialHair: rng.pick([0, 0, 1, 2, 4]),
+    shoeColor: "#111111",
   };
   return p;
 }
@@ -37,7 +42,9 @@ export function Officials({ match, replayFrame, crewSize = 4 }: { match: Match; 
   const home = s.teams[0].team;
   const avatars = useMemo(() => {
     const refs = (s.crew?.refs ?? []).map((o) => new Avatar(gltf, masks, person(`ref:${s.cfg.seed}:${o.idx}`, "official", o.number), home, "home", "official"));
-    const staff = s.crew ? Array.from({ length: crewSize }, (_, i) => new Avatar(gltf, masks, person(`table:${home.id}:${i}`, "staff", 0), home, "home", "staff")) : [];
+    const staff = s.crew
+      ? Array.from({ length: crewSize }, (_, i) => new Avatar(gltf, masks, person(`table:${home.id}:${i}`, "staff", 0), home, "home", "staff"))
+      : [];
     return { refs, staff };
   }, [gltf, masks, s.crew, s.cfg.seed, home, crewSize]);
   const tick = useRef(0);
@@ -46,7 +53,12 @@ export function Officials({ match, replayFrame, crewSize = 4 }: { match: Match; 
     const g = group.current;
     if (!g) return;
     for (const a of [...avatars.refs, ...avatars.staff]) g.add(a.root);
-    return () => { for (const a of [...avatars.refs, ...avatars.staff]) { g.remove(a.root); a.dispose(); } };
+    return () => {
+      for (const a of [...avatars.refs, ...avatars.staff]) {
+        g.remove(a.root);
+        a.dispose();
+      }
+    };
   }, [avatars]);
 
   useFrame((_, dtRaw) => {
@@ -60,11 +72,27 @@ export function Officials({ match, replayFrame, crewSize = 4 }: { match: Match; 
       const av = avatars.refs[i];
       if (!av) return;
       av.update({
-        x: o.pos.x, y: 0, z: o.pos.z, facing: o.facing, vx: o.vel.x, vz: o.vel.z,
-        action: "official", actionT: o.signalT, actionDur: o.signalDur,
+        x: o.pos.x,
+        y: 0,
+        z: o.pos.z,
+        facing: o.facing,
+        vx: o.vel.x,
+        vz: o.vel.z,
+        action: "official",
+        actionT: o.signalT,
+        actionDur: o.signalDur,
         actionData: { signal: o.signal === "none" ? "" : o.signal, signalT: o.signalT, signalDir: o.signalDir },
-        hasBall: false, dribbling: false, hand: 1, ballWorld: null, lookAt: ballV,
-        stance: false, stamina: 1, dt, heightM: av.player.heightIn * 0.0254, airborne: false, celebrate: false,
+        hasBall: false,
+        dribbling: false,
+        hand: 1,
+        ballWorld: null,
+        lookAt: ballV,
+        stance: false,
+        stamina: 1,
+        dt,
+        heightM: av.player.heightIn * 0.0254,
+        airborne: false,
+        celebrate: false,
       });
     });
     // the table crew: seated, following the ball; updated every other frame
@@ -74,9 +102,28 @@ export function Officials({ match, replayFrame, crewSize = 4 }: { match: Match; 
       if ((tick.current + i) % 2) return;
       const seat = seats[i];
       av.update({
-        x: seat.x, y: 0, z: seat.z, facing: 0, vx: 0, vz: 0, action: "bench", actionT: 0, actionDur: 0, actionData: {},
-        hasBall: false, dribbling: false, hand: 1, ballWorld: null, lookAt: ballV, stance: false, stamina: 1, dt: dt * 2,
-        heightM: av.player.heightIn * 0.0254, airborne: false, celebrate: false, seatY: SEAT_HEIGHT,
+        x: seat.x,
+        y: 0,
+        z: seat.z,
+        facing: 0,
+        vx: 0,
+        vz: 0,
+        action: "bench",
+        actionT: 0,
+        actionDur: 0,
+        actionData: {},
+        hasBall: false,
+        dribbling: false,
+        hand: 1,
+        ballWorld: null,
+        lookAt: ballV,
+        stance: false,
+        stamina: 1,
+        dt: dt * 2,
+        heightM: av.player.heightIn * 0.0254,
+        airborne: false,
+        celebrate: false,
+        seatY: SEAT_HEIGHT,
       });
     });
   });

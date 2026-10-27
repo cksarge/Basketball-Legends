@@ -58,6 +58,7 @@ Useful scripts:
 - `npx tsx scripts/dev/injury-rate.ts 30 pro` measures how often in-game injuries happen.
 - `npx tsx scripts/dev/defense-compare.ts 6 pro` compares the defensive schemes; `npx tsx scripts/dev/shot-mix.ts 4 pro` shows the shot type mix.
 - `npm run lint` runs ESLint (also part of the deploy workflow).
+- `npm run format` formats the code with Prettier; `npm run format:check` (part of the deploy workflow) fails on unformatted files.
 - `/dev/anim` (dev server only) is an animation lab: every procedural clip with a timeline, contact sheets (`?sheet=1`) and a side view (`&profile=1`).
 
 `npm run build` also stamps `out/sw.js` (the offline service worker) with a build version and the list of hashed assets to precache.
