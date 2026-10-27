@@ -27,7 +27,7 @@ export default function Credits() {
       <H2>Fonts</H2>
       <p>Big Shoulders (Patric King) and Barlow (Jeremy Tribby), both under the SIL Open Font License. Fonts are bundled with the site, so no font service is contacted while you play.</p>
       <H2>Team and school data</H2>
-      <p>The list of Arizona high schools and their classifications and regions comes from the Arizona Interscholastic Association&apos;s public 2026-2028 alignment. College lists come from public Wikipedia lists of NCAA institutions. Only factual names, locations and affiliations are used. Every nickname, logo, color scheme, arena name, conference name and player in the game is original and fictional.</p>
+      <p>The list of Arizona high schools and their classifications and regions comes from the Arizona Interscholastic Association&apos;s public 2026-2028 alignment. College lists come from public Wikipedia lists of NCAA institutions. Only factual names, locations and affiliations are used. Every nickname, logo, color scheme, arena name, conference name and player in the game is original and fictional, with one exception: Brophy College Preparatory appears as the Broncos in its real red and white. Those names belong to the school.</p>
       <p>Basketball Legends is not affiliated with, endorsed by or sponsored by the NBA, the NCAA, the AIA, or any team, school, college or university.</p>
       <H2>Open-source libraries</H2>
       <ul className="flex flex-col gap-1">

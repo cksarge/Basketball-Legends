@@ -41,6 +41,9 @@ function shapePath(shape: LogoSpec["shape"]): string {
 
 export function logoSvg(spec: LogoSpec, colors: TeamColors, opts: { monogram?: boolean; size?: number } = {}): string {
   const size = opts.size ?? 100;
+  if (spec.image) {
+    return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100" width="${size}" height="${size}"><image href="${spec.image}" xlink:href="${spec.image}" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/></svg>`;
+  }
   const cid = `lc${hashString(spec.monogram + spec.shape + spec.icon + colors.primary + colors.secondary + size)}`;
   const ring = spec.shape === "roundel" ? `<circle cx="50" cy="50" r="38" fill="none" stroke="${colors.accent}" stroke-width="3"/>` : "";
   const stripe = spec.stripe ? `<path d="M0 64 100 36v10L0 74z" fill="${colors.secondary}" opacity="0.35" clip-path="url(#${cid})"/>` : "";
@@ -65,4 +68,9 @@ function escapeXml(s: string) {
 
 export function logoDataUrl(spec: LogoSpec, colors: TeamColors, size = 256) {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(logoSvg(spec, colors, { size }))}`;
+}
+
+/** Image source for canvas drawing: an image logo directly, otherwise the generated SVG. */
+export function logoImageSrc(spec: LogoSpec, colors: TeamColors, size = 256) {
+  return spec.image ?? logoDataUrl(spec, colors, size);
 }

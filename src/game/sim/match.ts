@@ -295,6 +295,7 @@ export class Match {
     s.frameEvents = [];
     if (s.phase === "final") return;
     s.time += dt;
+    this.watchdog(dt);
 
     // apply human intents
     for (const a of s.agents) {
@@ -339,6 +340,50 @@ export class Match {
       case "live":
         this.stepLive(dt);
         return;
+    }
+  }
+
+  private stallKey = "";
+  private stallTime = 0;
+  /** Number of times the watchdog had to intervene (exposed for tests/diagnostics). */
+  watchdogTrips = 0;
+
+  /**
+   * Soft-lock protection: if nothing has progressed for a while (no clock movement,
+   * no change of phase, possession or score), push the game forward.
+   */
+  private watchdog(dt: number) {
+    const s = this.state;
+    if (s.phase === "timeout" || s.phase === "halftime" || s.phase === "periodEnd" || s.phase === "pregame" || s.cfg.practice) { this.stallTime = 0; return; }
+    const key = `${s.phase}|${s.ball.mode}|${s.ball.owner}|${Math.floor(s.clock * 2)}|${Math.floor(s.shotClock * 2)}|${s.teams[0].score}|${s.teams[1].score}|${s.freeThrows?.attempt ?? ""}`;
+    if (key !== this.stallKey) { this.stallKey = key; this.stallTime = 0; return; }
+    this.stallTime += dt;
+    if (this.stallTime < 12) return;
+    this.stallTime = 0;
+    this.watchdogTrips++;
+    switch (s.phase) {
+      case "freethrows": {
+        const ft = s.freeThrows;
+        if (ft && s.ball.mode === "dead") { s.phaseTimer = 0; this.startFreeThrowStroke(s.agents[ft.shooter], false); }
+        else if (ft) { s.ball.mode = "dead"; s.phaseTimer = 0.2; }
+        break;
+      }
+      case "inbound": {
+        const ib = s.inbound;
+        if (ib) this.violation(ib.team, "fiveSeconds", ib.inbounder);
+        break;
+      }
+      case "deadball": s.phaseTimer = 0; break;
+      case "jumpball": this.setupJumpBall(); s.phaseTimer = 0.6; break;
+      default: {
+        // live ball nobody can reach (e.g. stuck): award it to the team that didn't touch it last
+        if (s.ball.owner === null) {
+          const team = (s.ball.lastTouch === 0 ? 1 : 0) as TeamIdx;
+          const b = s.ball.phys.pos;
+          s.ball.mode = "dead";
+          this.toDeadBall(team, false, { x: b.x, z: b.z });
+        }
+      }
     }
   }
 
@@ -513,6 +558,16 @@ export class Match {
     }
     if (!ia) return;
     a.intent.act = undefined;
+    if (s.phase === "freethrows") {
+      if (ia.type === "shoot" && s.freeThrows && s.freeThrows.shooter === a.idx) this.ftInput(ia.phase);
+      return;
+    }
+    if (s.phase === "inbound") {
+      if (ia.type === "pass" && s.inbound && s.inbound.inbounder === a.idx && s.ball.owner === a.idx) {
+        this.startPass(a, ia.to, ia.kind === "alley" ? "lob" : ia.kind);
+      }
+      return;
+    }
     if (a.human !== null && this.isBusy(a) && (ia.type === "shoot" && ia.phase === "press" || ia.type === "pass" || ia.type === "dribbleMove" || ia.type === "steal" || ia.type === "block")) {
       const shooting = ["jumper", "fadeaway", "floater", "hook", "layup", "dunk"].includes(a.action.kind);
       if (!(ia.type === "pass" && shooting)) {
@@ -524,16 +579,6 @@ export class Match {
     if (ia.type === "shoot" && ia.phase === "release" && a.buffered?.act.type === "shoot") {
       a.buffered.act = { type: "shoot", phase: "press" };
       a.quickRelease = true;
-      return;
-    }
-    if (s.phase === "freethrows") {
-      if (ia.type === "shoot" && s.freeThrows && s.freeThrows.shooter === a.idx) this.ftInput(ia.phase);
-      return;
-    }
-    if (s.phase === "inbound") {
-      if (ia.type === "pass" && s.inbound && s.inbound.inbounder === a.idx && s.ball.owner === a.idx) {
-        this.startPass(a, ia.to, ia.kind === "alley" ? "lob" : ia.kind);
-      }
       return;
     }
     if (s.phase !== "live" && s.phase !== "jumpball") return;
@@ -644,6 +689,10 @@ export class Match {
       if (face !== null && !shooting) {
         const turn = (a.y > 0 ? 2 : 9) * dt;
         a.facing += clamp(angDiff(a.facing, face), -turn, turn);
+      } else if (shooting && typeof a.action.data.faceTo === "number") {
+        // square up to the rim while gathering; small corrections in the air
+        const turn = (a.y > 0 ? 3 : 11) * dt;
+        a.facing += clamp(angDiff(a.facing, a.action.data.faceTo as number), -turn, turn);
       }
       // keep players roughly on/near the floor
       a.pos.x = clamp(a.pos.x, -c.halfL - 1.2, c.halfL + 1.2);
@@ -778,13 +827,17 @@ export class Match {
     if (s.ball.owner !== a.idx) return;
     const kind = forceKind ?? this.shotKindFor(a);
     const lv = this.verticalLeap(a);
+    // shooting rhythm: a deliberate gather; good shooters and catch-and-shoot looks are a touch quicker
+    const sk = (a.player.ratings.midRange + a.player.ratings.three) / 2;
+    const catchShoot = s.time - s.ball.lastPassTime < 0.7 && a.holdTime < 0.7;
+    const gather = clamp(0.42 - (sk - 50) * 0.0016, 0.3, 0.44) * (catchShoot ? 0.88 : 1);
     const timing: Record<ShotKind, { dur: number; jumpAt: number; jump: number; release: number }> = {
-      jumper: { dur: 1.0, jumpAt: 0.22, jump: lv * 0.55, release: 0.0 },
-      fadeaway: { dur: 1.05, jumpAt: 0.22, jump: lv * 0.5, release: 0.0 },
-      floater: { dur: 0.85, jumpAt: 0.15, jump: lv * 0.45, release: 0.0 },
-      hook: { dur: 0.9, jumpAt: 0.18, jump: lv * 0.4, release: 0.0 },
-      layup: { dur: 1.05, jumpAt: 0.3, jump: lv * 0.85, release: 0.0 },
-      dunk: { dur: 1.25, jumpAt: 0.32, jump: Math.max(lv, s.cfg.court.rimHeight + 0.15 - this.reach(a)), release: 0.0 },
+      jumper: { dur: gather + 0.95, jumpAt: gather, jump: lv * 0.55, release: 0.0 },
+      fadeaway: { dur: gather + 1.0, jumpAt: gather + 0.04, jump: lv * 0.5, release: 0.0 },
+      floater: { dur: 1.0, jumpAt: 0.24, jump: lv * 0.45, release: 0.0 },
+      hook: { dur: 1.05, jumpAt: 0.3, jump: lv * 0.4, release: 0.0 },
+      layup: { dur: 1.2, jumpAt: 0.36, jump: lv * 0.85, release: 0.0 },
+      dunk: { dur: 1.4, jumpAt: 0.38, jump: Math.max(lv, s.cfg.court.rimHeight + 0.15 - this.reach(a)), release: 0.0 },
       freeThrow: { dur: 1.0, jumpAt: 99, jump: 0, release: 0.55 },
       tip: { dur: 0.5, jumpAt: 0, jump: lv * 0.8, release: 0.25 },
     };
@@ -806,9 +859,11 @@ export class Match {
       a.vel.z = (dz / d) * v * 0.9 + a.vel.z * 0.1;
       a.facing = Math.atan2(dx, dz);
     } else {
+      // turn to the rim during the gather (see moveAgents) instead of snapping
       const rim = this.rim(a.team);
-      a.facing = Math.atan2(rim.x - a.pos.x, rim.z - a.pos.z);
-      if (kind === "fadeaway") { a.vel.x = -Math.sin(a.facing) * 1.2; a.vel.z = -Math.cos(a.facing) * 1.2; }
+      const face = Math.atan2(rim.x - a.pos.x, rim.z - a.pos.z);
+      a.action.data.faceTo = face;
+      if (kind === "fadeaway") { a.vel.x = -Math.sin(face) * 1.2; a.vel.z = -Math.cos(face) * 1.2; }
     }
     // defenders react
     for (const d of this.agentsOf(a.team === 0 ? 1 : 0)) d.intent.act = undefined;
@@ -1636,7 +1691,7 @@ export class Match {
     const s = this.state;
     s.phase = "freethrows";
     s.freeThrows = { shooter: shooter.idx, team: shooter.team, total, made: 0, attempt: 1, oneAndOne, keepPossession: false };
-    s.phaseTimer = s.cfg.fast ? 0.2 : 1.6;
+    s.phaseTimer = s.cfg.fast ? 0.2 : 2.2;
     s.ball.mode = "dead";
     s.ball.owner = shooter.idx;
     this.lineUpForFreeThrows();
@@ -1671,14 +1726,26 @@ export class Match {
     s.ball.phys.pos = v3(shooter.pos.x, 1.2, shooter.pos.z);
   }
 
+  /** Free-throw stroke timing: the set point is reached at `ideal` seconds after the press. */
+  static FT_IDEAL = 0.72;
+
+  private startFreeThrowStroke(a: Agent, human: boolean) {
+    a.action = act("freeThrow", 1.6, { started: true, start: this.state.time, ideal: Match.FT_IDEAL, release: Match.FT_IDEAL, releasedAt: -1, human });
+  }
+
   private ftInput(phase: "press" | "release") {
     const s = this.state;
     const ft = s.freeThrows!;
     const a = s.agents[ft.shooter];
-    if (phase === "press" && a.action.kind === "freeThrow" && !a.action.data.started && s.phaseTimer <= 0) {
-      a.action = act("freeThrow", 1.2, { started: true, start: s.time, ideal: 0.55, releasedAt: -1, human: true });
-    } else if (phase === "release" && a.action.data.started && (a.action.data.releasedAt as number) < 0) {
-      a.action.data.releasedAt = a.action.t;
+    if (a.action.kind !== "freeThrow") return;
+    const d = a.action.data;
+    if (phase === "press" && !d.started) {
+      // pressing during the lineup or bounce routine is remembered, not lost
+      if (s.phaseTimer > 0 || s.ball.mode !== "dead") d.queuedPress = true;
+      else this.startFreeThrowStroke(a, true);
+    } else if (phase === "release") {
+      if (d.started && (d.releasedAt as number) < 0) d.releasedAt = a.action.t;
+      else if (d.queuedPress) { d.queuedPress = false; d.queuedRelease = true; }
     }
   }
 
@@ -1689,21 +1756,43 @@ export class Match {
     const c = s.cfg.court;
     if (s.ball.mode === "dead") {
       s.phaseTimer -= dt;
-      // ball in shooter's hands
-      s.ball.phys.pos = v3(a.pos.x + Math.sin(a.facing) * 0.3, this.heightM(a) * 0.62, a.pos.z + Math.cos(a.facing) * 0.3);
+      const d = a.action.data;
+      const fx = Math.sin(a.facing), fz = Math.cos(a.facing);
+      const hh = this.heightM(a);
+      // pre-shot routine: two bounces, then the ball comes up to the shooter's chest
+      const routine = s.cfg.fast ? 0 : 1.3;
+      const tr = routine - s.phaseTimer; // seconds into the routine
+      if (!d.started && s.phaseTimer > 0 && s.phaseTimer < routine) {
+        const ph = (tr / routine) * 2; // two bounces
+        const y = s.cfg.court.ballRadius + (hh * 0.5 - s.cfg.court.ballRadius) * Math.abs(Math.cos(ph * Math.PI));
+        s.ball.phys.pos = v3(a.pos.x + fx * 0.35 + Math.cos(a.facing) * -0.12, y, a.pos.z + fz * 0.35 - Math.sin(a.facing) * -0.12);
+        d.routine = true;
+        if (Math.abs(Math.cos(ph * Math.PI)) < 0.06 && !d[`b${Math.floor(ph)}`]) { d[`b${Math.floor(ph)}`] = true; this.emit({ t: "floorBounce", speed: 2 }); }
+      } else {
+        d.routine = false;
+        s.ball.phys.pos = v3(a.pos.x + fx * 0.3, hh * 0.62, a.pos.z + fz * 0.3);
+      }
       const humanShooter = a.human !== null && s.cfg.shotMeter && !s.cfg.fast;
       if (s.phaseTimer > 0) return;
-      if (!humanShooter && !a.action.data.started) {
-        a.action = act("freeThrow", 1.2, { started: true, start: s.time, ideal: 0.55, releasedAt: -1, human: false });
+      if (!d.started) {
+        d.waiting = ((d.waiting as number) ?? 0) + dt;
+        if (!humanShooter && (d.waiting as number) > 0.35) this.startFreeThrowStroke(a, false);
+        else if (humanShooter && d.queuedPress) this.startFreeThrowStroke(a, true);
+        else if (humanShooter && d.queuedRelease) { this.startFreeThrowStroke(a, true); a.action.data.releasedAt = Match.FT_IDEAL; }
+        // watchdog: never wait forever at the line
+        else if (humanShooter && (d.waiting as number) > 8) { this.startFreeThrowStroke(a, false); this.emit({ t: "crowd", level: 0.2 }); }
       }
       if (!a.action.data.started) return;
+      // the ball rises with the shooting motion
+      const k = Math.min(1, a.action.t / Match.FT_IDEAL);
+      s.ball.phys.pos = v3(a.pos.x + fx * (0.3 - 0.08 * k), hh * (0.62 + 0.5 * k * k), a.pos.z + fz * (0.3 - 0.08 * k));
       const ideal = a.action.data.ideal as number;
       const rel = a.action.data.releasedAt as number;
       if (a.action.data.human && rel < 0 && a.action.t < ideal + 0.35) return;
       if (a.action.t < ideal) return;
       // shoot
       const q = a.action.data.human ? ((rel < 0 ? a.action.t : rel) - ideal) / 0.22 : NaN;
-      const p = this.makeProbability(a, "freeThrow", 4.6, false, 0, q);
+      const p = this.makeProbability(a, "freeThrow", 4.6, false, 0, a.action.data.human ? q : NaN);
       const make = this.rng.chance(p);
       const side = this.attackSide(ft.team);
       const rim = rimPos(c, side);
@@ -1751,11 +1840,12 @@ export class Match {
     if (!last) {
       ft.attempt++;
       s.ball.mode = "dead";
-      s.phaseTimer = s.cfg.fast ? 0.15 : 1.2;
+      s.phaseTimer = s.cfg.fast ? 0.15 : 1.8;
       a.action = act("freeThrow", 0, { ready: false });
       return;
     }
     s.freeThrows = null;
+    a.action = act("idle");
     if (made) {
       s.ball.mode = "dead";
       this.toDeadBall(ft.team === 0 ? 1 : 0, true);

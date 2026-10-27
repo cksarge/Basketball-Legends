@@ -2,7 +2,7 @@
 import type { CourtSpec } from "@/game/court";
 import type { Team } from "@/engine/types";
 import { Rng } from "@/engine/rng";
-import { logoSvg } from "@/ui/logo";
+import { logoImageSrc } from "@/ui/logo";
 import { displayFont } from "@/lib/fonts";
 
 export const FLOOR_MARGIN = { x: 2.6, z: 2.2 }; // apron beyond the lines (m)
@@ -176,7 +176,7 @@ export async function drawCourt(canvas: HTMLCanvasElement, c: CourtSpec, home: T
 
   // --- logos and wordmarks
   try {
-    const img = await loadImage(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(logoSvg(home.logo, home.colors, { size: 1024 }))}`);
+    const img = await loadImage(logoImageSrc(home.logo, home.colors, 1024));
     const s = c.centerCircle * 1.7 * ppm;
     g.globalAlpha = 0.92;
     g.drawImage(img, X(0) - s / 2, Z(0) - s / 2, s, s);

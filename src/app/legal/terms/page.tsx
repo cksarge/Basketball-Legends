@@ -10,7 +10,7 @@ export default function Terms() {
       <H2>A free fan project</H2>
       <p>The game is free, non-commercial and open source. There are no purchases, ads or subscriptions. The source code is licensed under the MIT License; that license, not these terms, governs your use of the code itself.</p>
       <H2>No affiliation</H2>
-      <p>Basketball Legends is not affiliated with, endorsed by or sponsored by the NBA, the NCAA, the Arizona Interscholastic Association, or any professional team, college, university or high school. Real city and school names are used only to identify places and institutions. Team nicknames, logos, colors, conferences, arenas and all players are fictional. Any resemblance between a generated player and a real person is coincidental.</p>
+      <p>Basketball Legends is not affiliated with, endorsed by or sponsored by the NBA, the NCAA, the Arizona Interscholastic Association, or any professional team, college, university or high school. Real city and school names are used only to identify places and institutions. Team nicknames, logos, colors, conferences, arenas and all players are fictional, except that Brophy College Preparatory appears with its real nickname (Broncos) and school colors, which remain the property of the school. Any resemblance between a generated player and a real person is coincidental.</p>
       <H2>Your content</H2>
       <p>The game lets you edit rosters and import roster files. Those files stay on your device. You are responsible for anything you create, import or share, and you agree not to use the game to infringe anyone&apos;s rights, impersonate real people (including minors), or share unlawful content.</p>
       <H2>Saves and settings</H2>

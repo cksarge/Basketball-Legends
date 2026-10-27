@@ -18,6 +18,8 @@ export interface LogoSpec {
   icon: LogoIcon;
   monogram: string;
   stripe: boolean;
+  /** Optional image logo (path under public/), used instead of the generated mark. */
+  image?: string;
 }
 
 export type LogoIcon =

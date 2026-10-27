@@ -39,6 +39,9 @@ export function Players({ match, uniforms, ballMesh, avatarsRef }: PlayersProps)
   const group = useRef<THREE.Group>(null);
   const avatars = useRef(new Map<string, Avatar>());
   const ballSpin = useRef(new THREE.Quaternion());
+  /** Visual offset carried over when the ball leaves the hands, decays to zero. */
+  const ballOffset = useRef(new THREE.Vector3());
+  const wasAttached = useRef(false);
 
   useEffect(() => {
     const map = avatars.current;
@@ -100,9 +103,13 @@ export function Players({ match, uniforms, ballMesh, avatarsRef }: PlayersProps)
     // ball (when not attached to hands)
     const bm = ballMesh.current;
     if (bm) {
-      if (!bm.userData.attached || !(s.ball.mode === "held" && s.ball.owner !== null)) {
+      const attached = !!bm.userData.attached && s.ball.mode === "held" && s.ball.owner !== null;
+      if (!attached) {
         const b = s.ball.phys;
-        bm.position.set(b.pos.x, b.pos.y, b.pos.z);
+        if (wasAttached.current) ballOffset.current.set(bm.position.x - b.pos.x, bm.position.y - b.pos.y, bm.position.z - b.pos.z);
+        if (ballOffset.current.lengthSq() > 0.25) ballOffset.current.set(0, 0, 0); // teleports (inbounds, lineups) don't blend
+        ballOffset.current.multiplyScalar(Math.exp(-22 * dt));
+        bm.position.set(b.pos.x + ballOffset.current.x, b.pos.y + ballOffset.current.y, b.pos.z + ballOffset.current.z);
         // roll from velocity
         const v = new THREE.Vector3(b.vel.x, 0, b.vel.z);
         const speed = v.length();
@@ -113,6 +120,7 @@ export function Players({ match, uniforms, ballMesh, avatarsRef }: PlayersProps)
         }
         bm.quaternion.copy(ballSpin.current);
       }
+      wasAttached.current = attached;
       bm.userData.attached = false;
     }
   });

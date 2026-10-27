@@ -295,8 +295,28 @@ function buildHs() {
 
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Real-identity exceptions requested by the project owner. Everything else stays
+// original. Brophy College Preparatory: Broncos, red and white.
+const IDENTITY_OVERRIDES: Record<string, Partial<Team>> = {
+  "hs-brophy-prep": {
+    nickname: "Broncos",
+    colors: { primary: "#b5121b", secondary: "#ffffff", accent: "#ffffff" },
+    logo: { shape: "shield", icon: "horn", monogram: "BP", stripe: false },
+    arena: { name: "Brophy Gymnasium", capacity: 2200 },
+  },
+};
+
+function applyOverrides(teams: Team[]) {
+  for (const t of teams) {
+    const o = IDENTITY_OVERRIDES[t.id];
+    if (o) Object.assign(t, o);
+  }
+}
+
 fs.mkdirSync(OUT, { recursive: true });
 const out = { pro: buildPro(), college: buildCollege(), hs: buildHs() };
+for (const v of Object.values(out)) applyOverrides(v.teams);
 for (const [k, v] of Object.entries(out)) {
   fs.writeFileSync(path.join(OUT, `${k}.json`), JSON.stringify(v));
   console.log(`${k}: ${v.teams.length} teams, ${v.conferences.length} conferences`);

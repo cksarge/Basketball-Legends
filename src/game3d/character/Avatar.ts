@@ -297,8 +297,18 @@ export class Avatar {
     const tN = p.actionDur > 0 ? THREE.MathUtils.clamp(p.actionT / p.actionDur, 0, 1) : 0;
 
     // ----- body posture
-    const targetCrouch = p.stance ? 0.22 : act === "post" ? 0.18 : p.dribbling ? 0.1 : act === "fall" ? 0 : 0.03 + Math.min(speed, 8) * 0.008;
-    s.crouch = THREE.MathUtils.damp(s.crouch, p.airborne ? 0.02 : targetCrouch, 10, dt);
+    let targetCrouch = p.stance ? 0.22 : act === "post" ? 0.18 : p.dribbling ? 0.1 : act === "fall" ? 0 : 0.03 + Math.min(speed, 8) * 0.008;
+    // shooting gather: bend the knees before rising into the shot
+    const jumpAt = Number(p.actionData.jumpAt ?? 0);
+    if (["jumper", "fadeaway", "floater", "hook"].includes(act) && !p.airborne && jumpAt > 0 && p.actionT < jumpAt + 0.05) {
+      targetCrouch = 0.08 + 0.2 * Math.sin(Math.PI * Math.min(1, p.actionT / (jumpAt + 0.05)));
+    }
+    if (act === "freeThrow" && p.actionData.started && !p.actionData.shot) {
+      const k = p.actionT / Number(p.actionData.ideal ?? 0.72);
+      targetCrouch = 0.04 + 0.16 * Math.sin(Math.PI * Math.min(1, k * 0.95));
+    }
+    if (act === "freeThrow" && !p.actionData.started) targetCrouch = p.actionData.routine ? 0.14 : 0.07;
+    s.crouch = THREE.MathUtils.damp(s.crouch, p.airborne ? 0.02 : targetCrouch, 14, dt);
     const targetLean = THREE.MathUtils.clamp(lvz * 0.035, -0.12, 0.3) + (p.stance ? 0.18 : 0) + (p.dribbling ? 0.1 : 0);
     s.lean = THREE.MathUtils.damp(s.lean, targetLean, 8, dt);
     s.sideLean = THREE.MathUtils.damp(s.sideLean, THREE.MathUtils.clamp(-lvx * 0.03, -0.15, 0.15), 8, dt);
@@ -354,10 +364,12 @@ export class Avatar {
         fz += sign * 0.06;
       }
       if (p.airborne) {
-        // tuck legs while in the air
-        fy = 0.09 + 0.25 + (p.y / scale) * 0.2;
-        fz = 0.08 + (side === "L" ? 0.12 : -0.02);
-        fx = sign * 0.14;
+        // legs in the air: jump shots stay long and relaxed; rebounds/blocks tuck a little more
+        const tuck = ["jumper", "fadeaway", "freeThrow", "floater", "hook"].includes(act) ? 0.05
+          : ["rebound", "block", "jumpball"].includes(act) ? 0.15 : 0.1;
+        fy = 0.09 + tuck + (p.y / scale) * 0.12;
+        fz = (side === "L" ? 0.06 : -0.03) + tuck * 0.3;
+        fx = sign * 0.13;
       }
       if (act === "layup" || act === "dunk") {
         // one-leg takeoff: drive knee up
@@ -390,40 +402,94 @@ export class Avatar {
     const shSign = sh === "L" ? 1 : -1;
 
     const shootingActs = ["jumper", "fadeaway", "floater", "hook", "freeThrow"];
-    if (shootingActs.includes(act)) {
+    const ftIdle = act === "freeThrow" && !p.actionData.started;
+    if (ftIdle && p.actionData.routine && ball) {
+      // free-throw routine: bounce the ball with the shooting hand
+      const handT = ball.clone();
+      handT.y = Math.max(ball.y + 0.12 * scale, 0.55 * scale);
+      setHand(sh, handT, this.toWorld(shSign * 0.7, 1.0, -0.4, new THREE.Vector3()));
+      setHand(off, this.toWorld(-shSign * 0.24, 0.98 + rootY, 0.22, new THREE.Vector3()));
+    } else if (ftIdle) {
+      // set at the line: ball held at the waist, eyes on the rim
+      setHand("R", this.toWorld(-0.11, 1.08 + rootY, 0.3, new THREE.Vector3()));
+      setHand("L", this.toWorld(0.11, 1.1 + rootY, 0.3, new THREE.Vector3()));
+    } else if (shootingActs.includes(act)) {
       const rel = Number(p.actionData.release ?? 0.45) || 0.45;
-      const released = !!p.actionData.released || p.actionT > rel + 0.02;
+      const released = act === "freeThrow" ? !!p.actionData.shot : !!p.actionData.released || p.actionT > rel + 0.02;
+      // after the follow-through is held for a beat, the arms relax back down
+      const sinceRelease = released ? p.actionT - (act === "freeThrow" ? Number(p.actionData.ideal ?? 0.72) : rel) : 0;
       const k = THREE.MathUtils.clamp(p.actionT / Math.max(0.05, rel), 0, 1);
+      // shooting elbow points at the rim (in front, below the ball); guide elbow out to the side
+      const shPole = (y: number, z: number) => this.toWorld(shSign * 0.22, y, z, new THREE.Vector3());
+      const offPole = this.toWorld(-shSign * 0.75, 1.25 + rootY, 0.15, new THREE.Vector3());
       if (!released) {
-        // gather at chest -> set point above the forehead
-        const y = THREE.MathUtils.lerp(1.2, act === "hook" ? 2.0 : 1.95, k * k) + rootY;
-        const z = THREE.MathUtils.lerp(0.3, act === "fadeaway" ? 0.1 : 0.2, k);
-        setHand(sh, this.toWorld(shSign * 0.06, y - 0.05, z, new THREE.Vector3()));
-        setHand(off, this.toWorld(-shSign * 0.14, y + 0.02, z + 0.02, new THREE.Vector3()));
+        // gather at the chest, then lift to a set point just above the forehead
+        const kk = k * k * (3 - 2 * k);
+        const y = THREE.MathUtils.lerp(1.22, act === "hook" ? 2.02 : 1.98, kk) + rootY;
+        const z = THREE.MathUtils.lerp(0.32, act === "fadeaway" ? 0.14 : 0.24, kk);
+        setHand(sh, this.toWorld(shSign * 0.05, y - 0.07, z - 0.02, new THREE.Vector3()), shPole(y - 0.55, z + 0.6));
+        setHand(off, this.toWorld(-shSign * 0.13, y, z + 0.03, new THREE.Vector3()), offPole);
+      } else if (sinceRelease < 0.5) {
+        // follow-through: shooting arm extended toward the rim, wrist snapped down, guide hand stays put
+        setHand(sh, this.toWorld(shSign * 0.07, 2.3 + rootY, 0.6, new THREE.Vector3()), shPole(1.75 + rootY, 1.4));
+        setHand(off, this.toWorld(-shSign * 0.2, 2.02 + rootY, 0.42, new THREE.Vector3()), offPole);
+        this.rotateWorld(`hand${sh}`, worldRot(1.0, 0, 0));
       } else {
-        // follow through: shooting arm up and out, wrist snapped
-        setHand(sh, this.toWorld(shSign * 0.1, 2.28 + rootY, 0.42, new THREE.Vector3()), this.toWorld(shSign * 0.5, 1.6, -0.3, new THREE.Vector3()));
-        setHand(off, this.toWorld(-shSign * 0.3, 1.95 + rootY, 0.18, new THREE.Vector3()));
-        this.rotateWorld(`hand${sh}`, worldRot(0.9, 0, 0));
+        setHand("L", swing("L", 1));
+        setHand("R", swing("R", -1));
       }
     } else if (act === "layup" || act === "dunk") {
       const rel = Number(p.actionData.release ?? 0.5) || 0.5;
       const k = THREE.MathUtils.clamp(p.actionT / rel, 0, 1);
+      const after = p.actionT - rel;
       const top = act === "dunk" ? 2.45 : 2.3;
-      setHand(sh, this.toWorld(shSign * 0.12, THREE.MathUtils.lerp(1.25, top, k) + rootY, THREE.MathUtils.lerp(0.25, 0.45, k), new THREE.Vector3()));
-      setHand(off, k < 0.7 ? this.toWorld(-shSign * 0.12, 1.3 + rootY + k * 0.5, 0.3, new THREE.Vector3()) : swing(off, -shSign));
-      if (act === "dunk" && p.actionT > rel) setHand(sh, this.toWorld(shSign * 0.12, 2.35 + rootY, 0.35, new THREE.Vector3()));
+      const elbowIn = (y: number) => this.toWorld(shSign * 0.25, y, 0.9, new THREE.Vector3());
+      if (k < 0.45) {
+        // two-hand carry through the gather
+        const g = k / 0.45;
+        const y = THREE.MathUtils.lerp(1.2, 1.45, g) + rootY;
+        setHand(sh, this.toWorld(shSign * 0.1, y, 0.3, new THREE.Vector3()), elbowIn(y - 0.5));
+        setHand(off, this.toWorld(-shSign * 0.1, y + 0.02, 0.3, new THREE.Vector3()));
+      } else if (after < (act === "dunk" ? 0.35 : 0.2)) {
+        // extend to the rim; the guide hand protects the ball out front
+        const r = Math.min(1, (k - 0.45) / 0.55);
+        const rr = r * r * (3 - 2 * r);
+        const y = THREE.MathUtils.lerp(1.45, top, rr) + rootY;
+        setHand(sh, this.toWorld(shSign * 0.1, after > 0 && act === "dunk" ? 2.38 + rootY : y, THREE.MathUtils.lerp(0.3, 0.5, rr), new THREE.Vector3()), elbowIn(y - 0.45));
+        setHand(off, this.toWorld(-shSign * 0.3, 1.5 + rootY, 0.35, new THREE.Vector3()), this.toWorld(-shSign * 0.8, 1.2 + rootY, 0.1, new THREE.Vector3()));
+      } else {
+        setHand("L", swing("L", 1));
+        setHand("R", swing("R", -1));
+      }
     } else if (act === "block" || act === "rebound") {
-      const up = Math.sin(Math.PI * Math.min(1, tN * 1.3));
-      setHand("R", this.toWorld(-0.18, 1.5 + up * 0.85 + rootY, 0.25, new THREE.Vector3()));
-      setHand("L", act === "rebound" ? this.toWorld(0.18, 1.5 + up * 0.85 + rootY, 0.25, new THREE.Vector3()) : swing("L", 1));
+      // reach up and come back down to the relaxed arms (never parks the hands on the chest)
+      const up = Math.sin(Math.PI * Math.min(1, tN * 1.25));
+      const reach = (side: "L" | "R", sign: number, amount: number) => {
+        const rest = swing(side, sign);
+        const top = this.toWorld(sign * 0.2, 2.35 + rootY, 0.3, new THREE.Vector3());
+        return rest.lerp(top, amount);
+      };
+      setHand("R", reach("R", -1, up), this.toWorld(-0.45, 1.3 + rootY, 0.75, new THREE.Vector3()));
+      setHand("L", reach("L", 1, act === "rebound" ? up : up * 0.45), this.toWorld(0.45, 1.3 + rootY, 0.75, new THREE.Vector3()));
     } else if (act === "pass") {
-      const k = THREE.MathUtils.clamp(p.actionT / Math.max(0.05, Number(p.actionData.release ?? 0.15)), 0, 1.4);
+      const rel = Math.max(0.05, Number(p.actionData.release ?? 0.15));
+      const k = THREE.MathUtils.clamp(p.actionT / rel, 0, 1.4);
       const lob = p.actionData.kind === "lob" || p.actionData.kind === "alley";
-      const y = (lob ? 1.65 : 1.25) + rootY;
-      const z = 0.25 + Math.min(1, k) * 0.35;
-      setHand("R", this.toWorld(-0.12 * (1 + k * 0.4), y, z, new THREE.Vector3()));
-      setHand("L", this.toWorld(0.12 * (1 + k * 0.4), y, z, new THREE.Vector3()));
+      const bounce = p.actionData.kind === "bounce";
+      const after = p.actionT - rel;
+      if (after > 0.16) {
+        // follow-through done: arms relax
+        setHand("L", swing("L", 1));
+        setHand("R", swing("R", -1));
+      } else {
+        const y = (lob ? 1.65 + Math.min(1, k) * 0.25 : bounce ? 1.2 - Math.min(1, k) * 0.25 : 1.25) + rootY;
+        const z = 0.25 + Math.min(1, k) * 0.35;
+        const elbows = (sign: number) => this.toWorld(sign * 0.55, 1.0 + rootY, 0.2, new THREE.Vector3());
+        setHand("R", this.toWorld(-0.12 * (1 + k * 0.4), y, z, new THREE.Vector3()), elbows(-1));
+        setHand("L", this.toWorld(0.12 * (1 + k * 0.4), y, z, new THREE.Vector3()), elbows(1));
+        // thumbs snap down through the release
+        if (k >= 1) { this.rotateWorld("handR", worldRot(0.6, 0, 0)); this.rotateWorld("handL", worldRot(0.6, 0, 0)); }
+      }
     } else if (act === "steal") {
       const k = Math.sin(Math.PI * tN);
       setHand(sh, this.toWorld(shSign * 0.15, 0.95 + rootY, 0.3 + k * 0.45, new THREE.Vector3()));
@@ -492,9 +558,30 @@ export class Avatar {
       this.rotateWorld("head", worldRot(pitch * 0.5, THREE.MathUtils.clamp(wrapped, -1, 1) * 0.45, 0));
     }
 
+    this.blend(dt);
     this.model.updateMatrixWorld(true);
     this.worldPos(`middle1L`, this.handL);
     this.worldPos(`middle1R`, this.handR);
+  }
+
+  private prevQ = new Map<string, THREE.Quaternion>();
+  private prevHips: THREE.Vector3 | null = null;
+
+  /** Ease every bone toward this frame's pose so transitions between actions never snap. */
+  private blend(dt: number) {
+    for (const name in this.bones) {
+      const bone = this.bones[name].bone;
+      const prev = this.prevQ.get(name);
+      if (!prev) { this.prevQ.set(name, bone.quaternion.clone()); continue; }
+      const leg = /^(thigh|shin|foot|toe)/.test(name);
+      const core = /^(spine|chest|upperchest|neck|head)$/.test(name);
+      const rate = leg ? 32 : name === "hips" ? 24 : core ? 14 : 17;
+      prev.slerp(bone.quaternion, 1 - Math.exp(-rate * dt));
+      bone.quaternion.copy(prev);
+    }
+    const hips = this.bones.hips.bone;
+    if (!this.prevHips) this.prevHips = hips.position.clone();
+    else { this.prevHips.lerp(hips.position, 1 - Math.exp(-26 * dt)); hips.position.copy(this.prevHips); }
   }
 }
 

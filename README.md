@@ -24,7 +24,7 @@ Career mode, Franchise mode, roster editing, accounts and online play are in dev
 | College | National Collegiate Hoops | 1,092 programs in D-I, D-II and D-III across 100 conferences |
 | Arizona high school | Arizona Prep Hoops | 283 schools, 6A through 1A, using the 2026–28 region alignment |
 
-Real city, school and university names are used only to identify places. Every nickname, logo, color scheme, conference name, arena and player is original and fictional. Basketball Legends is not affiliated with the NBA, the NCAA, the AIA, or any team or school.
+Real city, school and university names are used only to identify places. Every nickname, logo, color scheme, conference name, arena and player is original and fictional, with one exception: Brophy College Preparatory appears as the Brophy Prep Broncos in its red and white colors. Basketball Legends is not affiliated with the NBA, the NCAA, the AIA, or any team or school.
 
 ## Development
 

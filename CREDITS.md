@@ -19,7 +19,7 @@
 | College institutions, cities, conferences | Wikipedia lists of NCAA Division I, II and III institutions | Facts only; real nicknames are kept only as an avoid list so generated nicknames never match |
 | City list for pro teams | Public knowledge | City names only |
 
-All team identities (nicknames, colors, logos, conference names, arenas) and all players are original and fictional.
+All team identities (nicknames, colors, logos, conference names, arenas) and all players are original and fictional. The one exception is Brophy College Preparatory, which uses its real nickname (Broncos) and colors (red and white); the Broncos and Brophy names belong to Brophy College Preparatory.
 
 ## Libraries
 

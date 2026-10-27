@@ -829,8 +829,32 @@ rig.select_set(True)
 bpy.context.view_layer.objects.active = rig
 bpy.ops.object.parent_set(type="ARMATURE_AUTO")
 
-# Body vertex weights indexed by ORIGINAL body vertex index
+# Skin under and just around the jersey's armholes follows the torso like the cloth
+# does, so it can't poke through the armhole edge when the arms move. Blends back
+# to the arm weights over 3 cm outside the cut.
+TORSO = ("hips", "spine", "chest", "upperchest", "clavicle.L", "clavicle.R")
 orig_of = {new: old for new, old in enumerate(keep_idx)}
+_gidx = {g.name: g for g in body.vertex_groups}
+for v in body.data.vertices:
+    fj = F_J.get(orig_of[v.index], -1.0)
+    if fj < -0.03 or VINFO[orig_of[v.index]][0] in ("head", "neck"):
+        continue
+    t = smooth(-0.03, 0.0, fj)
+    cur = {gname_: g.weight for g in v.groups for gname_ in [body.vertex_groups[g.group].name]}
+    torso = {k: w for k, w in cur.items() if k in TORSO}
+    tt = sum(torso.values())
+    if tt < 1e-4:
+        torso = {"upperchest": 1.0}
+        tt = 1.0
+    torso = {k: w / tt for k, w in torso.items()}
+    mixed = {k: cur.get(k, 0) * (1 - t) + torso.get(k, 0) * t for k in set(cur) | set(torso)}
+    tot = sum(mixed.values()) or 1
+    for k, w in mixed.items():
+        if k not in _gidx:
+            _gidx[k] = body.vertex_groups.new(name=k)
+        _gidx[k].add([v.index], w / tot, "REPLACE")
+
+# Body vertex weights indexed by ORIGINAL body vertex index
 W = {}
 gname = {g.index: g.name for g in body.vertex_groups}
 for v in body.data.vertices:
@@ -847,6 +871,29 @@ def weights_for(combo):
     tot = sum(acc_w.values()) or 1
     return {g: x / tot for g, x in acc_w.items()}
 
+# Clothing only follows the bones it actually hangs from. Without this, jersey
+# vertices near the armpit pick up upper-arm weight and get dragged into spikes
+# whenever an arm goes up (shooting, blocking, celebrating).
+ALLOWED = {
+    "Jersey": ("hips", "spine", "chest", "upperchest", "clavicle.L", "clavicle.R"),
+    "Shorts": ("hips", "spine", "thigh.L", "thigh.R"),
+}
+FALLBACK = {"Jersey": "upperchest", "Shorts": "hips"}
+# a little arm influence keeps the armhole edge over the skin when the arm rises
+PARTIAL: dict = {}
+
+def restrict(name, ws, co):
+    allowed = ALLOWED.get(name)
+    if not allowed:
+        return ws
+    partial = PARTIAL.get(name, {})
+    kept = {g: w * partial.get(g, 1.0) for g, w in ws.items() if g in allowed or g in partial}
+    tot = sum(kept.values())
+    if tot < 1e-4:
+        best = min(allowed, key=lambda b: seg(co, b)[0])
+        return {best: 1.0}
+    return {g: w / tot for g, w in kept.items()}
+
 head_only = {id(o) for o in hairs.values()} | {id(acc[0])}
 for o, combos in SHELLS:
     o.parent = rig
@@ -854,7 +901,7 @@ for o, combos in SHELLS:
     mod.object = rig
     groups = {}
     for vi, combo in enumerate(combos):
-        ws = {"head": 1.0} if id(o) in head_only else weights_for(combo)
+        ws = {"head": 1.0} if id(o) in head_only else restrict(o.name, weights_for(combo), o.data.vertices[vi].co)
         for g, w in ws.items():
             if g not in groups:
                 groups[g] = o.vertex_groups.new(name=g)

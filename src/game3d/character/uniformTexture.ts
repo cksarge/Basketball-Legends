@@ -2,7 +2,7 @@
 // u = 0.25 front center, 0.75 back center, seam under the right arm; v = 0 hem, 1 neckline.
 import * as THREE from "three";
 import type { Team } from "@/engine/types";
-import { logoSvg } from "@/ui/logo";
+import { logoImageSrc } from "@/ui/logo";
 import { displayFont } from "@/lib/fonts";
 
 export type UniformStyle = "home" | "away" | "alt";
@@ -36,7 +36,7 @@ function teamLogoImage(team: Team): HTMLImageElement {
   let img = logoImages.get(team.id);
   if (!img) {
     img = new Image();
-    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(logoSvg(team.logo, team.colors, { size: 256 }))}`;
+    img.src = logoImageSrc(team.logo, team.colors, 256);
     logoImages.set(team.id, img);
   }
   return img;
