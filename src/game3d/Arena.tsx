@@ -301,24 +301,42 @@ export function Arena({ court, home, away, kind, quality, crowdDensity, exciteRe
   const seatMat = useMemo(() => new THREE.MeshStandardMaterial({ color: kind === "gym" ? "#9a7b55" : "#1d2430", roughness: 0.85 }), [kind]);
   const seats = useMemo(() => [...lower.seats, ...(upper?.seats ?? [])], [lower, upper]);
   const roofY = kind === "gym" ? 11 : 32;
+  // Courtside boards: each panel is 4:1 on the canvas and drawn 3.6 m x 0.9 m on the
+  // board, so the text keeps its proportions instead of being squeezed.
+  const BOARD_H = 0.9, PANEL_W = BOARD_H * 4;
   const ribbonTex = useMemo(() => {
     const c = document.createElement("canvas");
-    c.width = 2048; c.height = 64;
+    const pw = 1024, ph = 256;
+    c.width = pw * 2; c.height = ph;
     const g = c.getContext("2d")!;
-    for (let x = 0; x < 2048; x += 512) {
-      g.fillStyle = x % 1024 ? home.colors.primary : "#0b0f15";
-      g.fillRect(x, 0, 512, 64);
-      g.fillStyle = x % 1024 ? home.colors.accent : home.colors.secondary;
-      g.font = `900 44px ${displayFont()}`;
+    const panels: [string, string, string][] = [
+      ["#0b0f15", home.colors.secondary === "#ffffff" ? home.colors.primary : home.colors.secondary, "BASKETBALL LEGENDS"],
+      [home.colors.primary, home.colors.accent, `${home.name} ${home.nickname}`.toUpperCase()],
+    ];
+    panels.forEach(([bg, fg, text], i) => {
+      const x0 = i * pw;
+      g.fillStyle = bg;
+      g.fillRect(x0, 0, pw, ph);
+      g.fillStyle = fg;
       g.textAlign = "center";
-      g.fillText(x % 1024 ? `${home.name.toUpperCase()} ${home.nickname.toUpperCase()}` : "BASKETBALL LEGENDS", x + 256, 48);
-    }
+      g.textBaseline = "middle";
+      let size = 150;
+      g.font = `900 ${size}px ${displayFont()}`;
+      while (g.measureText(text).width > pw * 0.88 && size > 60) { size -= 6; g.font = `900 ${size}px ${displayFont()}`; }
+      g.fillText(text, x0 + pw / 2, ph / 2 + size * 0.04);
+      // thin LED-style top and bottom rails
+      g.fillStyle = "rgba(255,255,255,0.12)";
+      g.fillRect(x0, 0, pw, 6);
+      g.fillRect(x0, ph - 6, pw, 6);
+    });
     const t = new THREE.CanvasTexture(c);
     t.colorSpace = THREE.SRGBColorSpace;
     t.wrapS = THREE.RepeatWrapping;
-    t.repeat.set(4, 1);
+    t.anisotropy = 8;
+    // one texture = two panels; repeat so each panel spans PANEL_W meters
+    t.repeat.set((court.length * 0.9) / (PANEL_W * 2), 1);
     return t;
-  }, [home]);
+  }, [home, court.length, PANEL_W]);
 
   return (
     <group>
@@ -329,7 +347,7 @@ export function Arena({ court, home, away, kind, quality, crowdDensity, exciteRe
       {/* courtside ad boards */}
       {[1, -1].map((s) => (
         <mesh key={s} position={[0, 0.45, s * (court.halfW + FLOOR_MARGIN.z + 0.6)]} rotation={[0, s > 0 ? Math.PI : 0, 0]}>
-          <planeGeometry args={[court.length * 0.9, 0.9]} />
+          <planeGeometry args={[court.length * 0.9, BOARD_H]} />
           <meshBasicMaterial map={ribbonTex} toneMapped={false} />
         </mesh>
       ))}
