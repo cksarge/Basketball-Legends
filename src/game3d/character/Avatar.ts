@@ -47,6 +47,8 @@ export class Avatar {
   bones: Record<string, BoneInfo> = {};
   skinMat!: THREE.MeshStandardMaterial;
   private meshes: Record<string, THREE.SkinnedMesh> = {};
+  /** Every skinned primitive (multi-material meshes load as groups of primitives). */
+  private allMeshes: THREE.SkinnedMesh[] = [];
   private jerseyTex: ReturnType<typeof makeCanvasTexture>;
   private shortsTex: ReturnType<typeof makeCanvasTexture>;
   private gait = 0;
@@ -70,6 +72,7 @@ export class Avatar {
         m.castShadow = true;
         m.receiveShadow = true;
         this.meshes[m.name] = m;
+        this.allMeshes.push(m);
       }
       const b = o as THREE.Bone;
       if (b.isBone) {
@@ -101,8 +104,8 @@ export class Avatar {
   applyLook(masks: MaskSet, style: UniformStyle) {
     const p = this.player, ap = p.appearance;
     const styleName = HAIR_STYLES[ap.hairStyle] ?? "Short";
-    const tone = new THREE.Color(SKIN_TONES[ap.skinTone] ?? SKIN_TONES[4]).convertSRGBToLinear();
-    const hairColor = new THREE.Color(HAIR_COLORS[ap.hairColor] ?? HAIR_COLORS[0]).convertSRGBToLinear();
+    const tone = new THREE.Color(SKIN_TONES[ap.skinTone] ?? SKIN_TONES[4]);
+    const hairColor = new THREE.Color(HAIR_COLORS[ap.hairColor] ?? HAIR_COLORS[0]);
     const fh = ap.facialHair;
     const look: SkinLook = {
       tone, hairColor,
@@ -117,10 +120,12 @@ export class Avatar {
       fullBeard: fh === 3 ? 0.75 : fh === 5 ? 1 : 0,
     };
     this.skinMat = createSkinMaterial(masks, look);
-    const body = this.meshes.Body;
-    if (body) {
-      const mats = Array.isArray(body.material) ? body.material : [body.material];
-      body.material = mats.map((m) => (m.name === "Skin" ? this.skinMat : m.clone()));
+    const shoeColor = new THREE.Color(ap.shoeColor);
+    for (const m of this.allMeshes) {
+      const mat = m.material as THREE.MeshStandardMaterial;
+      if (mat.name === "Skin") m.material = this.skinMat;
+      else if (mat.name === "Upper") { const c = mat.clone(); c.color = shoeColor.clone(); m.material = c; }
+      else if (mat.name === "Eye" || mat.name === "Iris" || mat.name === "Sole") m.material = mat.clone();
     }
     // hair geometry
     for (const [idx, name] of Object.entries(HAIR_MESH)) {
@@ -137,19 +142,10 @@ export class Avatar {
     this.jerseyTex.tex.needsUpdate = true;
     drawShorts(this.shortsTex.canvas, this.team, style);
     this.shortsTex.tex.needsUpdate = true;
-    const cloth = (tex: THREE.Texture) => new THREE.MeshStandardMaterial({ map: tex, roughness: 0.82, side: THREE.DoubleSide, sheen: 0 } as THREE.MeshStandardMaterialParameters);
+    const cloth = (tex: THREE.Texture) => new THREE.MeshStandardMaterial({ map: tex, roughness: 0.82, side: THREE.DoubleSide });
     if (this.meshes.Jersey) this.meshes.Jersey.material = cloth(this.jerseyTex.tex);
     if (this.meshes.Shorts) this.meshes.Shorts.material = cloth(this.shortsTex.tex);
     if (this.meshes.Socks) this.meshes.Socks.material = new THREE.MeshStandardMaterial({ color: new THREE.Color(col.trim === col.base ? "#ffffff" : style === "away" ? col.base : "#f4f4f4"), roughness: 0.95, side: THREE.DoubleSide });
-    if (this.meshes.Shoes) {
-      const shoe = this.meshes.Shoes;
-      const mats = Array.isArray(shoe.material) ? shoe.material : [shoe.material];
-      shoe.material = mats.map((m) => {
-        const c = m.clone() as THREE.MeshStandardMaterial;
-        if (m.name === "Upper") c.color = new THREE.Color(ap.shoeColor).convertSRGBToLinear();
-        return c;
-      });
-    }
     const accColor = new THREE.Color(col.trim);
     const acc = (name: string, on: boolean) => {
       const m = this.meshes[name];
@@ -169,17 +165,17 @@ export class Avatar {
     const f = ap.faceShape;
     const faceW = [Math.max(0, 1 - Math.abs(f - 0.0) * 3), Math.max(0, 1 - Math.abs(f - 0.5) * 3), Math.max(0, 1 - Math.abs(f - 1.0) * 3)];
     const sum = faceW.reduce((a, b) => a + b, 0) || 1;
-    for (const m of Object.values(this.meshes)) {
+    for (const m of this.allMeshes) {
       const dict = m.morphTargetDictionary;
       const inf = m.morphTargetInfluences;
       if (!dict || !inf) continue;
       const set = (k: string, v: number) => { if (dict[k] !== undefined) inf[dict[k]] = v; };
       set("Lean", lean);
       set("Heavy", heavy);
-      // face targets are absolute shapes relative to the neutral mix; blend away from neutral
-      set("FaceA", (faceW[0] / sum - 1 / 3) * 1.2 + 0.0);
-      set("FaceB", (faceW[1] / sum - 1 / 3) * 1.2);
-      set("FaceC", (faceW[2] / sum - 1 / 3) * 1.2);
+      // FaceA/B/C hold (shape_i - neutral); neutral is their average, so weights summing to 1 stay in range
+      set("FaceA", faceW[0] / sum);
+      set("FaceB", faceW[1] / sum);
+      set("FaceC", faceW[2] / sum);
     }
   }
 

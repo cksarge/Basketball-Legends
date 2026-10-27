@@ -123,8 +123,8 @@ def mat(name, color, rough=0.6, double=False):
 
 MAT = {
     "Skin": mat("Skin", (0.45, 0.28, 0.19), 0.48),
-    "Eye": mat("Eye", (0.9, 0.9, 0.88), 0.15),
-    "Iris": mat("Iris", (0.08, 0.05, 0.03), 0.1),
+    "Eye": mat("Eye", (0.62, 0.6, 0.57), 0.2),
+    "Iris": mat("Iris", (0.06, 0.04, 0.025), 0.1),
     "Socks": mat("Socks", (0.95, 0.95, 0.95), 0.95, True),
     "Jersey": mat("Jersey", (0.75, 0.1, 0.1), 0.8, True),
     "Shorts": mat("Shorts", (0.75, 0.1, 0.1), 0.75, True),
@@ -221,7 +221,7 @@ for i, p in enumerate(me.polygons):
 for side in ("l", "r"):
     ec = conv(centroid(BASE, f"helper-{side}-eye"))
     for i, p in enumerate(me.polygons):
-        if i >= n_body and (p.center - ec).length < 0.03 and p.center.y < ec.y - 0.0085:
+        if i >= n_body and (p.center - ec).length < 0.03 and p.center.y < ec.y - 0.0055:
             p.material_index = 2
 
 CO = [v.co.copy() for v in me.vertices]
@@ -271,7 +271,7 @@ def f_shorts(p):
         return -1.0
     waist = waist_z - co.z
     if isb(bn, "thigh"):
-        return min(waist, (0.88 - t) * 0.45)
+        return min(waist, (0.84 - t) * 0.45)
     return waist
 
 def f_socks(p):
@@ -458,7 +458,7 @@ def cyl_uv(o, z0, z1):
 # ---- clothing (the jersey hangs looser toward the hem)
 jersey = cut_shell("Jersey", f_jersey, lambda p: 0.013 + 0.016 * smooth(BONES["chest"][0].z, pelvis.z - 0.1, p.co.z), MAT["Jersey"])
 cyl_uv(jersey, pelvis.z - 0.11, neck_base)
-shorts = cut_shell("Shorts", f_shorts, lambda p: 0.03 + (p.t if isb(p.bn, "thigh") else 0.0) * 0.05, MAT["Shorts"])
+shorts = cut_shell("Shorts", f_shorts, lambda p: 0.026 + (p.t if isb(p.bn, "thigh") else 0.0) * 0.03, MAT["Shorts"])
 cyl_uv(shorts, BONES["shin.L"][0].z, waist_z)
 socks = cut_shell("Socks", f_socks, lambda p: 0.0035, MAT["Socks"], subdiv=1)
 
@@ -633,7 +633,7 @@ F_J = {i: f_jersey(BASE_PT[i]) for i in range(len(CO))}
 F_S = {i: f_shorts(BASE_PT[i]) for i in range(len(CO))}
 hide = []
 for pi, f in enumerate(BODY_FACES):
-    if all(F_J[v] > 0.025 for v in f) or all(F_S[v] > 0.035 for v in f):
+    if all(F_J[v] > 0.006 for v in f) or all(F_S[v] > 0.01 for v in f):
         hide.append(pi)
     elif all(isb(VINFO[v][0], "foot", "toe") or (isb(VINFO[v][0], "shin") and VINFO[v][1] > 0.93) for v in f):
         hide.append(pi)

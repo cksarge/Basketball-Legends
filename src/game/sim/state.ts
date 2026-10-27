@@ -56,6 +56,10 @@ export interface Agent {
   heat: number;
   /** In-game gameplan role for AI. */
   role: "ball" | "wing" | "corner" | "post" | "slot";
+  /** Human input buffered while busy (replayed when free). */
+  buffered?: { act: IntentAct; until: number } | null;
+  /** Shot button released before a buffered shot started. */
+  quickRelease?: boolean;
 }
 
 export interface AgentIntent {

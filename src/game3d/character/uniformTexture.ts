@@ -148,5 +148,6 @@ export function makeCanvasTexture(w: number, h: number) {
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;
   tex.wrapS = THREE.RepeatWrapping;
+  tex.flipY = false; // glTF UV convention (origin top-left)
   return { canvas, tex };
 }

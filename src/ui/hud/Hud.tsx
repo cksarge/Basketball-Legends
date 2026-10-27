@@ -134,7 +134,7 @@ export function ControlsStrip({ onOffense }: { onOffense: boolean }) {
     ? [["shoot", "Shoot"], ["pass", "Pass"], ["lob", "Lob"], ["sprint", "Sprint"], ["dribbleLeft", "Moves"], ["pause", "Pause"]]
     : [["block", "Block"], ["steal", "Steal"], ["intenseD", "Intense D"], ["switchPlayer", "Switch"], ["sprint", "Sprint"], ["pause", "Pause"]];
   return (
-    <div className="pointer-events-none fixed bottom-5 right-5 z-20 flex flex-wrap justify-end gap-x-3 gap-y-1 rounded-[var(--radius-chip)] bg-navy/70 px-3 py-2 text-xs text-steel backdrop-blur">
+    <div className="pointer-events-none fixed right-5 top-5 z-20 flex max-w-md flex-wrap justify-end gap-x-3 gap-y-1 rounded-[var(--radius-chip)] bg-navy/70 px-3 py-2 text-xs text-steel backdrop-blur">
       {items.map(([a, label]) => (
         <span key={a} className="flex items-center gap-1.5"><KeyHint action={a as never} device={prompts === "auto" ? device : prompts === "keyboard" ? "keyboard" : prompts} />{label}</span>
       ))}

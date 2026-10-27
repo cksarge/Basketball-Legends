@@ -456,9 +456,27 @@ export class Match {
 
   private handleIntentAct(a: Agent) {
     const s = this.state;
-    const ia = a.intent.act;
+    let ia = a.intent.act;
+    // input buffer: replay a recent press once the player is free
+    if (!ia && a.buffered && s.time <= a.buffered.until && !this.isBusy(a)) {
+      ia = a.buffered.act;
+      a.buffered = null;
+    }
     if (!ia) return;
     a.intent.act = undefined;
+    if (a.human !== null && this.isBusy(a) && (ia.type === "shoot" && ia.phase === "press" || ia.type === "pass" || ia.type === "dribbleMove" || ia.type === "steal" || ia.type === "block")) {
+      const shooting = ["jumper", "fadeaway", "floater", "hook", "layup", "dunk"].includes(a.action.kind);
+      if (!(ia.type === "pass" && shooting)) {
+        a.buffered = { act: ia, until: s.time + 0.35 };
+        return;
+      }
+    }
+    // a release that arrives while the press is still buffered becomes a quick release
+    if (ia.type === "shoot" && ia.phase === "release" && a.buffered?.act.type === "shoot") {
+      a.buffered.act = { type: "shoot", phase: "press" };
+      a.quickRelease = true;
+      return;
+    }
     if (s.phase === "freethrows") {
       if (ia.type === "shoot" && s.freeThrows && s.freeThrows.shooter === a.idx) this.ftInput(ia.phase);
       return;
@@ -473,7 +491,10 @@ export class Match {
     const hasBall = s.ball.owner === a.idx;
     switch (ia.type) {
       case "shoot":
-        if (ia.phase === "press" && hasBall && !this.isBusy(a)) this.beginShot(a);
+        if (ia.phase === "press" && hasBall && !this.isBusy(a)) {
+          this.beginShot(a);
+          if (a.quickRelease) { a.quickRelease = false; a.action.data.pendingQuick = true; }
+        }
         else if (ia.phase === "release" && ["jumper", "fadeaway", "floater", "hook", "layup"].includes(a.action.kind)) this.humanRelease(a);
         break;
       case "pass":
@@ -746,6 +767,7 @@ export class Match {
 
   /** Human released the shoot button: record timing quality. */
   humanRelease(a: Agent) {
+    a.quickRelease = false;
     const ac = a.action;
     if (ac.data.released || ac.data.releasedAt as number >= 0) return;
     ac.data.releasedAt = ac.t;
@@ -763,6 +785,7 @@ export class Match {
       d.jumped = true;
       this.startJump(a, d.jumpH as number);
     }
+    if (d.pendingQuick && ac.t >= (d.ideal as number) - 0.04) { d.pendingQuick = false; this.humanRelease(a); }
     // human never released: auto-release late
     if (d.human && !d.released && (d.releasedAt as number) < 0 && ac.t >= (d.ideal as number) + 0.18 && s.cfg.shotMeter) {
       d.releasedAt = ac.t;
@@ -1807,10 +1830,10 @@ export class Match {
     s.ball.lastTouch = ib.team;
     s.phase = "inbound";
     ib.timer = 0;
-    // human control: inbounder on human teams
-    if (s.teams[ib.team].humanControlled && !(s as MatchState & { lockHuman?: boolean }).lockHuman) {
-      const h = team.find((a) => a.human !== null);
-      if (h && h !== inbounder) { inbounder.human = h.human; h.human = null; }
+    // humans never control the inbounder (the AI inbounds); move control to another player
+    if (inbounder.human !== null && !(s as MatchState & { lockHuman?: boolean }).lockHuman) {
+      const other = team.find((a) => a !== inbounder && a.human === null && a.role === "ball") ?? team.find((a) => a !== inbounder && a.human === null);
+      if (other) { other.human = inbounder.human; inbounder.human = null; }
     }
   }
 

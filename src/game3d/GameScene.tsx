@@ -277,11 +277,12 @@ export function GameScene(props: GameSceneProps) {
 
   return (
     <Canvas
-      shadows={g.shadows ? "soft" : false}
+      shadows={g.shadows ? { type: THREE.PCFShadowMap } : false}
       dpr={dpr}
       gl={{ antialias: !g.antialias ? false : false, powerPreference: "high-performance", stencil: false }}
-      camera={{ fov: 30, near: 0.1, far: 400, position: [0, 9, 26] }}
-      onCreated={({ gl }) => {
+      camera={{ fov: 30, near: 0.5, far: 400, position: [0, 9, 26] }}
+      onCreated={({ gl, scene, camera }) => {
+        if (process.env.NODE_ENV !== "production") (window as unknown as { __bl: unknown }).__bl = { scene, camera, gl, match: props.match, THREE, camState };
         gl.toneMapping = THREE.NoToneMapping;
         gl.outputColorSpace = THREE.SRGBColorSpace;
       }}

@@ -23,15 +23,25 @@ export function CourtFloor({ court, home, quality, kind }: { court: CourtSpec; h
   }, []);
   useEffect(() => {
     let cancelled = false;
-    const canvas = document.createElement("canvas");
-    const res = quality === "ultra" ? 4096 : quality === "high" ? 3072 : quality === "medium" ? 2048 : 1536;
-    canvas.width = res;
-    canvas.height = Math.round((res * h) / w);
-    const t = new THREE.CanvasTexture(canvas);
+    const res = quality === "ultra" ? 4096 : quality === "high" ? 4096 : quality === "medium" ? 2048 : 1024;
+    // draw at the true aspect ratio, then resample into a power-of-two canvas:
+    // GPU mipmap generation for NPOT canvases is unreliable on some drivers.
+    const draw = document.createElement("canvas");
+    draw.width = res;
+    draw.height = Math.round((res * h) / w);
+    const pot = document.createElement("canvas");
+    pot.width = res;
+    pot.height = res / 2;
+    const t = new THREE.CanvasTexture(pot);
     t.colorSpace = THREE.SRGBColorSpace;
     t.anisotropy = 8;
-    drawCourt(canvas, court, home, { gym: kind === "gym" }).then(() => {
+    t.generateMipmaps = true;
+    t.minFilter = THREE.LinearMipmapLinearFilter;
+    drawCourt(draw, court, home, { gym: kind === "gym" }).then(() => {
       if (cancelled) return;
+      const g = pot.getContext("2d")!;
+      g.imageSmoothingQuality = "high";
+      g.drawImage(draw, 0, 0, pot.width, pot.height);
       t.needsUpdate = true;
       setTex(t);
     });
@@ -41,10 +51,10 @@ export function CourtFloor({ court, home, quality, kind }: { court: CourtSpec; h
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[w, h]} />
-        <meshStandardMaterial map={tex} roughnessMap={rough} roughness={0.42} metalness={0.02} envMapIntensity={0.9} color={tex ? "#ffffff" : "#c99055"} />
+        <meshStandardMaterial key={tex ? tex.uuid : "pending"} map={tex} roughnessMap={rough} roughness={0.5} metalness={0.02} envMapIntensity={0.7} color={tex ? "#ffffff" : "#c99055"} />
       </mesh>
       {/* surrounding floor */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.005, 0]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.08, 0]} receiveShadow>
         <planeGeometry args={[w + 30, h + 30]} />
         <meshStandardMaterial color={kind === "gym" ? "#6b5844" : "#151b24"} roughness={0.9} />
       </mesh>
@@ -339,7 +349,7 @@ export function Arena({ court, home, away, kind, quality, crowdDensity, exciteRe
         </group>
       ))}
       {/* walls and roof */}
-      <mesh position={[0, roofY / 2, 0]}>
+      <mesh position={[0, roofY / 2 - 0.3, 0]}>
         <boxGeometry args={[w + (kind === "gym" ? 18 : 70), roofY, h + (kind === "gym" ? 18 : 70)]} />
         <meshStandardMaterial attach="material" color={kind === "gym" ? "#cfc6b6" : "#06080c"} roughness={0.95} side={THREE.BackSide} />
       </mesh>
