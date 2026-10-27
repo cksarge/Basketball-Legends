@@ -314,6 +314,8 @@ export class Avatar {
       targetCrouch = 0.04 + 0.16 * Math.sin(Math.PI * Math.min(1, k * 0.95));
     }
     if (act === "freeThrow" && !p.actionData.started) targetCrouch = p.actionData.routine ? 0.14 : 0.07;
+    const winded = act === "idle" && !p.hasBall && !p.stance && p.stamina < 0.45 && speed < 0.25;
+    if (winded) targetCrouch = 0.2;
     s.crouch = THREE.MathUtils.damp(s.crouch, p.airborne ? 0.02 : targetCrouch, 14, dt);
     const targetLean = THREE.MathUtils.clamp(lvz * 0.035, -0.12, 0.3) + (p.stance ? 0.18 : 0) + (p.dribbling ? 0.1 : 0);
     s.lean = THREE.MathUtils.damp(s.lean, targetLean, 8, dt);
@@ -325,21 +327,21 @@ export class Avatar {
     if (moving) this.gait = (this.gait + (speed / strideLen) * dt) % 1;
     const bob = moving ? Math.abs(Math.cos(this.gait * Math.PI * 2)) * 0.03 * Math.min(1, speed / 4) : Math.sin(s.idleT * 2.2) * 0.004;
 
+    // fall: drop onto the hips, catch with the hands behind, then get back up (hurt players stay down)
+    let fallK = 0;
+    if (act === "fall") {
+      const ss = (x: number) => { const c = THREE.MathUtils.clamp(x, 0, 1); return c * c * (3 - 2 * c); };
+      const down = ss(p.actionT / 0.38);
+      const up = p.actionData.injured ? 0 : ss((p.actionT - (p.actionDur - 0.5)) / 0.5);
+      fallK = down * (1 - up);
+    }
     const hips = this.b("hips");
-    const rootY = (p.y / scale) - s.crouch * 0.55 - bob;
+    const rootY = THREE.MathUtils.lerp((p.y / scale) - s.crouch * 0.55 - bob, 0.16 - this.hipRestH, fallK);
     hips.bone.position.copy(hips.restPos);
     // hips parent may be the armature node: move along its local up
     hips.bone.position.y += rootY * (1 / (this.modelScale() || 1));
-    // fall: rotate the whole body back
-    if (act === "fall") {
-      const k = Math.min(1, p.actionT / 0.45);
-      this.model.rotation.x = -k * 1.25;
-      this.model.position.y = k * 0.12;
-      this.model.position.z = -k * 0.4;
-    } else {
-      this.model.rotation.x = 0;
-      this.model.position.set(0, 0, 0);
-    }
+    this.model.rotation.x = 0;
+    this.model.position.set(0, 0, 0);
     this.model.updateMatrixWorld(true);
     const qModel = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, p.facing, 0));
     const worldRot = (x: number, y: number, z: number) => {
@@ -351,6 +353,10 @@ export class Avatar {
     this.rotateWorld("hips", worldRot(s.lean * 0.4, (moving ? Math.sin(this.gait * Math.PI * 2) * 0.12 : 0), s.sideLean * 0.5));
     this.rotateWorld("spine", worldRot(s.lean * 0.35, twistToBall, s.sideLean * 0.3));
     this.rotateWorld("chest", worldRot(s.lean * 0.25 + Math.sin(s.idleT * 2.2) * 0.01, moving ? -Math.sin(this.gait * Math.PI * 2) * 0.16 : 0, 0));
+    if (fallK > 0) {
+      this.rotateWorld("spine", worldRot(-0.45 * fallK, 0, 0));
+      this.rotateWorld("chest", worldRot(-0.12 * fallK, 0, 0));
+    }
 
     // ----- legs
     const hipW = 0.11, stanceW = p.stance ? 0.24 : act === "post" ? 0.2 : 0.13;
@@ -362,10 +368,14 @@ export class Avatar {
       let fx = sign * stanceW, fz = 0.02, fy = 0.09;
       if (moving) {
         const sw = Math.sin(ph), cw = Math.cos(ph);
-        const amp = half * Math.min(1, speed / 1.5);
+        const amp = half * Math.min(1, speed / 1.5) * (p.stance ? 0.6 : 1);
         fx += dirX * amp * sw;
         fz += dirZ * amp * sw;
-        fy += Math.max(0, cw) * (0.08 + Math.min(speed, 8) * 0.018);
+        // defensive slides shuffle: low steps and the feet never cross
+        if (p.stance) fx = sign > 0 ? Math.max(fx, 0.13) : Math.min(fx, -0.13);
+        // swing foot lifts as it comes through; at running pace the trailing heel kicks up
+        fy += Math.max(0, cw) * (0.08 + Math.min(speed, 8) * 0.04) * (p.stance ? 0.45 : 1);
+        fy += Math.max(0, -sw) * Math.max(0, cw + 0.3) * Math.max(0, Math.min(speed, 9) - 2.5) * 0.05;
       } else if (p.stance) {
         fz += sign * 0.06;
       }
@@ -381,9 +391,15 @@ export class Avatar {
         // one-leg takeoff: drive knee up
         if (side === (p.hand === 1 ? "L" : "R") && p.airborne) { fy += 0.35; fz += 0.25; }
       }
+      if (fallK > 0) {
+        // sitting on the floor: legs out in front, knees a little bent
+        fx = THREE.MathUtils.lerp(fx, sign * 0.17, fallK);
+        fz = THREE.MathUtils.lerp(fz, side === "L" ? 0.62 : 0.5, fallK);
+        fy = THREE.MathUtils.lerp(fy, 0.07, fallK);
+      }
       const footT = this.toWorld(fx, fy + (p.y / scale), fz, new THREE.Vector3());
       if (!p.airborne) footT.y = fy * scale; // planted relative to the floor
-      const knee = this.toWorld(sign * hipW, 0.6 + p.y / scale, 1.2, new THREE.Vector3());
+      const knee = this.toWorld(sign * hipW, 0.6 + p.y / scale + fallK * 0.5, 1.2, new THREE.Vector3());
       this.ik2(`thigh${side}`, `shin${side}`, footT, knee);
       // foot flat, pointing along facing (toe slightly out)
       const fwd = new THREE.Vector3(Math.sin(p.facing + sign * 0.15), p.airborne ? -0.6 : -0.08, Math.cos(p.facing + sign * 0.15));
@@ -399,8 +415,16 @@ export class Avatar {
     };
     const swing = (side: "L" | "R", sign: number) => {
       const ph = this.gait * Math.PI * 2 + (side === "L" ? Math.PI : 0);
-      const amp = moving ? Math.min(0.32, speed * 0.05) : 0;
-      return this.toWorld(sign * 0.3, H(1.0) + (moving ? 0.08 + Math.max(0, Math.sin(ph)) * amp * 0.5 : 0) + rootY, 0.06 + Math.sin(ph) * amp, new THREE.Vector3());
+      const amp = moving ? Math.min(0.42, speed * 0.075) : 0;
+      // running: elbows bend toward 90 degrees and the hands pump higher and closer in
+      const run = moving ? THREE.MathUtils.clamp((speed - 2.5) / 3, 0, 1) : 0;
+      const sw = Math.sin(ph);
+      return this.toWorld(
+        sign * (0.3 - run * 0.06),
+        H(1.0) + run * 0.12 + (moving ? 0.06 + Math.max(0, sw) * amp * 0.7 : 0) + rootY,
+        0.06 + run * 0.08 + sw * amp,
+        new THREE.Vector3(),
+      );
     };
     const shoot = (sign: number) => sign; void shoot;
     const sh = p.hand === 1 ? "R" : "L"; // shooting / dribble hand (hand: 1 = right)
@@ -527,18 +551,21 @@ export class Avatar {
       setHand("R", this.toWorld(-0.08, 0.95 + rootY, 0.18, new THREE.Vector3()));
       setHand("L", this.toWorld(0.08, 0.95 + rootY, 0.18, new THREE.Vector3()));
     } else if (act === "fall") {
-      setHand("R", this.toWorld(-0.45, 0.5, -0.4, new THREE.Vector3()));
-      setHand("L", this.toWorld(0.45, 0.5, -0.4, new THREE.Vector3()));
+      // hands go back to break the fall and plant on the floor behind the hips
+      const handY = THREE.MathUtils.lerp(1.0 + rootY, 0.06, fallK);
+      setHand("R", this.toWorld(-0.3, handY, THREE.MathUtils.lerp(0, -0.32, fallK), new THREE.Vector3()), this.toWorld(-0.5, 0.6, 0.4, new THREE.Vector3()));
+      setHand("L", this.toWorld(0.3, handY, THREE.MathUtils.lerp(0, -0.32, fallK), new THREE.Vector3()), this.toWorld(0.5, 0.6, 0.4, new THREE.Vector3()));
     } else {
       setHand("L", swing("L", 1));
       setHand("R", swing("R", -1));
-      if (!moving) {
-        // relaxed hands on knees when tired
-        if (p.stamina < 0.45) {
-          setHand("L", this.toWorld(0.16, 0.62 + rootY, 0.2, new THREE.Vector3()));
-          setHand("R", this.toWorld(-0.16, 0.62 + rootY, 0.2, new THREE.Vector3()));
-          this.rotateWorld("spine", worldRot(0.5, 0, 0));
-        }
+      if (winded) {
+        // hands on knees, catching a breath (bend first so the hands land where they're aimed)
+        const heave = Math.sin(s.idleT * 3.4) * 0.035;
+        this.rotateWorld("spine", worldRot(0.62 + heave, 0, 0));
+        this.rotateWorld("chest", worldRot(0.12, 0, 0));
+        const kneeY = 0.56 + rootY * 0.5;
+        setHand("L", this.toWorld(0.15, kneeY + 0.04, 0.17, new THREE.Vector3()), this.toWorld(0.6, 1.0, 0.1, new THREE.Vector3()));
+        setHand("R", this.toWorld(-0.15, kneeY + 0.04, 0.17, new THREE.Vector3()), this.toWorld(-0.6, 1.0, 0.1, new THREE.Vector3()));
       }
     }
 
