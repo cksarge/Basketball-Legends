@@ -23,8 +23,9 @@ describe("in-game injuries", () => {
   }, 60_000);
   it("take the hurt player off the floor for the rest of the game", () => {
     let seen = 0;
+    // a high injury-rate slider so injuries reliably happen whatever the exact game flow
     for (let seed = 1; seed <= 6; seed++) {
-      const m = play(seed, true, 2);
+      const m = play(seed, true, 12);
       for (const inj of m.state.injuries) {
         seen++;
         const t = m.state.teams[inj.team];
