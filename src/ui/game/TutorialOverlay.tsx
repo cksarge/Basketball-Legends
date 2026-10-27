@@ -52,7 +52,7 @@ function renderBody(body: string, device: ReturnType<typeof useInputDevice.getSt
 }
 
 /** Step-by-step guided practice. Each step completes from what the player actually does. */
-export function TutorialOverlay({ match, replaying, onFinish }: { match: Match; replaying: boolean; onFinish: () => void }) {
+export function TutorialOverlay({ match, replaying, visible, onFinish }: { match: Match; replaying: boolean; visible: boolean; onFinish: () => void }) {
   const device = useInputDevice((s) => s.device);
   const [step, setStep] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -111,7 +111,7 @@ export function TutorialOverlay({ match, replaying, onFinish }: { match: Match; 
 
   const cur = STEPS[step];
   return (
-    <div className="fixed right-5 top-28 z-30 w-[min(380px,calc(100vw-2.5rem))] rounded-[var(--radius-panel)] bg-navy/92 p-5 shadow-2xl ring-1 ring-line backdrop-blur" role="region" aria-label="Tutorial" aria-live="polite">
+    <div hidden={!visible} className="fixed left-5 top-32 z-30 w-[min(360px,calc(100vw-2.5rem))] rounded-[var(--radius-panel)] bg-navy/92 p-5 shadow-2xl ring-1 ring-line backdrop-blur" role="region" aria-label="Tutorial" aria-live="polite">
       {done ? (
         <>
           <p className="font-display text-sm font-bold uppercase tracking-widest text-amber">Tutorial complete</p>

@@ -134,7 +134,16 @@ export function QuickPlay() {
     setAssign((cur) => Object.fromEntries(Object.entries(cur).map(([d, s]) => [d, s === "home" ? "away" : s === "away" ? "home" : s])));
   };
 
-  if (!data) return <PageShell title={practice ? "Practice" : "Quick Play"}><p className="text-steel" role="status">Loading teams…</p></PageShell>;
+  // placeholders at the panels' real size, so nothing jumps when the teams arrive
+  if (!data) return (
+    <PageShell title={practice ? "Practice" : "Quick Play"} wide>
+      <p className="sr-only" role="status">Loading teams…</p>
+      <div className={`grid gap-5 ${practice ? "lg:grid-cols-1" : "lg:grid-cols-2"}`} aria-hidden>
+        {(practice ? [0] : [0, 1]).map((i) => <div key={i} className="h-[560px] animate-pulse rounded-[var(--radius-panel)] bg-deck/60 ring-1 ring-line" />)}
+      </div>
+      <div className="mt-5 h-64 animate-pulse rounded-[var(--radius-panel)] bg-deck/60 ring-1 ring-line" aria-hidden />
+    </PageShell>
+  );
 
   return (
     <PageShell title={practice ? "Practice" : "Quick Play"} wide actions={

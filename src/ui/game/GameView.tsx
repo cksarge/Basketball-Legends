@@ -178,13 +178,15 @@ export function GameView({ pending }: { pending: PendingMatch }) {
     return () => window.removeEventListener(BACK_EVENT, onBack);
   }, [screen]);
 
+  // state updaters must stay pure, so the toast reads the current camera from a ref
+  const cameraRef = useRef(camera);
+  useEffect(() => { cameraRef.current = camera; }, [camera]);
   const cycleCamera = useCallback(() => {
-    setCamera((c) => {
-      const i = CAMERAS.findIndex((x) => x.id === c);
-      const next = CAMERAS[(i + 1) % CAMERAS.length];
-      toast(`Camera: ${next.label}`);
-      return next.id;
-    });
+    const i = CAMERAS.findIndex((x) => x.id === cameraRef.current);
+    const next = CAMERAS[(i + 1) % CAMERAS.length];
+    cameraRef.current = next.id;
+    setCamera(next.id);
+    toast(`Camera: ${next.label}`);
   }, []);
 
   const requestTimeout = useCallback((team: 0 | 1) => {
@@ -231,7 +233,7 @@ export function GameView({ pending }: { pending: PendingMatch }) {
       <LoadingScreen key={`loading-${runId}`} home={home} away={away} ready={ready} />
       {screen !== "intro" && screen !== "final" && (
         <>
-          {pending.practice ? <PracticeStats match={match} /> : <ScoreBug home={home} away={away} />}
+          {pending.practice ? !replaying && <PracticeStats match={match} /> : <ScoreBug home={home} away={away} />}
           {!replaying && <ShotMeter />}
           {!replaying && <PlayerTag />}
           <CommentaryFeed />
@@ -239,7 +241,7 @@ export function GameView({ pending }: { pending: PendingMatch }) {
         </>
       )}
       <ReplayOverlay director={replay} />
-      {pending.tutorial && ready && (screen === "playing" || replaying) && <TutorialOverlay match={match} replaying={replaying} onFinish={() => router.push("/play/")} />}
+      {pending.tutorial && ready && <TutorialOverlay key={`tutorial-${runId}`} match={match} replaying={replaying} visible={screen === "playing" || replaying} onFinish={() => router.push("/play/")} />}
       {(screen === "playing" || screen === "break") && !pending.practice && <PlayBannerView />}
       {screen === "playing" && !replaying && !pending.practice && <StatOverlayView />}
       {screen === "break" && !replaying && (
@@ -360,19 +362,20 @@ function PauseMenu({ initialTab, match, camera, setCamera, onResume, onTimeout, 
   );
   return (
     <div className="fixed inset-0 z-40 flex bg-navy/80 backdrop-blur" data-nav-scope="modal" role="dialog" aria-label="Paused">
-      <aside className="flex w-80 flex-col gap-1 border-r border-line bg-navy/90 p-6">
+      <aside className="scrollbar-thin flex w-80 flex-none flex-col gap-1 overflow-y-auto border-r border-line bg-navy/90 p-6">
         <p className="mb-4 font-display text-5xl font-black">Paused</p>
         {item("Resume", onResume, tab === "menu" ? first : undefined)}
-        {item("Box score", () => setTab("box"))}
-        {item("Substitutions", () => setTab("subs"))}
-        {item("Tactics", () => setTab("tactics"))}
-        {item(`Timeout (${s.teams[humanTeam].timeouts} left)`, () => { onTimeout(humanTeam as 0 | 1); onResume(); })}
+        {/* practice and the tutorial have no opponent, clock or rotation */}
+        {!s.cfg.practice && item("Box score", () => setTab("box"))}
+        {!s.cfg.practice && item("Substitutions", () => setTab("subs"))}
+        {!s.cfg.practice && item("Tactics", () => setTab("tactics"))}
+        {!s.cfg.practice && item(`Timeout (${s.teams[humanTeam].timeouts} left)`, () => { onTimeout(humanTeam as 0 | 1); onResume(); })}
         {item(`Camera: ${CAMERAS.find((c) => c.id === camera)?.label}`, () => setCamera(CAMERAS[(CAMERAS.findIndex((c) => c.id === camera) + 1) % CAMERAS.length].id))}
         {item("Instant replay", onReplay)}
         {highlightCount > 0 && item(`Highlights (${highlightCount})`, onHighlights)}
         {item("Controls", () => setTab("controls"))}
-        {item("Sim to end", () => setConfirm("sim"))}
-        {item("Restart game", () => setConfirm("restart"))}
+        {!s.cfg.practice && item("Sim to end", () => setConfirm("sim"))}
+        {item(s.cfg.practice ? "Start over" : "Restart game", () => setConfirm("restart"))}
         {onSaveQuit && item("Save and quit", onSaveQuit)}
         {item("Quit game", () => setConfirm("quit"))}
       </aside>

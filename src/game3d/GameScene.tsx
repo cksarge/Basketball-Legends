@@ -362,6 +362,7 @@ function ReadySignal({ onReady }: { onReady?: () => void }) {
 /** Jersey number and name floating over each player (DOM, positioned from the 3D scene). */
 function NameTags({ match, replayFrame, visible }: { match: Match; replayFrame: React.RefObject<ViewFrame | null>; visible: boolean }) {
   const { camera, gl } = useThree();
+  const canvas = gl.domElement;
   const enabled = useSettings((s) => s.gameplay.showPlayerNames);
   const els = useRef<HTMLDivElement[]>([]);
   const ids = useRef<string[]>([]);
@@ -370,7 +371,8 @@ function NameTags({ match, replayFrame, visible }: { match: Match; replayFrame: 
     const host = document.createElement("div");
     host.setAttribute("aria-hidden", "true");
     Object.assign(host.style, { position: "fixed", inset: "0", pointerEvents: "none", zIndex: "15", overflow: "hidden" });
-    document.body.appendChild(host);
+    // inside the game view (not <body>) so HUD panels and menus layer above the tags
+    (canvas.parentElement?.parentElement ?? document.body).appendChild(host);
     els.current = Array.from({ length: 10 }, () => {
       const d = document.createElement("div");
       d.className = "bl-tag";
@@ -378,7 +380,7 @@ function NameTags({ match, replayFrame, visible }: { match: Match; replayFrame: 
       return d;
     });
     return () => host.remove();
-  }, []);
+  }, [canvas]);
   useFrame(() => {
     const s = match.state;
     const v = replayFrame.current ?? liveView(match);

@@ -70,3 +70,19 @@ describe("gamepad input", () => {
     expect(f.held.size).toBe(0);
   });
 });
+
+describe("keyboard input", () => {
+  it("never drops a tap that starts and ends between two reads", () => {
+    const listeners: Record<string, (e: unknown) => void> = {};
+    vi.stubGlobal("window", { addEventListener: (t: string, f: (e: unknown) => void) => { listeners[t] = f; }, removeEventListener: () => {} });
+    const input = new InputManager({ keys: DEFAULT_KEYS, pad: DEFAULT_PAD, deadzone: 0.18 });
+    input.attach();
+    const ev = (code: string) => ({ code, target: null, preventDefault: () => {} });
+    input.read("keyboard");
+    listeners.keydown(ev("Escape"));
+    listeners.keyup(ev("Escape"));
+    expect(input.read("keyboard").pressed.has("pause")).toBe(true);
+    expect(input.read("keyboard").released.has("pause")).toBe(true);
+    vi.unstubAllGlobals();
+  });
+});

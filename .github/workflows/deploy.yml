@@ -28,6 +28,8 @@ jobs:
       - run: npm run lint
       - run: npx vitest run
       - run: npm run build
+      # browser smoke tests against the static build (uses the runner's installed Chrome)
+      - run: npx playwright test
       - uses: actions/upload-pages-artifact@v3
         with:
           path: out

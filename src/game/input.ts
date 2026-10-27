@@ -61,7 +61,10 @@ export class InputManager {
     // stop the browser scrolling / tabbing during gameplay
     if (["Space", "Tab", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) e.preventDefault();
     this.keys.add(e.code);
+    this.tapped.add(e.code);
   };
+  /** Keys pressed since the last keyboard read: a tap shorter than a frame still counts once. */
+  private tapped = new Set<string>();
   private onUp = (e: KeyboardEvent) => { this.keys.delete(e.code); };
   private onBlur = () => { this.keys.clear(); };
 
@@ -76,7 +79,8 @@ export class InputManager {
     const held = new Set<ActionName>();
     let mx = 0, my = 0, stickMove: ControllerFrame["stickMove"] = null;
     if (device === "keyboard") {
-      for (const a of ACTIONS) if (this.bindings.keys[a]?.some((k) => this.keys.has(k))) held.add(a);
+      for (const a of ACTIONS) if (this.bindings.keys[a]?.some((k) => this.keys.has(k) || this.tapped.has(k))) held.add(a);
+      this.tapped.clear();
       mx = (held.has("right") ? 1 : 0) - (held.has("left") ? 1 : 0);
       my = (held.has("up") ? 1 : 0) - (held.has("down") ? 1 : 0);
       const l = Math.hypot(mx, my);

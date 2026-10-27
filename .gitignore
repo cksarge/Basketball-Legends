@@ -7,3 +7,5 @@ next-env.d.ts
 .env*.local
 .idea/
 scripts/blender/out/
+test-results/
+playwright-report/

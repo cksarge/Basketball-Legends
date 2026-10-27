@@ -1,8 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { loadLeague, rosterFor } from "@/data/leagues";
 import { useSettings } from "@/state/settings";
-import { type PendingMatch, restorePending, useMatchStore } from "@/state/matchStore";
+import { type PendingMatch, useMatchStore } from "@/state/matchStore";
 import { GameView } from "@/ui/game/GameView";
 
 /** Fallback matchup when /game is opened directly (bookmark, reload without session). */
@@ -20,10 +20,19 @@ async function demoMatch(): Promise<PendingMatch> {
 
 export function GamePageClient() {
   const stored = useMatchStore((s) => s.pending);
-  const [pending, setPending] = useState<PendingMatch | null>(() => stored ?? restorePending());
+  // the match set up before a reload lives in session storage; read it without a hydration mismatch
+  const savedRaw = useSyncExternalStore(
+    () => () => {},
+    () => { try { return sessionStorage.getItem("bl-pending"); } catch { return null; } },
+    () => undefined,
+  );
+  const saved = useMemo(() => { try { return savedRaw ? (JSON.parse(savedRaw) as PendingMatch) : null; } catch { return null; } }, [savedRaw]);
+  const [demo, setDemo] = useState<PendingMatch | null>(null);
+  const hydrated = savedRaw !== undefined;
+  const pending = stored ?? saved ?? demo;
   useEffect(() => {
-    if (!pending) demoMatch().then(setPending);
-  }, [pending]);
+    if (hydrated && !stored && !saved) demoMatch().then(setDemo);
+  }, [hydrated, stored, saved]);
   if (!pending) {
     return (
       <div className="grid min-h-dvh place-items-center" role="status">

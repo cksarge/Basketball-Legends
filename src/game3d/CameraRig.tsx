@@ -4,7 +4,19 @@ import { useRef } from "react";
 import * as THREE from "three";
 import type { Match } from "@/game/sim/match";
 import type { CameraMode } from "@/state/settings";
-import { huddleSpot } from "@/game/court";
+import { type CourtSpec, huddleSpot } from "@/game/court";
+import { floorSize } from "./courtTexture";
+
+/**
+ * Lowest a camera may sit at (x, z) without ending up inside the seating bowl
+ * (mirrors Arena's lower bowl: rows start 1.6 m past the floor edge, 0.82 m deep, 0.42 m rise).
+ */
+export function standsClearance(court: CourtSpec, x: number, z: number) {
+  const { w, h } = floorSize(court);
+  const d = Math.max(Math.abs(x) - (w / 2 + 1.6), Math.abs(z) - (h / 2 + 1.6));
+  if (d <= 0) return 0;
+  return 0.45 + (d / 0.82) * 0.42 + 1.7; // seat height plus a seated fan's head, plus margin
+}
 
 export interface CameraState {
   /** Floor-projected forward vector of the camera (for camera-relative controls). */
@@ -66,9 +78,10 @@ export function CameraRig({ match, mode, zoom, heightMul, stateRef, focusAgent }
           break;
         }
         case "low": {
-          targetLook = new THREE.Vector3(fx, 1.4, fz);
-          targetPos = new THREE.Vector3(fx * 0.9, 3.4 * heightMul, c.halfW + 12 / zoom);
-          fov = 40 / zoom;
+          // courtside, just behind the near ad boards, at about eye level over them
+          targetLook = new THREE.Vector3(fx, 1.3, fz * 0.6);
+          targetPos = new THREE.Vector3(fx * 0.85, 2.3 * heightMul, c.halfW + 3.35);
+          fov = 46 / zoom;
           break;
         }
         case "baseline": {
@@ -102,6 +115,11 @@ export function CameraRig({ match, mode, zoom, heightMul, stateRef, focusAgent }
           fov = 30 / zoom;
         }
       }
+    }
+    // never put the camera inside the crowd (zoomed-out or raised presets included)
+    if (!cs.override) {
+      const minY = standsClearance(c, targetPos.x, targetPos.z);
+      if (targetPos.y < minY) targetPos = targetPos.clone().setY(minY);
     }
     // smooth follow (critically damped feel)
     const k = cs.override ? 3 : 3.2;
