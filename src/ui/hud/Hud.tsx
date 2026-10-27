@@ -141,3 +141,24 @@ export function ControlsStrip({ onOffense }: { onOffense: boolean }) {
     </div>
   );
 }
+
+/** Big-play banner across the top of the screen. */
+export function PlayBannerView() {
+  const banner = useHud((s) => s.banner);
+  const [shown, setShown] = useState<typeof banner>(null);
+  useEffect(() => {
+    if (!banner) return;
+    setShown(banner);
+    const h = setTimeout(() => setShown((b) => (b?.id === banner.id ? null : b)), 2300);
+    return () => clearTimeout(h);
+  }, [banner]);
+  if (!shown) return null;
+  return (
+    <div key={shown.id} className="bl-banner pointer-events-none fixed left-1/2 top-[14vh] z-20 select-none text-center" role="status">
+      <div className="px-10 py-2 shadow-2xl" style={{ background: `linear-gradient(90deg, transparent, ${shown.color} 12%, ${shown.color} 88%, transparent)` }}>
+        <p className="font-display text-6xl font-black italic tracking-wide" style={{ color: shown.accent, textShadow: "0 3px 0 rgb(0 0 0 / 0.35)" }}>{shown.title}</p>
+      </div>
+      {shown.sub && <p className="mt-1 font-display text-xl font-bold text-net drop-shadow">{shown.sub}</p>}
+    </div>
+  );
+}

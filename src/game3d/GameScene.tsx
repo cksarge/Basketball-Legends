@@ -20,6 +20,8 @@ import { Players } from "./Players";
 import { CameraRig, type CameraState } from "./CameraRig";
 import type { UniformStyle } from "./character/uniformTexture";
 import { rimPos } from "@/game/court";
+import { liveView, REPLAY_CAMS, type ReplayDirector, type ViewFrame } from "./replay";
+import { ordinal } from "@/game/commentary";
 
 export const SIM_STEP = 1 / 60;
 
@@ -36,6 +38,7 @@ export interface GameSceneProps {
   onCameraCycle: () => void;
   onTimeoutRequest: (team: 0 | 1) => void;
   timeScale?: number;
+  replay: ReplayDirector;
 }
 
 function Environment() {
@@ -77,7 +80,7 @@ function Lights({ kind, shadows }: { kind: ArenaKind; shadows: boolean }) {
 }
 
 /** Floor ring under each controlled player, colored by controller. */
-function ControlMarkers({ match }: { match: Match }) {
+function ControlMarkers({ match, replayFrame }: { match: Match; replayFrame: React.RefObject<ViewFrame | null> }) {
   const colors = ["#ffb627", "#4cc3ff", "#7dff8a", "#ff6bd6"];
   const refs = useRef<(THREE.Mesh | null)[]>([]);
   const geo = useMemo(() => new THREE.RingGeometry(0.42, 0.52, 40), []);
@@ -87,7 +90,7 @@ function ControlMarkers({ match }: { match: Match }) {
       const m = refs.current[h];
       if (!m) continue;
       const ag = s.agents.find((a) => a.human === h);
-      m.visible = !!ag && s.phase !== "final";
+      m.visible = !!ag && s.phase !== "final" && !replayFrame.current;
       if (ag) m.position.set(ag.pos.x, 0.012, ag.pos.z);
     }
   });
@@ -102,12 +105,14 @@ function ControlMarkers({ match }: { match: Match }) {
   );
 }
 
-function SimDriver(props: GameSceneProps & { camState: React.RefObject<CameraState>; exciteRef: React.RefObject<number>; clockRefs: [React.RefObject<{ shot: number; game: number }>, React.RefObject<{ shot: number; game: number }>]; rimShake: React.RefObject<number[]>; ballPos: React.RefObject<THREE.Vector3 | null>; scoreRef: React.RefObject<{ h: number; a: number; period: string; clock: string }> }) {
+function SimDriver(props: GameSceneProps & { camState: React.RefObject<CameraState>; exciteRef: React.RefObject<number>; clockRefs: [React.RefObject<{ shot: number; game: number }>, React.RefObject<{ shot: number; game: number }>]; rimShake: React.RefObject<number[]>; ballPos: React.RefObject<THREE.Vector3 | null>; scoreRef: React.RefObject<{ h: number; a: number; period: string; clock: string }>; benchExcite: React.RefObject<[number, number]> }) {
   const { match, input, devices } = props;
   const acc = useRef(0);
   const settings = useSettings();
   const setHud = useHud((s) => s.set);
   const pushFeed = useHud((s) => s.pushFeed);
+  const showBanner = useHud((s) => s.showBanner);
+  const heatShown = useRef(new Map<string, number>());
   const lastHud = useRef(0);
   const lastDribblePhase = useRef(0);
   const prevOwner = useRef<number | null>(null);
@@ -118,9 +123,25 @@ function SimDriver(props: GameSceneProps & { camState: React.RefObject<CameraSta
     const dt = Math.min(dtRaw, 0.1);
     // global buttons from every controller
     const frames = devices.map((d) => input.read(d));
+    const rp = props.replay;
+    if (rp.playback) {
+      // replay controls (any controller)
+      for (const f of frames) {
+        const any = (...a: Parameters<typeof f.pressed.has>[0][]) => a.some((x) => f.pressed.has(x));
+        if (rp.playback.auto ? any("shoot", "pass", "pause", "replay", "switchPlayer") : any("pause", "replay")) { rp.stop(); break; }
+        if (any("shoot")) rp.setPlaying(!rp.playback.playing);
+        if (any("camera", "pass")) rp.cycleCam(1);
+        if (any("dribbleLeft")) rp.scrub(-1);
+        if (any("dribbleRight")) rp.scrub(1);
+        if (any("dribbleSpin")) rp.setSpeed(Math.min(1, rp.playback.speed * 2));
+        if (any("dribbleBack")) rp.setSpeed(Math.max(0.125, rp.playback.speed / 2));
+      }
+      return;
+    }
     frames.forEach((f, i) => {
       if (f.pressed.has("pause")) props.onPauseRequest();
       if (f.pressed.has("camera")) props.onCameraCycle();
+      if (f.pressed.has("replay") && !props.paused) { const c = rp.recentClip(); if (c) rp.play(c); }
       if (f.pressed.has("timeout")) {
         const ag = s.agents.find((a) => a.human === i);
         if (ag) props.onTimeoutRequest(ag.team);
@@ -147,12 +168,45 @@ function SimDriver(props: GameSceneProps & { camState: React.RefObject<CameraSta
     while (acc.current >= SIM_STEP && steps < 8) {
       match.step(SIM_STEP, intents);
       events.push(...s.frameEvents);
+      rp.observe(s.frameEvents);
+      rp.record();
       // actions are edge-triggered: only deliver them on the first sub-step
       for (const it of intents) if (it) it.act = undefined;
       acc.current -= SIM_STEP;
       steps++;
     }
     callFor.current = (s as typeof s & { callFor?: number | null }).callFor ?? null;
+    if (rp.autoCandidate) {
+      if (settings.presentation.replays && !s.cfg.practice && s.phase !== "final") rp.play(rp.autoCandidate, { auto: true });
+      else rp.autoCandidate = null;
+    }
+
+    // ---- big-play banners
+    if (settings.presentation.playBanners && !s.cfg.practice) {
+      const teamCol = (ti: number) => s.teams[ti].team.colors;
+      const nm = (i: number) => `${s.agents[i]?.player.firstName[0]}. ${s.agents[i]?.player.lastName}`;
+      const banner = (title: string, ti: number | null, sub?: string) => {
+        const c = ti !== null ? teamCol(ti) : { primary: "#0d1b2e", accent: "#ffb627" };
+        showBanner({ title, sub, color: c.primary, accent: c.accent === c.primary ? "#ffffff" : c.accent });
+      };
+      for (const e of events) {
+        if (e.t === "make") {
+          const sh = s.agents[e.shooter];
+          if (!sh) continue;
+          if (s.clock <= 0.05 && (e.kind !== "freeThrow")) banner("BUZZER BEATER", sh.team, nm(e.shooter));
+          else if (e.andOne) banner("AND ONE", sh.team, nm(e.shooter));
+          else if (s.run.team === sh.team && [8, 12, 16, 20].some((t) => s.run.pts - e.points < t && s.run.pts >= t)) banner(`${s.run.pts}-0 RUN`, sh.team, s.teams[sh.team].team.name);
+          else if (sh.heat > 0.7 && s.time - (heatShown.current.get(sh.player.id) ?? -999) > 90) { heatShown.current.set(sh.player.id, s.time); banner(sh.heat > 0.9 ? "ON FIRE" : "HEATING UP", sh.team, nm(e.shooter)); }
+        } else if (e.t === "block") banner("REJECTED", s.agents[e.blocker]?.team ?? null, nm(e.blocker));
+        else if (e.t === "dribbleMove" && e.broke !== null) banner("ANKLES!", s.agents[e.player]?.team ?? null, nm(e.player));
+        else if (e.t === "injury") banner("INJURY", s.agents[e.player]?.team ?? null, `${nm(e.player)}: ${e.name}`);
+        else if (e.t === "foulOut") banner("FOULED OUT", s.agents[e.player]?.team ?? null, nm(e.player));
+        else if (e.t === "periodStart" && e.period > 1) {
+          const per = s.cfg.rules.periods;
+          banner(e.period > per ? (e.period - per > 1 ? `OVERTIME ${e.period - per}` : "OVERTIME") : per === 2 ? "SECOND HALF" : ordinal(e.period).replace(" quarter", "").toUpperCase() + " QUARTER", null);
+        }
+      }
+    }
 
     // ---- presentation side effects
     const pan = (x: number) => THREE.MathUtils.clamp(x / s.cfg.court.halfL, -1, 1) * 0.8;
@@ -168,11 +222,12 @@ function SimDriver(props: GameSceneProps & { camState: React.RefObject<CameraSta
           audio.cheer(big ? 0.9 : 0.5);
           if (e.kind === "dunk" && settings.camera.shake) props.camState.current!.shake = 0.8;
           props.exciteRef.current = big ? 1 : 0.7;
+          if (big || e.andOne) props.benchExcite.current![s.agents[e.shooter].team] = 2.6;
           const sh = s.agents[e.shooter];
           if (sh.human !== null && settings.gameplay.vibration) input.rumble(devices[sh.human], 0.4, 0.6, 180);
           break;
         }
-        case "block": audio.board(3); audio.cheer(0.7); props.exciteRef.current = 0.9; break;
+        case "block": audio.board(3); audio.cheer(0.7); props.exciteRef.current = 0.9; props.benchExcite.current![s.agents[e.blocker].team] = 2.2; break;
         case "foul": case "violation": audio.whistle(); break;
         case "buzzer": audio.buzzer(); break;
         case "steal": audio.catchBall(); audio.cheer(0.5); break;
@@ -247,6 +302,125 @@ function SimDriver(props: GameSceneProps & { camState: React.RefObject<CameraSta
   return null;
 }
 
+/** Jersey number and name floating over each player (DOM, positioned from the 3D scene). */
+function NameTags({ match, replayFrame }: { match: Match; replayFrame: React.RefObject<ViewFrame | null> }) {
+  const { camera, gl } = useThree();
+  const enabled = useSettings((s) => s.gameplay.showPlayerNames);
+  const els = useRef<HTMLDivElement[]>([]);
+  const ids = useRef<string[]>([]);
+  const v3 = useMemo(() => new THREE.Vector3(), []);
+  useEffect(() => {
+    const host = document.createElement("div");
+    host.setAttribute("aria-hidden", "true");
+    Object.assign(host.style, { position: "fixed", inset: "0", pointerEvents: "none", zIndex: "15", overflow: "hidden" });
+    document.body.appendChild(host);
+    els.current = Array.from({ length: 10 }, () => {
+      const d = document.createElement("div");
+      d.className = "bl-tag";
+      host.appendChild(d);
+      return d;
+    });
+    return () => host.remove();
+  }, []);
+  useFrame(() => {
+    const s = match.state;
+    const v = replayFrame.current ?? liveView(match);
+    const show = enabled && !replayFrame.current && s.phase !== "final" && s.phase !== "timeout" && s.phase !== "halftime" && s.phase !== "periodEnd";
+    const rect = gl.domElement.getBoundingClientRect();
+    els.current.forEach((el, i) => {
+      const ag = v.agents[i];
+      if (!show || !ag) { el.style.display = "none"; return; }
+      if (ids.current[i] !== ag.player.id) {
+        ids.current[i] = ag.player.id;
+        const col = s.teams[ag.team].team.colors;
+        el.replaceChildren();
+        const num = document.createElement("b");
+        num.textContent = String(ag.player.jersey);
+        num.style.background = col.primary;
+        num.style.color = col.accent === col.primary ? "#fff" : col.accent;
+        el.append(num, document.createTextNode(ag.player.lastName));
+      }
+      v3.set(ag.pos.x, ag.y + ag.player.heightIn * 0.0254 + 0.3, ag.pos.z).project(camera);
+      if (v3.z > 1 || Math.abs(v3.x) > 1.1 || Math.abs(v3.y) > 1.1) { el.style.display = "none"; return; }
+      const x = rect.left + (v3.x * 0.5 + 0.5) * rect.width;
+      const y = rect.top + (-v3.y * 0.5 + 0.5) * rect.height;
+      el.style.display = "flex";
+      el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`;
+      const key = ag.human !== null || v.ball.owner === ag.idx;
+      el.style.opacity = key ? "1" : "0.6";
+    });
+  });
+  return null;
+}
+
+/** Advances replay playback and points the camera for the chosen replay angle. */
+function ReplayDriver({ match, replay, frameRef, camState, ballPos }: {
+  match: Match; replay: ReplayDirector; frameRef: React.RefObject<ViewFrame | null>;
+  camState: React.RefObject<CameraState>; ballPos: React.RefObject<THREE.Vector3 | null>;
+}) {
+  const orbit = useRef(0);
+  const lastClip = useRef<number | null>(null);
+  const lastCam = useRef(-1);
+  useFrame((_, dtRaw) => {
+    const dt = Math.min(dtRaw, 0.05);
+    const cs = camState.current!;
+    const pb = replay.playback;
+    const f = pb ? replay.advance(dt) : null;
+    const pbNow = replay.playback;
+    if (!f || !pbNow) {
+      if (frameRef.current) { cs.override = null; cs.cut = true; }
+      frameRef.current = null;
+      lastClip.current = null;
+      return;
+    }
+    frameRef.current = f;
+    const b = f.ball;
+    ballPos.current = b.mode === "shot" || b.mode === "loose" || b.mode === "dead" || b.mode === "ft" ? new THREE.Vector3(b.pos.x, b.pos.y, b.pos.z) : null;
+    // camera: frame the key player (tracked by id across substitutions), else the ball
+    const clip = pbNow.clip;
+    const keyAg = clip.focus !== null ? clip.frames[clip.keyIndex].agents[clip.focus] : null;
+    const ag = keyAg ? f.agents.find((a) => a.player.id === keyAg.player.id) ?? null : null;
+    const c = match.state.cfg.court;
+    const tx = ag ? ag.pos.x : b.pos.x, tz = ag ? ag.pos.z : b.pos.z;
+    const team = ag ? ag.team : f.offense;
+    const rimX = f.rimX[team];
+    const sign = Math.sign(rimX) || 1;
+    const look = new THREE.Vector3(tx * 0.6 + b.pos.x * 0.4, 1.3 + (ag ? ag.y * 0.6 : 0), tz * 0.6 + b.pos.z * 0.4);
+    let pos: THREE.Vector3, fov = 38;
+    orbit.current += dt * 0.35 * pbNow.speed;
+    switch (REPLAY_CAMS[pbNow.cam].id) {
+      case "orbit": {
+        const a = orbit.current + (sign > 0 ? Math.PI * 0.5 : -Math.PI * 0.5);
+        pos = new THREE.Vector3(tx + Math.sin(a) * 6.5, 2.4, tz + Math.cos(a) * 6.5);
+        fov = 40;
+        break;
+      }
+      case "baseline":
+        pos = new THREE.Vector3(sign * (c.halfL + 3.5), 2.1, tz * 0.4);
+        fov = 34;
+        break;
+      case "rim":
+        pos = new THREE.Vector3(rimX - sign * 0.8, 6.2, 1.8);
+        look.set(tx * 0.5 + rimX * 0.5, 1.2, tz * 0.5);
+        fov = 50;
+        break;
+      case "courtside":
+        pos = new THREE.Vector3(tx - sign * 2.5, 1.25, (tz >= 0 ? 1 : -1) * (c.halfW + 3));
+        fov = 36;
+        break;
+      default:
+        pos = new THREE.Vector3(b.pos.x * 0.85, 9.5, c.halfW + 17);
+        look.set(b.pos.x, 1.1, b.pos.z * 0.25);
+        fov = 30;
+    }
+    cs.override = { pos, look, fov };
+    if (lastClip.current !== clip.id || lastCam.current !== pbNow.cam) cs.cut = true;
+    lastClip.current = clip.id;
+    lastCam.current = pbNow.cam;
+  });
+  return null;
+}
+
 /** Drives a "demand" frameloop at a fixed rate (frame rate cap). */
 function FrameCap({ fps }: { fps: number }) {
   const { invalidate } = useThree();
@@ -295,7 +469,10 @@ export function fmtClock(sec: number) {
 export function GameScene(props: GameSceneProps) {
   const g = useSettings((s) => s.graphics);
   const cam = useSettings((s) => s.camera);
-  const camState = useRef<CameraState>({ forward: new THREE.Vector2(0, -1), shake: 0, override: null });
+  const camState = useRef<CameraState>({ forward: new THREE.Vector2(0, -1), shake: 0, override: null, cut: false });
+  const replayFrame = useRef<ViewFrame | null>(null);
+  const benchExcite = useRef<[number, number]>([0, 0]);
+  const benchSize = props.match.state.cfg.practice ? 0 : g.preset === "low" ? 0 : g.preset === "medium" ? 4 : 9;
   const excite = useRef(0.3);
   const clockA = useRef({ shot: 24, game: 720 });
   const clockB = useRef({ shot: 24, game: 720 });
@@ -331,6 +508,7 @@ export function GameScene(props: GameSceneProps) {
       {g.showFps && <FpsCounter />}
       <color attach="background" args={[props.arena === "gym" ? "#bdb4a3" : "#05070a"]} />
       <fog attach="fog" args={[props.arena === "gym" ? "#bdb4a3" : "#05070a", 45, 140]} />
+      <ReplayDriver match={props.match} replay={props.replay} frameRef={replayFrame} camState={camState} ballPos={ballPos} />
       <Environment />
       <Lights kind={props.arena} shadows={g.shadows} />
       <Suspense fallback={null}>
@@ -339,11 +517,12 @@ export function GameScene(props: GameSceneProps) {
           <Hoop key={side} court={court} side={side} team={home} ceilingHung={props.arena === "gym"} ballRef={ballPos} clockRef={i === 0 ? clockA : clockB} rimShake={rimShake} />
         ))}
         <BallMesh ref={ballMesh} radius={court.ballRadius} />
-        <Players match={props.match} uniforms={props.uniforms} ballMesh={ballMesh} />
-        <ControlMarkers match={props.match} />
+        <Players match={props.match} uniforms={props.uniforms} ballMesh={ballMesh} replayFrame={replayFrame} benchSize={benchSize} benchExcite={benchExcite} />
+        <ControlMarkers match={props.match} replayFrame={replayFrame} />
+        <NameTags match={props.match} replayFrame={replayFrame} />
       </Suspense>
       <CameraRig match={props.match} mode={props.cameraMode} zoom={cam.zoom} heightMul={cam.height} stateRef={camState} focusAgent={() => s.agents.find((a) => a.human === 0)?.idx ?? s.ball.owner} />
-      <SimDriver {...props} camState={camState} exciteRef={excite} clockRefs={[clockA, clockB]} rimShake={rimShake} ballPos={ballPos} scoreRef={scoreRef} />
+      <SimDriver {...props} camState={camState} exciteRef={excite} clockRefs={[clockA, clockB]} rimShake={rimShake} ballPos={ballPos} scoreRef={scoreRef} benchExcite={benchExcite} />
       <EffectComposer multisampling={0} enableNormalPass={false}>
         {g.ambientOcclusion ? <N8AO aoRadius={1.2} intensity={2.2} distanceFalloff={0.6} halfRes /> : <></>}
         {g.bloom ? <Bloom intensity={0.55} luminanceThreshold={0.85} luminanceSmoothing={0.2} mipmapBlur /> : <></>}

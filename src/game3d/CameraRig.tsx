@@ -4,12 +4,15 @@ import { useRef } from "react";
 import * as THREE from "three";
 import type { Match } from "@/game/sim/match";
 import type { CameraMode } from "@/state/settings";
+import { huddleSpot } from "@/game/court";
 
 export interface CameraState {
   /** Floor-projected forward vector of the camera (for camera-relative controls). */
   forward: THREE.Vector2;
   shake: number;
   override: { pos: THREE.Vector3; look: THREE.Vector3; fov?: number } | null;
+  /** Jump straight to the next target instead of easing (camera cuts). */
+  cut?: boolean;
 }
 
 export function CameraRig({ match, mode, zoom, heightMul, stateRef, focusAgent }: {
@@ -36,6 +39,13 @@ export function CameraRig({ match, mode, zoom, heightMul, stateRef, focusAgent }
       targetPos = cs.override.pos;
       targetLook = cs.override.look;
       fov = cs.override.fov ?? fov;
+    } else if (s.phase === "timeout" || s.phase === "periodEnd" || s.phase === "halftime") {
+      // breaks: look in on a team huddle (the team that called timeout, else alternate)
+      const ti = s.timeoutTeam ?? ((s.period % 2) as 0 | 1);
+      const h = huddleSpot(c, s.phase === "timeout" ? ti : ((s.period % 2) as 0 | 1), 2);
+      targetPos = tmpT.current.set(h.cx + 2.5, 3.0, h.cz + 7.5);
+      targetLook = new THREE.Vector3(h.cx, 1.2, h.cz);
+      fov = 36;
     } else if (s.phase === "freethrows" && s.freeThrows) {
       const shooter = s.agents[s.freeThrows.shooter];
       const fs = match.attackSide(s.freeThrows.team);
@@ -102,6 +112,12 @@ export function CameraRig({ match, mode, zoom, heightMul, stateRef, focusAgent }
     look.current.y = THREE.MathUtils.damp(look.current.y, targetLook.y, 4.2, dt);
     look.current.z = THREE.MathUtils.damp(look.current.z, targetLook.z, 4.2, dt);
     cam.fov = THREE.MathUtils.damp(cam.fov, fov, 3, dt);
+    if (cs.cut) {
+      cs.cut = false;
+      pos.current.copy(targetPos);
+      look.current.copy(targetLook);
+      cam.fov = fov;
+    }
     cam.updateProjectionMatrix();
     cam.position.copy(pos.current);
     if (cs.shake > 0) {

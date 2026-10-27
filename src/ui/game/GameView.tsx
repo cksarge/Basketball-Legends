@@ -11,11 +11,14 @@ import { audio } from "@/audio/engine";
 import { overall } from "@/engine/player";
 import { useSettings, type CameraMode } from "@/state/settings";
 import { type PendingMatch, useHud, useMatchStore } from "@/state/matchStore";
-import { CommentaryFeed, ControlsStrip, PlayerTag, ScoreBug, ShotMeter } from "../hud/Hud";
+import { CommentaryFeed, ControlsStrip, PlayBannerView, PlayerTag, ScoreBug, ShotMeter } from "../hud/Hud";
 import { TeamLogo } from "../TeamLogo";
 import { BoxScoreTable } from "../BoxScore";
 import { BACK_EVENT } from "../MenuNavigator";
 import { toast } from "../Toaster";
+import { ReplayDirector } from "@/game3d/replay";
+import { ReplayOverlay, useReplay } from "./ReplayOverlay";
+import { BreakScreen, type BreakKind } from "./BreakScreen";
 
 const GameScene = dynamic(() => import("@/game3d/GameScene").then((m) => m.GameScene), { ssr: false });
 
@@ -24,7 +27,7 @@ const CAMERAS: { id: CameraMode; label: string }[] = [
   { id: "baseline", label: "Baseline" }, { id: "player", label: "Player lock" }, { id: "skycam", label: "Skycam" },
 ];
 
-type Screen = "intro" | "playing" | "paused" | "final" | "simming";
+type Screen = "intro" | "playing" | "paused" | "final" | "simming" | "break";
 
 function buildMatch(p: PendingMatch, quarterMinutes: number, g: ReturnType<typeof useSettings.getState>["gameplay"], tapShots: boolean) {
   const home = p.home, away = p.away;
@@ -55,6 +58,10 @@ export function GameView({ pending }: { pending: PendingMatch }) {
   const [simProgress, setSimProgress] = useState(0);
   const input = useMemo(() => new InputManager({ keys: settings.controls.keys, pad: settings.controls.pad, deadzone: settings.controls.stickDeadzone }), [settings.controls]);
   const hudPhase = useHud((s) => s.hud?.phase);
+  const replay = useMemo(() => new ReplayDirector(match), [match]);
+  const replaying = useReplay(replay) !== null;
+  const [breakKind, setBreakKind] = useState<BreakKind>("periodEnd");
+  const [pauseTab, setPauseTab] = useState<"menu" | "subs">("menu");
   const finished = useRef(false);
 
   // input + "in game" flag (menus ignore keys while playing)
@@ -119,6 +126,21 @@ export function GameView({ pending }: { pending: PendingMatch }) {
     setScreen("final");
   }, [match, pending.mode, setResult]);
 
+  // quarter breaks, halftime and timeouts open the break panel (the sim holds the break meanwhile)
+  useEffect(() => {
+    if (screen !== "playing" || replaying || pending.practice || !useSettings.getState().presentation.breakScreens) return;
+    if (hudPhase !== "periodEnd" && hudPhase !== "halftime" && hudPhase !== "timeout") return;
+    const h = setTimeout(() => {
+      const ph = match.state.phase;
+      if (ph !== "periodEnd" && ph !== "halftime" && ph !== "timeout") return;
+      match.holdBreak = true;
+      setBreakKind(ph);
+      setScreen("break");
+    }, 1300);
+    return () => clearTimeout(h);
+  }, [hudPhase, screen, replaying, match, pending.practice]);
+  useEffect(() => { if (screen === "playing") match.holdBreak = false; }, [screen, match]);
+
   useEffect(() => {
     if (hudPhase === "final" && screen === "playing") {
       const h = setTimeout(() => finish(false), 2500);
@@ -173,32 +195,51 @@ export function GameView({ pending }: { pending: PendingMatch }) {
         devices={devices}
         uniforms={[pending.home.uniform, pending.away.uniform]}
         arena={pending.arena}
-        paused={screen !== "playing"}
+        paused={screen !== "playing" && screen !== "break"}
         cameraMode={camera}
         onPauseRequest={() => setScreen((s) => (s === "playing" ? "paused" : s === "paused" ? "playing" : s))}
         onCameraCycle={cycleCamera}
         onTimeoutRequest={requestTimeout}
+        replay={replay}
       />
       {screen !== "intro" && screen !== "final" && (
         <>
           {pending.practice ? <PracticeStats match={match} /> : <ScoreBug home={home} away={away} />}
-          <ShotMeter />
-          <PlayerTag />
+          {!replaying && <ShotMeter />}
+          {!replaying && <PlayerTag />}
           <CommentaryFeed />
-          {screen === "playing" && humanTeams.size > 0 && <ControlsStrip onOffense={humanOffense} />}
+          {screen === "playing" && !replaying && humanTeams.size > 0 && <ControlsStrip onOffense={humanOffense} />}
         </>
+      )}
+      <ReplayOverlay director={replay} />
+      {(screen === "playing" || screen === "break") && !pending.practice && <PlayBannerView />}
+      {screen === "break" && !replaying && (
+        <BreakScreen
+          match={match}
+          kind={breakKind}
+          humanTeam={humanTeams.size ? ([...humanTeams][0] as TeamIdx) : null}
+          autoContinue={humanTeams.size === 0}
+          highlightCount={replay.highlights.length}
+          onContinue={() => { match.holdBreak = false; match.skipBreak(); setScreen("playing"); }}
+          onSubs={() => { setPauseTab("subs"); setScreen("paused"); }}
+          onHighlights={() => replay.playReel()}
+        />
       )}
       {screen === "intro" && <IntroSplash match={match} occasion={pending.occasion} onSkip={() => setScreen("playing")} />}
       {screen === "paused" && (
         <PauseMenu
+          initialTab={pauseTab}
           match={match}
           camera={camera}
           setCamera={setCamera}
-          onResume={() => setScreen("playing")}
+          onResume={() => { setPauseTab("menu"); setScreen("playing"); }}
           onTimeout={requestTimeout}
           onRestart={restart}
           onSim={simToEnd}
           onQuit={() => router.push(pending.returnTo)}
+          onReplay={() => { const c = replay.recentClip(); setScreen("playing"); if (c) replay.play(c); else toast("Nothing to replay yet"); }}
+          onHighlights={() => { setScreen("playing"); replay.playReel(); }}
+          highlightCount={replay.highlights.length}
         />
       )}
       {screen === "simming" && (
@@ -209,7 +250,7 @@ export function GameView({ pending }: { pending: PendingMatch }) {
           </div>
         </div>
       )}
-      {screen === "final" && <FinalScreen match={match} onContinue={() => router.push(pending.returnTo)} onRestart={restart} />}
+      {screen === "final" && !replaying && <FinalScreen match={match} onContinue={() => router.push(pending.returnTo)} onRestart={restart} onHighlights={replay.highlights.length ? () => replay.playReel() : undefined} />}
     </div>
   );
 }
@@ -273,11 +314,11 @@ function IntroSplash({ match, occasion, onSkip }: { match: Match; occasion?: str
 }
 
 // ------------------------------------------------------------------- pause
-function PauseMenu({ match, camera, setCamera, onResume, onTimeout, onRestart, onSim, onQuit }: {
-  match: Match; camera: CameraMode; setCamera: (c: CameraMode) => void; onResume: () => void; onTimeout: (t: 0 | 1) => void;
-  onRestart: () => void; onSim: () => void; onQuit: () => void;
+function PauseMenu({ initialTab, match, camera, setCamera, onResume, onTimeout, onRestart, onSim, onQuit, onReplay, onHighlights, highlightCount }: {
+  initialTab: "menu" | "subs"; match: Match; camera: CameraMode; setCamera: (c: CameraMode) => void; onResume: () => void; onTimeout: (t: 0 | 1) => void;
+  onRestart: () => void; onSim: () => void; onQuit: () => void; onReplay: () => void; onHighlights: () => void; highlightCount: number;
 }) {
-  const [tab, setTab] = useState<"menu" | "box" | "subs" | "controls">("menu");
+  const [tab, setTab] = useState<"menu" | "box" | "subs" | "controls">(initialTab);
   const [confirm, setConfirm] = useState<null | "quit" | "restart" | "sim">(null);
   const s = match.state;
   const humanTeam = s.agents.find((a) => a.human !== null)?.team ?? 0;
@@ -295,6 +336,8 @@ function PauseMenu({ match, camera, setCamera, onResume, onTimeout, onRestart, o
         {item("Substitutions", () => setTab("subs"))}
         {item(`Timeout (${s.teams[humanTeam].timeouts} left)`, () => { onTimeout(humanTeam as 0 | 1); onResume(); })}
         {item(`Camera: ${CAMERAS.find((c) => c.id === camera)?.label}`, () => setCamera(CAMERAS[(CAMERAS.findIndex((c) => c.id === camera) + 1) % CAMERAS.length].id))}
+        {item("Instant replay", onReplay)}
+        {highlightCount > 0 && item(`Highlights (${highlightCount})`, onHighlights)}
         {item("Controls", () => setTab("controls"))}
         {item("Sim to end", () => setConfirm("sim"))}
         {item("Restart game", () => setConfirm("restart"))}
@@ -420,7 +463,7 @@ function ControlsReference() {
 }
 
 // ------------------------------------------------------------------- final
-function FinalScreen({ match, onContinue, onRestart }: { match: Match; onContinue: () => void; onRestart: () => void }) {
+function FinalScreen({ match, onContinue, onRestart, onHighlights }: { match: Match; onContinue: () => void; onRestart: () => void; onHighlights?: () => void }) {
   const s = match.state;
   const result = useMatchStore((x) => x.lastResult);
   const all = [...s.teams[0].roster, ...s.teams[1].roster];
@@ -455,6 +498,7 @@ function FinalScreen({ match, onContinue, onRestart }: { match: Match; onContinu
         )}
         <BoxScoreTable teams={[s.teams[1], s.teams[0]]} box={s.box} />
         <div className="flex justify-end gap-3">
+          {onHighlights && <button onClick={onHighlights} className="rounded-[var(--radius-chip)] px-5 py-3 font-display text-xl font-bold text-steel hover:text-net">Watch highlights</button>}
           <button onClick={onRestart} className="rounded-[var(--radius-chip)] px-5 py-3 font-display text-xl font-bold text-steel hover:text-net">Play again</button>
           <button ref={cont} onClick={onContinue} className="rounded-[var(--radius-chip)] bg-amber px-6 py-3 font-display text-xl font-bold text-navy">Continue</button>
         </div>

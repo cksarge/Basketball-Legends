@@ -5,7 +5,7 @@ import type { InputDevice } from "./MenuNavigator";
 const XBOX = ["A", "B", "X", "Y", "LB", "RB", "LT", "RT", "View", "Menu", "LS", "RS", "↑", "↓", "←", "→"];
 const PS = ["✕", "○", "□", "△", "L1", "R1", "L2", "R2", "Create", "Options", "L3", "R3", "↑", "↓", "←", "→"];
 
-function keyLabel(code: string) {
+export function keyLabel(code: string) {
   if (code.startsWith("Key")) return code.slice(3);
   if (code.startsWith("Digit")) return code.slice(5);
   const map: Record<string, string> = { Space: "Space", ShiftLeft: "Shift", ShiftRight: "Shift", Escape: "Esc", ArrowUp: "↑", ArrowDown: "↓", ArrowLeft: "←", ArrowRight: "→", Tab: "Tab", Enter: "Enter" };

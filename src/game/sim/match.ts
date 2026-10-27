@@ -1,7 +1,7 @@
 // Real-time match simulation. Deterministic given seed + inputs (host authoritative).
 // Rendering never mutates this; it reads Match.state each frame.
 import { aimAt, type BallEvent, newBallPhys, solveArc, solveTime, stepBall } from "../ball";
-import { courtFor, distToRim, ftSpot, inBounds, inLane, isThree, rimPos } from "../court";
+import { courtFor, distToRim, ftSpot, huddleSpot, inBounds, inLane, isThree, rimPos } from "../court";
 import { angDiff, approach, dist2, distToSeg2, len2, segT2, v2, v3, type V2 } from "../vec";
 import { Rng, clamp } from "@/engine/rng";
 import { overall } from "@/engine/player";
@@ -107,6 +107,8 @@ export class Match {
   /** Human controller indexes per team. */
   humanSlots: [number[], number[]] = [[], []];
   lockPlayerId: string | null = null;
+  /** While true, timeouts and period breaks wait (a break screen is open). */
+  holdBreak = false;
   private ballEvents: BallEvent[] = [];
 
   constructor(setup: MatchSetup) {
@@ -170,8 +172,8 @@ export class Match {
       a.vel = v2();
       a.action = act("idle");
       if (a.team === 1) {
-        a.pos = v2(-6 + (a.idx - 5) * 1.3, c.halfW + 2.4);
-        a.facing = Math.PI;
+        a.pos = v2(-6 + (a.idx - 5) * 1.3, -(c.halfW + 0.6));
+        a.facing = 0;
       } else {
         a.pos = this.spacingSpot(a.role, s.teams[0].attackSide);
         a.facing = s.teams[0].attackSide > 0 ? Math.PI / 2 : -Math.PI / 2;
@@ -344,7 +346,8 @@ export class Match {
       case "timeout":
       case "periodEnd":
       case "halftime":
-        s.phaseTimer -= dt;
+        if (!this.holdBreak) s.phaseTimer -= dt;
+        this.walkToHuddles(dt);
         if (s.phaseTimer <= 0) this.resumeAfterBreak();
         this.recoverBench(dt * 4);
         return;
@@ -2133,6 +2136,33 @@ export class Match {
     s.timeoutTeam = ti;
     s.phaseTimer = s.cfg.fast ? 0.1 : 8;
     return true;
+  }
+
+  /** During timeouts and between periods both teams gather in front of their benches. */
+  private walkToHuddles(dt: number) {
+    const s = this.state;
+    if (s.cfg.fast) return;
+    for (const a of s.agents) {
+      const slot = this.agentsOf(a.team).indexOf(a);
+      const h = huddleSpot(s.cfg.court, a.team, slot);
+      const dx = h.x - a.pos.x, dz = h.z - a.pos.z;
+      const d = Math.hypot(dx, dz);
+      const v = d > 0.08 ? Math.min(2.6, d * 2) : 0;
+      a.vel = v2(d > 0.001 ? (dx / d) * v : 0, d > 0.001 ? (dz / d) * v : 0);
+      a.pos.x += a.vel.x * dt;
+      a.pos.z += a.vel.z * dt;
+      const faceTarget = d > 0.4 ? Math.atan2(dx, dz) : Math.atan2(h.cx - a.pos.x, h.cz - a.pos.z);
+      a.facing += angDiff(a.facing, faceTarget) * Math.min(1, dt * 6);
+      if (a.action.kind !== "idle" && (a.action.dur === 0 || a.action.t >= a.action.dur)) a.action = act("idle");
+      a.action.t += dt;
+    }
+    if (s.ball.owner === null && s.ball.mode === "dead") s.ball.phys.pos = v3(0, -1, 0); // tucked away with the officials
+  }
+
+  /** Skip the rest of a timeout or period break (the player pressed continue). */
+  skipBreak() {
+    const s = this.state;
+    if (s.phase === "timeout" || s.phase === "periodEnd" || s.phase === "halftime") s.phaseTimer = Math.min(s.phaseTimer, 0.05);
   }
 
   private resumeAfterBreak() {

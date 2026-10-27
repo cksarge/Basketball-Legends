@@ -105,3 +105,23 @@ export function inLane(c: CourtSpec, side: 1 | -1, x: number, z: number) {
 export function ftSpot(c: CourtSpec, side: 1 | -1) {
   return { x: side * (c.halfL - c.ftLineFromBaseline), z: 0 };
 }
+
+/** Chairs per team bench. */
+export const BENCH_SEATS = 9;
+
+/**
+ * Team benches line the far sideline (opposite the broadcast camera), facing the court:
+ * home (team 0) toward +x, away toward -x. Seat 0 is nearest midcourt.
+ */
+export function benchSeat(c: CourtSpec, team: 0 | 1, i: number) {
+  const s = team === 0 ? 1 : -1;
+  return { x: s * (Math.min(6.5, c.halfL * 0.5) + i * 0.65), z: -(c.halfW + 1.6) };
+}
+
+/** Where the five players stand during a timeout huddle (a half ring in front of the bench). */
+export function huddleSpot(c: CourtSpec, team: 0 | 1, i: number) {
+  const s = team === 0 ? 1 : -1;
+  const cx = s * (Math.min(6.5, c.halfL * 0.5) + 2.6), cz = -(c.halfW + 0.2);
+  const a = (i - 2) * 0.62; // fan out on the court side of the center
+  return { x: cx + Math.sin(a) * 1.15, z: cz + Math.cos(a) * 1.15, cx, cz };
+}

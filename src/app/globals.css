@@ -96,3 +96,41 @@ html[data-reduced-motion="true"] *::after {
   animation-duration: 0.001ms !important;
   transition-duration: 0.001ms !important;
 }
+
+/* Player name tags floating over heads (positioned every frame from the 3D scene). */
+.bl-tag {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: none;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px 1px 0;
+  border-radius: 3px;
+  background: rgb(7 12 20 / 0.72);
+  font: 600 11px/16px var(--font-body);
+  color: var(--color-net);
+  white-space: nowrap;
+  will-change: transform, opacity;
+  transition: opacity 0.2s;
+}
+.bl-tag b {
+  display: inline-block;
+  min-width: 20px;
+  padding: 0 4px;
+  border-radius: 3px 0 0 3px;
+  text-align: center;
+  font: 800 12px/16px var(--font-display);
+}
+
+/* Big-play banner (AND ONE, REJECTED, ...). */
+@keyframes bl-banner {
+  0% { opacity: 0; transform: translateX(-50%) skewX(-12deg) scaleX(0.4); }
+  12% { opacity: 1; transform: translateX(-50%) skewX(-12deg) scaleX(1.04); }
+  20% { transform: translateX(-50%) skewX(-12deg) scaleX(1); }
+  82% { opacity: 1; transform: translateX(-50%) skewX(-12deg) scaleX(1); }
+  100% { opacity: 0; transform: translateX(-50%) skewX(-12deg) scaleX(1.1); }
+}
+.bl-banner {
+  animation: bl-banner 2.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}

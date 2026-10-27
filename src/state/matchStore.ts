@@ -91,9 +91,20 @@ export interface HudSnapshot {
   controlled: { name: string; number: number; stamina: number; team: 0 | 1 } | null;
 }
 
-export const useHud = create<{ hud: HudSnapshot | null; feed: { id: number; text: string; team: number | null }[]; set: (h: HudSnapshot) => void; pushFeed: (text: string, team: number | null) => void }>((set) => ({
+export interface PlayBanner { id: number; title: string; sub?: string; color: string; accent: string }
+
+export const useHud = create<{
+  hud: HudSnapshot | null;
+  feed: { id: number; text: string; team: number | null }[];
+  banner: PlayBanner | null;
+  set: (h: HudSnapshot) => void;
+  pushFeed: (text: string, team: number | null) => void;
+  showBanner: (b: Omit<PlayBanner, "id">) => void;
+}>((set) => ({
   hud: null,
   feed: [],
+  banner: null,
   set: (hud) => set({ hud }),
   pushFeed: (text, team) => set((s) => ({ feed: [...s.feed.slice(-5), { id: Date.now() + Math.random(), text, team }] })),
+  showBanner: (b) => set({ banner: { ...b, id: Date.now() + Math.random() } }),
 }));

@@ -2,7 +2,8 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import type { CourtSpec } from "@/game/court";
+import { BENCH_SEATS, benchSeat, type CourtSpec } from "@/game/court";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { Team } from "@/engine/types";
 import { Rng } from "@/engine/rng";
 import { drawCourt, drawRoughness, FLOOR_MARGIN, floorSize } from "./courtTexture";
@@ -351,21 +352,7 @@ export function Arena({ court, home, away, kind, quality, crowdDensity, exciteRe
           <meshBasicMaterial map={ribbonTex} toneMapped={false} />
         </mesh>
       ))}
-      {/* scorer's table + benches on the near side */}
-      <mesh position={[0, 0.4, court.halfW + 1.3]} castShadow receiveShadow>
-        <boxGeometry args={[6, 0.8, 0.8]} />
-        <meshStandardMaterial color={home.colors.primary} roughness={0.6} />
-      </mesh>
-      {[-1, 1].map((s) => (
-        <group key={s} position={[s * 6.5, 0, court.halfW + 1.6]}>
-          {Array.from({ length: 9 }, (_, i) => (
-            <mesh key={i} position={[s * i * 0.65, 0.25, 0]} castShadow>
-              <boxGeometry args={[0.48, 0.5, 0.48]} />
-              <meshStandardMaterial color={s > 0 ? home.colors.primary : away.colors.primary} roughness={0.7} />
-            </mesh>
-          ))}
-        </group>
-      ))}
+      <BenchArea court={court} home={home} away={away} />
       {/* walls and roof */}
       <mesh position={[0, roofY / 2 - 0.3, 0]}>
         <boxGeometry args={[w + (kind === "gym" ? 18 : 70), roofY, h + (kind === "gym" ? 18 : 70)]} />
@@ -373,6 +360,114 @@ export function Arena({ court, home, away, kind, quality, crowdDensity, exciteRe
       </mesh>
       {kind === "gym" && <GymDressing w={w} h={h} home={home} />}
       {kind !== "gym" && <Jumbotron y={14} scoreRef={scoreRef} home={home} away={away} />}
+    </group>
+  );
+}
+
+/** Scorer's table, bench chairs (seat height matches Players' SEAT_HEIGHT), coolers and towels. */
+function BenchArea({ court, home, away }: { court: CourtSpec; home: Team; away: Team }) {
+  const chairs = useMemo(() => {
+    // one chair = metal frame + cushion + back pad, instanced 2 x BENCH_SEATS
+    const leg = (x: number, z: number) => new THREE.BoxGeometry(0.035, 0.42, 0.035).translate(x, 0.21, z);
+    const frame = mergeGeometries([
+      leg(-0.2, -0.19), leg(0.2, -0.19), leg(-0.2, 0.19), leg(0.2, 0.19),
+      new THREE.BoxGeometry(0.035, 0.6, 0.035).translate(-0.2, 0.72, -0.21),
+      new THREE.BoxGeometry(0.035, 0.6, 0.035).translate(0.2, 0.72, -0.21),
+      new THREE.BoxGeometry(0.46, 0.04, 0.44).translate(0, 0.42, 0),
+    ])!;
+    const cushion = new THREE.BoxGeometry(0.46, 0.08, 0.44).translate(0, 0.46, 0);
+    const back = new THREE.BoxGeometry(0.46, 0.4, 0.07).translate(0, 0.82, -0.23);
+    const n = BENCH_SEATS * 2;
+    const frameMesh = new THREE.InstancedMesh(frame, new THREE.MeshStandardMaterial({ color: "#2a2e35", metalness: 0.7, roughness: 0.35 }), n);
+    const padMat = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.55 });
+    const cushionMesh = new THREE.InstancedMesh(cushion, padMat, n);
+    const backMesh = new THREE.InstancedMesh(back, padMat, n);
+    const m = new THREE.Matrix4();
+    let k = 0;
+    for (const ti of [0, 1] as const) {
+      const col = new THREE.Color(ti === 0 ? home.colors.primary : away.colors.primary);
+      for (let i = 0; i < BENCH_SEATS; i++, k++) {
+        const p = benchSeat(court, ti, i);
+        m.makeTranslation(p.x, 0, p.z);
+        for (const im of [frameMesh, cushionMesh, backMesh]) im.setMatrixAt(k, m);
+        cushionMesh.setColorAt(k, col);
+        backMesh.setColorAt(k, col);
+      }
+    }
+    for (const im of [frameMesh, cushionMesh, backMesh]) { im.castShadow = true; im.receiveShadow = true; im.instanceMatrix.needsUpdate = true; }
+    return [frameMesh, cushionMesh, backMesh];
+  }, [court, home, away]);
+  useEffect(() => () => { for (const c of chairs) { c.geometry.dispose(); (c.material as THREE.Material).dispose(); } }, [chairs]);
+
+  const tableTex = useMemo(() => {
+    const c = document.createElement("canvas");
+    c.width = 2048; c.height = 256;
+    const g = c.getContext("2d")!;
+    g.fillStyle = "#07090d";
+    g.fillRect(0, 0, 2048, 256);
+    const third = 2048 / 3;
+    const cells: [string, string, string][] = [
+      [away.colors.primary, away.colors.accent, away.name.toUpperCase()],
+      ["#0b0f15", "#ffb627", "BASKETBALL LEGENDS"],
+      [home.colors.primary, home.colors.accent, home.name.toUpperCase()],
+    ];
+    cells.forEach(([bg, fg, text], i) => {
+      g.fillStyle = bg;
+      g.fillRect(i * third + 8, 10, third - 16, 236);
+      g.fillStyle = fg;
+      g.textAlign = "center";
+      g.textBaseline = "middle";
+      let size = 120;
+      g.font = `900 ${size}px ${displayFont()}`;
+      while (g.measureText(text).width > third * 0.86 && size > 40) { size -= 4; g.font = `900 ${size}px ${displayFont()}`; }
+      g.fillText(text, i * third + third / 2, 132);
+    });
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 8;
+    return t;
+  }, [home, away]);
+  const tableZ = -(court.halfW + 1.25);
+  const tableW = Math.min(7, court.halfL * 0.75);
+  return (
+    <group>
+      {chairs.map((c, i) => <primitive key={i} object={c} />)}
+      {/* scorer's table: LED front, dark top, a row of monitors */}
+      <mesh position={[0, 0.39, tableZ]} castShadow receiveShadow>
+        <boxGeometry args={[tableW, 0.78, 0.7]} />
+        <meshStandardMaterial color="#111419" roughness={0.5} />
+      </mesh>
+      <mesh position={[0, 0.39, tableZ + 0.352]}>
+        <planeGeometry args={[tableW, 0.7]} />
+        <meshBasicMaterial map={tableTex} toneMapped={false} />
+      </mesh>
+      {Array.from({ length: 5 }, (_, i) => (
+        <mesh key={i} position={[(i - 2) * (tableW / 5.5), 0.93, tableZ - 0.1]} rotation={[0.25, 0, 0]} castShadow>
+          <boxGeometry args={[0.5, 0.32, 0.04]} />
+          <meshStandardMaterial color="#1a1d22" roughness={0.4} />
+        </mesh>
+      ))}
+      {/* coolers and towel stacks at the end of each bench */}
+      {([0, 1] as const).map((ti) => {
+        const p = benchSeat(court, ti, BENCH_SEATS);
+        const col = ti === 0 ? home.colors.primary : away.colors.primary;
+        return (
+          <group key={ti} position={[p.x, 0, p.z]}>
+            <mesh position={[0, 0.3, 0]} castShadow>
+              <cylinderGeometry args={[0.2, 0.2, 0.6, 20]} />
+              <meshStandardMaterial color="#e8eaed" roughness={0.35} />
+            </mesh>
+            <mesh position={[0, 0.63, 0]}>
+              <cylinderGeometry args={[0.21, 0.21, 0.07, 20]} />
+              <meshStandardMaterial color={col} roughness={0.4} />
+            </mesh>
+            <mesh position={[ti === 0 ? 0.42 : -0.42, 0.12, 0]} castShadow>
+              <boxGeometry args={[0.36, 0.24, 0.3]} />
+              <meshStandardMaterial color="#f4f4f2" roughness={0.95} />
+            </mesh>
+          </group>
+        );
+      })}
     </group>
   );
 }

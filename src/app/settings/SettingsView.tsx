@@ -102,7 +102,9 @@ export function SettingsView() {
           {tab === "presentation" && (
             <Panel>
               <Toggle label="Commentary" checked={st.presentation.commentary} onChange={(v) => set("presentation", { commentary: v })} />
-              <Toggle label="Instant replays" checked={st.presentation.replays} onChange={(v) => set("presentation", { replays: v })} />
+              <Toggle label="Automatic instant replays" hint="Big plays replay in slow motion. Press the replay button any time to watch the last few seconds." checked={st.presentation.replays} onChange={(v) => set("presentation", { replays: v })} />
+              <Toggle label="Big-play banners" hint="AND ONE, REJECTED, runs and buzzer beaters" checked={st.presentation.playBanners} onChange={(v) => set("presentation", { playBanners: v })} />
+              <Toggle label="Quarter and timeout screens" hint="Stats and substitutions at every break. Off keeps play moving." checked={st.presentation.breakScreens} onChange={(v) => set("presentation", { breakScreens: v })} />
               <Toggle label="Skip intros" checked={st.presentation.skipIntros} onChange={(v) => set("presentation", { skipIntros: v })} />
               <Toggle label="Control hints during games" checked={st.presentation.showTips} onChange={(v) => set("presentation", { showTips: v })} />
               <div className="mt-4 border-t border-line pt-4">

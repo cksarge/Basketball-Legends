@@ -39,6 +39,10 @@ export interface PoseInput {
   heightM: number;
   airborne: boolean;
   celebrate: boolean;
+  /** Seated on a bench chair whose cushion is this high (m). */
+  seatY?: number;
+  /** Bench reactions: 0 calm, 1 on their feet cheering. */
+  benchExcite?: number;
 }
 
 export class Avatar {
@@ -287,6 +291,8 @@ export class Avatar {
     this.root.updateMatrixWorld(true);
     this.resetPose();
     this.model.updateMatrixWorld(true);
+    if (this.hipRestH < 0) this.hipRestH = this.worldPos("hips", new THREE.Vector3()).y / scale;
+    if (p.seatY !== undefined) { this.updateSeated(p, scale, dt); return; }
 
     // local velocity (model space, per model unit)
     const cos = Math.cos(-p.facing), sin = Math.sin(-p.facing);
@@ -562,6 +568,72 @@ export class Avatar {
     this.model.updateMatrixWorld(true);
     this.worldPos(`middle1L`, this.handL);
     this.worldPos(`middle1R`, this.handR);
+  }
+
+  private hipRestH = -1;
+
+  /** Bench pose: sitting with hands on the thighs, following the play; big moments bring them up. */
+  private updateSeated(p: PoseInput, scale: number, dt: number) {
+    const s = this.smooth;
+    const ex = p.benchExcite ?? 0;
+    // standing up blends the hips from the chair toward full height
+    const seat = p.seatY! / scale;
+    const sitRoot = seat + 0.06 - this.hipRestH;
+    const stand = ex > 0.5 ? 1 : 0;
+    s.crouch = THREE.MathUtils.damp(s.crouch, stand, 3, dt);
+    const k = s.crouch;
+    const rootY = THREE.MathUtils.lerp(sitRoot, -0.02, k);
+    const hips = this.b("hips");
+    hips.bone.position.copy(hips.restPos);
+    hips.bone.position.y += rootY * (1 / (this.modelScale() || 1));
+    this.model.rotation.x = 0;
+    this.model.position.set(0, 0, 0);
+    this.model.updateMatrixWorld(true);
+    const qModel = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, p.facing, 0));
+    const worldRot = (x: number, y: number, z: number) => {
+      const e = new THREE.Quaternion().setFromEuler(new THREE.Euler(x, y, z, "YXZ"));
+      return qModel.clone().multiply(e).multiply(qModel.clone().invert());
+    };
+    const breathe = Math.sin(s.idleT * 1.8) * 0.012;
+    this.rotateWorld("spine", worldRot(0.16 * (1 - k) + breathe, 0, 0));
+    this.rotateWorld("chest", worldRot(0.08 * (1 - k), 0, 0));
+    for (const [side, sign] of [["L", 1], ["R", -1]] as const) {
+      const foot = this.toWorld(sign * 0.17, 0.09, THREE.MathUtils.lerp(0.5, 0.06, k), new THREE.Vector3());
+      foot.y = 0.09 * scale;
+      this.ik2(`thigh${side}`, `shin${side}`, foot, this.toWorld(sign * 0.2, 1.1, 1.6, new THREE.Vector3()));
+      this.aim(`foot${side}`, new THREE.Vector3(Math.sin(p.facing + sign * 0.2), -0.1, Math.cos(p.facing + sign * 0.2)));
+    }
+    if (k > 0.5) {
+      // on their feet: arms up, waving a towel-less fist
+      const pump = Math.abs(Math.sin(s.idleT * 5 + this.player.jersey));
+      this.ik2("upperarmR", "forearmR", this.toWorld(-0.3, 2.0 + pump * 0.3 + rootY, 0.15, new THREE.Vector3()), this.toWorld(-0.8, 1.2, -0.3, new THREE.Vector3()));
+      this.ik2("upperarmL", "forearmL", this.toWorld(0.3, 1.9 + (1 - pump) * 0.3 + rootY, 0.15, new THREE.Vector3()), this.toWorld(0.8, 1.2, -0.3, new THREE.Vector3()));
+    } else {
+      // forearms resting on the thighs
+      const pole = (sign: number) => this.toWorld(sign * 0.6, 0.9 + rootY, -0.5, new THREE.Vector3());
+      this.ik2("upperarmL", "forearmL", this.toWorld(0.17, seat + 0.2, 0.36, new THREE.Vector3()), pole(1));
+      this.ik2("upperarmR", "forearmR", this.toWorld(-0.17, seat + 0.2, 0.36, new THREE.Vector3()), pole(-1));
+    }
+    for (const side of ["L", "R"] as const) {
+      for (const f of ["index", "middle", "ring", "pinky"]) {
+        for (const seg of [1, 2]) {
+          const info = this.bones[`${f}${seg}${side}`];
+          if (info) info.bone.quaternion.multiply(_q.setFromAxisAngle(new THREE.Vector3(1, 0, 0), k > 0.5 ? 1.1 : 0.45 * (seg === 1 ? 0.6 : 0.9)));
+        }
+      }
+    }
+    if (p.lookAt) {
+      const headP = this.worldPos("head", new THREE.Vector3());
+      const toL = new THREE.Vector3().subVectors(p.lookAt, headP);
+      const yaw = Math.atan2(Math.sin(Math.atan2(toL.x, toL.z) - p.facing), Math.cos(Math.atan2(toL.x, toL.z) - p.facing));
+      const pitch = THREE.MathUtils.clamp(-Math.atan2(toL.y, Math.hypot(toL.x, toL.z)), -0.5, 0.4);
+      this.rotateWorld("neck", worldRot(pitch * 0.4, THREE.MathUtils.clamp(yaw, -1.2, 1.2) * 0.45, 0));
+      this.rotateWorld("head", worldRot(pitch * 0.5, THREE.MathUtils.clamp(yaw, -1.2, 1.2) * 0.45, 0));
+    }
+    this.blend(dt);
+    this.model.updateMatrixWorld(true);
+    this.worldPos("middle1L", this.handL);
+    this.worldPos("middle1R", this.handR);
   }
 
   private prevQ = new Map<string, THREE.Quaternion>();
