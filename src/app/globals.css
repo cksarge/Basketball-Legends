@@ -25,6 +25,19 @@
   --ui-scale: 1;
 }
 
+/* Color-vision modes: keep good/bad readable without relying on red vs green. */
+html[data-colorblind="protanopia"],
+html[data-colorblind="deuteranopia"] {
+  --color-good: #4c9bff;
+  --color-bad: #ffb627;
+  --color-amber: #ffd84a;
+}
+html[data-colorblind="tritanopia"] {
+  --color-good: #2fd3c7;
+  --color-bad: #ff5c8a;
+  --color-amber: #ff9e3d;
+}
+
 html {
   font-size: calc(16px * var(--ui-scale));
   background: var(--color-navy);

@@ -195,6 +195,8 @@ export interface MatchConfig {
   fast: boolean;
   /** Keep human ball handlers from accidentally stepping out of bounds. */
   boundaryAssist: boolean;
+  /** Shootaround: no clocks, no defense, the ball comes back after every shot. */
+  practice: boolean;
 }
 
 export type Difficulty = "rookie" | "pro" | "allstar" | "superstar" | "hof" | "legend";

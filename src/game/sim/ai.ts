@@ -30,6 +30,7 @@ export function runAI(match: Match, dt: number, decide: boolean) {
   COURT_HALF = { x: s.cfg.court.halfL, z: s.cfg.court.halfW };
   for (const a of s.agents) {
     if (a.human !== null) continue;
+    if (s.cfg.practice && a.team === 1) { holdStill(a); continue; }
     const intent = a.intent;
     intent.act = undefined;
     switch (s.phase) {

@@ -1,0 +1,33 @@
+import type { Metadata } from "next";
+import { H2, ProsePage } from "@/ui/Prose";
+
+export const metadata: Metadata = { title: "Privacy Policy", description: "What Basketball Legends stores, where, and why." };
+
+export default function Privacy() {
+  return (
+    <ProsePage title="Privacy Policy" updated="October 26, 2026">
+      <p>Basketball Legends is built to work without collecting personal information. There are no accounts, ads, analytics, tracking pixels or cookies.</p>
+      <H2>What stays on your device</H2>
+      <ul className="list-disc pl-6">
+        <li><b>Settings</b> (graphics, audio, controls, accessibility) are saved in your browser&apos;s local storage.</li>
+        <li><b>The current match setup</b> is kept in session storage so a page reload doesn&apos;t lose it. It clears when you close the tab.</li>
+        <li><b>Saved games and roster files</b> you create are stored in your browser and never uploaded.</li>
+      </ul>
+      <p>You can remove all of this at any time by clearing this site&apos;s data in your browser settings.</p>
+      <H2>Hosting</H2>
+      <p>The site is hosted on GitHub Pages. GitHub may log technical information such as IP addresses when your browser requests the site&apos;s files, as described in the <a className="text-amber underline" href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub Privacy Statement</a>. The game itself doesn&apos;t receive or store that information.</p>
+      <H2>Browser features the game uses</H2>
+      <ul className="list-disc pl-6">
+        <li><b>Gamepads</b> are read through your browser&apos;s Gamepad API. Button presses never leave your device.</li>
+        <li><b>Spoken commentary</b> (off by default) uses your browser&apos;s built-in speech voices. Some browsers send that text to the browser maker&apos;s speech service. Leave it off if you prefer, and text commentary still works.</li>
+        <li><b>Graphics auto-detect</b> reads your graphics card&apos;s name locally to choose a preset. It isn&apos;t sent anywhere.</li>
+      </ul>
+      <H2>Children</H2>
+      <p>The game doesn&apos;t knowingly collect information from anyone, including children. All players in the game are fictional, including those on high school rosters.</p>
+      <H2>Future online features</H2>
+      <p>Optional accounts, cloud saves, leaderboards and online play are planned. When they arrive, this policy will be updated before they go live to explain exactly what is collected and how to delete it. Playing offline will stay available without an account.</p>
+      <H2>Contact</H2>
+      <p>Privacy questions can be raised by opening an issue on the project&apos;s <a className="text-amber underline" href="https://github.com/cksarge/Basketball-Legends/issues">GitHub repository</a>.</p>
+    </ProsePage>
+  );
+}

@@ -34,6 +34,7 @@ export interface MatchSetup {
   seed?: number;
   fast?: boolean;
   boundaryAssist?: boolean;
+  practice?: boolean;
 }
 
 export const DEFAULT_TACTICS: TeamTactics = { pace: 0.5, threeRate: 0.5, defense: "man", crashBoards: 0.4, doubleTeamStars: false };
@@ -98,6 +99,7 @@ export class Match {
       seed: setup.seed ?? 1,
       fast: setup.fast ?? false,
       boundaryAssist: setup.boundaryAssist ?? true,
+      practice: setup.practice ?? false,
     };
     this.rng = new Rng(cfg.seed);
     const mkTeam = (s: MatchSetup["home"], side: 1 | -1): TeamGameState => {
@@ -126,7 +128,53 @@ export class Match {
       timeoutTeam: null, aiClock: 0, playByPlay: [], possessions: [0, 0], pendingAndOne: null,
     };
     this.buildAgents();
-    this.setupJumpBall();
+    if (cfg.practice) this.setupPractice();
+    else this.setupJumpBall();
+  }
+
+  private practiceRetrieve = 0;
+
+  /** Shootaround: offense spread out, the other team waits by its bench, ball to the human. */
+  private setupPractice() {
+    const s = this.state;
+    const c = s.cfg.court;
+    for (const a of s.agents) {
+      a.vel = v2();
+      a.action = act("idle");
+      if (a.team === 1) {
+        a.pos = v2(-6 + (a.idx - 5) * 1.3, c.halfW + 2.4);
+        a.facing = Math.PI;
+      } else {
+        a.pos = this.spacingSpot(a.role, s.teams[0].attackSide);
+        a.facing = s.teams[0].attackSide > 0 ? Math.PI / 2 : -Math.PI / 2;
+      }
+    }
+    s.phase = "live";
+    s.offense = 0;
+    s.frontcourt = true;
+    const h = s.agents.find((a) => a.human !== null && a.team === 0) ?? s.agents[0];
+    this.giveBall(h);
+  }
+
+  private stepPractice(dt: number) {
+    const s = this.state;
+    this.aiAndMove(dt);
+    // keep the other team parked by the bench
+    for (const a of this.agentsOf(1)) { a.vel = v2(); a.intent = { moveX: 0, moveZ: 0, sprint: false }; }
+    this.stepBallLive(dt);
+    if (s.phase !== "live") s.phase = "live";
+    // return the ball to the human after a shot settles
+    if (s.ball.owner === null && s.ball.mode !== "shot" && s.ball.mode !== "pass") {
+      this.practiceRetrieve += dt;
+      if (this.practiceRetrieve > 1.4) {
+        this.practiceRetrieve = 0;
+        const h = s.agents.find((a) => a.human !== null && a.team === 0) ?? s.agents[0];
+        s.ball.shot = null;
+        this.giveBall(h);
+      }
+    } else this.practiceRetrieve = 0;
+    s.offense = 0;
+    s.shotClock = s.cfg.rules.shotClock ?? 0;
   }
 
   // ------------------------------------------------------------------ setup
@@ -352,6 +400,7 @@ export class Match {
   private stepLive(dt: number) {
     const s = this.state;
     const r = s.cfg.rules;
+    if (s.cfg.practice) { this.stepPractice(dt); return; }
     // clocks
     const ballInPlay = s.ball.mode !== "dead";
     if (ballInPlay) {
@@ -1487,6 +1536,7 @@ export class Match {
     this.log(`${this.name(shooter)} ${describeShot(sh.kind, pts, dist)}${sh.assistFrom !== null ? ` (assist ${this.name(sh.assistFrom)})` : ""}${goaltend ? " (goaltending)" : ""}`, sh.team);
     this.trackRun(sh.team, pts);
     s.lastScoreTime = s.time;
+    if (s.cfg.practice) { s.ball.mode = "loose"; s.ball.shot = null; return; }
     s.ball.mode = "dead";
     if (sh.fouled) {
       s.ball.shot = null;
@@ -1539,6 +1589,7 @@ export class Match {
   // ------------------------------------------------------------------ fouls
   foul(fouler: Agent, on: Agent, kind: FoulKind, shooting: boolean, shotPoints = 2) {
     const s = this.state;
+    if (s.cfg.practice) return;
     const pfLine = s.box[fouler.player.id];
     pfLine.pf++;
     const defensive = fouler.team !== s.offense || kind === "shooting";
@@ -1752,6 +1803,7 @@ export class Match {
 
   private violation(team: TeamIdx, kind: ViolationKind, player: number | null) {
     const s = this.state;
+    if (s.cfg.practice) return;
     if (s.phase !== "live" && s.phase !== "inbound") return;
     this.emit({ t: "violation", team, kind, player });
     const labels: Record<ViolationKind, string> = {

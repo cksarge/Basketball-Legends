@@ -247,6 +247,45 @@ function SimDriver(props: GameSceneProps & { camState: React.RefObject<CameraSta
   return null;
 }
 
+/** Drives a "demand" frameloop at a fixed rate (frame rate cap). */
+function FrameCap({ fps }: { fps: number }) {
+  const { invalidate } = useThree();
+  useEffect(() => {
+    let raf = 0, last = 0;
+    const loop = (t: number) => {
+      raf = requestAnimationFrame(loop);
+      if (t - last >= 1000 / fps - 1) { last = t; invalidate(); }
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [fps, invalidate]);
+  return null;
+}
+
+/** Tiny frame-rate readout rendered into a fixed DOM element. */
+function FpsCounter() {
+  const el = useRef<HTMLDivElement | null>(null);
+  const frames = useRef({ n: 0, t: performance.now() });
+  useEffect(() => {
+    const d = document.createElement("div");
+    d.setAttribute("aria-hidden", "true");
+    Object.assign(d.style, { position: "fixed", top: "8px", left: "8px", zIndex: "60", font: "600 12px var(--font-body)", color: "#ffb627", background: "rgba(13,27,46,.8)", padding: "2px 6px", borderRadius: "4px", pointerEvents: "none" });
+    document.body.appendChild(d);
+    el.current = d;
+    return () => d.remove();
+  }, []);
+  useFrame(() => {
+    const f = frames.current;
+    f.n++;
+    const now = performance.now();
+    if (now - f.t > 500) {
+      if (el.current) el.current.textContent = `${Math.round((f.n * 1000) / (now - f.t))} fps`;
+      f.n = 0; f.t = now;
+    }
+  });
+  return null;
+}
+
 export function fmtClock(sec: number) {
   if (sec < 60) return Math.max(0, sec).toFixed(1);
   const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
@@ -286,8 +325,10 @@ export function GameScene(props: GameSceneProps) {
         gl.toneMapping = THREE.NoToneMapping;
         gl.outputColorSpace = THREE.SRGBColorSpace;
       }}
-      frameloop="always"
+      frameloop={g.fpsCap > 0 && g.fpsCap < 120 ? "demand" : "always"}
     >
+      {g.fpsCap > 0 && g.fpsCap < 120 && <FrameCap fps={g.fpsCap} />}
+      {g.showFps && <FpsCounter />}
       <color attach="background" args={[props.arena === "gym" ? "#bdb4a3" : "#05070a"]} />
       <fog attach="fog" args={[props.arena === "gym" ? "#bdb4a3" : "#05070a", 45, 140]} />
       <Environment />

@@ -26,7 +26,7 @@ const CAMERAS: { id: CameraMode; label: string }[] = [
 
 type Screen = "intro" | "playing" | "paused" | "final" | "simming";
 
-function buildMatch(p: PendingMatch, quarterMinutes: number, g: ReturnType<typeof useSettings.getState>["gameplay"]) {
+function buildMatch(p: PendingMatch, quarterMinutes: number, g: ReturnType<typeof useSettings.getState>["gameplay"], tapShots: boolean) {
   const home = p.home, away = p.away;
   let h = 0;
   const humansHome = home.controllers.map(() => h++);
@@ -35,10 +35,12 @@ function buildMatch(p: PendingMatch, quarterMinutes: number, g: ReturnType<typeo
     league: p.league,
     home: { team: home.team, roster: home.roster, tactics: home.tactics, human: humansHome.length > 0, humans: humansHome, starters: home.starters },
     away: { team: away.team, roster: away.roster, tactics: away.tactics, human: humansAway.length > 0, humans: humansAway, starters: away.starters },
-    quarterMinutes, difficulty: g.difficulty, shotMeter: g.shotMeter, fatigue: g.fatigue, injuries: g.injuries, fouls: g.fouls,
-    seed: p.seed, boundaryAssist: g.boundaryAssist, lockPlayerId: p.lockPlayerId,
+    quarterMinutes, difficulty: g.difficulty, shotMeter: g.shotMeter && !tapShots, fatigue: g.fatigue, injuries: g.injuries, fouls: g.fouls,
+    seed: p.seed, boundaryAssist: g.boundaryAssist, lockPlayerId: p.lockPlayerId, practice: p.practice,
   });
   const devices = [...home.controllers, ...away.controllers] as DeviceId[];
+  // the coach's auto-subs setting applies to human-controlled teams
+  for (const t of match.state.teams) if (t.humanControlled) (t as typeof t & { autoSubs?: boolean }).autoSubs = g.autoSubs;
   return { match, devices };
 }
 
@@ -47,8 +49,8 @@ export function GameView({ pending }: { pending: PendingMatch }) {
   const settings = useSettings();
   const setResult = useMatchStore((s) => s.setResult);
   const [runId, setRunId] = useState(0);
-  const { match, devices } = useMemo(() => buildMatch(pending, pending.quarterMinutes, useSettings.getState().gameplay), [pending, runId]);
-  const [screen, setScreen] = useState<Screen>(settings.presentation.skipIntros ? "playing" : "intro");
+  const { match, devices } = useMemo(() => buildMatch(pending, pending.quarterMinutes, useSettings.getState().gameplay, useSettings.getState().accessibility.holdToTap), [pending, runId]);
+  const [screen, setScreen] = useState<Screen>(settings.presentation.skipIntros || pending.practice ? "playing" : "intro");
   const [camera, setCamera] = useState<CameraMode>(settings.camera.mode);
   const [simProgress, setSimProgress] = useState(0);
   const input = useMemo(() => new InputManager({ keys: settings.controls.keys, pad: settings.controls.pad, deadzone: settings.controls.stickDeadzone }), [settings.controls]);
@@ -80,9 +82,12 @@ export function GameView({ pending }: { pending: PendingMatch }) {
     else delete document.body.dataset.ingame;
   }, [screen]);
 
-  // pause when the tab is hidden
+  // pause (and optionally mute) when the tab is hidden
   useEffect(() => {
-    const onVis = () => { if (document.hidden && screen === "playing") setScreen("paused"); };
+    const onVis = () => {
+      if (document.hidden && screen === "playing") setScreen("paused");
+      if (useSettings.getState().audio.muteOnBlur) { if (document.hidden) audio.suspend(); else audio.resume(); }
+    };
     document.addEventListener("visibilitychange", onVis);
     return () => document.removeEventListener("visibilitychange", onVis);
   }, [screen]);
@@ -176,7 +181,7 @@ export function GameView({ pending }: { pending: PendingMatch }) {
       />
       {screen !== "intro" && screen !== "final" && (
         <>
-          <ScoreBug home={home} away={away} />
+          {pending.practice ? <PracticeStats match={match} /> : <ScoreBug home={home} away={away} />}
           <ShotMeter />
           <PlayerTag />
           <CommentaryFeed />
@@ -205,6 +210,29 @@ export function GameView({ pending }: { pending: PendingMatch }) {
         </div>
       )}
       {screen === "final" && <FinalScreen match={match} onContinue={() => router.push(pending.returnTo)} onRestart={restart} />}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- practice
+function PracticeStats({ match }: { match: Match }) {
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const h = setInterval(() => tick((x) => x + 1), 250);
+    return () => clearInterval(h);
+  }, []);
+  const s = match.state;
+  const line = s.teams[0].roster.reduce((acc, p) => {
+    const b = s.box[p.id];
+    if (b) { acc.fgm += b.fgm; acc.fga += b.fga; acc.tpm += b.tpm; acc.tpa += b.tpa; }
+    return acc;
+  }, { fgm: 0, fga: 0, tpm: 0, tpa: 0 });
+  const pct = (m: number, a: number) => (a ? `${Math.round((m / a) * 100)}%` : "-");
+  return (
+    <div className="pointer-events-none fixed bottom-5 left-1/2 z-20 flex -translate-x-1/2 gap-6 rounded-[var(--radius-chip)] bg-navy/90 px-6 py-3 ring-1 ring-line backdrop-blur">
+      <div className="text-center"><p className="text-xs text-steel">Shooting</p><p className="led text-3xl">{line.fgm}/{line.fga}</p><p className="text-xs text-steel">{pct(line.fgm, line.fga)}</p></div>
+      <div className="text-center"><p className="text-xs text-steel">Threes</p><p className="led text-3xl">{line.tpm}/{line.tpa}</p><p className="text-xs text-steel">{pct(line.tpm, line.tpa)}</p></div>
+      <div className="max-w-56 self-center text-xs text-steel">Practice: no clock and no defense. The ball comes back after every shot.</div>
     </div>
   );
 }

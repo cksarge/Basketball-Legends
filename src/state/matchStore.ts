@@ -32,6 +32,8 @@ export interface PendingMatch {
   seed: number;
   /** Optional label shown in the intro ("Region final", "Game 7"). */
   occasion?: string;
+  /** Shootaround with no opponent or clock. */
+  practice?: boolean;
 }
 
 export interface MatchResult {

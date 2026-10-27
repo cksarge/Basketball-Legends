@@ -36,9 +36,9 @@ export const DEFAULT_KEYS: Record<ActionName, string[]> = {
 /** Standard-mapping gamepad button indices. */
 export const DEFAULT_PAD: Record<ActionName, number[]> = {
   up: [12], down: [13], left: [14], right: [15], sprint: [7], shoot: [2], pass: [0], lob: [3], bounce: [1],
-  iconPass: [4], dribbleLeft: [], dribbleRight: [], dribbleBack: [], dribbleSpin: [], pumpFake: [2], post: [6],
+  iconPass: [4], dribbleLeft: [], dribbleRight: [], dribbleBack: [], dribbleSpin: [], pumpFake: [11], post: [6],
   callScreen: [5], steal: [2], block: [3], switchPlayer: [0], intenseD: [6], takeCharge: [1], timeout: [8],
-  pause: [9], camera: [8], replay: [11], callForBall: [0],
+  pause: [9], camera: [8], replay: [10], callForBall: [0],
 };
 
 export interface Settings {

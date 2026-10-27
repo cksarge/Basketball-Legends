@@ -76,7 +76,7 @@ export function ShotMeter() {
   const fill = meter?.fill ?? 1;
   const ideal = meter?.ideal ?? 0.74;
   const label = flash === "green" ? "Perfect release" : flash === "good" ? "Good release" : flash === "early" ? "Slightly early" : flash === "late" ? "Slightly late" : null;
-  const color = flash === "green" ? "#4cc38a" : flash === "good" ? "#ffb627" : flash ? "#f0625a" : "#f2f5f8";
+  const color = flash === "green" ? "var(--color-good)" : flash === "good" ? "var(--color-amber)" : flash ? "var(--color-bad)" : "var(--color-net)";
   return (
     <div className="pointer-events-none fixed right-[18%] top-1/2 z-20 flex -translate-y-1/2 flex-col items-center gap-2">
       <div className="relative h-44 w-4 overflow-hidden rounded-full bg-navy/80 ring-1 ring-line">
@@ -97,7 +97,7 @@ export function PlayerTag() {
       <div className="flex flex-col">
         <span className="font-display text-lg font-bold leading-tight">{c.name}</span>
         <div className="h-1.5 w-28 overflow-hidden rounded-full bg-deck" aria-label={`Stamina ${Math.round(c.stamina * 100)} percent`}>
-          <div className="h-full rounded-full" style={{ width: `${c.stamina * 100}%`, background: c.stamina > 0.6 ? "#4cc38a" : c.stamina > 0.4 ? "#ffb627" : "#f0625a" }} />
+          <div className="h-full rounded-full" style={{ width: `${c.stamina * 100}%`, background: c.stamina > 0.6 ? "var(--color-good)" : c.stamina > 0.4 ? "var(--color-amber)" : "var(--color-bad)" }} />
         </div>
       </div>
     </div>
