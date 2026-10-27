@@ -3,7 +3,7 @@ import { Match } from "../../src/game/sim/match";
 import { generateRoster } from "../../src/engine/player";
 import type { Team } from "../../src/engine/types";
 const data = JSON.parse(fs.readFileSync(`src/data/generated/pro.json`, "utf8")) as { teams: Team[] };
-const tos: Record<string, number> = {}; const durs: number[] = []; let ends: Record<string, number> = {};
+const tos: Record<string, number> = {}; const durs: number[] = []; const ends: Record<string, number> = {};
 for (let g = 0; g < 4; g++) {
   const h = data.teams[(g * 7) % 30], a = data.teams[(g * 7 + 3) % 30];
   const m = new Match({ league: "pro", home: { team: h, roster: generateRoster(h) }, away: { team: a, roster: generateRoster(a) }, fast: true, seed: g + 11 });

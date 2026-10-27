@@ -33,7 +33,7 @@ export function commentFor(match: Match, e: GameEvent): string | null {
     case "dribbleMove": return e.broke !== null ? pick([`${nm(e.player)} breaks his man down!`, `Ankles! ${nm(e.player)} with a filthy move.`]) : null;
     case "foul": return e.fts ? `Foul on ${nm(e.player)}. ${e.fts} shots coming.` : rng.chance(0.4) ? `Whistle. Foul on ${nm(e.player)}.` : null;
     case "violation":
-      return e.kind === "shotClock" ? "Shot clock violation." : e.kind === "threeSeconds" ? "Three seconds in the lane." : e.kind === "goaltending" ? "Goaltending is called!" : e.kind === "backcourt" ? "Over and back. Backcourt violation." : null;
+      return e.kind === "shotClock" ? "Shot clock violation." : e.kind === "threeSeconds" ? "Three seconds in the lane." : e.kind === "goaltending" ? "Goaltending is called!" : e.kind === "backcourt" ? "Over and back. Backcourt violation." : e.kind === "travel" ? pick(["Whistle. That's a travel.", `Traveling on ${e.player !== null ? nm(e.player) : "the offense"}.`]) : null;
     case "timeout": return `${s.teams[e.team].team.name} calls timeout.`;
     case "periodEnd": return s.cfg.rules.periods === 2 && e.period === 1 ? "That's the half." : `End of the ${ordinal(e.period)}.`;
     case "final": return `That's the ballgame. ${s.teams[e.winner].team.name} win it.`;

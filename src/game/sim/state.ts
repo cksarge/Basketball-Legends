@@ -50,6 +50,10 @@ export interface Agent {
   holdTime: number;
   /** True after picking up the dribble (can't dribble again until pass/shot). */
   pickedUp: boolean;
+  /** The most recent dribble move and when it ended (stepback jumpers). */
+  lastMove?: { move: DribbleMoveKind; at: number } | null;
+  /** Where the pivot foot was planted when the dribble ended (traveling). */
+  pivot?: V2 | null;
   /** Momentum stun after being crossed (ankle breaker), seconds. */
   stun: number;
   /** Hot/cold streak modifier, -1..1. */
@@ -213,12 +217,14 @@ export interface LeagueTuning {
   steals: number;
   /** Shot make probability multiplier. */
   makes: number;
+  /** Gather-step travels on drives. */
+  travels: number;
 }
 
 export const LEAGUE_TUNING: Record<import("@/engine/types").LeagueId, LeagueTuning> = {
-  pro: { patience: 2, threeBias: 1, fouls: 1.2, shootingFouls: 0.95, steals: 1, makes: 1 },
-  college: { patience: 10, threeBias: 1.06, fouls: 1.5, shootingFouls: 1, steals: 1.1, makes: 1.02 },
-  hs: { patience: 6, threeBias: 1.18, fouls: 1.6, shootingFouls: 1.05, steals: 1.75, makes: 1 },
+  pro: { patience: 2, threeBias: 1, fouls: 1.2, shootingFouls: 0.95, steals: 1, makes: 1, travels: 1 },
+  college: { patience: 10, threeBias: 1.06, fouls: 1.5, shootingFouls: 1, steals: 1.1, makes: 1.02, travels: 1.4 },
+  hs: { patience: 6, threeBias: 1.18, fouls: 1.6, shootingFouls: 1.05, steals: 1.75, makes: 1, travels: 2.4 },
 };
 
 export type Difficulty = "rookie" | "pro" | "allstar" | "superstar" | "hof" | "legend";

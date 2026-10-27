@@ -20,12 +20,9 @@ async function demoMatch(): Promise<PendingMatch> {
 
 export function GamePageClient() {
   const stored = useMatchStore((s) => s.pending);
-  const [pending, setPending] = useState<PendingMatch | null>(stored);
+  const [pending, setPending] = useState<PendingMatch | null>(() => stored ?? restorePending());
   useEffect(() => {
-    if (pending) return;
-    const restored = restorePending();
-    if (restored) setPending(restored);
-    else demoMatch().then(setPending);
+    if (!pending) demoMatch().then(setPending);
   }, [pending]);
   if (!pending) {
     return (

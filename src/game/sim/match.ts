@@ -2,7 +2,7 @@
 // Rendering never mutates this; it reads Match.state each frame.
 import { aimAt, type BallEvent, newBallPhys, solveArc, solveTime, stepBall } from "../ball";
 import { courtFor, distToRim, ftSpot, huddleSpot, inBounds, inLane, isThree, rimPos } from "../court";
-import { angDiff, approach, dist2, distToSeg2, len2, segT2, v2, v3, type V2 } from "../vec";
+import { angDiff, dist2, distToSeg2, len2, segT2, v2, v3, type V2 } from "../vec";
 import { Rng, clamp } from "@/engine/rng";
 import { overall } from "@/engine/player";
 import { LEAGUE_RULES, type LeagueId, type Player, type RatingKey, type Team, type TeamTactics } from "@/engine/types";
@@ -747,6 +747,8 @@ export class Match {
       if (busyGround) maxV *= 0.15;
       if (shooting) maxV = 0;
       if (a.action.kind === "fall") maxV = 0;
+      // the CPU pivots in place once its dribble is picked up (humans can travel)
+      if (a.human === null && a.pickedUp && s.ball.owner === a.idx && !this.isBusy(a)) maxV = 0;
       const desiredX = tx * (mag > 0.01 ? maxV / Math.max(Math.min(1, mag), 0.01) * Math.min(1, mag) : 0);
       const desiredZ = tz * (mag > 0.01 ? maxV / Math.max(Math.min(1, mag), 0.01) * Math.min(1, mag) : 0);
       const accel = (5.5 + this.r(a, "accel") * 0.085) * (a.y > 0 ? 0.08 : 1);
@@ -847,7 +849,6 @@ export class Match {
 
   // ------------------------------------------------------------- dribbling
   dribbleMove(a: Agent, move: DribbleMoveKind, dir: number) {
-    const s = this.state;
     const durs: Record<DribbleMoveKind, number> = { crossover: 0.42, behindBack: 0.5, spin: 0.62, hesitation: 0.55, stepback: 0.55, betweenLegs: 0.45 };
     // burst direction: lateral relative to facing (dir = -1 left / +1 right), stepback = backwards
     const f = a.facing;
@@ -858,6 +859,7 @@ export class Match {
     if (move === "hesitation") { bx = fx * 0.6; bz = fz * 0.6; }
     if (move === "spin") { bx = (lx + fx) * 0.7; bz = (lz + fz) * 0.7; }
     this.startAction(a, "dribbleMove", durs[move], { move, dir, bx, bz });
+    a.lastMove = { move, at: this.state.time + durs[move] };
     a.hand = (move === "crossover" || move === "behindBack" || move === "betweenLegs" ? -a.hand : a.hand) as 1 | -1;
     // ankle breaker vs on-ball defender
     const def = this.nearestOpponent(a);
@@ -879,6 +881,8 @@ export class Match {
   }
 
   pumpFake(a: Agent) {
+    // faking out of a live dribble ends it: now it's pivot, pass or shoot
+    if (this.state.ball.mode === "dribble" && !a.pickedUp) { a.pickedUp = true; a.pivot = { ...a.pos }; }
     this.startAction(a, "gather", 0.35, { fake: true });
     const def = this.nearestOpponent(a);
     if (def && dist2(def.pos, a.pos) < 2.2 && def.y === 0 && this.rng.chance(clamp(0.45 - this.r(def, "iq") * 0.004, 0.08, 0.4))) {
@@ -903,11 +907,20 @@ export class Match {
     const speed = Math.hypot(a.vel.x, a.vel.z);
     const towardRim = this.towardRim(a);
     const canDunk = this.reach(a) + this.verticalLeap(a) > s.cfg.court.rimHeight + 0.12;
-    if (d < 2.6 && canDunk && (speed > 2.5 || d < 1.3) && this.r(a, "dunk") > 45 && towardRim > 0.2) return "dunk";
+    const dunker = this.r(a, "dunk");
+    if (d < 2.4 && canDunk && dunker > 55 && ((speed > 3 && towardRim > 0.35) || (d < 1.1 && dunker > 70))) return "dunk";
+    // runners and teardrops when a big is waiting at the rim
+    const rimHelp = this.contestOn(a) > 0.3 || this.agentsOf(a.team === 0 ? 1 : 0).some((o) => distToRim(s.cfg.court, this.attackSide(a.team), o.pos.x, o.pos.z) < 1.8);
+    if (d > 2.2 && d < 4.6 && speed > 2 && towardRim > 0.3 && rimHelp && this.r(a, "closeShot") > 50) return "floater";
     if (d < 2.9 && (speed > 2.2 || d < 1.4)) return "layup";
-    if (d < 4.2 && speed > 2.5 && towardRim > 0.4 && this.r(a, "closeShot") > 55) return "floater";
     if (d < 3.4 && a.action.kind === "post") return "hook";
     if (d < 5.5 && a.action.kind === "post") return "fadeaway";
+    // drifting away from the basket (off a stepback or a retreat dribble): fade away
+    const lastMove = a.lastMove && s.time - a.lastMove.at < 0.45 ? a.lastMove.move : "";
+    if (d > 2.6 && d < 7.5 && (lastMove === "stepback" || (towardRim < -0.45 && speed > 1.3))) return "fadeaway";
+    // bigs near the rim with their back to it go to the hook
+    const facingRim = Math.cos(angDiff(a.facing, Math.atan2(this.rim(a.team).x - a.pos.x, this.rim(a.team).z - a.pos.z)));
+    if (d < 3.2 && speed < 2 && facingRim < 0.35 && this.r(a, "postControl") > 62 && (a.player.pos === "C" || a.player.pos === "PF")) return "hook";
     return "jumper";
   }
 
@@ -923,6 +936,11 @@ export class Match {
     const s = this.state;
     if (s.ball.owner !== a.idx) return;
     const kind = forceKind ?? this.shotKindFor(a);
+    // an extra step on the gather: weaker ball handlers (and younger leagues) get called more
+    if ((kind === "layup" || kind === "dunk" || kind === "floater") && !forceKind && s.phase === "live" && Math.hypot(a.vel.x, a.vel.z) > 3) {
+      const p = 0.02 * Math.max(0.2, 1.45 - this.r(a, "ballHandle") / 100) * LEAGUE_TUNING[s.cfg.league].travels;
+      if (this.rng.chance(p)) { this.violation(a.team, "travel", a.idx); return; }
+    }
     const lv = this.verticalLeap(a);
     // shooting rhythm: a deliberate gather; good shooters and catch-and-shoot looks are a touch quicker
     const sk = (a.player.ratings.midRange + a.player.ratings.three) / 2;
@@ -1019,22 +1037,33 @@ export class Match {
     return clamp(best, 0, 1);
   }
 
+  /** A zone packs the paint: extra help bodies around the rim make shots there harder (not foul-prone). */
+  zoneHelp(a: Agent, contest: number): number {
+    const def = this.state.teams[a.team === 0 ? 1 : 0].tactics.defense;
+    if (def !== "zone23" && def !== "zone32") return contest;
+    const dRim = distToRim(this.state.cfg.court, this.attackSide(a.team), a.pos.x, a.pos.z);
+    if (dRim < 3.2) return contest + (1 - contest) * (def === "zone23" ? 0.42 : 0.34);
+    if (dRim < 5.5) return contest + (1 - contest) * 0.18;
+    // the 2-3's wings sink and recover: a late hand on outside shots
+    return def === "zone23" ? contest + (1 - contest) * 0.1 : contest;
+  }
+
   makeProbability(a: Agent, kind: ShotKind, dist: number, three: boolean, contest: number, quality: number): number {
     const s = this.state;
     const sl = s.cfg.sliders;
     let p: number;
     switch (kind) {
-      case "dunk": p = 0.86 + (this.r(a, "dunk") - 50) * 0.0025; break;
-      case "layup": p = 0.42 + (this.r(a, "layup") - 50) * 0.0062 - Math.max(0, dist - 1.2) * 0.03; break;
+      case "dunk": p = 0.9 + (this.r(a, "dunk") - 50) * 0.0022; break;
+      case "layup": p = 0.54 + (this.r(a, "layup") - 50) * 0.0058 - Math.max(0, dist - 1.2) * 0.03; break;
       case "tip": p = 0.4 + (this.r(a, "closeShot") - 50) * 0.004; break;
-      case "floater": p = 0.33 + (this.r(a, "closeShot") - 50) * 0.0048; break;
+      case "floater": p = 0.44 + (this.r(a, "closeShot") - 50) * 0.0048; break;
       case "hook": p = 0.36 + (this.r(a, "postControl") * 0.5 + this.r(a, "closeShot") * 0.5 - 50) * 0.005; break;
       case "fadeaway": p = 0.3 + (this.r(a, "midRange") * 0.6 + this.r(a, "postControl") * 0.4 - 50) * 0.0045; break;
       case "freeThrow": p = 0.33 + this.r(a, "freeThrow") * 0.0059; break;
       default: {
         if (three) {
           const extra = Math.max(0, dist - s.cfg.court.threeRadius - 0.45);
-          p = 0.302 + (this.r(a, "three") - 50) * 0.0043 - extra * 0.055;
+          p = 0.312 + (this.r(a, "three") - 50) * 0.0043 - extra * 0.055;
         } else if (dist < 3) {
           p = 0.36 + (this.r(a, "closeShot") * 0.4 + this.r(a, "midRange") * 0.6 - 50) * 0.0045;
         } else {
@@ -1078,7 +1107,7 @@ export class Match {
     const three = kind !== "dunk" && kind !== "layup" && isThree(c, side, d.fromX as number, d.fromZ as number);
     const contest = this.contestOn(a);
     const quality = d.human && s.cfg.shotMeter ? (d.quality as number) : NaN;
-    let pMake = this.makeProbability(a, kind, dist, three, contest, quality);
+    let pMake = this.makeProbability(a, kind, dist, three, this.zoneHelp(a, contest), quality);
 
     // shooting foul?
     let fouled = false;
@@ -1328,6 +1357,10 @@ export class Match {
         if (b.owner !== null) {
           const h = s.agents[b.owner];
           h.holdTime += dt;
+          // traveling: after the dribble is picked up, one step off the pivot is all you get
+          if (h.pickedUp && h.pivot && h.y === 0 && s.phase === "live" && !["jumper", "layup", "dunk", "fadeaway", "floater", "hook", "pass"].includes(h.action.kind)) {
+            if (dist2(h.pos, h.pivot) > 0.95) { this.violation(h.team, "travel", h.idx); break; }
+          }
           // out of bounds with ball
           if (!inBounds(s.cfg.court, h.pos.x, h.pos.z, -0.05) && h.y === 0 && s.phase === "live") {
             this.turnover(h, "outOfBounds");
@@ -1520,6 +1553,7 @@ export class Match {
     s.ball.lastToucher = a.idx;
     a.holdTime = 0;
     a.pickedUp = false;
+    a.pivot = null;
     if (a.team !== s.offense) this.changePossessionTracking(a.team);
     if (s.phase === "inbound" && s.inbound && a.idx !== s.inbound.inbounder) this.inboundComplete();
     void prevOwnerTeam;
@@ -2002,7 +2036,7 @@ export class Match {
     this.log(`${labels[kind]}${player !== null ? ` on ${this.name(player)}` : ""}`, team);
     if (player !== null && kind !== "outOfBounds" && team === s.offense) {
       s.box[s.agents[player].player.id].tov++;
-      this.emit({ t: "turnover", player, reason: kind === "shotClock" ? "shotClock" : kind === "threeSeconds" ? "threeSeconds" : kind === "backcourt" ? "backcourt" : "tenSeconds" });
+      this.emit({ t: "turnover", player, reason: kind === "shotClock" ? "shotClock" : kind === "threeSeconds" ? "threeSeconds" : kind === "backcourt" ? "backcourt" : kind === "travel" ? "travel" : "tenSeconds" });
     }
     s.ball.mode = "dead";
     s.ball.owner = null;

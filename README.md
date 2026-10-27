@@ -7,7 +7,9 @@ A free, open-source 3D basketball game that runs in the browser. Play pro basket
 ## What's in the game
 
 - **Real-time 3D 5v5** with dribble moves, a timing-based shot meter, layups, dunks, floaters, post moves, alley-oops, steals, blocks and box-out rebounding.
-- **Full rules for each league:** shot clocks, fouls and the bonus, free throws, inbounds, three seconds, backcourt and 8/10-second violations, goaltending, timeouts, substitutions, fatigue and overtime.
+- **Full rules for each league:** shot clocks, fouls and the bonus, free throws, inbounds, traveling, three seconds, backcourt and 8/10-second violations, goaltending, timeouts, substitutions, fatigue and overtime.
+- **Coaching:** set each team's pace, three-point emphasis, offensive rebounding, double teams and defense (man-to-man, 2-3 zone, 3-2 zone or a full-court trapping press) before the game or from the pause menu.
+- **Gameplay sliders:** shot, three-point and layup success, pass accuracy, steals, blocks, fouls, game speed, injuries and CPU aggression.
 - **Team AI** that spaces the floor, runs pick-and-roll, drives and kicks, posts up, cuts, and plays man or zone defense with help rotations.
 - **Quick Play:** any two teams from any league (cross-league exhibitions included), instant simulation, and up to four local players with keyboard and gamepads.
 - **Practice:** a shootaround with no clock or defense.
@@ -47,6 +49,8 @@ Useful scripts:
 - `npm run assets:player` rebuilds the rigged player model with Blender 4.2+ (`blender` on your PATH) and compresses it.
 - `npx tsx scripts/dev/headless-game.ts 10 pro` simulates full games headlessly and prints league-wide stats, which is useful for tuning (`college` and `hs` work too).
 - `npx tsx scripts/dev/injury-rate.ts 30 pro` measures how often in-game injuries happen.
+- `npx tsx scripts/dev/defense-compare.ts 6 pro` compares the defensive schemes; `npx tsx scripts/dev/shot-mix.ts 4 pro` shows the shot type mix.
+- `npm run lint` runs ESLint (also part of the deploy workflow).
 - `/dev/anim` (dev server only) is an animation lab: every procedural clip with a timeline, contact sheets (`?sheet=1`) and a side view (`&profile=1`).
 
 `npm run build` also stamps `out/sw.js` (the offline service worker) with a build version and the list of hashed assets to precache.

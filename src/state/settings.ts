@@ -1,7 +1,7 @@
 "use client";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import type { Difficulty } from "@/game/sim/state";
+import { DEFAULT_SLIDERS, type Difficulty, type GameplaySliders } from "@/game/sim/state";
 
 export type GraphicsPreset = "low" | "medium" | "high" | "ultra";
 export type CameraMode = "broadcast" | "2k" | "low" | "baseline" | "player" | "skycam";
@@ -68,6 +68,8 @@ export interface Settings {
     showShotFeedback: boolean;
     vibration: boolean;
     lockToPlayer: boolean;
+    /** Gameplay sliders (1 = default). */
+    sliders: GameplaySliders;
   };
   camera: { mode: CameraMode; zoom: number; height: number; shake: boolean };
   controls: { keys: Record<ActionName, string[]>; pad: Record<ActionName, number[]>; prompts: PromptStyle; stickDeadzone: number; invertCamera: boolean };
@@ -78,7 +80,7 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   graphics: { preset: "high", autoDetected: false, resolutionScale: 1, shadows: true, bloom: true, ambientOcclusion: true, antialias: true, crowdDensity: 0.8, fpsCap: 60, showFps: false },
   audio: { master: 0.8, music: 0.5, sfx: 0.9, crowd: 0.7, commentary: 0.9, voiceCommentary: false, muteOnBlur: true },
-  gameplay: { difficulty: "allstar", quarterMinutes: 6, shotMeter: true, fatigue: true, injuries: false, fouls: true, autoSubs: true, boundaryAssist: true, showPlayerNames: true, showShotFeedback: true, vibration: true, lockToPlayer: false },
+  gameplay: { difficulty: "allstar", quarterMinutes: 6, shotMeter: true, fatigue: true, injuries: false, fouls: true, autoSubs: true, boundaryAssist: true, showPlayerNames: true, showShotFeedback: true, vibration: true, lockToPlayer: false, sliders: DEFAULT_SLIDERS },
   camera: { mode: "broadcast", zoom: 1, height: 1, shake: true },
   controls: { keys: DEFAULT_KEYS, pad: DEFAULT_PAD, prompts: "auto", stickDeadzone: 0.18, invertCamera: false },
   accessibility: { colorblind: "off", subtitles: true, reducedMotion: false, uiScale: 1, highContrastHud: false, holdToTap: false },
@@ -126,6 +128,7 @@ export const useSettings = create<SettingsStore>()(
         for (const k of Object.keys(DEFAULT_SETTINGS) as Section[]) {
           (out as Record<string, unknown>)[k] = { ...DEFAULT_SETTINGS[k], ...(p[k] ?? {}) };
         }
+        out.gameplay = { ...out.gameplay, sliders: { ...DEFAULT_SLIDERS, ...(p.gameplay?.sliders ?? {}) } };
         // nested maps must keep any new default actions
         out.controls = { ...out.controls, keys: { ...DEFAULT_KEYS, ...(p.controls?.keys ?? {}) }, pad: { ...DEFAULT_PAD, ...(p.controls?.pad ?? {}) } };
         return out;

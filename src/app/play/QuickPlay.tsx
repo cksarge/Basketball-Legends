@@ -1,13 +1,13 @@
 "use client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import type { LeagueId, Player, Team } from "@/engine/types";
+import type { LeagueId, Player, Team, TeamTactics } from "@/engine/types";
 import { overall } from "@/engine/player";
 import { LEAGUES, loadAllLeagues, type LeagueData, rosterFor, tierLabel } from "@/data/leagues";
 import { useMatchStore, type PendingMatch } from "@/state/matchStore";
 import { useSettings } from "@/state/settings";
 import { DIFFICULTY_LEVELS, type Difficulty } from "@/game/sim/state";
-import { Match } from "@/game/sim/match";
+import { DEFAULT_TACTICS, Match } from "@/game/sim/match";
 import { simulateToEnd } from "@/game/simulate";
 import { audio } from "@/audio/engine";
 import type { UniformStyle } from "@/game3d/character/uniformTexture";
@@ -17,6 +17,7 @@ import { TeamLogo } from "@/ui/TeamLogo";
 import { BoxScoreTable } from "@/ui/BoxScore";
 import { Button, PageShell, Panel, Segmented, Select, Toggle } from "@/ui/kit";
 import { toast } from "@/ui/Toaster";
+import { TacticsPanel } from "@/ui/TacticsPanel";
 
 type Side = "away" | "home";
 
@@ -49,6 +50,7 @@ export function QuickPlay() {
   const [assign, setAssign] = useState<Record<string, Side | "cpu">>({ keyboard: "home" });
   const [pads, setPads] = useState<number[]>([]);
   const [arenaChoice, setArenaChoice] = useState<ArenaKind | "auto">("auto");
+  const [tactics, setTactics] = useState<Record<Side, TeamTactics>>({ away: { ...DEFAULT_TACTICS }, home: { ...DEFAULT_TACTICS } });
   const [simResult, setSimResult] = useState<Match | null>(null);
   const [simming, setSimming] = useState<number | null>(null);
 
@@ -88,8 +90,8 @@ export function QuickPlay() {
     if (hc.toLowerCase() === ac.toLowerCase()) awayUniform = awayUniform === "away" ? "alt" : "away";
     return {
       mode: practice ? "practice" : "quick", league: home.league, arena,
-      home: { team: home, roster: rosterFor(home), uniform: uniforms.home, controllers: practice ? ["keyboard", ...pads.map((i) => `pad${i}`)].slice(0, 1) : ctrl("home") },
-      away: { team: away, roster: rosterFor(away), uniform: awayUniform, controllers: practice ? [] : ctrl("away") },
+      home: { team: home, roster: rosterFor(home), uniform: uniforms.home, tactics: tactics.home, controllers: practice ? ["keyboard", ...pads.map((i) => `pad${i}`)].slice(0, 1) : ctrl("home") },
+      away: { team: away, roster: rosterFor(away), uniform: awayUniform, tactics: tactics.away, controllers: practice ? [] : ctrl("away") },
       quarterMinutes: quarter, returnTo: practice ? "/" : "/play/", seed: Math.floor(Math.random() * 1e6), practice,
     };
   };
@@ -107,8 +109,9 @@ export function QuickPlay() {
     if (!p) return;
     setSimming(0);
     const match = new Match({
-      league: p.league, home: { team: p.home.team, roster: p.home.roster }, away: { team: p.away.team, roster: p.away.roster },
-      quarterMinutes: quarter, difficulty: settings.gameplay.difficulty, fatigue: settings.gameplay.fatigue, fouls: settings.gameplay.fouls, seed: p.seed, fast: true,
+      league: p.league, home: { team: p.home.team, roster: p.home.roster, tactics: p.home.tactics }, away: { team: p.away.team, roster: p.away.roster, tactics: p.away.tactics },
+      quarterMinutes: quarter, difficulty: settings.gameplay.difficulty, fatigue: settings.gameplay.fatigue, fouls: settings.gameplay.fouls,
+      injuries: settings.gameplay.injuries, sliders: settings.gameplay.sliders, seed: p.seed, fast: true,
     });
     await simulateToEnd(match, (x) => setSimming(x));
     setSimming(null);
@@ -127,6 +130,7 @@ export function QuickPlay() {
 
   const swap = () => {
     setTeams({ home: teams.away, away: teams.home });
+    setTactics({ home: tactics.away, away: tactics.home });
     setAssign((cur) => Object.fromEntries(Object.entries(cur).map(([d, s]) => [d, s === "home" ? "away" : s === "away" ? "home" : s])));
   };
 
@@ -160,7 +164,21 @@ export function QuickPlay() {
               );
             })}
           </div>
-          {devices.every((d) => (assign[d] ?? (d === "keyboard" ? "home" : "cpu")) === "cpu") && <p className="mt-3 text-sm text-amber">No one is assigned, so you'll watch the CPU play both teams.</p>}
+          {devices.every((d) => (assign[d] ?? (d === "keyboard" ? "home" : "cpu")) === "cpu") && <p className="mt-3 text-sm text-amber">No one is assigned, so you&apos;ll watch the CPU play both teams.</p>}
+        </Panel>
+      )}
+
+      {!practice && (
+        <Panel title="Coaching" className="mt-5">
+          <div className="grid gap-x-10 lg:grid-cols-2">
+            {(["away", "home"] as const).map((side) => (
+              <div key={side}>
+                <p className="mb-1 font-display text-xl font-bold">{teams[side]?.name ?? (side === "home" ? "Home" : "Away")} {teams[side]?.nickname ?? ""}</p>
+                <TacticsPanel value={tactics[side]} onChange={(t) => setTactics((s) => ({ ...s, [side]: t }))} />
+              </div>
+            ))}
+          </div>
+          <p className="mt-2 text-sm text-steel">You can change your team&apos;s tactics during the game from the pause menu. Gameplay sliders are in Settings.</p>
         </Panel>
       )}
 
@@ -177,6 +195,7 @@ export function QuickPlay() {
           <Toggle label="Shot meter" hint="Time your release for better accuracy" checked={settings.gameplay.shotMeter} onChange={(v) => setSettings("gameplay", { shotMeter: v })} />
           {!practice && <Toggle label="Fatigue" checked={settings.gameplay.fatigue} onChange={(v) => setSettings("gameplay", { fatigue: v })} />}
           {!practice && <Toggle label="Fouls" checked={settings.gameplay.fouls} onChange={(v) => setSettings("gameplay", { fouls: v })} />}
+          {!practice && <Toggle label="Injuries" hint="Players can get hurt on hard falls and collisions" checked={settings.gameplay.injuries} onChange={(v) => setSettings("gameplay", { injuries: v })} />}
           {!practice && <Toggle label="Coach makes substitutions" checked={settings.gameplay.autoSubs} onChange={(v) => setSettings("gameplay", { autoSubs: v })} />}
           <Toggle label="Sideline assist" hint="Stops you from stepping out of bounds by accident" checked={settings.gameplay.boundaryAssist} onChange={(v) => setSettings("gameplay", { boundaryAssist: v })} />
         </div>
@@ -204,7 +223,12 @@ function TeamPicker({ label, data, team, onPick, uniform, onUniform }: {
   const [tier, setTier] = useState<string>("all");
   const [conf, setConf] = useState<string>("all");
   const [q, setQ] = useState("");
-  useEffect(() => { if (team) setLeague(team.league); }, [team]);
+  // follow the league of a team picked elsewhere (e.g. "random")
+  const [prevTeam, setPrevTeam] = useState(team);
+  if (team !== prevTeam) {
+    setPrevTeam(team);
+    if (team) setLeague(team.league);
+  }
   const confs = data[league].conferences.filter((c) => tier === "all" || c.tier === tier);
   const tiers = league === "college" ? ["D1", "D2", "D3"] : league === "hs" ? ["6A", "5A", "4A", "3A", "2A", "1A"] : [];
   const list = useMemo(() => {

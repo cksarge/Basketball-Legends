@@ -1,10 +1,17 @@
 "use client";
 import { useEffect, useState } from "react";
 import { ACTION_LABELS, type ActionName, type CameraMode, type ColorblindMode, DEFAULT_KEYS, DEFAULT_PAD, type GraphicsPreset, PRESETS, type PromptStyle, detectPreset, useSettings } from "@/state/settings";
-import { DIFFICULTY_LEVELS, type Difficulty } from "@/game/sim/state";
+import { DEFAULT_SLIDERS, DIFFICULTY_LEVELS, type Difficulty, type GameplaySliders } from "@/game/sim/state";
 import { audio } from "@/audio/engine";
 import { Button, PageShell, Panel, Segmented, Select, Slider, Toggle } from "@/ui/kit";
 import { toast } from "@/ui/Toaster";
+
+const SLIDERS: [keyof GameplaySliders, string, string?][] = [
+  ["shotSuccess", "Shot success"], ["threeSuccess", "Three-point success"], ["layupSuccess", "Layup and dunk success"],
+  ["passAccuracy", "Pass accuracy"], ["stealSuccess", "Steal success"], ["blockSuccess", "Block success"],
+  ["foulFrequency", "Foul frequency"], ["speed", "Game speed", "player movement"], ["injuryRate", "Injury frequency", "when injuries are on"],
+  ["aiAggression", "CPU aggression", "steals, blocks and gambles"],
+];
 
 type Tab = "graphics" | "audio" | "gameplay" | "camera" | "controls" | "accessibility" | "presentation";
 const TABS: { id: Tab; label: string }[] = [
@@ -76,6 +83,18 @@ export function SettingsView() {
               <Toggle label="Sideline assist" hint="Stops you from stepping out of bounds by accident" checked={st.gameplay.boundaryAssist} onChange={(v) => set("gameplay", { boundaryAssist: v })} />
               <Toggle label="Player names over heads" checked={st.gameplay.showPlayerNames} onChange={(v) => set("gameplay", { showPlayerNames: v })} />
               <Toggle label="Controller vibration" checked={st.gameplay.vibration} onChange={(v) => set("gameplay", { vibration: v })} />
+            </Panel>
+          )}
+          {tab === "gameplay" && (
+            <Panel title="Gameplay sliders" className="mt-5">
+              <p className="mb-2 text-sm text-steel">Fine-tune how the game plays for both teams. 100% is the standard balance. They apply to games you play and games you simulate.</p>
+              {SLIDERS.map(([k, label, hint]) => (
+                <Slider key={k} label={hint ? `${label} (${hint})` : label} value={st.gameplay.sliders[k]} min={0.25} max={2} step={0.05} format={pct}
+                  onChange={(v) => set("gameplay", { sliders: { ...st.gameplay.sliders, [k]: v } })} />
+              ))}
+              <div className="mt-3 flex justify-end">
+                <Button variant="secondary" onClick={() => { set("gameplay", { sliders: { ...DEFAULT_SLIDERS } }); toast("Sliders reset", "good"); }}>Reset sliders</Button>
+              </div>
             </Panel>
           )}
           {tab === "camera" && (

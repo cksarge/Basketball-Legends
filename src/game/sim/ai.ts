@@ -216,13 +216,16 @@ function offenseAI(match: Match, a: Agent, decide: boolean) {
     if (!front && s.ball.mode !== "loose") {
       // advance the ball; push in transition
       const defBack = match.agentsOf(a.team === 0 ? 1 : 0).filter((d) => (d.pos.x - a.pos.x) * side > 0).length;
-      const push = defBack <= 2 || s.teams[a.team].tactics.pace > 0.6;
+      // beat the press and the half-court count: get it up the floor when time runs short
+      const pressed = s.teams[a.team === 0 ? 1 : 0].tactics.defense === "press";
+      const urgent = pressed || s.backcourtTimer > s.cfg.rules.backcourtSeconds * 0.45;
+      const push = defBack <= 2 || s.teams[a.team].tactics.pace > 0.6 || urgent;
       const lane = m.variant ? 2.5 : -2.5;
       goTo(a, v2(side * 4, lane), { sprint: push, slow: 0.5 });
       if (decide && push) {
         // ahead pass to a streaking teammate
-        const ahead = match.agentsOf(a.team).filter((t) => t !== a && (t.pos.x - a.pos.x) * side > 6 && openness(match, t) > 0.8);
-        if (ahead.length && match.rng.chance(0.35)) a.intent.act = { type: "pass", to: ahead[0].idx, kind: "chest" };
+        const ahead = match.agentsOf(a.team).filter((t) => t !== a && (t.pos.x - a.pos.x) * side > (urgent ? 3 : 6) && openness(match, t) > (urgent ? 0.6 : 0.8));
+        if (ahead.length && match.rng.chance(urgent ? 0.55 : 0.35)) a.intent.act = { type: "pass", to: ahead[0].idx, kind: "chest" };
       }
       return;
     }
@@ -442,7 +445,6 @@ function requestScreen(match: Match, handler: Agent) {
 }
 
 function passKind(match: Match, from: Agent, to: Agent): "chest" | "bounce" | "lob" {
-  const s = match.state;
   let blocked = 0;
   for (const d of match.agentsOf(from.team === 0 ? 1 : 0)) {
     if (distToSeg2(from.pos, to.pos, d.pos) < 0.8) blocked++;
@@ -463,8 +465,10 @@ function defenseAI(match: Match, a: Agent, decide: boolean) {
   const aggression = s.cfg.sliders.aiAggression;
   if (match.isBusy(a)) { holdStill(a); return; }
 
+  // full-court press: pick up the ball in the backcourt and trap it before half court
+  const pressing = tactics.defense === "press" && handler !== null && handler.team === offTeam && !s.frontcourt && (s.phase === "live" || s.phase === "inbound");
   // transition defense: get back
-  if (handler && (handler.pos.x - a.pos.x) * side > 1 && Math.abs(a.pos.x - rim.x) > 6) {
+  if (!pressing && handler && (handler.pos.x - a.pos.x) * side > 1 && Math.abs(a.pos.x - rim.x) > 6) {
     goTo(a, v2(rim.x - side * 3, clamp(handler.pos.z * 0.5, -3, 3)), { sprint: true });
     return;
   }
@@ -473,14 +477,49 @@ function defenseAI(match: Match, a: Agent, decide: boolean) {
   if (!man || man.team === a.team) { man = match.nearestOpponent(a); }
   if (!man) { holdStill(a); return; }
 
-  const onBall = handler !== null && man.idx === handler.idx;
+  // in a zone, whoever is closest to the ball takes it; the others guard their area
+  const zone = tactics.defense === "zone23" || tactics.defense === "zone32";
+  let onBall = handler !== null && man.idx === handler.idx;
+  if (zone && handler && handler.team === offTeam) {
+    const closest = match.agentsOf(a.team).reduce((b, d) => (dist2(d.pos, handler.pos) < dist2(b.pos, handler.pos) ? d : b));
+    onBall = closest === a;
+    if (onBall) man = handler;
+  }
   const ballPos = s.ball.phys.pos;
   const toRim = norm(v2(rim.x - man.pos.x, rim.z - man.pos.z));
   const manRimDist = distToRim(c, side, man.pos.x, man.pos.z);
 
   let target: V2;
-  if (tactics.defense !== "man" && !onBall) {
-    target = zoneSpot(match, a, side);
+  if (pressing && handler) {
+    const helpers = match.agentsOf(a.team).filter((d) => d.guarding !== handler.idx).sort((x, y) => dist2(x.pos, handler.pos) - dist2(y.pos, handler.pos));
+    const toR = norm(v2(rim.x - handler.pos.x, rim.z - handler.pos.z));
+    if (onBall) {
+      target = v2(handler.pos.x + toR.x * 0.75, handler.pos.z + toR.z * 0.75);
+    } else if (helpers[0] === a && s.phase === "live") {
+      // the trapper closes from the middle of the floor, pinning the ball toward the sideline
+      const mid = handler.pos.z > 0 ? -1 : 1;
+      target = v2(handler.pos.x + toR.x * 0.5, handler.pos.z + mid * 0.85);
+    } else {
+      // everyone else denies the next pass
+      target = v2(man.pos.x + (handler.pos.x - man.pos.x) * 0.3 + toR.x * 0.6, man.pos.z + (handler.pos.z - man.pos.z) * 0.3);
+    }
+  } else if (zone && !onBall) {
+    const spot = zoneSpot(match, a, side);
+    // close out on anyone who drifts into my area (not the ball, someone else has it)
+    const intruder = match.agentsOf(offTeam).filter((o) => o !== handler && dist2(o.pos, spot) < 3.4)
+      .sort((x, y) => dist2(x.pos, spot) - dist2(y.pos, spot))[0];
+    const backLine = distToRim(c, side, spot.x, spot.z) < 3.2;
+    const hRim = handler ? distToRim(c, side, handler.pos.x, handler.pos.z) : 99;
+    if (handler && backLine && hRim < 6) {
+      // the back line walls off the paint on drives
+      target = v2(handler.pos.x + (rim.x - handler.pos.x) * 0.45, handler.pos.z + (rim.z - handler.pos.z) * 0.45);
+      target = v2(target.x * 0.7 + spot.x * 0.3, target.z * 0.7 + spot.z * 0.3);
+    } else if (intruder && (!backLine || distToRim(c, side, intruder.pos.x, intruder.pos.z) < 4.5)) {
+      // close out, but the back line never chases out past the short corner
+      const toR = norm(v2(rim.x - intruder.pos.x, rim.z - intruder.pos.z));
+      const guardSpot = v2(intruder.pos.x + toR.x * 1.1, intruder.pos.z + toR.z * 1.1);
+      target = v2(spot.x * 0.3 + guardSpot.x * 0.7, spot.z * 0.3 + guardSpot.z * 0.7);
+    } else target = spot;
   } else if (onBall) {
     // respect shooters, give cushion to quick drivers
     const shooter = match.r(man, "three") > 78;
@@ -569,7 +608,9 @@ function reboundAI(match: Match, a: Agent, decide: boolean) {
       if (crasher && a.idx !== s.ball.shot.shooter) goTo(a, v2(rim.x - side * 1.6, a.pos.z * 0.5), { sprint: true });
       else goTo(a, v2(-side * 4, a.pos.z * 0.5), { sprint: false, slow: 3 }); // get back
     } else {
-      const man = a.guarding !== null ? s.agents[a.guarding] : match.nearestOpponent(a);
+      // zones box out whoever is closest; man defenders find their own man
+      const zoned = s.teams[a.team].tactics.defense.startsWith("zone");
+      const man = !zoned && a.guarding !== null ? s.agents[a.guarding] : match.nearestOpponent(a);
       if (man) {
         const toRim = norm(v2(rim.x - man.pos.x, rim.z - man.pos.z));
         goTo(a, v2(man.pos.x + toRim.x * 0.65, man.pos.z + toRim.z * 0.65), { face: man.pos, slow: 0.4 });
@@ -595,7 +636,8 @@ function reboundAI(match: Match, a: Agent, decide: boolean) {
 export function predictLanding(match: Match): V2 {
   const b = match.state.ball.phys;
   // simple ballistic estimate to reach ~1.4 m height
-  let x = b.pos.x, y = b.pos.y, z = b.pos.z, vx = b.vel.x, vy = b.vel.y, vz = b.vel.z;
+  let x = b.pos.x, y = b.pos.y, z = b.pos.z, vy = b.vel.y;
+  const vx = b.vel.x, vz = b.vel.z;
   for (let i = 0; i < 180; i++) {
     const h = 1 / 60;
     vy -= 9.81 * h;

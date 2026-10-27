@@ -107,12 +107,15 @@ export function PlayerTag() {
 export function CommentaryFeed() {
   const feed = useHud((s) => s.feed);
   const subtitles = useSettings((s) => s.accessibility.subtitles);
-  const [visible, setVisible] = useState(feed);
+  // the last three lines show; after a quiet spell only the newest stays
+  const [quietAt, setQuietAt] = useState<number | null>(null);
+  const lastId = feed[feed.length - 1]?.id ?? null;
   useEffect(() => {
-    setVisible(feed.slice(-3));
-    const h = setTimeout(() => setVisible((v) => v.slice(-1)), 4500);
+    if (lastId === null) return;
+    const h = setTimeout(() => setQuietAt(lastId), 4500);
     return () => clearTimeout(h);
-  }, [feed]);
+  }, [lastId]);
+  const visible = quietAt !== null && quietAt === lastId ? feed.slice(-1) : feed.slice(-3);
   if (!subtitles || !visible.length) return null;
   return (
     <div className="pointer-events-none fixed left-1/2 top-6 z-20 flex w-[min(720px,90vw)] -translate-x-1/2 flex-col items-center gap-1" aria-live="polite">
@@ -145,13 +148,13 @@ export function ControlsStrip({ onOffense }: { onOffense: boolean }) {
 /** Big-play banner across the top of the screen. */
 export function PlayBannerView() {
   const banner = useHud((s) => s.banner);
-  const [shown, setShown] = useState<typeof banner>(null);
+  const [doneId, setDoneId] = useState<number | null>(null);
   useEffect(() => {
     if (!banner) return;
-    setShown(banner);
-    const h = setTimeout(() => setShown((b) => (b?.id === banner.id ? null : b)), 2300);
+    const h = setTimeout(() => setDoneId(banner.id), 2300);
     return () => clearTimeout(h);
   }, [banner]);
+  const shown = banner && banner.id !== doneId ? banner : null;
   if (!shown) return null;
   return (
     <div key={shown.id} className="bl-banner pointer-events-none fixed left-1/2 top-[14vh] z-20 select-none text-center" role="status">

@@ -38,6 +38,7 @@ export default function HowToPlay() {
       <H2>The shot meter</H2>
       <p>Hold the shoot button to rise into your shot and release it at the top of your jump. The bar on the right fills while you hold; the green band is the ideal release. A perfect release raises your chance a lot, a slightly early or late one barely changes it, and a badly mistimed one is far less likely to go in. Better shooters get a wider green window. You can turn the meter off in Settings to use rating-based shooting, or choose tap-to-shoot under Accessibility.</p>
       <p>Where you shoot from matters: open catch-and-shoot threes and shots at the rim are the most efficient. Contested shots, shots off a hard dribble and shots late in a long stretch of minutes (fatigue) are harder.</p>
+      <p>A pump fake out of a dribble ends your dribble: from there you can pivot, pass or shoot, but walking more than a step is traveling. Careless ball handlers can also get called for an extra step on drives.</p>
       <H2>Defense</H2>
       <table className="w-full text-left">
         <thead className="text-sm text-steel"><tr><th className="py-2">Action</th><th>Keyboard</th><th>Controller</th></tr></thead>
@@ -50,6 +51,15 @@ export default function HowToPlay() {
         </tbody>
       </table>
       <p>Stay between your man and the basket. Reaching for steals from behind or from too far away risks a foul. Jump at the right moment to block: too early and the shooter waits you out. A pump fake can get an eager defender off his feet.</p>
+      <H2>Coaching and tactics</H2>
+      <p>Before a Quick Play game, and any time from the pause menu (Tactics), you can set your team&apos;s pace, how much it hunts threes, how hard it crashes the offensive glass, whether it doubles the other team&apos;s best scorer, and its defense:</p>
+      <ul className="list-disc pl-6">
+        <li><b>Man-to-man:</b> every defender takes a man. The best all-around choice.</li>
+        <li><b>2-3 zone:</b> packs the paint, so drives and post-ups get much harder, but it gives up more threes and offensive rebounds.</li>
+        <li><b>3-2 zone:</b> takes away the perimeter; drives and the short corner open up.</li>
+        <li><b>Full-court press:</b> picks up the ball in the backcourt and traps before half court. More steals and turnovers, but a broken press gives up easy baskets.</li>
+      </ul>
+      <p>Gameplay sliders in Settings change the balance of the whole game (shooting, steals, blocks, fouls, speed and more).</p>
       <H2>Game controls</H2>
       <p>Press Esc (or Menu) to pause. From the pause menu you can see the box score and play-by-play, make substitutions, call a timeout, change the camera, simulate the rest of the game or restart. T calls a timeout when your team has the ball, and Y cycles through the cameras.</p>
       <H2>Replays and highlights</H2>

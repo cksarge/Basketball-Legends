@@ -19,6 +19,7 @@ import { toast } from "../Toaster";
 import { ReplayDirector } from "@/game3d/replay";
 import { ReplayOverlay, useReplay } from "./ReplayOverlay";
 import { BreakScreen, type BreakKind } from "./BreakScreen";
+import { TacticsPanel } from "../TacticsPanel";
 
 const GameScene = dynamic(() => import("@/game3d/GameScene").then((m) => m.GameScene), { ssr: false });
 
@@ -39,7 +40,7 @@ function buildMatch(p: PendingMatch, quarterMinutes: number, g: ReturnType<typeo
     home: { team: home.team, roster: home.roster, tactics: home.tactics, human: humansHome.length > 0, humans: humansHome, starters: home.starters },
     away: { team: away.team, roster: away.roster, tactics: away.tactics, human: humansAway.length > 0, humans: humansAway, starters: away.starters },
     quarterMinutes, difficulty: g.difficulty, shotMeter: g.shotMeter && !tapShots, fatigue: g.fatigue, injuries: g.injuries, fouls: g.fouls,
-    seed: p.seed, boundaryAssist: g.boundaryAssist, lockPlayerId: p.lockPlayerId, practice: p.practice,
+    seed: p.seed, boundaryAssist: g.boundaryAssist, lockPlayerId: p.lockPlayerId, practice: p.practice, sliders: g.sliders,
   });
   const devices = [...home.controllers, ...away.controllers] as DeviceId[];
   // the coach's auto-subs setting applies to human-controlled teams
@@ -52,7 +53,8 @@ export function GameView({ pending }: { pending: PendingMatch }) {
   const settings = useSettings();
   const setResult = useMatchStore((s) => s.setResult);
   const [runId, setRunId] = useState(0);
-  const { match, devices } = useMemo(() => buildMatch(pending, pending.quarterMinutes, useSettings.getState().gameplay, useSettings.getState().accessibility.holdToTap), [pending, runId]);
+  // a restart (runId) builds a fresh game with a new seed
+  const { match, devices } = useMemo(() => buildMatch({ ...pending, seed: pending.seed + runId * 7919 }, pending.quarterMinutes, useSettings.getState().gameplay, useSettings.getState().accessibility.holdToTap), [pending, runId]);
   const [screen, setScreen] = useState<Screen>(settings.presentation.skipIntros || pending.practice ? "playing" : "intro");
   const [camera, setCamera] = useState<CameraMode>(settings.camera.mode);
   const [simProgress, setSimProgress] = useState(0);
@@ -318,7 +320,8 @@ function PauseMenu({ initialTab, match, camera, setCamera, onResume, onTimeout, 
   initialTab: "menu" | "subs"; match: Match; camera: CameraMode; setCamera: (c: CameraMode) => void; onResume: () => void; onTimeout: (t: 0 | 1) => void;
   onRestart: () => void; onSim: () => void; onQuit: () => void; onReplay: () => void; onHighlights: () => void; highlightCount: number;
 }) {
-  const [tab, setTab] = useState<"menu" | "box" | "subs" | "controls">(initialTab);
+  const [tab, setTab] = useState<"menu" | "box" | "subs" | "tactics" | "controls">(initialTab);
+  const [, refresh] = useState(0);
   const [confirm, setConfirm] = useState<null | "quit" | "restart" | "sim">(null);
   const s = match.state;
   const humanTeam = s.agents.find((a) => a.human !== null)?.team ?? 0;
@@ -334,6 +337,7 @@ function PauseMenu({ initialTab, match, camera, setCamera, onResume, onTimeout, 
         {item("Resume", onResume, tab === "menu" ? first : undefined)}
         {item("Box score", () => setTab("box"))}
         {item("Substitutions", () => setTab("subs"))}
+        {item("Tactics", () => setTab("tactics"))}
         {item(`Timeout (${s.teams[humanTeam].timeouts} left)`, () => { onTimeout(humanTeam as 0 | 1); onResume(); })}
         {item(`Camera: ${CAMERAS.find((c) => c.id === camera)?.label}`, () => setCamera(CAMERAS[(CAMERAS.findIndex((c) => c.id === camera) + 1) % CAMERAS.length].id))}
         {item("Instant replay", onReplay)}
@@ -347,6 +351,13 @@ function PauseMenu({ initialTab, match, camera, setCamera, onResume, onTimeout, 
         {tab === "box" && <BoxScoreTable teams={[s.teams[1], s.teams[0]]} box={s.box} onCourt={[...s.teams[0].onCourt, ...s.teams[1].onCourt]} />}
         {tab === "subs" && <SubsPanel match={match} team={humanTeam as TeamIdx} />}
         {tab === "controls" && <ControlsReference />}
+        {tab === "tactics" && (
+          <div className="max-w-2xl">
+            <h2 className="mb-1 font-display text-3xl font-black">Tactics</h2>
+            <p className="mb-3 text-sm text-steel">{s.teams[humanTeam].team.name} {s.teams[humanTeam].team.nickname}. Changes take effect on the next possession.</p>
+            <TacticsPanel value={s.teams[humanTeam].tactics} onChange={(t) => { s.teams[humanTeam].tactics = t; refresh((x) => x + 1); }} />
+          </div>
+        )}
         {tab === "menu" && <PlayByPlay match={match} />}
       </section>
       {confirm && (

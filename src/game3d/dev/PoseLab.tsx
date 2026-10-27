@@ -141,10 +141,13 @@ export default function PoseLab({ player, team }: { player: Player; team: Team }
   const [profile, setProfile] = useState(false);
   const clip = CLIPS.find((c) => c.id === clipId)!;
   useEffect(() => {
+    // dev tool: read the URL once after mount (the page is prerendered without it)
     const q = new URLSearchParams(location.search);
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (q.get("sheet")) setSheet(true);
     if (q.get("profile")) setProfile(true);
     if (q.get("clip")) setClipId(q.get("clip")!);
+    /* eslint-enable react-hooks/set-state-in-effect */
     (window as unknown as { __lab: unknown }).__lab = { setClipId, setSheet, setProfile };
   }, []);
   return (

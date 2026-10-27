@@ -441,8 +441,9 @@ function FrameCap({ fps }: { fps: number }) {
 /** Tiny frame-rate readout rendered into a fixed DOM element. */
 function FpsCounter() {
   const el = useRef<HTMLDivElement | null>(null);
-  const frames = useRef({ n: 0, t: performance.now() });
+  const frames = useRef({ n: 0, t: 0 });
   useEffect(() => {
+    frames.current.t = performance.now();
     const d = document.createElement("div");
     d.setAttribute("aria-hidden", "true");
     Object.assign(d.style, { position: "fixed", top: "8px", left: "8px", zIndex: "60", font: "600 12px var(--font-body)", color: "#ffb627", background: "rgba(13,27,46,.8)", padding: "2px 6px", borderRadius: "4px", pointerEvents: "none" });
