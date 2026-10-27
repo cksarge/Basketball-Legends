@@ -132,6 +132,7 @@ function SimDriver(props: GameSceneProps & { camState: React.RefObject<CameraSta
   const setHud = useHud((s) => s.set);
   const pushFeed = useHud((s) => s.pushFeed);
   const showBanner = useHud((s) => s.showBanner);
+  const showOverlay = useHud((s) => s.showOverlay);
   const heatShown = useRef(new Map<string, number>());
   const lastHud = useRef(0);
   const lastDribblePhase = useRef(0);
@@ -224,6 +225,29 @@ function SimDriver(props: GameSceneProps & { camState: React.RefObject<CameraSta
         else if (e.t === "periodStart" && e.period > 1) {
           const per = s.cfg.rules.periods;
           banner(e.period > per ? (e.period - per > 1 ? `OVERTIME ${e.period - per}` : "OVERTIME") : per === 2 ? "SECOND HALF" : ordinal(e.period).replace(" quarter", "").toUpperCase() + " QUARTER", null);
+        }
+      }
+    }
+
+    // ---- lower-third stat cards
+    if (settings.presentation.statOverlays && !s.cfg.practice) {
+      const card = (idx: number, lines: string[]) => {
+        const ag = s.agents[idx];
+        if (!ag) return;
+        const t = s.teams[ag.team].team;
+        showOverlay({ jersey: ag.player.jersey, name: `${ag.player.firstName[0]}. ${ag.player.lastName}`, team: t.abbrev, color: t.colors.primary, accent: t.colors.accent === t.colors.primary ? "#ffffff" : t.colors.accent, lines });
+      };
+      for (const e of events) {
+        if (e.t === "make" && e.kind !== "freeThrow") {
+          const ag = s.agents[e.shooter];
+          const b = ag && s.box[ag.player.id];
+          if (b && [10, 15, 20, 25, 30, 35, 40, 50].some((m) => b.pts >= m && b.pts - e.points < m)) {
+            card(e.shooter, [`${b.pts} PTS · ${b.fgm}/${b.fga} FG${b.tpa ? ` · ${b.tpm}/${b.tpa} 3PT` : ""}`, `${b.oreb + b.dreb} REB · ${b.ast} AST${b.stl ? ` · ${b.stl} STL` : ""}`]);
+          }
+        } else if (e.t === "foul" && e.fts > 0) {
+          const ag = s.agents[e.on];
+          const b = ag && s.box[ag.player.id];
+          if (b) card(e.on, [`Tonight ${b.ftm}/${b.fta} from the line`, `Free throw rating ${ag.player.ratings.freeThrow}`]);
         }
       }
     }

@@ -165,3 +165,25 @@ export function PlayBannerView() {
     </div>
   );
 }
+
+/** Lower-third stat card for a player (scoring milestones, free-throw shooters). */
+export function StatOverlayView() {
+  const overlay = useHud((s) => s.overlay);
+  const [doneId, setDoneId] = useState<number | null>(null);
+  useEffect(() => {
+    if (!overlay) return;
+    const h = setTimeout(() => setDoneId(overlay.id), 4200);
+    return () => clearTimeout(h);
+  }, [overlay]);
+  const o = overlay && overlay.id !== doneId ? overlay : null;
+  if (!o) return null;
+  return (
+    <div key={o.id} className="bl-lower-third pointer-events-none fixed bottom-24 left-6 z-20 flex select-none overflow-hidden rounded-[var(--radius-chip)] shadow-2xl ring-1 ring-line" role="status">
+      <div className="flex w-14 items-center justify-center font-display text-3xl font-black" style={{ background: o.color, color: o.accent }}>{o.jersey}</div>
+      <div className="bg-navy/95 px-4 py-2 backdrop-blur">
+        <p className="font-display text-xl font-black uppercase leading-tight tracking-wide">{o.name} <span className="ml-1 text-sm font-bold text-steel">{o.team}</span></p>
+        {o.lines.map((l) => <p key={l} className="text-sm tabular-nums text-net">{l}</p>)}
+      </div>
+    </div>
+  );
+}

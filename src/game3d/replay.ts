@@ -24,7 +24,7 @@ export interface AgentView {
 export interface ViewFrame {
   time: number;
   agents: AgentView[];
-  ball: { pos: { x: number; y: number; z: number }; vel: { x: number; y: number; z: number }; mode: BallMode; owner: number | null; dribblePhase: number };
+  ball: { pos: { x: number; y: number; z: number }; vel: { x: number; y: number; z: number }; mode: BallMode; owner: number | null; dribblePhase: number; passTo?: number | null };
   offense: TeamIdx;
   phase: string;
   /** Rim x for each team's attacking basket at this moment. */
@@ -77,7 +77,7 @@ export function liveView(match: Match): ViewFrame {
   return {
     time: s.time,
     agents: s.agents,
-    ball: { pos: s.ball.phys.pos, vel: s.ball.phys.vel, mode: s.ball.mode, owner: s.ball.owner, dribblePhase: s.ball.dribblePhase },
+    ball: { pos: s.ball.phys.pos, vel: s.ball.phys.vel, mode: s.ball.mode, owner: s.ball.owner, dribblePhase: s.ball.dribblePhase, passTo: s.ball.pass?.to ?? null },
     offense: s.offense,
     phase: s.phase,
     rimX: [match.rim(0).x, match.rim(1).x],
@@ -95,7 +95,7 @@ function snapshot(match: Match): ViewFrame {
       hand: a.hand, stamina: a.stamina, human: a.human,
     })),
     ball: {
-      pos: { ...s.ball.phys.pos }, vel: { ...s.ball.phys.vel }, mode: s.ball.mode, owner: s.ball.owner, dribblePhase: s.ball.dribblePhase,
+      pos: { ...s.ball.phys.pos }, vel: { ...s.ball.phys.vel }, mode: s.ball.mode, owner: s.ball.owner, dribblePhase: s.ball.dribblePhase, passTo: s.ball.pass?.to ?? null,
     },
     offense: s.offense,
     phase: s.phase,

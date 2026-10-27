@@ -95,18 +95,25 @@ export interface HudSnapshot {
 
 export interface PlayBanner { id: number; title: string; sub?: string; color: string; accent: string }
 
+/** Broadcast lower-third stat card ("SHEPHERD 18 PTS · 7/10 FG"). */
+export interface StatOverlay { id: number; jersey: number; name: string; team: string; color: string; accent: string; lines: string[] }
+
 export const useHud = create<{
   hud: HudSnapshot | null;
   feed: { id: number; text: string; team: number | null }[];
   banner: PlayBanner | null;
+  overlay: StatOverlay | null;
   set: (h: HudSnapshot) => void;
+  showOverlay: (o: Omit<StatOverlay, "id">) => void;
   pushFeed: (text: string, team: number | null) => void;
   showBanner: (b: Omit<PlayBanner, "id">) => void;
 }>((set) => ({
   hud: null,
   feed: [],
   banner: null,
+  overlay: null,
   set: (hud) => set({ hud }),
+  showOverlay: (o) => set({ overlay: { ...o, id: Date.now() + Math.random() } }),
   pushFeed: (text, team) => set((s) => ({ feed: [...s.feed.slice(-5), { id: Date.now() + Math.random(), text, team }] })),
   showBanner: (b) => set({ banner: { ...b, id: Date.now() + Math.random() } }),
 }));

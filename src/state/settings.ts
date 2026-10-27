@@ -74,7 +74,7 @@ export interface Settings {
   camera: { mode: CameraMode; zoom: number; height: number; shake: boolean };
   controls: { keys: Record<ActionName, string[]>; pad: Record<ActionName, number[]>; prompts: PromptStyle; stickDeadzone: number; invertCamera: boolean };
   accessibility: { colorblind: ColorblindMode; subtitles: boolean; reducedMotion: boolean; uiScale: number; highContrastHud: boolean; holdToTap: boolean };
-  presentation: { commentary: boolean; replays: boolean; playBanners: boolean; breakScreens: boolean; skipIntros: boolean; showTips: boolean };
+  presentation: { commentary: boolean; replays: boolean; playBanners: boolean; statOverlays: boolean; breakScreens: boolean; skipIntros: boolean; showTips: boolean };
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -84,7 +84,7 @@ export const DEFAULT_SETTINGS: Settings = {
   camera: { mode: "broadcast", zoom: 1, height: 1, shake: true },
   controls: { keys: DEFAULT_KEYS, pad: DEFAULT_PAD, prompts: "auto", stickDeadzone: 0.18, invertCamera: false },
   accessibility: { colorblind: "off", subtitles: true, reducedMotion: false, uiScale: 1, highContrastHud: false, holdToTap: false },
-  presentation: { commentary: true, replays: true, playBanners: true, breakScreens: true, skipIntros: false, showTips: true },
+  presentation: { commentary: true, replays: true, playBanners: true, statOverlays: true, breakScreens: true, skipIntros: false, showTips: true },
 };
 
 export const PRESETS: Record<GraphicsPreset, Partial<Settings["graphics"]>> = {

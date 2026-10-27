@@ -46,6 +46,8 @@ export interface PoseInput {
   seatY?: number;
   /** Bench reactions: 0 calm, 1 on their feet cheering. */
   benchExcite?: number;
+  /** A pass on its way to this player: the hands go out to meet it. */
+  catchBall?: THREE.Vector3 | null;
 }
 
 export class Avatar {
@@ -318,7 +320,7 @@ export class Avatar {
     const tN = p.actionDur > 0 ? THREE.MathUtils.clamp(p.actionT / p.actionDur, 0, 1) : 0;
 
     // ----- body posture
-    let targetCrouch = p.stance ? 0.22 : act === "post" ? 0.18 : p.dribbling ? 0.1 : act === "fall" ? 0 : 0.03 + Math.min(speed, 8) * 0.008;
+    let targetCrouch = p.stance ? 0.22 : act === "post" ? 0.18 : act === "screen" ? 0.13 : p.dribbling ? 0.1 : act === "fall" ? 0 : 0.03 + Math.min(speed, 8) * 0.008;
     // shooting gather: bend the knees before rising into the shot
     const jumpAt = Number(p.actionData.jumpAt ?? 0);
     if (["jumper", "fadeaway", "floater", "hook"].includes(act) && !p.airborne && jumpAt > 0 && p.actionT < jumpAt + 0.05) {
@@ -332,7 +334,8 @@ export class Avatar {
     const winded = act === "idle" && !p.hasBall && !p.stance && p.stamina < 0.45 && speed < 0.25;
     if (winded) targetCrouch = 0.2;
     s.crouch = THREE.MathUtils.damp(s.crouch, p.airborne ? 0.02 : targetCrouch, 14, dt);
-    const targetLean = THREE.MathUtils.clamp(lvz * 0.035, -0.12, 0.3) + (p.stance ? 0.18 : 0) + (p.dribbling ? 0.1 : 0);
+    const targetLean = THREE.MathUtils.clamp(lvz * 0.035, -0.12, 0.3) + (p.stance ? 0.18 : 0) + (p.dribbling ? 0.1 : 0)
+      + (act === "steal" ? 0.3 * Math.sin(Math.PI * tN) : 0) + (act === "post" ? 0.12 : 0);
     s.lean = THREE.MathUtils.damp(s.lean, targetLean, 8, dt);
     s.sideLean = THREE.MathUtils.damp(s.sideLean, THREE.MathUtils.clamp(-lvx * 0.03, -0.15, 0.15), 8, dt);
 
@@ -374,7 +377,7 @@ export class Avatar {
     }
 
     // ----- legs
-    const hipW = 0.11, stanceW = p.stance ? 0.24 : act === "post" ? 0.2 : 0.13;
+    const hipW = 0.11, stanceW = p.stance ? 0.24 : act === "post" ? 0.2 : act === "screen" ? 0.23 : 0.13;
     const dirX = speed > 0.1 ? lvx / (Math.hypot(lvx, lvz) || 1) : 0;
     const dirZ = speed > 0.1 ? lvz / (Math.hypot(lvx, lvz) || 1) : 1;
     const half = strideLen / scale / 4;
@@ -524,6 +527,20 @@ export class Avatar {
         }
         default: relax();
       }
+    } else if (p.catchBall && !p.hasBall && !shootingActs.includes(act) && act !== "layup" && act !== "dunk" && act !== "fall") {
+      // target the ball with a soft two-hand pocket, stronger as it arrives
+      const cb = p.catchBall;
+      const local = this.root.worldToLocal(cb.clone());
+      const d = Math.hypot(local.x, local.z) * scale;
+      const k = THREE.MathUtils.clamp(1.25 - (d - 0.6) / 4.5, 0, 1);
+      const reach = (sideSign: number) => {
+        const lx = THREE.MathUtils.clamp(local.x, -0.4, 0.4) + sideSign * 0.13;
+        const ly = THREE.MathUtils.clamp(local.y, 1.1, 2.2);
+        const lz = THREE.MathUtils.clamp(local.z, 0.28, 0.62);
+        return this.toWorld(lx, ly, lz, new THREE.Vector3());
+      };
+      setHand("L", swing("L", 1).lerp(reach(1), k), this.toWorld(0.55, 1.0, -0.2, new THREE.Vector3()));
+      setHand("R", swing("R", -1).lerp(reach(-1), k), this.toWorld(-0.55, 1.0, -0.2, new THREE.Vector3()));
     } else if (ftIdle && p.actionData.routine && ball) {
       // free-throw routine: bounce the ball with the shooting hand
       const handT = ball.clone();
@@ -612,9 +629,11 @@ export class Avatar {
         if (k >= 1) { this.rotateWorld("handR", worldRot(0.6, 0, 0)); this.rotateWorld("handL", worldRot(0.6, 0, 0)); }
       }
     } else if (act === "steal") {
+      // low swipe across the ball with a lunge; the other hand stays out for balance
       const k = Math.sin(Math.PI * tN);
-      setHand(sh, this.toWorld(shSign * 0.15, 0.95 + rootY, 0.3 + k * 0.45, new THREE.Vector3()));
-      setHand(off, swing(off, -shSign));
+      const across = THREE.MathUtils.lerp(shSign * 0.3, -shSign * 0.2, tN);
+      setHand(sh, this.toWorld(across, 0.92 + rootY - k * 0.12, 0.3 + k * 0.5, new THREE.Vector3()), this.toWorld(shSign * 0.6, 1.1, 0.1, new THREE.Vector3()));
+      setHand(off, this.toWorld(-shSign * 0.42, 1.2 + rootY, 0.1, new THREE.Vector3()), this.toWorld(-shSign * 0.8, 1.1, -0.2, new THREE.Vector3()));
     } else if (p.celebrate) {
       const pump = Math.abs(Math.sin(s.idleT * 6));
       setHand("R", this.toWorld(-0.25, 1.9 + pump * 0.35 + rootY, 0.1, new THREE.Vector3()));
@@ -629,10 +648,17 @@ export class Avatar {
         setHand(sh, handT, this.toWorld(shSign * 0.7, 1.0, -0.4, new THREE.Vector3()));
         setHand(off, this.toWorld(-shSign * 0.38, 1.1 + rootY, 0.32, new THREE.Vector3()), this.toWorld(-shSign * 0.8, 1.0, 0, new THREE.Vector3()));
       } else {
-        // holding the ball at the chest / hip (triple threat)
-        const y = (act === "post" ? 1.1 : 1.15) + rootY;
-        setHand("R", this.toWorld(-0.12, y, 0.32, new THREE.Vector3()));
-        setHand("L", this.toWorld(0.12, y + 0.02, 0.32, new THREE.Vector3()));
+        if (act === "post") {
+          // chin the ball: up at the chest, elbows out to protect it
+          const y = 1.42 + rootY;
+          setHand("R", this.toWorld(-0.14, y, 0.26, new THREE.Vector3()), this.toWorld(-0.9, 1.45 + rootY, 0.05, new THREE.Vector3()));
+          setHand("L", this.toWorld(0.14, y + 0.02, 0.26, new THREE.Vector3()), this.toWorld(0.9, 1.45 + rootY, 0.05, new THREE.Vector3()));
+        } else {
+          // holding the ball at the hip (triple threat)
+          const y = 1.15 + rootY;
+          setHand("R", this.toWorld(-0.12, y, 0.32, new THREE.Vector3()));
+          setHand("L", this.toWorld(0.12, y + 0.02, 0.32, new THREE.Vector3()));
+        }
       }
     } else if (p.stance) {
       const flick = Math.sin(s.idleT * 5) * 0.04;

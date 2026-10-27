@@ -72,6 +72,7 @@ export const CLIPS: Clip[] = [
   { id: "ftStroke", label: "Free throw: stroke", dur: 1.8, at: (t) => ({ action: "freeThrow", actionT: t, actionDur: 1.6, hasBall: t < 0.72, actionData: { started: true, ideal: 0.72, release: 0.72, shot: t >= 0.72 } }) },
   { id: "celebrate", label: "Celebrate", dur: 2, at: () => ({ action: "celebrate", celebrate: true }) },
   { id: "fall", label: "Fall (charge / ankle breaker)", dur: 1.4, at: (t) => ({ action: "fall", actionT: t, actionDur: 1.2 }) },
+  { id: "catch", label: "Catch a pass", dur: 1, at: (t) => ({ action: "idle", catchBall: new THREE.Vector3(0.15, 1.35 + Math.sin(Math.min(1, t / 0.85) * Math.PI) * 0.4, 6 - Math.min(1, t / 0.85) * 5.55) }) },
   { id: "bench", label: "Bench: seated", dur: 2, at: () => ({ action: "bench", seatY: 0.5 }) },
   { id: "benchUp", label: "Bench: on their feet", dur: 2, at: () => ({ action: "bench", seatY: 0.5, benchExcite: 1 }) },
   { id: "ref-foul", label: "Ref: foul", dur: 1.2, at: (t) => ({ action: "official", actionT: t, actionData: { signal: "foul", signalT: t, signalDir: Math.PI / 2 } }) },

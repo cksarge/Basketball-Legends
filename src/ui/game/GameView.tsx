@@ -12,7 +12,7 @@ import { audio } from "@/audio/engine";
 import { overall } from "@/engine/player";
 import { useSettings, type CameraMode } from "@/state/settings";
 import { type PendingMatch, useHud, useMatchStore } from "@/state/matchStore";
-import { CommentaryFeed, ControlsStrip, PlayBannerView, PlayerTag, ScoreBug, ShotMeter } from "../hud/Hud";
+import { CommentaryFeed, ControlsStrip, PlayBannerView, PlayerTag, ScoreBug, ShotMeter, StatOverlayView } from "../hud/Hud";
 import { TeamLogo } from "../TeamLogo";
 import { BoxScoreTable } from "../BoxScore";
 import { BACK_EVENT } from "../MenuNavigator";
@@ -239,6 +239,7 @@ export function GameView({ pending }: { pending: PendingMatch }) {
       )}
       <ReplayOverlay director={replay} />
       {(screen === "playing" || screen === "break") && !pending.practice && <PlayBannerView />}
+      {screen === "playing" && !replaying && !pending.practice && <StatOverlayView />}
       {screen === "break" && !replaying && (
         <BreakScreen
           match={match}

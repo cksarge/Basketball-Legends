@@ -134,3 +134,14 @@ html[data-reduced-motion="true"] *::after {
 .bl-banner {
   animation: bl-banner 2.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
+
+/* Lower-third stat card slides in from the left. */
+@keyframes bl-lower-third {
+  0% { opacity: 0; transform: translateX(-24px); }
+  8% { opacity: 1; transform: translateX(0); }
+  92% { opacity: 1; transform: translateX(0); }
+  100% { opacity: 0; transform: translateX(-12px); }
+}
+.bl-lower-third {
+  animation: bl-lower-third 4.2s ease-out forwards;
+}

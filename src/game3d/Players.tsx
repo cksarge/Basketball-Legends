@@ -93,6 +93,7 @@ export function Players({ match, uniforms, ballMesh, avatarsRef, replayFrame, be
         stance: ag.action.kind === "stance" || (ag.team !== v.offense && v.phase === "live" && handler !== null && Math.hypot(handler.pos.x - ag.pos.x, handler.pos.z - ag.pos.z) < 2.5),
         stamina: ag.stamina, dt, heightM: ag.player.heightIn * 0.0254, airborne: ag.y > 0.02,
         celebrate: ag.action.kind === "celebrate",
+        catchBall: v.ball.mode === "pass" && v.ball.passTo === ag.idx ? new THREE.Vector3(ballP.x, ballP.y, ballP.z) : null,
       };
       av.root.visible = true;
       av.update(pose);
