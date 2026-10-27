@@ -148,6 +148,12 @@ export default function HowToPlay() {
         hands on hips is a blocking foul, a T is a timeout, and a pointed arm shows which way the ball is going. On a three-point try the nearest official
         raises one arm, and both arms go up when it falls. On inbounds the official counts the five seconds with his arm.
       </p>
+      <H2>Venues</H2>
+      <p>
+        Every team plays in its own building. High schools play in small, classic or modern gyms depending on their size, colleges in a fieldhouse or a campus
+        arena, and pro teams in one of two big arenas. Seats, walls, banners and scoreboards are dressed in the home team&apos;s colors and history. In Quick
+        Play you can move any game to a pro arena, a college arena or a high school gym with the Venue option.
+      </p>
       <H2>League rules</H2>
       <ul className="list-disc pl-6">
         <li>

@@ -1,0 +1,136 @@
+{
+  "$comment": "Shared by scripts/blender/build_arenas.py (builds public/models/arenas/<id>.glb + <id>.seats.json) and src/game3d/arena/variants.ts (venue choice, camera bounds). Three.js coordinates in meters: +X toward the right basket, +Z toward the camera sideline, +Y up. Every venue is built around its native court (hs = 84 ft, pro = 94 ft) and stretched along X at runtime for the other length. 'start' is measured from the edge of the floor apron.",
+  "variants": {
+    "gym_small": {
+      "kind": "gym",
+      "label": "Small gym",
+      "native": "hs",
+      "tiers": [
+        { "type": "bank", "side": "far", "rows": 6, "depth": 0.8, "rise": 0.4, "start": 1.6, "y0": 0.42, "length": 24, "seat": "bench" },
+        { "type": "bank", "side": "near", "rows": 5, "depth": 0.8, "rise": 0.4, "start": 1.6, "y0": 0.42, "length": 24, "seat": "bench" }
+      ],
+      "walls": { "x": 19.4, "z": 17.2 },
+      "ceiling": 9.4,
+      "girderY": 8.4,
+      "interior": { "x": 18.2, "z": 16.4, "y": 7.6 },
+      "lightY": 8.2,
+      "style": { "wall": "cmu", "bleacher": "wood", "windows": false, "stage": true, "scoreboards": "wall", "roof": "girders", "adBoards": false, "banners": 6 }
+    },
+    "gym_classic": {
+      "kind": "gym",
+      "label": "Classic gym",
+      "native": "hs",
+      "tiers": [
+        { "type": "bank", "side": "far", "rows": 10, "depth": 0.8, "rise": 0.4, "start": 1.6, "y0": 0.42, "length": 28, "seat": "bench" },
+        { "type": "bank", "side": "near", "rows": 10, "depth": 0.8, "rise": 0.4, "start": 1.6, "y0": 0.42, "length": 28, "seat": "bench" }
+      ],
+      "walls": { "x": 20.4, "z": 20.6 },
+      "ceiling": 11,
+      "girderY": 9.6,
+      "interior": { "x": 19.2, "z": 19.8, "y": 8.8 },
+      "lightY": 9.4,
+      "style": {
+        "wall": "cmu",
+        "bleacher": "wood",
+        "windows": true,
+        "stage": false,
+        "scoreboards": "wall",
+        "roof": "girders",
+        "adBoards": false,
+        "banners": 10
+      }
+    },
+    "gym_modern": {
+      "kind": "gym",
+      "label": "Modern gym",
+      "native": "hs",
+      "tiers": [
+        { "type": "bank", "side": "far", "rows": 12, "depth": 0.8, "rise": 0.4, "start": 1.6, "y0": 0.42, "length": 30, "seat": "backed" },
+        { "type": "bank", "side": "near", "rows": 12, "depth": 0.8, "rise": 0.4, "start": 1.6, "y0": 0.42, "length": 30, "seat": "backed" },
+        { "type": "bank", "side": "left", "rows": 8, "depth": 0.8, "rise": 0.4, "start": 2.0, "y0": 0.42, "length": 17, "seat": "backed" }
+      ],
+      "walls": { "x": 26, "z": 22.6 },
+      "ceiling": 12.5,
+      "girderY": 10.6,
+      "interior": { "x": 24.8, "z": 21.8, "y": 9.8 },
+      "lightY": 10.4,
+      "style": {
+        "wall": "cmu2",
+        "bleacher": "team",
+        "windows": false,
+        "stage": false,
+        "scoreboards": "video",
+        "roof": "joists",
+        "adBoards": false,
+        "banners": 14
+      }
+    },
+    "college_fieldhouse": {
+      "kind": "college",
+      "label": "Fieldhouse",
+      "native": "pro",
+      "tiers": [{ "type": "bowl", "rows": 16, "depth": 0.82, "rise": 0.5, "start": 1.6, "y0": 0.45, "radius": 3, "seat": "chair" }],
+      "walls": { "x": 35, "z": 28 },
+      "ceiling": 22,
+      "girderY": 12,
+      "interior": { "x": 31.3, "z": 24.2, "y": 17 },
+      "lightY": 15,
+      "style": { "wall": "brick", "windows": true, "scoreboards": "centerSmall", "roof": "arch", "adBoards": true, "banners": 16, "vomitories": 0 }
+    },
+    "college_arena": {
+      "kind": "college",
+      "label": "Campus arena",
+      "native": "pro",
+      "tiers": [
+        { "type": "bowl", "rows": 18, "depth": 0.82, "rise": 0.45, "start": 1.6, "y0": 0.45, "radius": 4, "seat": "chair" },
+        { "type": "bowl", "rows": 12, "depth": 0.85, "rise": 0.62, "start": 19.86, "y0": 11.75, "radius": 10, "seat": "chair" }
+      ],
+      "walls": { "x": 50, "z": 43 },
+      "ceiling": 26,
+      "girderY": 23,
+      "interior": { "x": 32.8, "z": 25.7, "y": 20.8 },
+      "lightY": 18,
+      "style": { "wall": "concrete", "scoreboards": "center", "roof": "flat", "adBoards": true, "banners": 20, "vomitories": 8, "fascia": true }
+    },
+    "pro_bowl": {
+      "kind": "pro",
+      "label": "Pro bowl",
+      "native": "pro",
+      "tiers": [
+        { "type": "bowl", "rows": 20, "depth": 0.82, "rise": 0.42, "start": 1.6, "y0": 0.45, "radius": 4, "seat": "chair" },
+        { "type": "bowl", "rows": 18, "depth": 0.85, "rise": 0.6, "start": 23.0, "y0": 13.6, "radius": 11, "seat": "chair" }
+      ],
+      "walls": { "x": 58, "z": 51 },
+      "ceiling": 34,
+      "girderY": 30,
+      "interior": { "x": 34.4, "z": 27.3, "y": 27.8 },
+      "lightY": 18,
+      "style": {
+        "wall": "dark",
+        "scoreboards": "videoBig",
+        "roof": "flat",
+        "adBoards": true,
+        "banners": 18,
+        "vomitories": 10,
+        "fascia": true,
+        "suites": { "start": 19.6, "y": 9.4, "height": 3.4 }
+      }
+    },
+    "pro_modern": {
+      "kind": "pro",
+      "label": "Modern pro arena",
+      "native": "pro",
+      "tiers": [
+        { "type": "bowl", "rows": 22, "depth": 0.82, "rise": 0.48, "start": 1.6, "y0": 0.45, "radius": 4, "seat": "chair" },
+        { "type": "bowl", "rows": 6, "depth": 0.9, "rise": 0.55, "start": 22.44, "y0": 13.6, "radius": 9, "seat": "chair" },
+        { "type": "bowl", "rows": 14, "depth": 0.85, "rise": 0.66, "start": 30.84, "y0": 20.3, "radius": 13, "seat": "chair" }
+      ],
+      "walls": { "x": 63, "z": 56 },
+      "ceiling": 40,
+      "girderY": 35,
+      "interior": { "x": 36.1, "z": 29.0, "y": 32.8 },
+      "lightY": 20,
+      "style": { "wall": "dark", "scoreboards": "halo", "roof": "flat", "adBoards": true, "banners": 22, "vomitories": 10, "fascia": true }
+    }
+  }
+}

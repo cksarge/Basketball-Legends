@@ -11,7 +11,7 @@ export function floorSize(c: CourtSpec) {
   return { w: c.length + FLOOR_MARGIN.x * 2, h: c.width + FLOOR_MARGIN.z * 2 };
 }
 
-function shade(hex: string, f: number) {
+export function shade(hex: string, f: number) {
   const n = parseInt(hex.slice(1), 16);
   const r = Math.min(255, Math.max(0, Math.round(((n >> 16) & 255) * f)));
   const g = Math.min(255, Math.max(0, Math.round(((n >> 8) & 255) * f)));
@@ -19,7 +19,7 @@ function shade(hex: string, f: number) {
   return `rgb(${r},${g},${b})`;
 }
 
-function loadImage(src: string): Promise<HTMLImageElement> {
+export function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((res, rej) => {
     const img = new Image();
     img.onload = () => res(img);

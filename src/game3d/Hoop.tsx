@@ -141,12 +141,14 @@ export interface HoopProps {
   side: 1 | -1;
   team: Team;
   ceilingHung?: boolean;
+  /** Height of the roof girder a ceiling-hung basket hangs from. */
+  mountY?: number;
   ballRef: React.RefObject<THREE.Vector3 | null>;
   clockRef: React.RefObject<{ shot: number; game: number }>;
   rimShake: React.RefObject<number[]>;
 }
 
-export function Hoop({ court, side, team, ceilingHung, ballRef, clockRef, rimShake }: HoopProps) {
+export function Hoop({ court, side, team, ceilingHung, mountY = 8.4, ballRef, clockRef, rimShake }: HoopProps) {
   const rim = rimPos(court, side);
   const bx = boardX(court, side);
   const sim = useMemo(() => new NetSim(new THREE.Vector3(rim.x, rim.y - 0.01, rim.z), court.rimRadius), [rim.x, rim.y, rim.z, court.rimRadius]);
@@ -254,11 +256,16 @@ export function Hoop({ court, side, team, ceilingHung, ballRef, clockRef, rimSha
       {/* support */}
       {ceilingHung ? (
         <group>
-          <mesh position={[bx + side * 0.35, bb + bh + 2.2, 0]} material={steel}>
-            <boxGeometry args={[0.08, 4.4, 0.08]} />
+          {/* drop pipe to the girder, plus a diagonal brace back toward the end wall */}
+          <mesh position={[bx + side * 0.35, (bb + bh + mountY) / 2, 0]} material={steel}>
+            <boxGeometry args={[0.08, mountY - bb - bh, 0.08]} />
           </mesh>
-          <mesh position={[bx + side * 1.4, bb + bh + 2.2, 0]} rotation={[0, 0, side * 0.45]} material={steel}>
-            <boxGeometry args={[0.06, 5, 0.06]} />
+          <mesh
+            position={[bx + side * (0.35 + (mountY - bb - bh) * 0.25), (bb + bh + mountY) / 2, 0]}
+            rotation={[0, 0, side * Math.atan(0.5)]}
+            material={steel}
+          >
+            <boxGeometry args={[0.06, Math.hypot(mountY - bb - bh, (mountY - bb - bh) * 0.5), 0.06]} />
           </mesh>
         </group>
       ) : (

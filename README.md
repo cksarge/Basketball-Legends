@@ -15,6 +15,7 @@ A free, open-source 3D basketball game that runs in the browser. Play pro basket
 - **Quick Play:** any two teams from any league (cross-league exhibitions included), instant simulation, and up to four local players with keyboard and gamepads.
 - **Tutorial:** a ten-step guided session (moving, sprinting, dribble moves, shot timing, layups, threes, passing, pump fakes, replays) that checks off each skill as you do it, using your own key and button bindings.
 - **Practice:** a shootaround with no clock or defense.
+- **Venues built in Blender:** three small, classic and modern high school gyms (wooden or plastic bleachers, girders or open-web joists, a stage with curtains in the oldest gyms), a college fieldhouse with an arched brick-and-steel roof, a two-deck campus arena, and two pro arenas (suites ring, club level, halo video board). Each team's home is picked from its capacity and dressed in its colors: seats in team sections, painted walls and pads, LED ribbons, wordmarks, wall logos, live scoreboards, and championship and retired-number banners that match the program's history.
 - **Presentation:** broadcast HUD, six cameras, commentary with optional voice, broadcast stat cards for hot scorers and free-throw shooters, a crowd that reacts to the game, and synthesized sound.
 - **Instant replays and highlights:** replay any moment with scrubbing, slow motion and five replay cameras; big plays replay automatically, and a highlight reel is ready at every break and after the game.
 - **Officials:** a three-person crew works every game: the opening jump-ball toss, lead/trail/center floor positions that rotate on every change of possession, whistles with real signals (fouls, charges and blocks, traveling, three seconds, shot clock, goaltending, out of bounds, timeouts, substitutions, three-point attempts and makes), the visible five-second count, and handing the ball to inbounders and free-throw shooters. The scorer's table crew sits courtside.
@@ -29,11 +30,11 @@ Career mode, Franchise mode, roster editing, accounts and online play are in dev
 
 ## Leagues and teams
 
-| League | In the game as | Teams |
-| --- | --- | --- |
-| Pro | Pro Basketball League | 30 cities |
-| College | National Collegiate Hoops | 1,092 programs in D-I, D-II and D-III across 100 conferences |
-| Arizona high school | Arizona Prep Hoops | 283 schools, 6A through 1A, using the 2026–28 region alignment |
+| League              | In the game as            | Teams                                                          |
+| ------------------- | ------------------------- | -------------------------------------------------------------- |
+| Pro                 | Pro Basketball League     | 30 cities                                                      |
+| College             | National Collegiate Hoops | 1,092 programs in D-I, D-II and D-III across 100 conferences   |
+| Arizona high school | Arizona Prep Hoops        | 283 schools, 6A through 1A, using the 2026–28 region alignment |
 
 Real city, school and university names are used only to identify places. Every nickname, logo, color scheme, conference name, arena and player is original and fictional, with one exception: Brophy College Preparatory appears as the Brophy Prep Broncos in its red and white colors. Basketball Legends is not affiliated with the NBA, the NCAA, the AIA, or any team or school.
 
@@ -53,15 +54,17 @@ npm run build        # static export to out/ (also regenerates sitemap.xml)
 Useful scripts:
 
 - `npm run data` rebuilds league data in `src/data/generated/` from the factual lists in `scripts/raw/`.
+- `npm run assets:arenas` rebuilds every venue from `src/game3d/arena/variants.json` with Blender (`scripts/blender/build_arenas.py`) and compresses them into `public/models/arenas/`.
 - `npm run assets:player` rebuilds the rigged player model with Blender 4.2+ (`blender` on your PATH) and compresses it.
 - `npx tsx scripts/dev/headless-game.ts 10 pro` simulates full games headlessly and prints league-wide stats, which is useful for tuning (`college` and `hs` work too).
 - `npx tsx scripts/dev/injury-rate.ts 30 pro` measures how often in-game injuries happen.
 - `npx tsx scripts/dev/defense-compare.ts 6 pro` compares the defensive schemes; `npx tsx scripts/dev/shot-mix.ts 4 pro` shows the shot type mix.
 - `npm run lint` runs ESLint (also part of the deploy workflow).
 - `npm run format` formats the code with Prettier; `npm run format:check` (part of the deploy workflow) fails on unformatted files.
+- `/dev/venues` (dev server only) previews every venue dressed for any team from the game's camera spots.
 - `/dev/anim` (dev server only) is an animation lab: every procedural clip with a timeline, contact sheets (`?sheet=1`) and a side view (`&profile=1`).
 
-`npm run build` also stamps `out/sw.js` (the offline service worker) with a build version and the list of hashed assets to precache.
+`npm run build` also stamps `out/sw.js` (the offline service worker) with a build version and the list of hashed assets and models to precache.
 
 ### Project layout
 

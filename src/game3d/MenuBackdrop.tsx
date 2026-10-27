@@ -9,6 +9,7 @@ import { courtFor } from "@/game/court";
 import type { Team } from "@/engine/types";
 import { useSettings } from "@/state/settings";
 import { Arena, type ArenaKind } from "./Arena";
+import { pickVariant, variant } from "./arena/variants";
 import { Hoop } from "./Hoop";
 
 function Env() {
@@ -41,6 +42,7 @@ export default function MenuBackdrop({ team, kind }: { team: Team; kind: ArenaKi
   const g = useSettings((s) => s.graphics);
   const reduced = useSettings((s) => s.accessibility.reducedMotion);
   const court = useMemo(() => courtFor(kind === "gym" ? "hs" : kind === "college" ? "college" : "pro"), [kind]);
+  const venue = useMemo(() => variant(pickVariant(kind, team)), [kind, team]);
   const excite = useRef(0.35);
   const score = useRef({ h: 0, a: 0, period: "Q1", clock: "12:00" });
   const clock = useRef({ shot: 24, game: 720 });
@@ -68,14 +70,24 @@ export default function MenuBackdrop({ team, kind }: { team: Team; kind: ArenaKi
           court={court}
           home={team}
           away={team}
-          kind={kind}
+          venue={venue}
           quality={g.preset === "ultra" ? "high" : g.preset}
           crowdDensity={g.crowdDensity * 0.85}
           exciteRef={excite}
           scoreRef={score}
         />
         {([1, -1] as const).map((side) => (
-          <Hoop key={side} court={court} side={side} team={team} ceilingHung={kind === "gym"} ballRef={ball} clockRef={clock} rimShake={shake} />
+          <Hoop
+            key={side}
+            court={court}
+            side={side}
+            team={team}
+            ceilingHung={kind === "gym"}
+            mountY={venue.girderY}
+            ballRef={ball}
+            clockRef={clock}
+            rimShake={shake}
+          />
         ))}
       </Suspense>
       <Orbit reduced={reduced} />

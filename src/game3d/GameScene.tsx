@@ -14,6 +14,8 @@ import { audio } from "@/audio/engine";
 import { useSettings, type CameraMode } from "@/state/settings";
 import { useHud, type HudSnapshot } from "@/state/matchStore";
 import { Arena, type ArenaKind } from "./Arena";
+import { pickVariant, variant, type VenueVariant } from "./arena/variants";
+import { replayPose } from "./cameraPose";
 import { Hoop } from "./Hoop";
 import { BallMesh } from "./Ball";
 import { Players } from "./Players";
@@ -62,7 +64,7 @@ function Environment() {
   return null;
 }
 
-function Lights({ kind, shadows }: { kind: ArenaKind; shadows: boolean }) {
+function Lights({ venue, shadows }: { venue: VenueVariant; shadows: boolean }) {
   const key = useRef<THREE.DirectionalLight>(null);
   useEffect(() => {
     const l = key.current;
@@ -80,14 +82,15 @@ function Lights({ kind, shadows }: { kind: ArenaKind; shadows: boolean }) {
     l.target.position.set(0, 0, 0);
     l.target.updateMatrixWorld();
   }, []);
-  const gym = kind === "gym";
+  const gym = venue.kind === "gym";
+  const ly = venue.lightY;
   return (
     <>
       <hemisphereLight args={[gym ? "#fff6e5" : "#cfd9ff", gym ? "#6b5844" : "#1a1410", gym ? 0.9 : 0.55]} />
       <directionalLight ref={key} position={[3, 26, 6]} intensity={gym ? 1.6 : 2.4} castShadow={shadows} color={gym ? "#fff3dc" : "#ffffff"} />
       {/* rows of arena lights over the floor */}
       {[-10, 0, 10].map((x) => (
-        <pointLight key={x} position={[x, gym ? 9 : 18, 0]} intensity={gym ? 90 : 260} distance={gym ? 30 : 46} decay={2} color={gym ? "#ffefd2" : "#ffffff"} />
+        <pointLight key={x} position={[x, ly, 0]} intensity={gym ? 90 : 260} distance={gym ? 30 : 46} decay={2} color={gym ? "#ffefd2" : "#ffffff"} />
       ))}
     </>
   );
@@ -590,40 +593,10 @@ function ReplayDriver({
     const keyAg = clip.focus !== null ? clip.frames[clip.keyIndex].agents[clip.focus] : null;
     const ag = keyAg ? (f.agents.find((a) => a.player.id === keyAg.player.id) ?? null) : null;
     const c = match.state.cfg.court;
-    const tx = ag ? ag.pos.x : b.pos.x,
-      tz = ag ? ag.pos.z : b.pos.z;
+    const t = ag ? { x: ag.pos.x, z: ag.pos.z, y: ag.y } : { x: b.pos.x, z: b.pos.z, y: 0 };
     const team = ag ? ag.team : f.offense;
-    const rimX = f.rimX[team];
-    const sign = Math.sign(rimX) || 1;
-    const look = new THREE.Vector3(tx * 0.6 + b.pos.x * 0.4, 1.3 + (ag ? ag.y * 0.6 : 0), tz * 0.6 + b.pos.z * 0.4);
-    let pos: THREE.Vector3,
-      fov = 38;
     orbit.current += dt * 0.35 * pbNow.speed;
-    switch (REPLAY_CAMS[pbNow.cam].id) {
-      case "orbit": {
-        const a = orbit.current + (sign > 0 ? Math.PI * 0.5 : -Math.PI * 0.5);
-        pos = new THREE.Vector3(tx + Math.sin(a) * 6.5, 2.4, tz + Math.cos(a) * 6.5);
-        fov = 40;
-        break;
-      }
-      case "baseline":
-        pos = new THREE.Vector3(sign * (c.halfL + 3.5), 2.1, tz * 0.4);
-        fov = 34;
-        break;
-      case "rim":
-        pos = new THREE.Vector3(rimX - sign * 0.8, 6.2, 1.8);
-        look.set(tx * 0.5 + rimX * 0.5, 1.2, tz * 0.5);
-        fov = 50;
-        break;
-      case "courtside":
-        pos = new THREE.Vector3(tx - sign * 2.5, 1.25, (tz >= 0 ? 1 : -1) * (c.halfW + 3));
-        fov = 36;
-        break;
-      default:
-        pos = new THREE.Vector3(b.pos.x * 0.85, 9.5, c.halfW + 17);
-        look.set(b.pos.x, 1.1, b.pos.z * 0.25);
-        fov = 30;
-    }
+    const { pos, look, fov } = replayPose(REPLAY_CAMS[pbNow.cam].id, c, t, b.pos, f.rimX[team], orbit.current);
     cs.override = { pos, look, fov };
     if (lastClip.current !== clip.id || lastCam.current !== pbNow.cam) cs.cut = true;
     lastClip.current = clip.id;
@@ -714,6 +687,7 @@ export function GameScene(props: GameSceneProps) {
   const home = s.teams[0].team,
     away = s.teams[1].team;
   const quality = g.preset;
+  const venue = useMemo(() => variant(pickVariant(props.arena, home)), [props.arena, home]);
   const dpr = Math.min(typeof window !== "undefined" ? window.devicePixelRatio : 1, 2) * g.resolutionScale;
 
   useEffect(() => {
@@ -740,25 +714,17 @@ export function GameScene(props: GameSceneProps) {
       <fog attach="fog" args={[props.arena === "gym" ? "#bdb4a3" : "#05070a", 45, 140]} />
       <ReplayDriver match={props.match} replay={props.replay} frameRef={replayFrame} camState={camState} ballPos={ballPos} />
       <Environment />
-      <Lights kind={props.arena} shadows={g.shadows} />
+      <Lights venue={venue} shadows={g.shadows} />
       <Suspense fallback={null}>
-        <Arena
-          court={court}
-          home={home}
-          away={away}
-          kind={props.arena}
-          quality={quality}
-          crowdDensity={g.crowdDensity}
-          exciteRef={excite}
-          scoreRef={scoreRef}
-        />
+        <Arena court={court} home={home} away={away} venue={venue} quality={quality} crowdDensity={g.crowdDensity} exciteRef={excite} scoreRef={scoreRef} />
         {([1, -1] as const).map((side, i) => (
           <Hoop
             key={side}
             court={court}
             side={side}
             team={home}
-            ceilingHung={props.arena === "gym"}
+            ceilingHung={venue.kind === "gym"}
+            mountY={venue.girderY}
             ballRef={ballPos}
             clockRef={i === 0 ? clockA : clockB}
             rimShake={rimShake}
@@ -776,6 +742,7 @@ export function GameScene(props: GameSceneProps) {
         mode={props.cameraMode}
         zoom={cam.zoom}
         heightMul={cam.height}
+        venue={venue}
         stateRef={camState}
         focusAgent={() => s.agents.find((a) => a.human === 0)?.idx ?? s.ball.owner}
       />

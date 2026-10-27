@@ -15,7 +15,8 @@
     "data": "tsx scripts/build-data.ts",
     "assets:player": "blender -b -P scripts/blender/build_player.py -- . && mkdir -p scripts/blender/out && cp public/models/player.glb scripts/blender/out/player.raw.glb && gltf-transform meshopt scripts/blender/out/player.raw.glb public/models/player.glb --level medium",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "assets:arenas": "/Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup -P scripts/blender/build_arenas.py -- . && tsx scripts/pack-arenas.ts"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",
@@ -49,6 +50,7 @@
     "postcss": "^8.5.32",
     "prettier": "^3.9.10",
     "tailwindcss": "^4.3.3",
+    "three-mesh-bvh": "^0.9.16",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "vitest": "^5.0.5"

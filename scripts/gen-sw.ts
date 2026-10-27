@@ -1,5 +1,5 @@
 // Post-build: stamp the service worker with a build version and the full list of hashed
-// build assets, so one visit caches everything needed to play offline.
+// build assets and models, so one visit caches everything needed to play offline.
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -14,6 +14,8 @@ const walk = (dir: string) => {
   }
 };
 walk(path.join(out, "_next", "static"));
+// every venue and character model, so any matchup plays offline
+walk(path.join(out, "models"));
 const hash = crypto.createHash("sha1").update(files.sort().join("\n")).digest("hex").slice(0, 10);
 const swPath = path.join(out, "sw.js");
 let sw = fs.readFileSync(swPath, "utf8");

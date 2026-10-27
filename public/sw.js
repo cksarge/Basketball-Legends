@@ -5,11 +5,10 @@
 const VERSION = "bl-v1";
 const PAGES = ["/", "/play/", "/game/", "/settings/", "/how-to-play/", "/credits/", "/legal/terms/", "/legal/privacy/", "/404.html"];
 const ASSETS = [
-  "/models/player.glb", "/models/player_maskA.png", "/models/player_maskB.png", "/models/player_maskC.png", "/models/player_maskD.png",
   "/logos/brophy.png", "/favicon.ico", "/icon.svg", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png", "/manifest.webmanifest",
 ];
 
-// filled in by scripts/gen-sw.ts after each build (hashed JS/CSS/fonts)
+// filled in by scripts/gen-sw.ts after each build (hashed JS/CSS/fonts, every model in /models)
 const BUILD_ASSETS = [];
 
 self.addEventListener("install", (event) => {
