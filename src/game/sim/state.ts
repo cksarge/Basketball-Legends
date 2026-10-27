@@ -199,6 +199,28 @@ export interface MatchConfig {
   practice: boolean;
 }
 
+/** Per-league feel: younger leagues hold the ball longer, foul more and turn it over more. */
+export interface LeagueTuning {
+  /** Seconds added to how long an offense waits for a good shot. */
+  patience: number;
+  /** Multiplier on how eagerly teams take threes. */
+  threeBias: number;
+  /** Non-shooting fouls (reach, hand-check, loose ball). */
+  fouls: number;
+  /** Shooting fouls. */
+  shootingFouls: number;
+  /** Steal success. */
+  steals: number;
+  /** Shot make probability multiplier. */
+  makes: number;
+}
+
+export const LEAGUE_TUNING: Record<import("@/engine/types").LeagueId, LeagueTuning> = {
+  pro: { patience: 2, threeBias: 1, fouls: 1.2, shootingFouls: 0.95, steals: 1, makes: 1 },
+  college: { patience: 10, threeBias: 1.06, fouls: 1.5, shootingFouls: 1, steals: 1.1, makes: 1.02 },
+  hs: { patience: 6, threeBias: 1.18, fouls: 1.6, shootingFouls: 1.05, steals: 1.75, makes: 1 },
+};
+
 export type Difficulty = "rookie" | "pro" | "allstar" | "superstar" | "hof" | "legend";
 
 export interface GameplaySliders {

@@ -4,7 +4,7 @@ import type { LeagueId, Player, Team, TeamTactics } from "@/engine/types";
 import type { UniformStyle } from "@/game3d/character/uniformTexture";
 import type { ArenaKind } from "@/game3d/Arena";
 import type { BoxScore } from "@/game/sim/stats";
-import type { MatchState } from "@/game/sim/match";
+import type { InjuryRecord, MatchState } from "@/game/sim/match";
 
 export type MatchMode = "quick" | "career" | "franchise" | "practice" | "online";
 
@@ -48,6 +48,7 @@ export interface MatchResult {
   playerOfGame: string | null;
   quarterMinutes: number;
   simulated: boolean;
+  injuries: InjuryRecord[];
 }
 
 interface MatchStore {

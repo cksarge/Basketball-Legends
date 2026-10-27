@@ -10,7 +10,7 @@ import type { FoulKind, GameEvent, TurnoverReason, ViolationKind } from "./event
 import {
   type ActionKind, type Agent, type AgentIntent, type BallState, DEFAULT_SLIDERS, DIFFICULTY_LEVELS, type Difficulty,
   type DribbleMoveKind, type FreeThrowState, type InboundState, type MatchConfig, type Phase, type ShotKind,
-  type TeamGameState, type TeamIdx,
+  type TeamGameState, type TeamIdx, LEAGUE_TUNING,
 } from "./state";
 import { type BoxScore, emptyLine } from "./stats";
 import { runAI } from "./ai";
@@ -72,7 +72,34 @@ export interface MatchState {
   possessions: [number, number];
   /** Pending and-one free throw after a made basket. */
   pendingAndOne: { shooter: number; team: TeamIdx } | null;
+  /** Players hurt during this game (out for the rest of it, plus `gamesOut` more). */
+  injuries: InjuryRecord[];
+  /** On-court agent who just got hurt: play stops at the next safe moment. */
+  pendingInjury: number | null;
 }
+
+export interface InjuryRecord {
+  playerId: string;
+  team: TeamIdx;
+  name: string;
+  gamesOut: number;
+  period: number;
+  clock: number;
+}
+
+/** In-game injury table: name, games missed (min..max) and relative frequency. */
+const INJURY_TABLE: { name: string; min: number; max: number; w: number; fallOnly?: boolean }[] = [
+  { name: "Sprained ankle", min: 0, max: 6, w: 30 },
+  { name: "Bruised knee", min: 0, max: 2, w: 18 },
+  { name: "Jammed finger", min: 0, max: 1, w: 12 },
+  { name: "Back spasms", min: 1, max: 4, w: 10 },
+  { name: "Hamstring strain", min: 2, max: 10, w: 10 },
+  { name: "Hip contusion", min: 0, max: 3, w: 8, fallOnly: true },
+  { name: "Concussion", min: 1, max: 4, w: 5, fallOnly: true },
+  { name: "Knee sprain", min: 4, max: 18, w: 6 },
+  { name: "Broken wrist", min: 20, max: 40, w: 2, fallOnly: true },
+  { name: "Torn ACL", min: 60, max: 82, w: 1 },
+];
 
 export class Match {
   state: MatchState;
@@ -126,6 +153,7 @@ export class Match {
       offense: 0, frontcourt: false, backcourtTimer: 0, possessionArrow: 0, inbound: null, freeThrows: null,
       box, events: [], frameEvents: [], time: 0, lastScoreTime: 0, run: { team: 0, pts: 0 }, winner: null,
       timeoutTeam: null, aiClock: 0, playByPlay: [], possessions: [0, 0], pendingAndOne: null,
+      injuries: [], pendingInjury: null,
     };
     this.buildAgents();
     if (cfg.practice) this.setupPractice();
@@ -458,6 +486,10 @@ export class Match {
     if (s.phase !== "live") return;
     this.checkViolations(dt);
     if (s.phase !== "live") return;
+    this.ambientFouls(dt);
+    if (s.phase !== "live") return;
+    this.checkInjuryStoppage();
+    if (s.phase !== "live") return;
 
     // shot clock violation
     if (r.shotClock && s.shotClock <= 0 && s.ball.mode !== "shot" && s.clock > 0) {
@@ -471,6 +503,63 @@ export class Match {
       s.clock = 0;
       if (s.ball.mode === "shot" && s.ball.shot && s.ball.shot.releaseTime <= s.time) return;
       this.endPeriod();
+    }
+  }
+
+  isInjured(playerId: string) {
+    return this.state.injuries.some((i) => i.playerId === playerId);
+  }
+
+  /**
+   * Chance of an in-game injury from contact (falls, hard landings, hits on drives).
+   * `risk` is relative: a hard fall is 1.
+   */
+  injuryRoll(a: Agent, risk: number, fall: boolean) {
+    const s = this.state;
+    if (!s.cfg.injuries || s.cfg.practice || this.isInjured(a.player.id)) return;
+    if (this.lockPlayerId && a.player.id === this.lockPlayerId) return;
+    const dur = this.r(a, "durability");
+    const p = 0.011 * risk * (1.6 - dur / 100) * s.cfg.sliders.injuryRate;
+    if (!this.rng.chance(p)) return;
+    const table = INJURY_TABLE.filter((i) => fall || !i.fallOnly);
+    const inj = this.rng.weighted(table, table.map((i) => i.w));
+    const gamesOut = Math.round(this.rng.range(inj.min, inj.max) * (1.25 - dur / 200));
+    s.injuries.push({ playerId: a.player.id, team: a.team, name: inj.name, gamesOut, period: s.period, clock: s.clock });
+    this.emit({ t: "injury", player: a.idx, name: inj.name, games: gamesOut });
+    this.log(`${this.name(a)} is hurt (${inj.name.toLowerCase()})`, a.team);
+    if (a.action.kind !== "fall") this.startAction(a, "fall", 2.2, { injured: true });
+    else a.action.data.injured = true;
+    s.pendingInjury = a.idx;
+  }
+
+  /** Stop play once the ball is safely in someone's hands so the hurt player can come off. */
+  private checkInjuryStoppage() {
+    const s = this.state;
+    if (s.pendingInjury === null) return;
+    if (s.ball.mode !== "held" && s.ball.mode !== "dribble") return;
+    const h = this.handler();
+    if (!h || this.isBusy(h)) return;
+    s.pendingInjury = null;
+    this.log("Play is stopped for an injury", null);
+    this.toDeadBall(h.team, false, { x: h.pos.x, z: h.pos.z });
+  }
+
+  /** Hand-checks and off-ball holding: tight on-ball defense draws the occasional whistle. */
+  private ambientFouls(dt: number) {
+    const s = this.state;
+    if (!s.cfg.fouls) return;
+    const h = this.handler();
+    if (!h || s.ball.mode !== "dribble" && s.ball.mode !== "held") return;
+    const tune = LEAGUE_TUNING[s.cfg.league];
+    for (const d of this.agentsOf(h.team === 0 ? 1 : 0)) {
+      const dd = dist2(d.pos, h.pos);
+      if (dd > 1.1) continue;
+      const handsy = 1.25 - this.r(d, "iq") / 200 - this.r(d, "perimeterD") / 400;
+      const rate = 0.0045 * handsy * (h.action.kind === "dribbleMove" || h.action.kind === "post" ? 2.2 : 1) * tune.fouls * s.cfg.sliders.foulFrequency;
+      if (this.rng.chance(rate * dt * 60 / 60)) {
+        this.foul(d, h, "reach", false);
+        return;
+      }
     }
   }
 
@@ -519,7 +608,10 @@ export class Match {
       if (a.y > 0 || a.vy > 0) {
         a.vy -= 9.81 * dt;
         a.y += a.vy * dt;
-        if (a.y <= 0) { a.y = 0; a.vy = 0; }
+        if (a.y <= 0) {
+          if (a.vy < -3.2) this.injuryRoll(a, 0.04, false);
+          a.y = 0; a.vy = 0;
+        }
       }
       this.handleIntentAct(a);
       switch (ac.kind) {
@@ -634,6 +726,7 @@ export class Match {
     if (a.action.kind === "post") v *= 0.45;
     if (a.action.kind === "stance") v *= 0.78;
     if (a.stun > 0) v *= 0.2;
+    if (s.pendingInjury === a.idx || (s.injuries.length && this.isInjured(a.player.id))) v *= 0.35; // limping
     return v * s.cfg.sliders.speed;
   }
 
@@ -742,6 +835,7 @@ export class Match {
       if (Math.hypot(d.pos.x - rimP.x, d.pos.z - rimP.z) > s.cfg.court.restrictedRadius) {
         if (this.rng.chance(0.55)) {
           this.startAction(d, "fall", 1.2);
+          this.injuryRoll(d, 1, true);
           this.foul(h, d, "charge", false);
         }
       }
@@ -770,7 +864,7 @@ export class Match {
       if (this.rng.chance(p)) {
         def.stun = this.rng.range(0.55, 1.1);
         broke = def.idx;
-        if (this.rng.chance(0.18)) this.startAction(def, "fall", 1.3);
+        if (this.rng.chance(0.18)) { this.startAction(def, "fall", 1.3); this.injuryRoll(def, 0.6, true); }
       }
     }
     // loose handle under pressure
@@ -965,7 +1059,7 @@ export class Match {
       else if (q < 0.45) p *= 0.78;
       else p *= 0.35;
     }
-    p *= sl.shotSuccess;
+    p *= sl.shotSuccess * LEAGUE_TUNING[s.cfg.league].makes;
     if (three) p *= sl.threeSuccess;
     if (kind === "layup" || kind === "dunk") p *= sl.layupSuccess;
     return clamp(p, 0.01, 0.99);
@@ -987,9 +1081,10 @@ export class Match {
     let fouled = false;
     if (s.cfg.fouls) {
       const base = kind === "dunk" || kind === "layup" ? 0.34 : kind === "floater" || kind === "hook" ? 0.16 : 0.065;
-      const pf = base * contest * (0.45 + this.r(a, "drawFoul") / 110) * s.cfg.sliders.foulFrequency;
+      const pf = base * contest * (0.45 + this.r(a, "drawFoul") / 110) * s.cfg.sliders.foulFrequency * LEAGUE_TUNING[s.cfg.league].shootingFouls;
       if (this.rng.chance(pf)) {
         fouled = true;
+        if (kind === "dunk" || kind === "layup") this.injuryRoll(a, 0.3, false);
         pMake *= kind === "dunk" ? 0.65 : 0.4;
       }
     }
@@ -1184,7 +1279,7 @@ export class Match {
     const angleToD = Math.atan2(d.pos.x - h.pos.x, d.pos.z - h.pos.z);
     const handSide = Math.sin(angDiff(h.facing, angleToD)) * h.hand; // >0 ball exposed
     const exposed = clamp(0.5 + handSide * 0.5, 0.15, 1);
-    let p = (0.05 + (this.r(d, "steal") - this.r(h, "ballHandle")) * 0.0028) * exposed * (h.action.kind === "dribbleMove" ? 1.4 : 1) * s.cfg.sliders.stealSuccess;
+    let p = (0.05 + (this.r(d, "steal") - this.r(h, "ballHandle")) * 0.0028) * exposed * (h.action.kind === "dribbleMove" ? 1.4 : 1) * s.cfg.sliders.stealSuccess * LEAGUE_TUNING[s.cfg.league].steals;
     if (h.action.kind === "post") p *= 0.6;
     if (this.rng.chance(clamp(p, 0.005, 0.32))) {
       s.box[d.player.id].stl++;
@@ -1200,7 +1295,7 @@ export class Match {
       b.pos = v3(h.pos.x, 0.8, h.pos.z);
       b.vel = v3(Math.sin(angleToD) * 2.5, 1.5, Math.cos(angleToD) * 2.5);
       this.changePossessionTracking(d.team);
-    } else if (s.cfg.fouls && this.rng.chance(clamp(0.1 - this.r(d, "iq") * 0.0006 + (dist < 0.7 ? 0.05 : 0), 0.02, 0.15) * s.cfg.sliders.foulFrequency)) {
+    } else if (s.cfg.fouls && this.rng.chance(clamp(0.1 - this.r(d, "iq") * 0.0006 + (dist < 0.7 ? 0.05 : 0), 0.02, 0.15) * s.cfg.sliders.foulFrequency * LEAGUE_TUNING[s.cfg.league].fouls)) {
       this.foul(d, h, "reach", false);
     } else {
       d.stun = Math.max(d.stun, 0.25); // off balance after a gamble
@@ -1517,7 +1612,7 @@ export class Match {
     if (!this.rng.chance(clamp(total * 0.12, 0.05, 0.9))) return;
     const winner = this.rng.weighted(cands.map((c) => c.a), cands.map((c) => c.w));
     // loose-ball foul in a crowded scrum
-    if (s.cfg.fouls && cands.length >= 2 && this.rng.chance(0.045 * s.cfg.sliders.foulFrequency)) {
+    if (s.cfg.fouls && cands.length >= 2 && this.rng.chance(0.045 * s.cfg.sliders.foulFrequency * LEAGUE_TUNING[s.cfg.league].fouls)) {
       const other = cands.find((c) => c.a.team !== winner.team);
       if (other) {
         this.foul(other.a, winner, "loose", false);
@@ -2017,6 +2112,7 @@ export class Match {
         this.callTimeout(ti);
       }
       if (!t.humanControlled || (t as TeamGameState & { autoSubs?: boolean }).autoSubs !== false) this.autoSubs(ti);
+      else this.autoSubs(ti, true);
     }
   }
 
@@ -2049,7 +2145,7 @@ export class Match {
     s.phaseTimer = 0.4;
   }
 
-  private autoSubs(ti: TeamIdx) {
+  private autoSubs(ti: TeamIdx, forcedOnly = false) {
     const s = this.state;
     const t = s.teams[ti];
     const fouledOut = (id: string) => s.box[id].pf >= s.cfg.rules.foulOutLimit;
@@ -2057,7 +2153,7 @@ export class Match {
       const ag = s.agents.find((a) => a.player.id === p.id);
       return ag ? ag.stamina : ((p as Player & { _stamina?: number })._stamina ?? 1);
     };
-    const bench = t.roster.filter((p) => !t.onCourt.includes(p.id) && !fouledOut(p.id) && !p.injury);
+    const bench = t.roster.filter((p) => !t.onCourt.includes(p.id) && !fouledOut(p.id) && !p.injury && !this.isInjured(p.id));
     let changed = false;
     for (let slot = 0; slot < 5; slot++) {
       const pid = t.onCourt[slot];
@@ -2070,11 +2166,14 @@ export class Match {
       const overMinutes = played > target * scale * (s.period / s.cfg.rules.periods) + 3 * scale;
       const tired = st < 0.62;
       const late = s.period >= s.cfg.rules.periods && s.clock < 180 && Math.abs(s.teams[0].score - s.teams[1].score) < 12;
-      if (!(fouledOut(pid) || ((tired || overMinutes) && !late))) continue;
-      // best rested bench player at a compatible position
-      const cands = bench.filter((b) => !t.onCourt.includes(b.id) && staminaOf(b) > 0.8)
-        .sort((a, b) => posFit(b, p) * overall(b.ratings, b.pos) - posFit(a, p) * overall(a.ratings, a.pos));
-      const sub = cands[0];
+      const forced = fouledOut(pid) || this.isInjured(pid);
+      if (forcedOnly && !forced) continue;
+      if (!(forced || ((tired || overMinutes) && !late))) continue;
+      // best rested bench player at a compatible position (anyone available when forced)
+      const byFit = (a: Player, b: Player) => posFit(b, p) * overall(b.ratings, b.pos) - posFit(a, p) * overall(a.ratings, a.pos);
+      const open = bench.filter((b) => !t.onCourt.includes(b.id));
+      const cands = open.filter((b) => staminaOf(b) > 0.8).sort(byFit);
+      const sub = cands[0] ?? (forced ? open.sort(byFit)[0] : undefined);
       if (!sub) continue;
       t.onCourt[slot] = sub.id;
       const ag = s.agents.find((a) => a.player.id === pid);

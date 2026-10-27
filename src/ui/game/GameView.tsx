@@ -114,7 +114,7 @@ export function GameView({ pending }: { pending: PendingMatch }) {
     }, null);
     setResult({
       mode: pending.mode, homeId: s.teams[0].team.id, awayId: s.teams[1].team.id, homeScore: s.teams[0].score, awayScore: s.teams[1].score,
-      box: s.box, periods: s.period, playByPlay: s.playByPlay, playerOfGame: potg?.id ?? null, quarterMinutes: s.cfg.quarterMinutes, simulated,
+      box: s.box, periods: s.period, playByPlay: s.playByPlay, playerOfGame: potg?.id ?? null, quarterMinutes: s.cfg.quarterMinutes, simulated, injuries: s.injuries,
     });
     setScreen("final");
   }, [match, pending.mode, setResult]);
@@ -358,6 +358,7 @@ function SubsPanel({ match, team }: { match: Match; team: TeamIdx }) {
       <button key={id} onClick={onClick} className={`flex w-full items-center gap-3 rounded-[var(--radius-chip)] px-3 py-2 text-left ${selected ? "bg-deck-2 ring-1 ring-amber" : "bg-deck hover:bg-deck-2"}`}>
         <span className="w-7 text-steel">{p.pos}</span>
         <span className="flex-1">{p.firstName[0]}. {p.lastName}</span>
+        {match.isInjured(id) && <span className="rounded bg-bad/20 px-1.5 text-xs font-semibold text-bad">Injured</span>}
         <span className="text-xs text-steel">{line.pts} pts · {line.pf} PF</span>
         <span className="h-1.5 w-16 overflow-hidden rounded-full bg-navy"><span className="block h-full bg-good" style={{ width: `${stam(id) * 100}%` }} /></span>
       </button>
@@ -381,6 +382,7 @@ function SubsPanel({ match, team }: { match: Match; team: TeamIdx }) {
         {t.roster.filter((p) => !t.onCourt.includes(p.id)).map((p) => row(p.id, () => {
           if (!out) { toast("Pick a player to take out first"); return; }
           if (match.state.box[p.id].pf >= match.state.cfg.rules.foulOutLimit) { toast(`${p.lastName} has fouled out`, "bad"); return; }
+          if (match.isInjured(p.id)) { toast(`${p.lastName} is injured`, "bad"); return; }
           match.substitute(team, out, p.id);
           toast(`${p.firstName[0]}. ${p.lastName} checks in`, "good");
           setOut(null);

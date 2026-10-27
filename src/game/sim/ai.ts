@@ -4,7 +4,7 @@ import { clamp } from "@/engine/rng";
 import { distToRim, inLane, isThree, rimPos } from "../court";
 import { dist2, distToSeg2, v2, type V2 } from "../vec";
 import type { Match } from "./match";
-import type { Agent, TeamIdx } from "./state";
+import { type Agent, LEAGUE_TUNING, type TeamIdx } from "./state";
 
 interface AIMemo {
   target?: V2;
@@ -236,12 +236,13 @@ function offenseAI(match: Match, a: Agent, decide: boolean) {
       const ev = match.shotValue(a);
       const three = isThree(c, side, a.pos.x, a.pos.z);
       const tac = s.teams[a.team].tactics;
-      const threePref = 0.85 + tac.threeRate * 0.3;
+      const tune = LEAGUE_TUNING[s.cfg.league];
+      const threePref = (0.85 + tac.threeRate * 0.3) * tune.threeBias;
       const clockPressure = shotClock < 5 ? 0.35 : shotClock < 9 ? 0.15 : 0;
       // possession maturity: early in the clock only take clearly good shots
       const shotClockMax = s.cfg.rules.shotClock ?? 35;
       const elapsed = shotClockMax - shotClock;
-      const patience = 9 + (1 - tac.pace) * 9;
+      const patience = 9 + tune.patience + (1 - tac.pace) * 9;
       const early = elapsed < patience ? 0.4 * (1 - elapsed / patience) : 0;
       const threshold = (three ? 1.07 / threePref : 1.0) + early - clockPressure - (a.heat > 0.5 ? 0.05 : 0);
       const holdOk = a.holdTime > 0.5 || s.time - s.ball.lastPassTime > 0.9;
@@ -524,7 +525,7 @@ function defenseAI(match: Match, a: Agent, decide: boolean) {
   }
   // pump fake bite handled in match; steals
   if (onBall && d < 1.1 && !shooting) {
-    const pSteal = 0.02 * (match.r(a, "steal") / 75) * aggression * (handler.action.kind === "dribbleMove" ? 1.6 : 1);
+    const pSteal = 0.02 * (match.r(a, "steal") / 75) * aggression * (handler.action.kind === "dribbleMove" ? 1.6 : 1) * LEAGUE_TUNING[s.cfg.league].steals;
     if (match.rng.chance(pSteal)) a.intent.act = { type: "steal" };
   }
   // double team stars

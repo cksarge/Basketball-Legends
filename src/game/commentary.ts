@@ -37,6 +37,8 @@ export function commentFor(match: Match, e: GameEvent): string | null {
     case "timeout": return `${s.teams[e.team].team.name} calls timeout.`;
     case "periodEnd": return s.cfg.rules.periods === 2 && e.period === 1 ? "That's the half." : `End of the ${ordinal(e.period)}.`;
     case "final": return `That's the ballgame. ${s.teams[e.winner].team.name} win it.`;
+    case "injury": return pick([`${nm(e.player)} is slow to get up. That looks like a ${e.name.toLowerCase()}.`, `Trouble here: ${nm(e.player)} is hurt, ${e.name.toLowerCase()}.`]);
+    case "foulOut": return `${nm(e.player)} has fouled out.`;
     case "rebound": return e.offensive && rng.chance(0.35) ? `Offensive board, ${nm(e.player)}.` : null;
     default: return null;
   }
