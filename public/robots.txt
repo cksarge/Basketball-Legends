@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+# developer tools, not part of the game
+Disallow: /dev/
 
 Sitemap: https://legends.carterscoding.com/sitemap.xml

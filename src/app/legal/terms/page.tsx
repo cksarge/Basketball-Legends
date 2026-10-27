@@ -5,7 +5,7 @@ export const metadata: Metadata = { title: "Terms of Service", description: "The
 
 export default function Terms() {
   return (
-    <ProsePage title="Terms of Service" updated="October 26, 2026">
+    <ProsePage title="Terms of Service" updated="October 27, 2026">
       <p>These terms apply to the Basketball Legends website at legends.carterscoding.com and the game it serves (together, &quot;the game&quot;). By playing, you agree to them. If you don&apos;t agree, please don&apos;t use the game.</p>
       <H2>A free fan project</H2>
       <p>The game is free, non-commercial and open source. There are no purchases, ads or subscriptions. The source code is licensed under the MIT License; that license, not these terms, governs your use of the code itself.</p>
@@ -14,7 +14,7 @@ export default function Terms() {
       <H2>Your content</H2>
       <p>The game lets you edit rosters and import roster files. Those files stay on your device. You are responsible for anything you create, import or share, and you agree not to use the game to infringe anyone&apos;s rights, impersonate real people (including minors), or share unlawful content.</p>
       <H2>Saves and settings</H2>
-      <p>Settings and saved games are stored in your browser. Clearing your browser data, using a private window or switching devices can remove them. Please export saves you care about.</p>
+      <p>Settings and saved games are stored in your browser. Clearing your browser data, using a private window or switching devices can remove them. Please export saves you care about. To play offline, your browser also keeps a cached copy of the game&apos;s files; clearing site data removes it, and it downloads again on your next visit.</p>
       <H2>No warranty</H2>
       <p>The game is provided &quot;as is&quot;, without warranties of any kind. It may have bugs, change, or become unavailable at any time. To the fullest extent allowed by law, the creator is not liable for any damages arising from your use of the game.</p>
       <H2>Health</H2>
