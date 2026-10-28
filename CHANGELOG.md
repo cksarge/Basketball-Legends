@@ -46,7 +46,9 @@ A patch for shooting and the main menu.
 ### Main menu
 
 - **Same spacing on every screen:** the menu no longer squeezes together in short windows; if it doesn't fit, it scrolls, and the arena backdrop stays fixed behind it.
-- **Only the menu scrolls on wide screens:** the title, the info card and the footer links stay in place while the menu column scrolls, with soft fades at its top and bottom edges.## v0.1.0 — October 28, 2026
+- **Only the menu scrolls on wide screens:** the title, the info card and the footer links stay in place while the menu column scrolls, with soft fades at its top and bottom edges.
+
+## v0.1.0 — October 28, 2026
 
 The first public version: a full 5v5 basketball game in the browser. You can play any pro, college or Arizona high school team in Quick Play, practice, or learn the controls in the tutorial. Career, Franchise and online play come in later versions.
 
