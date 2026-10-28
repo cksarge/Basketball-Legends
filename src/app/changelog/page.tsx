@@ -11,10 +11,7 @@ export default function Changelog() {
   const source = fs.readFileSync(path.join(process.cwd(), "CHANGELOG.md"), "utf8");
   return (
     <ProsePage title="Changelog">
-      <p className="text-steel">
-        You&apos;re playing version {process.env.APP_VERSION}. Versions follow MAJOR.MINOR.PATCH: a new phase of the game bumps the minor number, fixes bump the
-        patch number, and 1.0.0 will be the first complete release.
-      </p>
+      <p className="text-steel">You&apos;re playing version {process.env.APP_VERSION}.</p>
       <Markdown source={source} />
     </ProsePage>
   );
