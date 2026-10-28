@@ -17,6 +17,7 @@ import {
   hsContext,
   nextEvent,
   placeAtTryout,
+  takeFinals,
   startSeason,
   userGames,
   userMatchSetup,
@@ -50,6 +51,10 @@ describe("a real-engine season", () => {
     let played = 0;
     for (let guard = 0; guard < 40; guard++) {
       const ev = nextEvent(c);
+      if (ev.kind === "finals") {
+        c = takeFinals(advanceTo(c, ev.date, ctx), ev.semester, 0.6);
+        continue;
+      }
       if (ev.kind !== "game") break;
       c = advanceTo(c, ev.date, ctx);
       const game = currentSeason(c)!.games.find((g) => g.id === ev.game.id)!;
@@ -73,6 +78,6 @@ describe("a real-engine season", () => {
     for (const l of levelsPlayed) expect(averages(s.stats[l])!.mpg).toBeGreaterThan(3);
     expect(nextEvent(c).kind).toBe("seasonEnd");
     c = finishSeason(advanceTo(c, hsCalendar(2026).seasonEnd, ctx), ctx);
-    expect(currentSeason(c)!.grade).toBe(10);
+    expect(currentSeason(c)!.wrapped).toBe(true);
   });
 });

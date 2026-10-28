@@ -3,17 +3,35 @@ import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import { playerOvr } from "@/engine/player";
 import type { Career, TryoutResult } from "@/career/types";
-import { formatDate, LEVEL_LABEL, LEVEL_SHORT } from "@/career/format";
-import { currentSeason, nextEvent, userGames, type HsContext } from "@/career/hs/season";
+import { formatDate, GRADE_LABEL, LEVEL_LABEL, LEVEL_SHORT } from "@/career/format";
+import { currentSeason, nextEvent, setFocus, userGames, type HsContext } from "@/career/hs/season";
+import { ELIGIBLE_GPA, gpaLabel, practiceMultiplier } from "@/career/hs/academics";
+import { rankingText } from "@/career/hs/rankings";
+import { campsFor } from "@/career/hs/summer";
 import { standings } from "@/career/hs/sim";
 import { useCareer } from "@/state/careerStore";
 import { useMatchStore } from "@/state/matchStore";
 import { useInputDevice } from "@/ui/MenuNavigator";
 import { audio } from "@/audio/engine";
 import { TeamLogo } from "@/ui/TeamLogo";
-import { Button, Panel } from "@/ui/kit";
+import { Button, Panel, Slider } from "@/ui/kit";
 import { toast } from "@/ui/Toaster";
-import { careerPending, clearSuspended, finishCurrentSeason, runTryout, simUserGames, suspendedFor, type SimProgress } from "./actions";
+import {
+  campAction,
+  careerPending,
+  clearSuspended,
+  finalsAction,
+  finishCurrentSeason,
+  graduateAction,
+  nextYearAction,
+  runTryout,
+  showcaseAction,
+  simShowcase,
+  simUserGames,
+  suspendedFor,
+  type SimProgress,
+} from "./actions";
+import { FinalsQuiz } from "./FinalsQuiz";
 import { TryoutDrills } from "./TryoutDrills";
 
 function primaryDevice(device: string): string {
@@ -30,6 +48,7 @@ export function HomeTab({ career, ctx }: { career: Career; ctx: HsContext }) {
       <div className="flex flex-col gap-5">
         <NextUp career={career} ctx={ctx} />
         <SeasonGlance career={career} ctx={ctx} />
+        <SchoolPanel career={career} />
       </div>
       <div className="flex flex-col gap-5">
         <Panel title={`Messages${unread ? ` (${unread} new)` : ""}`}>
@@ -164,7 +183,8 @@ function NextUp({ career, ctx }: { career: Career; ctx: HsContext }) {
       s.games.filter((x) => x.level === g.level),
       [us.id, opp.id],
     );
-    const rec = (id: string) => `${table.get(id)!.w}-${table.get(id)!.l}`;
+    // only your school's lower-level games are tracked, so opponents' records show at varsity only
+    const rec = (id: string) => (id === us.id || g.level === "varsity" ? `${table.get(id)!.w}-${table.get(id)!.l}` : "");
     const saved = suspendedFor(career.id, g.id);
     const left = userGames(s).filter((x) => !x.result).length;
     const play = (resume: boolean) => {
@@ -236,15 +256,118 @@ function NextUp({ career, ctx }: { career: Career; ctx: HsContext }) {
     );
   }
 
-  if (ev.kind === "graduated")
+  if (ev.kind === "finals" && s)
     return (
-      <Panel title="High school graduate">
-        <p className="mb-2">
-          Four years done at {ctx.byId.get(career.hs.schoolId)?.name}. Overall {playerOvr(career.player)}.
+      <FinalsQuiz
+        seed={`${career.seed}:${s.year}:${ev.semester}`}
+        grade={s.grade}
+        semester={ev.semester}
+        onDone={(score) => run(() => finalsAction(ev.semester, score, ctx))}
+      />
+    );
+
+  if (ev.kind === "camp") {
+    const camps = campsFor(career);
+    return (
+      <Panel title="Summer camp">
+        <p className="mb-3 text-steel">
+          Pick one camp for June. Each sharpens a set of skills; the Elite 100 is invite-only and puts you in front of college coaches.
         </p>
-        <p className="text-steel">Recruiting, college and the pros arrive in an upcoming beta update. Your career is saved and will pick up right here.</p>
+        <ul className="grid gap-2 sm:grid-cols-2">
+          {camps.map((camp) => (
+            <li key={camp.id}>
+              <button
+                disabled={!camp.invited || busy}
+                onClick={() => run(() => campAction(camp.id))}
+                className="h-full w-full rounded-[var(--radius-chip)] bg-deck-2 p-3 text-left ring-1 ring-line hover:ring-amber disabled:opacity-40"
+              >
+                <span className="block font-display text-xl font-black">{camp.name}</span>
+                <span className="block text-sm text-steel">{camp.blurb}</span>
+                <span className="mt-1 block text-xs text-amber">
+                  {Object.entries(camp.boosts)
+                    .map(([k, v]) => `+${v} ${k.replace(/([A-Z])/g, " $1").toLowerCase()}`)
+                    .join(", ")}
+                </span>
+                {!camp.invited && <span className="mt-1 block text-xs text-steel">Invite only: top-300 prospects</span>}
+              </button>
+            </li>
+          ))}
+        </ul>
       </Panel>
     );
+  }
+
+  if (ev.kind === "showcase" && s) {
+    if (!ev.game)
+      return (
+        <Panel title="AAU season">
+          <p className="mb-4 text-steel">July means travel ball. A club wants you for three showcase games in front of college coaches.</p>
+          <Button disabled={busy} onClick={() => run(showcaseAction)}>
+            Join a club
+          </Button>
+        </Panel>
+      );
+    const g = ev.game;
+    const left = (s.summer?.showcase ?? []).filter((x) => !x.result).length;
+    const saved = suspendedFor(career.id, g.id);
+    const play = (resume: boolean) => {
+      audio.unlock();
+      setPending(resume && saved ? { ...saved.pending, resume: true } : careerPending(career, g, ctx, primaryDevice(device)));
+      if (!resume) clearSuspended();
+      router.push("/game/");
+    };
+    return (
+      <Panel>
+        <p className="text-sm text-steel">
+          {formatDate(g.date)} · {g.label} · {s.summer?.club?.name}
+          {s.summer?.club?.elite ? " (elite circuit)" : ""}
+        </p>
+        <p className="my-3">Big games here raise your exposure with college coaches and your recruiting ranking.</p>
+        <div className="flex flex-wrap gap-2">
+          {saved ? (
+            <Button disabled={busy} onClick={() => play(true)}>
+              Resume game
+            </Button>
+          ) : (
+            <Button disabled={busy} onClick={() => play(false)}>
+              Play
+            </Button>
+          )}
+          <Button variant="secondary" disabled={busy} onClick={() => run(() => simShowcase(setProgress))}>
+            Sim {left > 1 ? `all ${left}` : "game"}
+          </Button>
+        </div>
+      </Panel>
+    );
+  }
+
+  if (ev.kind === "nextYear" && s)
+    return (
+      <Panel title="Summer's over">
+        <p className="mb-4 text-steel">{s.summer?.camp ? `${s.summer.camp.name} done. ` : ""}Classes start August 1, and tryouts are in November.</p>
+        <Button disabled={busy} onClick={() => run(() => nextYearAction(ctx))}>
+          Start {GRADE_LABEL[s.grade + 1]?.toLowerCase()} year
+        </Button>
+      </Panel>
+    );
+
+  if (ev.kind === "graduated") {
+    const done = career.log.some((e) => e.text.startsWith("Graduated from"));
+    return (
+      <Panel title={done ? "High school graduate" : "Graduation day"}>
+        <p className="mb-2">
+          Four years at {ctx.byId.get(career.hs.schoolId)?.name}. Overall {playerOvr(career.player)}. {rankingText(s?.ranking)}.
+        </p>
+        {done ? (
+          <p className="text-steel">Recruiting, college and the pros arrive in an upcoming beta update. Your career is saved and will pick up right here.</p>
+        ) : (
+          <Button disabled={busy} onClick={() => run(() => graduateAction(ctx))}>
+            Walk at graduation
+          </Button>
+        )}
+      </Panel>
+    );
+  }
 
   return (
     <Panel title="Getting the season ready">
@@ -268,7 +391,8 @@ function TeamBlock({ team, record }: { team: { name: string; nickname: string } 
       <TeamLogo team={team} size={64} />
       <p className="font-display text-xl font-black leading-tight">{team.name}</p>
       <p className="text-sm text-steel">
-        {team.nickname} · {record}
+        {team.nickname}
+        {record && ` · ${record}`}
       </p>
     </div>
   );
@@ -301,6 +425,45 @@ function SeasonGlance({ career, ctx }: { career: Career; ctx: HsContext }) {
           );
         })}
       </ul>
+    </Panel>
+  );
+}
+
+function SchoolPanel({ career }: { career: Career }) {
+  const update = useCareer((x) => x.update);
+  const s = currentSeason(career);
+  if (!s) return null;
+  const focus = s.focus ?? 0.5;
+  const gpas = [s.grades.fall, s.grades.spring].filter((g): g is number => g !== undefined);
+  return (
+    <Panel title="School and recruiting">
+      <p className="mb-1 font-semibold text-amber">{rankingText(s.ranking)}</p>
+      <p className="mb-3 text-sm text-steel">
+        Class of {s.year + (12 - s.grade) + 1}
+        {s.ranking
+          ? ` · scouting score ${s.ranking.score.toFixed(1)}, exposure ${s.ranking.exposure.toFixed(1)}`
+          : " · rankings update after your first season"}
+      </p>
+      {gpas.length > 0 && (
+        <p className="mb-2 text-sm">
+          GPA {gpas.map((g) => g.toFixed(2)).join(" / ")} · {gpaLabel(gpas[gpas.length - 1])}
+        </p>
+      )}
+      {s.ineligibleFrom && (
+        <p className="mb-2 text-sm text-bad">
+          Academically ineligible since {formatDate(s.ineligibleFrom)} (fall GPA under {ELIGIBLE_GPA.toFixed(1)}). Your games are simulated without you.
+        </p>
+      )}
+      <Slider
+        label="Time: basketball ↔ school"
+        value={focus}
+        min={0}
+        max={1}
+        step={0.05}
+        format={(v) => (v < 0.35 ? "Hoops" : v > 0.65 ? "School" : "Balanced")}
+        onChange={(v) => update((c) => setFocus(c, v))}
+      />
+      <p className="text-xs text-steel">Practice XP ×{practiceMultiplier(focus).toFixed(2)}. More time on school raises your grades at finals.</p>
     </Panel>
   );
 }

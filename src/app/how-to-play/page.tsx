@@ -124,6 +124,8 @@ export default function HowToPlay() {
         the coach calls you up mid-season; struggle and you may be sent down. From the career hub you can play each game in 3D (you control only your player),
         sim one game, sim three, or sim to the playoffs. When the coach sits you, choose to watch, fast-forward until you check back in, or sim to the end. Your
         ratings grow on their own through practice and games, and skill points from XP let you push the skills you care about, up to the caps your body allows.
+        Keep your grades up: finals are a short timed exam, and a fall GPA under 2.0 sits you for the rest of the season. Summers bring a camp of your choice
+        and AAU showcase games, which raise your exposure with college coaches and your recruiting ranking.
       </p>
       <H2>Saving and resuming</H2>
       <p>

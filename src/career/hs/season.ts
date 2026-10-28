@@ -13,6 +13,9 @@ import { advanceBracket, bracketFor, createBrackets, winnerOf } from "./playoffs
 import { estimatedStrength, levelRoster, rollRosters, rosterStrength, schoolLevels } from "./rosters";
 import { generateVarsitySchedule } from "./schedule";
 import { simScore, standings } from "./sim";
+import { ELIGIBLE_GPA, gpaLabel, practiceMultiplier, semesterGpa } from "./academics";
+import { rankCareer, rankingText } from "./rankings";
+import { CAMPS, attendCamp, campDate, clubRoster, scheduleShowcase, showcaseExposure, showcaseFor } from "./summer";
 
 export interface HsContext {
   teams: Team[];
@@ -91,6 +94,8 @@ export function startSeason(c: Career, year: number, ctx: HsContext): Career {
     games: [...varsity, ...lower].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0)),
     stats: {},
     awards: [],
+    grades: {},
+    focus: prev?.focus ?? 0.5,
   };
   const age = c.player.age;
   const player = {
@@ -154,11 +159,18 @@ export function userGames(s: HsSeason): ScheduledGame[] {
   return s.games.filter((g) => g.level === s.level && (g.homeId === s.schoolId || g.awayId === s.schoolId));
 }
 
+/** Your games you can actually play (not the ones you sit out while academically ineligible). */
+export const playableGames = (s: HsSeason) => userGames(s).filter((g) => !s.ineligibleFrom || g.date < s.ineligibleFrom);
+
 export type NextEvent =
   | { kind: "season"; date: IsoDate }
   | { kind: "tryout"; date: IsoDate }
   | { kind: "game"; date: IsoDate; game: ScheduledGame }
+  | { kind: "finals"; date: IsoDate; semester: "fall" | "spring" }
   | { kind: "seasonEnd"; date: IsoDate }
+  | { kind: "camp"; date: IsoDate }
+  | { kind: "showcase"; date: IsoDate; game?: ScheduledGame }
+  | { kind: "nextYear"; date: IsoDate }
   | { kind: "graduated"; date: IsoDate };
 
 /** What the career is waiting on next. */
@@ -168,13 +180,19 @@ export function nextEvent(c: Career): NextEvent {
   if (!s) return { kind: "season", date: iso(c.startYear, 8, 1) };
   const cal = hsCalendar(year);
   if (!s.tryout) return { kind: "tryout", date: cal.tryouts };
-  const next = userGames(s).find((g) => !g.result);
+  const next = playableGames(s).find((g) => !g.result);
+  // fall finals come before the first game after them
+  if (!s.grades.fall && (!next || next.date > cal.fallGrades)) return { kind: "finals", date: cal.fallGrades, semester: "fall" };
   if (next) return { kind: "game", date: next.date, game: next };
-  // regular season or playoffs still running for other teams?
-  const pending = s.games.some((g) => !g.result) || !s.playoffs || s.playoffs.some((b) => !b.champion);
-  if (pending) return { kind: "seasonEnd", date: cal.seasonEnd };
+  if (!s.wrapped) return { kind: "seasonEnd", date: cal.seasonEnd };
+  if (!s.grades.spring) return { kind: "finals", date: cal.springGrades, semester: "spring" };
   if (s.grade === 12) return { kind: "graduated", date: iso(year + 1, 5, 28) };
-  return { kind: "season", date: iso(year + 1, 8, 1) };
+  if (!s.summer?.camp) return { kind: "camp", date: campDate(year) };
+  // AAU showcase: first pick up the club (no game yet), then play its games
+  if (!s.summer.showcase) return { kind: "showcase", date: campDate(year) };
+  const show = s.summer.showcase.find((g) => !g.result);
+  if (show) return { kind: "showcase", date: show.date, game: show };
+  return { kind: "nextYear", date: iso(year + 1, 8, 1) };
 }
 
 function teamStrength(s: HsSeason, teamId: string, level: HsLevel, ctx: HsContext, c: Career) {
@@ -186,7 +204,9 @@ function teamStrength(s: HsSeason, teamId: string, level: HsLevel, ctx: HsContex
   return estimatedStrength(ctx.byId.get(teamId)!, level, s.year);
 }
 
-const isUserGame = (s: HsSeason, g: ScheduledGame) => g.level === s.level && (g.homeId === s.schoolId || g.awayId === s.schoolId);
+/** A game the career waits on you to play or sim (your level, your school, while eligible). */
+const isUserGame = (s: HsSeason, g: ScheduledGame) =>
+  g.level === s.level && (g.homeId === s.schoolId || g.awayId === s.schoolId) && (!s.ineligibleFrom || g.date < s.ineligibleFrom);
 
 /**
  * Simulates every game up to and including `date` except your own, creates and advances playoff brackets,
@@ -198,21 +218,23 @@ export function advanceTo(c: Career, date: IsoDate, ctx: HsContext): Career {
   let until = date;
   // playoff rounds appear as results come in, so repeat until no new game of yours turns up before the target
   for (let guard = 0; guard < 24; guard++) {
-    const stop = userGames(s).find((g) => !g.result);
+    const stop = playableGames(s).find((g) => !g.result);
     until = stop && stop.date <= date ? stop.date : date;
     const rng = new Rng(`${c.seed}:sim:${until}:${guard}`);
     const cur: HsSeason = s;
     const games = cur.games.map((g) => {
       if (g.result || g.date > until || isUserGame(cur, g)) return g;
       const lvl = g.level as HsLevel;
-      return { ...g, result: simScore(teamStrength(cur, g.homeId, lvl, ctx, c), teamStrength(cur, g.awayId, lvl, ctx, c), rng, g.neutral) };
+      const sitting = lvl === cur.level && (g.homeId === cur.schoolId || g.awayId === cur.schoolId);
+      const result = simScore(teamStrength(cur, g.homeId, lvl, ctx, c), teamStrength(cur, g.awayId, lvl, ctx, c), rng, g.neutral);
+      return { ...g, result: sitting ? { ...result, dnp: true } : result };
     });
     s = runPlayoffs({ ...cur, games }, ctx, c, until, rng);
-    if (userGames(s).find((g) => !g.result)?.id === stop?.id) break;
+    if (playableGames(s).find((g) => !g.result)?.id === stop?.id) break;
   }
   // practice: a little XP for every week that passes during the school year
   const weeks = Math.max(0, Math.floor((Date.parse(until) - Date.parse(c.date)) / (7 * 86_400_000)));
-  const practiceXp = weeks * Math.round(8 + c.player.traits.workEthic * 6);
+  const practiceXp = Math.round(weeks * (8 + c.player.traits.workEthic * 6) * practiceMultiplier(s.focus ?? 0.5));
   const moved = { ...c, date: until > c.date ? until : c.date, hs: { ...c.hs, seasons: [...c.hs.seasons.slice(0, -1), s] } };
   return develop(withXp(moved, practiceXp, until), until);
 }
@@ -236,7 +258,7 @@ function runPlayoffs(s: HsSeason, ctx: HsContext, c: Career, until: IsoDate, rng
     // sim newly created playoff games up to the date, except yours when you're on varsity
     games = games.map((g) => {
       if (g.result || g.kind !== "playoff" || g.date > until) return g;
-      if (s.level === "varsity" && (g.homeId === s.schoolId || g.awayId === s.schoolId)) return g;
+      if (isUserGame(s, g)) return g;
       changed = true;
       return { ...g, result: simScore(teamStrength(s, g.homeId, "varsity", ctx, c), teamStrength(s, g.awayId, "varsity", ctx, c), rng, g.neutral) };
     });
@@ -435,15 +457,17 @@ export function seasonAwards(c: Career, ctx: HsContext): string[] {
   const school = ctx.byId.get(s.schoolId)!;
   const avg = averages(s.stats.varsity);
   const out: string[] = [];
+  // team honors belong to the varsity players
+  const onVarsity = s.level === "varsity" && (s.stats.varsity?.gp ?? 0) > 0;
   const champ = s.playoffs?.find((b) => b.champion === s.schoolId);
-  if (champ) out.push(`${champ.name} champion`);
+  if (champ && onVarsity) out.push(`${champ.name} champion`);
   const regionGames = s.games.filter((g) => g.level === "varsity" && g.kind !== "playoff");
   const table = standings(
     regionGames,
     ctx.teams.filter((t) => t.conferenceId === school.conferenceId).map((t) => t.id),
   );
   const regionRank = [...table.values()].sort((a, b) => b.rw - b.rl - (a.rw - a.rl) || b.w - a.w).findIndex((x) => x.teamId === s.schoolId);
-  if (regionRank === 0) out.push("Region champion");
+  if (regionRank === 0 && onVarsity) out.push("Region champion");
   if (!avg || avg.gp < 8) return out;
   const impact = avg.ppg + avg.rpg * 0.7 + avg.apg * 0.9 + (avg.spg + avg.bpg) * 1.2;
   const region = school.conferenceId.split("-").slice(2).join(" ");
@@ -457,9 +481,10 @@ export function seasonAwards(c: Career, ctx: HsContext): string[] {
   return out;
 }
 
-/** Closes out a season (awards and summary message) and starts the next school year on August 1, or graduates. */
+/** Closes out a season: awards, a wrap-up message, an updated recruiting ranking, and the season trimmed to your school's games. */
 export function finishSeason(c: Career, ctx: HsContext): Career {
   const s = currentSeason(c)!;
+  if (s.wrapped) return c;
   const awards = seasonAwards(c, ctx);
   const end = hsCalendar(s.year).seasonEnd;
   // keep the region table, then trim the season to your school's games and the playoffs
@@ -473,14 +498,16 @@ export function finishSeason(c: Career, ctx: HsContext): Career {
   const kept = s.games
     .filter((g) => g.homeId === s.schoolId || g.awayId === s.schoolId || g.kind === "playoff")
     .map((g) => (g.result?.box && g.level !== s.level ? { ...g, result: { ...g.result, box: undefined } } : g));
+  const wrappedSeason: HsSeason = { ...s, awards, regionTable, games: kept, wrapped: true };
   let next: Career = {
     ...c,
     date: end > c.date ? end : c.date,
-    hs: { ...c.hs, seasons: [...c.hs.seasons.slice(0, -1), { ...s, awards, regionTable, games: kept }] },
+    hs: { ...c.hs, seasons: [...c.hs.seasons.slice(0, -1), wrappedSeason] },
     log: [...c.log, ...awards.map((a) => log(end, a, "award"))],
   };
+  next = rerank(next, end);
   const champion = s.playoffs?.find((b) => b.champion === s.schoolId);
-  next = {
+  return {
     ...next,
     inbox: [
       ...next.inbox,
@@ -488,25 +515,138 @@ export function finishSeason(c: Career, ctx: HsContext): Career {
         end,
         "Coach",
         "Season wrap-up",
-        `${champion ? "State champions. What a ride. " : ""}${awards.length ? `Honors: ${awards.join(", ")}. ` : ""}Rest up, then get back in the gym this summer.`,
+        `${champion ? "State champions. What a ride. " : ""}${awards.length ? `Honors: ${awards.join(", ")}. ` : ""}${
+          s.grade < 12 ? "Finish the school year strong, then get back in the gym this summer." : "Finish the school year strong. College is next."
+        }`,
       ),
     ],
   };
-  if (s.grade === 12) {
-    const date = iso(s.year + 1, 5, 28);
-    return {
-      ...next,
-      date,
-      log: [...next.log, log(date, `Graduated from ${ctx.byId.get(s.schoolId)?.name ?? "high school"}.`)],
-      inbox: [...next.inbox, msg(date, "Family", "Graduation day", "We're so proud of you. College ball is next.")],
-    };
-  }
-  // summer: a year older, then the new season begins
+}
+
+/** Refreshes your recruiting ranking and tells you when your stars change. */
+export function rerank(c: Career, date: IsoDate, extraExposure = 0): Career {
+  const s = currentSeason(c);
+  if (!s) return c;
+  const r = rankCareer(c, date, extraExposure);
+  const before = s.ranking?.stars ?? 0;
+  const seasons = [...c.hs.seasons.slice(0, -1), { ...s, ranking: r }];
+  const changed = r.stars !== before && r.stars > 0;
+  return {
+    ...c,
+    hs: { ...c.hs, seasons },
+    ...(changed
+      ? {
+          inbox: [...c.inbox, msg(date, "Recruiting service", r.stars > before ? "Your ranking went up" : "Your ranking slipped", rankingText(r))],
+          log: [...c.log, log(date, `Rated a ${r.stars}-star prospect (#${r.national} nationally).`, "milestone")],
+        }
+      : {}),
+  };
+}
+
+/** Finals week: sets the semester GPA from your aptitude, focus and quiz score (0..1). Fall grades under 2.0 make you ineligible. */
+export function takeFinals(c: Career, semester: "fall" | "spring", exam: number): Career {
+  const s = currentSeason(c)!;
+  const cal = hsCalendar(s.year);
+  const date = semester === "fall" ? cal.fallGrades : cal.springGrades;
+  const gpa = semesterGpa(c.player.academics ?? 0.6, s.focus ?? 0.5, exam, new Rng(`${c.seed}:gpa:${s.year}:${semester}`));
+  const ineligible = semester === "fall" && gpa < ELIGIBLE_GPA && !s.wrapped;
+  const season: HsSeason = { ...s, grades: { ...s.grades, [semester]: gpa }, ...(ineligible ? { ineligibleFrom: date } : {}) };
+  const body = ineligible
+    ? `Your fall GPA is ${gpa.toFixed(2)}. That's below ${ELIGIBLE_GPA.toFixed(1)}, so you're academically ineligible for the rest of the season. Spend more time on school next semester.`
+    : `Your ${semester} GPA is ${gpa.toFixed(2)} (${gpaLabel(gpa)}).`;
+  return {
+    ...c,
+    date: date > c.date ? date : c.date,
+    hs: { ...c.hs, seasons: [...c.hs.seasons.slice(0, -1), season] },
+    inbox: [...c.inbox, msg(date, "Counselor", `${semester === "fall" ? "Fall" : "Spring"} grades`, body)],
+    log: [
+      ...c.log,
+      log(
+        date,
+        `${semester === "fall" ? "Fall" : "Spring"} semester GPA: ${gpa.toFixed(2)}.${ineligible ? " Academically ineligible." : ""}`,
+        ineligible ? "move" : "milestone",
+      ),
+    ],
+  };
+}
+
+export const setFocus = (c: Career, focus: number): Career => {
+  const s = currentSeason(c);
+  if (!s) return c;
+  return { ...c, hs: { ...c.hs, seasons: [...c.hs.seasons.slice(0, -1), { ...s, focus: clamp(focus, 0, 1) }] } };
+};
+
+/** Goes to a summer camp: rating boosts, then the exposure shows up in your recruiting ranking. */
+export function goToCamp(c: Career, campId: string): Career {
+  const camp = CAMPS.find((x) => x.id === campId);
+  if (!camp) return c;
+  const s = currentSeason(c)!;
+  return rerank(attendCamp(c, campId), campDate(s.year), camp.exposure);
+}
+
+/** Sets up this summer's AAU showcase (club and games). */
+export function prepareShowcase(c: Career): Career {
+  const s = currentSeason(c)!;
+  return s.summer?.showcase ? c : scheduleShowcase(c);
+}
+
+/** Records a showcase game: XP and exposure with college coaches, then a ranking refresh. */
+export function applyShowcaseGame(c: Career, gameId: string, o: UserGameOutcome): Career {
+  const s = currentSeason(c)!;
+  const games = s.summer?.showcase ?? [];
+  const g = games.find((x) => x.id === gameId);
+  if (!g || g.result) return c;
+  const line = o.box[c.player.id];
+  const gs = line ? gameScore(line) : 0;
+  const result: GameResult = { home: o.homeScore, away: o.awayScore, played: o.played, overtimes: o.overtimes, ...(line ? { userLine: line } : { dnp: true }) };
+  const showcase = games.map((x) => (x.id === gameId ? { ...x, result } : x));
+  const elite = !!s.summer?.club?.elite;
+  const gain = showcaseExposure(gs, elite);
+  let next: Career = { ...c, date: g.date, hs: { ...c.hs, seasons: [...c.hs.seasons.slice(0, -1), { ...s, summer: { ...s.summer!, showcase } }] } };
+  next = withXp(next, Math.round(clamp(15 + gs * 2.5, 5, 70)), g.date);
+  if (line && line.pts >= 20) next = { ...next, log: [...next.log, log(g.date, `${line.pts} points at the ${g.label ?? "showcase"}.`, "game")] };
+  return rerank(next, g.date, gain);
+}
+
+/** The 3D or simulated match for a showcase game: your club against another club. */
+export function showcaseSetup(c: Career, game: ScheduledGame): MatchSetup {
+  const s = currentSeason(c)!;
+  const sc = showcaseFor(c, s);
+  const opp = sc.opponents.find((t) => t.id === game.homeId || t.id === game.awayId)!;
+  const mine = withUser(clubRoster(sc.club, sc.target, s.year, s.grade), c.player);
+  const theirs = clubRoster(opp, sc.target + 1, s.year, s.grade);
+  const side = (team: Team, roster: Player[]) => ({ team, roster, starters: pickStarters(roster) });
+  const homeIsUs = game.homeId === sc.club.id;
+  return {
+    league: "hs",
+    home: homeIsUs ? side(sc.club, mine) : side(opp, theirs),
+    away: homeIsUs ? side(opp, theirs) : side(sc.club, mine),
+    lockPlayerId: c.player.id,
+    difficulty: c.settings.difficulty,
+    seed: Math.abs(hashGame(game.id + c.seed)) % 1_000_000,
+  };
+}
+
+/** Starts the next school year on August 1: a year older, the summer's development, new rosters and schedules. */
+export function startNextYear(c: Career, ctx: HsContext): Career {
+  const s = currentSeason(c)!;
   const newYear = s.year + 1;
-  // the summer counts toward natural development
-  const summer = develop(next, iso(newYear, 8, 1));
-  const aged = { ...summer, date: iso(newYear, 8, 1), player: { ...summer.player, age: summer.player.age + 1 } };
+  const developed = develop(c, iso(newYear, 8, 1));
+  const aged = { ...developed, date: iso(newYear, 8, 1), player: { ...developed.player, age: developed.player.age + 1 } };
   return startSeason(aged, newYear, ctx);
+}
+
+/** Graduation day after senior year. */
+export function graduate(c: Career, ctx: HsContext): Career {
+  const s = currentSeason(c)!;
+  const date = iso(s.year + 1, 5, 28);
+  if (c.log.some((e) => e.text.startsWith("Graduated from"))) return c;
+  return {
+    ...c,
+    date,
+    log: [...c.log, log(date, `Graduated from ${ctx.byId.get(s.schoolId)?.name ?? "high school"}.`)],
+    inbox: [...c.inbox, msg(date, "Family", "Graduation day", "We're so proud of you. College ball is next.")],
+  };
 }
 
 /** A readable one-line summary of a game from your school's side. */

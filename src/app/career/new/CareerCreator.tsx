@@ -105,6 +105,7 @@ export function CareerCreator() {
   const [appearance, setAppearance] = useState<Appearance>(() => randomAppearance(new Rng(1)));
   const [alloc, setAlloc] = useState<Partial<Record<RatingKey, number>>>({});
   const [settings, setSettings] = useState<CareerSettings>(DEFAULT_SETTINGS);
+  const [academics, setAcademics] = useState(0.6);
   const [starting, setStarting] = useState(false);
 
   useEffect(() => {
@@ -188,6 +189,7 @@ export function CareerCreator() {
           schoolId: school.id,
           allocation: alloc,
           settings,
+          academics,
           startYear: new Date().getFullYear(),
         },
         seed,
@@ -446,6 +448,17 @@ export function CareerCreator() {
                   { value: "sim", label: "Sim to the end" },
                 ]}
                 onChange={(v) => setSettings((s) => ({ ...s, bench: v }))}
+              />
+              <Select
+                label="In the classroom"
+                hint="Sets your starting grades; school time and finals matter too"
+                value={academics}
+                options={[
+                  { value: 0.3, label: "Struggling" },
+                  { value: 0.6, label: "Average" },
+                  { value: 0.85, label: "Honor roll" },
+                ]}
+                onChange={setAcademics}
               />
               <Select
                 label="Story events"

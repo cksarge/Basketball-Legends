@@ -8,6 +8,13 @@ import { uniformColors } from "@/game3d/character/uniformTexture";
 import type { Career, ScheduledGame } from "@/career/types";
 import {
   advanceTo,
+  applyShowcaseGame,
+  goToCamp,
+  graduate,
+  prepareShowcase,
+  showcaseSetup,
+  startNextYear,
+  takeFinals,
   applyTryout,
   applyUserGame,
   currentSeason,
@@ -48,8 +55,24 @@ export async function applyFinishedMatch(ctx: HsContext) {
   const c = cur();
   if (!res?.career || res.career.careerId !== c.id) return false;
   const s = currentSeason(c);
-  const game = s?.games.find((g) => g.id === res.career!.gameId);
   useMatchStore.getState().setResult(null);
+  // a summer showcase game
+  const show = s?.summer?.showcase?.find((g) => g.id === res.career!.gameId);
+  if (show) {
+    if (show.result) return false;
+    await update((x) =>
+      applyShowcaseGame(x, show.id, {
+        homeScore: res.homeScore,
+        awayScore: res.awayScore,
+        overtimes: Math.max(0, res.periods - 4),
+        box: res.box,
+        played: !res.simulated,
+        playerOfGame: res.playerOfGame,
+      }),
+    );
+    return true;
+  }
+  const game = s?.games.find((g) => g.id === res.career!.gameId);
   if (!game || game.result) return false;
   const regulation = res.periods > 4 ? 4 : res.periods;
   await update((x) =>
@@ -127,11 +150,39 @@ export async function finishCurrentSeason(ctx: HsContext) {
   await update((x) => finishSeason(x, ctx));
 }
 
-/** The 3D match for one of your games. */
+export async function finalsAction(semester: "fall" | "spring", exam: number, ctx: HsContext) {
+  const ev = nextEvent(cur());
+  if (ev.kind !== "finals") return;
+  await update((x) => takeFinals(advanceTo(x, ev.date, ctx), semester, exam));
+}
+
+export const campAction = (campId: string) => update((x) => goToCamp(x, campId));
+export const showcaseAction = () => update((x) => prepareShowcase(x));
+export const nextYearAction = (ctx: HsContext) => update((x) => startNextYear(x, ctx));
+export const graduateAction = (ctx: HsContext) => update((x) => graduate(x, ctx));
+
+/** Simulates the remaining showcase games through the real engine. */
+export async function simShowcase(onProgress: (p: SimProgress | null) => void) {
+  for (let i = 0; i < 5; i++) {
+    const ev = nextEvent(cur());
+    if (ev.kind !== "showcase" || !ev.game) break;
+    const game = ev.game;
+    const setup = showcaseSetup(cur(), game);
+    const label = game.label ?? "Showcase";
+    onProgress({ index: i + 1, total: 3, label, fraction: 0 });
+    const match = new Match({ ...setup, fast: true });
+    await simulateToEnd(match, (f) => onProgress({ index: i + 1, total: 3, label, fraction: f }));
+    await update((x) => applyShowcaseGame(x, game.id, outcomeFromMatch(match, false)));
+  }
+  onProgress(null);
+}
+
+/** The 3D match for one of your games (season or summer showcase). */
 export function careerPending(c: Career, game: ScheduledGame, ctx: HsContext, controller: string): PendingMatch {
-  const setup = userMatchSetup(c, game, ctx);
+  const isShowcase = game.id.startsWith("aau-");
+  const setup = isShowcase ? { ...showcaseSetup(c, game), level: "varsity" as const } : userMatchSetup(c, game, ctx);
   const s = currentSeason(c)!;
-  const homeIsUs = game.homeId === s.schoolId;
+  const homeIsUs = isShowcase ? setup.home.roster.some((p) => p.id === c.player.id) : game.homeId === s.schoolId;
   const home = setup.home,
     away = setup.away;
   let awayUniform: "away" | "alt" = "away";

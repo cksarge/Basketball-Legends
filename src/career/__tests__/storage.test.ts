@@ -5,7 +5,7 @@ import { Rng } from "@/engine/rng";
 import type { Team } from "@/engine/types";
 import hs from "@/data/generated/hs.json";
 import { DEFAULT_SETTINGS, createCareer, defaultBody } from "../create";
-import { EXPORT_KIND, deleteCareer, exportCareer, importCareer, listCareers, loadCareer, openCareerDb, saveCareer } from "../storage";
+import { EXPORT_KIND, deleteCareer, exportCareer, importCareer, listCareers, loadCareer, migrate, openCareerDb, saveCareer } from "../storage";
 import { CAREER_VERSION } from "../types";
 
 const team = (hs.teams as unknown as Team[])[0];
@@ -73,5 +73,14 @@ describe("career storage", () => {
     await expect(importCareer(JSON.stringify({ kind: "other" }), () => team)).rejects.toThrow("isn't a career save");
     const future = { kind: EXPORT_KIND, career: { ...make(), version: CAREER_VERSION + 1 } };
     await expect(importCareer(JSON.stringify(future), () => team)).rejects.toThrow("newer version");
+  });
+
+  it("fills in fields older saves don't have", async () => {
+    const c = make();
+    const old = { ...c, player: { ...c.player, academics: undefined }, hs: { ...c.hs, seasons: [{ year: 2026, grade: 9 } as never] } };
+    const fixed = migrate(old as never);
+    expect(fixed.player.academics).toBe(0.6);
+    expect(fixed.hs.seasons[0].grades).toEqual({});
+    expect(fixed.hs.seasons[0].focus).toBe(0.5);
   });
 });

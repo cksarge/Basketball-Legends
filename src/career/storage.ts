@@ -68,11 +68,16 @@ export async function deleteCareer(id: string) {
   await getDb().careers.delete(id);
 }
 
-/** Upgrades older saves to the current format. Version 1 is the first, so this only validates for now. */
+/** Upgrades older saves to the current format and fills in fields added since they were saved. */
 export function migrate(c: Career): Career {
   if (!c || typeof c !== "object" || !c.player || !c.id) throw new Error("Not a Basketball Legends career");
   if (c.version > CAREER_VERSION) throw new Error("This career was saved by a newer version of the game. Update the game to open it.");
-  return c;
+  // fields added during the 0.2.0 betas get their defaults
+  return {
+    ...c,
+    player: { ...c.player, academics: c.player.academics ?? 0.6 },
+    hs: { ...c.hs, seasons: c.hs.seasons.map((s) => ({ ...s, grades: s.grades ?? {}, focus: s.focus ?? 0.5 })) },
+  };
 }
 
 export const EXPORT_KIND = "basketball-legends-career";

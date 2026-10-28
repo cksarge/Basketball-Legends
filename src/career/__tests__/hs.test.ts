@@ -12,6 +12,14 @@ import { OPEN_SIZE, advanceBracket, createBrackets, roundName, winnerOf } from "
 import {
   XP_PER_POINT,
   advanceTo,
+  applyShowcaseGame,
+  goToCamp,
+  prepareShowcase,
+  showcaseSetup,
+  startNextYear,
+  takeFinals,
+  setFocus,
+  rerank,
   applyTryout,
   applyUserGame,
   checkLevelMove,
@@ -31,6 +39,9 @@ import {
   type UserGameOutcome,
 } from "../hs/season";
 import type { Career, ScheduledGame } from "../types";
+import { ELIGIBLE_GPA, finalsQuiz, gpaLabel, practiceMultiplier, semesterGpa } from "../hs/academics";
+import { MAX_EXPOSURE, nationalRank, rankCareer, starsFor, stateRank } from "../hs/rankings";
+import { CAMPS, campsFor, showcaseExposure } from "../hs/summer";
 import { emptyLine } from "@/game/sim/stats";
 
 const teams = hs.teams as unknown as Team[];
@@ -387,7 +398,7 @@ describe("season flow", () => {
     expect(setup.level).toBe(currentSeason(c)!.level);
   });
 
-  it("finishing a season trims it, keeps the region table, and starts next year a grade older", () => {
+  it("finishing a season trims it, keeps the region table, then summer leads to next year a grade older", () => {
     let c = startSeason(career(), 2026, ctx);
     c = applyTryout(advanceTo(c, hsCalendar(2026).tryouts, ctx), placeAtTryout(c, ctx));
     for (let guard = 0; guard < 60; guard++) {
@@ -395,21 +406,165 @@ describe("season flow", () => {
       if (ev.kind === "game") {
         c = advanceTo(c, ev.date, ctx);
         c = applyUserGame(c, ev.game.id, outcome(c, ev.game, 12, guard % 2 === 0), ctx);
-      } else break;
+      } else if (ev.kind === "finals") c = takeFinals(advanceTo(c, ev.date, ctx), ev.semester, 0.5);
+      else break;
     }
     expect(nextEvent(c).kind).toBe("seasonEnd");
     c = advanceTo(c, hsCalendar(2026).seasonEnd, ctx);
     const done = currentSeason(c)!;
     expect(done.playoffs!.every((b) => b.champion)).toBe(true);
     c = finishSeason(c, ctx);
-    const prev = c.hs.seasons[0];
+    const prev = currentSeason(c)!;
+    expect(prev.wrapped).toBe(true);
     expect(prev.regionTable!.length).toBeGreaterThan(1);
     expect(prev.games.every((g) => g.homeId === brophy.id || g.awayId === brophy.id || g.kind === "playoff")).toBe(true);
+    expect(prev.ranking).toBeDefined();
+    expect(finishSeason(c, ctx)).toBe(c);
+    // spring finals, camp, AAU, then the new school year
+    expect(nextEvent(c)).toMatchObject({ kind: "finals", semester: "spring" });
+    c = takeFinals(c, "spring", 0.5);
+    expect(nextEvent(c).kind).toBe("camp");
+    c = goToCamp(c, "shooting");
+    const sc = nextEvent(c);
+    expect(sc.kind === "showcase" && !sc.game).toBe(true);
+    c = prepareShowcase(c);
+    for (let i = 0; i < 3; i++) {
+      const ev = nextEvent(c);
+      if (ev.kind !== "showcase" || !ev.game) throw new Error("expected a showcase game");
+      const setup = showcaseSetup(c, ev.game);
+      const mine = setup.home.roster.some((p) => p.id === c.player.id) ? setup.home : setup.away;
+      expect(mine.roster.some((p) => p.id === c.player.id)).toBe(true);
+      c = applyShowcaseGame(c, ev.game.id, { ...outcome(c, ev.game, 20), homeScore: 70, awayScore: 60 });
+    }
+    expect(nextEvent(c).kind).toBe("nextYear");
+    c = startNextYear(c, ctx);
     expect(c.hs.seasons).toHaveLength(2);
     expect(currentSeason(c)!.grade).toBe(10);
     expect(c.player.age).toBe(15);
     expect(c.player.classYear).toBe("SO");
     expect(nextEvent(c).kind).toBe("tryout");
     expect(JSON.stringify(c).length).toBeLessThan(900_000);
+  });
+});
+
+describe("academics", () => {
+  it("GPA rises with aptitude, time on school and the exam", () => {
+    const r = () => new Rng(1);
+    expect(semesterGpa(0.85, 0.5, 0.5, r())).toBeGreaterThan(semesterGpa(0.3, 0.5, 0.5, r()));
+    expect(semesterGpa(0.6, 0.9, 0.5, r())).toBeGreaterThan(semesterGpa(0.6, 0.1, 0.5, r()));
+    expect(semesterGpa(0.6, 0.5, 1, r())).toBeGreaterThan(semesterGpa(0.6, 0.5, 0, r()));
+    for (let i = 0; i < 50; i++) {
+      const g = semesterGpa(Math.random(), Math.random(), Math.random(), new Rng(i));
+      expect(g).toBeGreaterThanOrEqual(0.5);
+      expect(g).toBeLessThanOrEqual(4);
+    }
+    expect(practiceMultiplier(0)).toBeGreaterThan(practiceMultiplier(1));
+    expect(gpaLabel(1.5)).toBe("Academically ineligible");
+  });
+
+  it("the finals quiz has eight answerable questions", () => {
+    const q = finalsQuiz("seed", 9);
+    expect(q).toHaveLength(8);
+    for (const x of q) {
+      expect(x.choices).toHaveLength(4);
+      expect(new Set(x.choices).size).toBe(4);
+      expect(x.answer).toBeGreaterThanOrEqual(0);
+      expect(x.answer).toBeLessThan(4);
+    }
+    const math = q.find((x) => x.prompt.includes("×"));
+    if (math) {
+      const [a, b] = math.prompt.replace(/^.*: /, "").replace(" = ?", "").split(" × ").map(Number);
+      expect(Number(math.choices[math.answer])).toBe(a * b);
+    }
+    expect(finalsQuiz("seed", 9)).toEqual(q);
+  });
+
+  it("a failing fall GPA makes you sit out the rest of the season", () => {
+    let c = startSeason({ ...career(), player: { ...career().player, academics: 0 } }, 2026, ctx);
+    c = setFocus(c, 0);
+    c = applyTryout(advanceTo(c, hsCalendar(2026).tryouts, ctx), placeAtTryout(c, ctx));
+    for (let guard = 0; guard < 30; guard++) {
+      const ev = nextEvent(c);
+      if (ev.kind === "game") c = applyUserGame(advanceTo(c, ev.date, ctx), ev.game.id, outcome(c, ev.game, 10), ctx);
+      else break;
+    }
+    const ev = nextEvent(c);
+    expect(ev).toMatchObject({ kind: "finals", semester: "fall" });
+    c = takeFinals(advanceTo(c, ev.date, ctx), "fall", 0);
+    const s = currentSeason(c)!;
+    expect(s.grades.fall!).toBeLessThan(ELIGIBLE_GPA);
+    expect(s.ineligibleFrom).toBe(hsCalendar(2026).fallGrades);
+    // no more games to play: the rest are simulated without you
+    expect(nextEvent(c).kind).toBe("seasonEnd");
+    c = advanceTo(c, hsCalendar(2026).seasonEnd, ctx);
+    const after = currentSeason(c)!.games.filter(
+      (g) => g.level === s.level && (g.homeId === s.schoolId || g.awayId === s.schoolId) && g.date >= s.ineligibleFrom!,
+    );
+    expect(after.length).toBeGreaterThan(0);
+    expect(after.every((g) => g.result?.dnp)).toBe(true);
+  });
+});
+
+describe("recruiting rankings", () => {
+  it("higher scores rank higher, with stars by rank", () => {
+    expect(nationalRank(84)).toBe(1);
+    expect(nationalRank(70)!).toBeLessThan(nationalRank(65)!);
+    expect(nationalRank(40)).toBeNull();
+    expect(starsFor(10)).toBe(5);
+    expect(starsFor(200)).toBe(4);
+    expect(starsFor(1000)).toBe(3);
+    expect(starsFor(2000)).toBe(2);
+    expect(starsFor(null)).toBe(0);
+    expect(stateRank(500)!).toBeLessThan(500);
+  });
+
+  it("a better player with more exposure ranks higher", () => {
+    let c = startSeason(career(), 2026, ctx);
+    const base = rankCareer(c, "2027-03-01");
+    const better = rankCareer(
+      {
+        ...c,
+        player: {
+          ...c.player,
+          ratings: Object.fromEntries(Object.entries(c.player.ratings).map(([k, v]) => [k, v + 10])) as unknown as Career["player"]["ratings"],
+        },
+      },
+      "2027-03-01",
+    );
+    expect(better.score).toBeGreaterThan(base.score);
+    expect(rankCareer(c, "2027-03-01", 3).score).toBeGreaterThan(base.score);
+    expect(rankCareer(c, "2027-03-01", 99).exposure).toBe(MAX_EXPOSURE);
+    c = rerank(c, "2027-03-01", 1);
+    expect(currentSeason(c)!.ranking).toBeDefined();
+  });
+});
+
+describe("summer", () => {
+  it("camps raise their skills but never past a cap, and the elite camp is invite-only", () => {
+    let c = startSeason(career(), 2026, ctx);
+    const camps = campsFor(c);
+    expect(camps.find((x) => x.id === "elite")!.invited).toBe(false);
+    expect(camps.filter((x) => x.invited).length).toBe(CAMPS.length - 1);
+    const before = c.player.ratings.three;
+    c = goToCamp(c, "shooting");
+    expect(c.player.ratings.three).toBe(Math.min(c.player.caps.three, before + 3));
+    expect(currentSeason(c)!.summer!.camp!.id).toBe("shooting");
+    const capped = goToCamp({ ...c, player: { ...c.player, ratings: { ...c.player.ratings, three: c.player.caps.three } } }, "shooting");
+    expect(capped.player.ratings.three).toBe(c.player.caps.three);
+  });
+
+  it("showcase games are three neutral-site games with your club, and good games earn exposure", () => {
+    let c = startSeason(career(), 2026, ctx);
+    c = prepareShowcase(c);
+    const games = currentSeason(c)!.summer!.showcase!;
+    expect(games).toHaveLength(3);
+    expect(games.every((g) => g.neutral && g.kind === "scrimmage")).toBe(true);
+    expect(prepareShowcase(c)).toBe(c);
+    expect(showcaseExposure(25, true)).toBeGreaterThan(showcaseExposure(5, true));
+    expect(showcaseExposure(25, false)).toBeLessThan(showcaseExposure(25, true));
+    const r0 = rankCareer(c, "2027-07-01").exposure;
+    c = applyShowcaseGame(c, games[0].id, { ...outcome(c, games[0], 30), homeScore: 80, awayScore: 70 });
+    expect(currentSeason(c)!.ranking!.exposure).toBeGreaterThan(r0);
+    expect(currentSeason(c)!.summer!.showcase![0].result!.userLine!.pts).toBe(30);
   });
 });

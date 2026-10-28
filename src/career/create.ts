@@ -168,6 +168,7 @@ export function createCareer(input: CreatorInput, seed = Date.now() % 2147483647
     skillPoints: 0,
     xp: 0,
     birthYear: input.startYear - age,
+    academics: clamp(input.academics ?? 0.6, 0, 1),
   };
   const now = Date.now();
   const date = startDate(input.startYear);

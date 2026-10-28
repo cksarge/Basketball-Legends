@@ -45,6 +45,8 @@ export interface CareerPlayer extends Player {
   birthYear: number;
   /** Natural development has been applied up to this date. */
   devDate?: IsoDate;
+  /** Aptitude in the classroom (0..1), set in the creator. */
+  academics: number;
 }
 
 export type GameKind = "nonregion" | "region" | "tournament" | "playoff" | "scrimmage";
@@ -109,11 +111,43 @@ export interface HsSeason {
   /** Totals for your player at each level this season. */
   stats: Partial<Record<HsLevel, StatLine & { gp: number; gs: number }>>;
   awards: string[];
-  gpa?: number;
+  /** Semester GPAs (0-4.0), set at finals. */
+  grades: { fall?: number; spring?: number };
+  /** How you split your time: 0 = all basketball, 1 = all school. Shapes practice XP and grades. */
+  focus: number;
+  /** Fall grades below 2.0 keep you out of games from this date until spring grades. */
+  ineligibleFrom?: IsoDate;
+  /** Summer after the season: the camp you went to and your AAU showcase games. */
+  summer?: SummerPlan;
+  /** Recruiting snapshot, refreshed after each season and summer event. */
+  ranking?: RecruitRanking;
+  /** Awards handed out and the season trimmed; the summer comes next. */
+  wrapped?: boolean;
   /** State playoff brackets (Open Division and each class), created when the regular season ends. */
   playoffs?: Bracket[];
   /** Final region table, kept when a finished season is trimmed to your school's games. */
   regionTable?: { teamId: string; w: number; l: number; rw: number; rl: number }[];
+}
+
+export interface SummerPlan {
+  camp?: { id: string; name: string; boosts: Partial<Record<RatingKey, number>>; exposure: number };
+  /** AAU club you play for and its showcase games (synthetic teams, see hs/summer.ts). */
+  club?: { name: string; elite: boolean };
+  showcase?: ScheduledGame[];
+  done?: boolean;
+}
+
+export interface RecruitRanking {
+  date: IsoDate;
+  /** 1-5; 0 = not rated. */
+  stars: number;
+  /** National rank in your class, or null when unranked. */
+  national: number | null;
+  state: number | null;
+  /** The score scouts rank on (projected senior overall + production + exposure). */
+  score: number;
+  /** Exposure from camps and showcases (0..4). */
+  exposure: number;
 }
 
 export interface Bracket {
@@ -188,6 +222,8 @@ export interface CreatorInput {
   schoolId: string;
   /** Starting skill points the player spent in the creator. */
   allocation: Partial<Record<RatingKey, number>>;
+  /** Classroom aptitude 0..1 (struggling 0.3, average 0.6, honor roll 0.85). */
+  academics?: number;
   settings: CareerSettings;
   startYear: number;
 }
