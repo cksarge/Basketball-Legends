@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { boardX, type CourtSpec } from "@/game/court";
 import type { CameraMode } from "@/state/settings";
 import type { ReplayCam } from "./replay";
-import { FLOOR_MARGIN } from "./courtTexture";
+import { FLOOR_MARGIN, floorSize } from "./courtTexture";
 import { type VenueVariant, venueCeiling, venueClearance, venueInterior } from "./arena/variants";
 
 export interface CameraPose {
@@ -50,8 +50,8 @@ export function followPose(
         };
       return { look: new THREE.Vector3(fx, 1.2, fz), pos: new THREE.Vector3(fx, 9, c.halfW + 18), fov: 32 / zoom };
     case "skycam":
-      // over the near sideline, inside the catwalk ring
-      return { look: new THREE.Vector3(fx, 0, fz), pos: new THREE.Vector3(fx - side * 2, (22 * heightMul) / zoom, c.halfW + 1.5), fov: 45 };
+      // over the near sideline, outside the halo board's ring and inside the catwalk ring
+      return { look: new THREE.Vector3(fx, 0, fz), pos: new THREE.Vector3(fx - side * 2, (22 * heightMul) / zoom, c.halfW + 2.8), fov: 45 };
     default:
       return { look: new THREE.Vector3(fx, 1.1, fz), pos: new THREE.Vector3(fx * 0.85, 9.5 * heightMul, c.halfW + 17 / zoom), fov: 30 / zoom };
   }
@@ -90,7 +90,11 @@ export function replayPose(
   switch (cam) {
     case "orbit": {
       const a = orbit + (sign > 0 ? Math.PI * 0.5 : -Math.PI * 0.5);
-      return { pos: new THREE.Vector3(t.x + Math.sin(a) * 6.5, 2.4, t.z + Math.cos(a) * 6.5), look, fov: 40 };
+      // circles on the floor: near the corners it tightens instead of swinging into the front rows
+      const f = floorSize(c);
+      const x = THREE.MathUtils.clamp(t.x + Math.sin(a) * 6.5, -f.w / 2 + 0.4, f.w / 2 - 0.4);
+      const z = THREE.MathUtils.clamp(t.z + Math.cos(a) * 6.5, -f.h / 2 + 0.4, f.h / 2 - 0.4);
+      return { pos: new THREE.Vector3(x, 2.4, z), look, fov: 40 };
     }
     case "baseline":
       return { pos: new THREE.Vector3(sign * (c.halfL + 3.5), 2.1, t.z * 0.4), look, fov: 34 };
@@ -132,13 +136,16 @@ function clearBaskets(venue: VenueVariant, c: CourtSpec, pos: THREE.Vector3) {
   for (const side of [1, -1] as const) {
     const bx = boardX(c, side);
     const top = c.boardBottom + c.boardHeight;
-    // the board, its shot clock and the arm/pole behind it
-    const behind = venue.kind === "gym" ? 0.6 : 2.6;
-    const lo = Math.min(bx, bx + side * behind) - 0.7,
-      hi = Math.max(bx, bx + side * behind) + 0.7;
-    if (pos.x > lo && pos.x < hi && Math.abs(pos.z) < c.boardWidth / 2 + 0.8 && pos.y < top + 1.2) {
-      // gyms: the drop pipe runs up to the girder, so move sideways instead
-      if (venue.kind === "gym" && pos.y > c.boardBottom - 0.7) pos.z = Math.sign(pos.z || 1) * (c.boardWidth / 2 + 0.8);
+    // the board, its shot clock and the arm/pole behind it, plus room behind so a camera
+    // never sits right up against the back of the board
+    const behind = (venue.kind === "gym" ? 0.6 : 2.6) + 1.0;
+    const lo = Math.min(bx - side * 0.7, bx + side * behind),
+      hi = Math.max(bx - side * 0.7, bx + side * behind);
+    // in gyms the drop pipe runs all the way up to the girder
+    const ceil = venue.kind === "gym" ? venue.girderY + 0.8 : top + 1.2;
+    if (pos.x > lo && pos.x < hi && Math.abs(pos.z) < c.boardWidth / 2 + 0.8 && pos.y < ceil) {
+      // gyms: move sideways off the pipe; arenas: rise over the board
+      if (venue.kind === "gym") pos.z = Math.sign(pos.z || 1) * (c.boardWidth / 2 + 0.8);
       else pos.y = top + 1.2;
     }
   }

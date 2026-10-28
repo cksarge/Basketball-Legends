@@ -123,10 +123,11 @@ export function venueClearance(v: VenueVariant, court: CourtSpec, x: number, y: 
       d = out - ((t.side === "near" || t.side === "far" ? fh2 : fw2) + t.start);
       // behind the back row the camera still has to clear the top row's fans
     }
-    if (d <= 0) return;
+    // just short of the front row still counts: those fans are within arm's reach of the lens
+    if (d <= -0.4) return;
     if (i > 0 && y < t.y0 - 1.3) return;
     // look one step up the rake: the fans in the row behind sit higher and right beside the lens
-    const row = Math.min(t.rows - 1, Math.floor((d + 0.8) / t.depth));
+    const row = Math.min(t.rows - 1, Math.max(0, Math.floor((d + 0.8) / t.depth)));
     min = Math.max(min, t.y0 + row * t.rise + HEAD_ROOM);
   });
   return min;

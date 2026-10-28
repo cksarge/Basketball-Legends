@@ -8,7 +8,7 @@ A free, open-source 3D basketball game that runs in the browser. Play pro basket
 
 - **Real-time 3D 5v5** with dribble moves, a timing-based shot meter, layups, dunks, floaters, post moves, alley-oops, steals, blocks and box-out rebounding.
 - **Full rules for each league:** shot clocks, fouls and the bonus, free throws, inbounds, traveling, three seconds, backcourt and 8/10-second violations, goaltending, timeouts, substitutions, fatigue and overtime.
-- **Tested:** unit tests for the engine (rules, injuries, saves, input) and browser smoke tests for every page and the main game flows run on every deploy.
+- **Tested:** unit tests for the engine (rules, injuries, saves, input), a camera sweep that flies every camera through every venue's real geometry and fails if one clips anything, and browser smoke tests for every page and the main game flows run on every deploy.
 - **Coaching:** set each team's pace, three-point emphasis, offensive rebounding, double teams and defense (man-to-man, 2-3 zone, 3-2 zone or a full-court trapping press) before the game or from the pause menu.
 - **Gameplay sliders:** shot, three-point and layup success, pass accuracy, steals, blocks, fouls, game speed, injuries and CPU aggression.
 - **Team AI** that spaces the floor, runs pick-and-roll, drives and kicks, posts up, cuts, and plays man or zone defense with help rotations.
@@ -45,7 +45,7 @@ Requires Node 22+.
 ```bash
 npm install
 npm run dev          # http://localhost:3000
-npm test             # engine and simulation tests
+npm test             # engine, simulation and camera-collision tests
 npm run test:e2e     # browser smoke tests against the production build (run `npm run build` first; uses your installed Chrome)
                      # CI runs the page tests only; the full-game @gpu flows need a GPU and run locally
 npm run build        # static export to out/ (also regenerates sitemap.xml)
