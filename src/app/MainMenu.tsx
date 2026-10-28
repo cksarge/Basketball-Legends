@@ -197,12 +197,13 @@ export function MainMenu() {
   const item = useMemo(() => items.find((i) => i.id === focused) ?? items[0], [focused, items]);
 
   return (
-    <div className="relative min-h-dvh overflow-hidden bg-navy">
-      <div className="absolute inset-0" aria-hidden>
+    <div className="relative min-h-dvh overflow-x-hidden bg-navy">
+      {/* the backdrop stays put while the menu scrolls on short screens */}
+      <div className="fixed inset-0" aria-hidden>
         {team && <MenuBackdrop team={team} kind="pro" />}
       </div>
-      <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/75 to-transparent" aria-hidden />
-      <div className="relative flex min-h-dvh flex-col px-6 py-[3vh] sm:px-12">
+      <div className="fixed inset-0 bg-gradient-to-r from-navy via-navy/75 to-transparent" aria-hidden />
+      <div className="relative flex min-h-dvh flex-col px-6 py-6 sm:px-12">
         <header className="flex items-center gap-4">
           {team && <TeamLogo team={team} size={44} />}
           <p className="font-display text-xl font-bold text-steel">Tonight at {team?.arena.name ?? "the arena"}</p>
@@ -210,7 +211,7 @@ export function MainMenu() {
         {IS_BETA && <BetaWarning />}
         <div className="flex flex-1 flex-col justify-center gap-10 lg:flex-row lg:items-center lg:justify-between">
           <nav aria-label="Main menu" className="flex flex-col">
-            <h1 className="mb-[2.5vh] font-display text-[clamp(3rem,min(9vw,11vh),7.5rem)] font-black leading-[0.85] tracking-tight">
+            <h1 className="mb-6 font-display text-[clamp(3rem,9vw,7.5rem)] font-black leading-[0.85] tracking-tight">
               Basketball
               <br />
               Legends
@@ -321,7 +322,7 @@ function BetaWarning() {
   return (
     <aside
       aria-label="Beta warning"
-      className="mt-4 w-full rounded-[var(--radius-panel)] bg-navy/85 p-4 ring-2 ring-amber backdrop-blur lg:absolute lg:right-12 lg:top-[3vh] lg:mt-0 lg:max-w-md"
+      className="mt-4 w-full rounded-[var(--radius-panel)] bg-navy/85 p-4 ring-2 ring-amber backdrop-blur lg:absolute lg:right-12 lg:top-6 lg:mt-0 lg:max-w-md"
     >
       <p className="font-display text-2xl font-black text-amber">You&apos;re playing the beta</p>
       <p className="mt-1 text-sm text-net/90">
@@ -336,5 +337,5 @@ function BetaWarning() {
 }
 
 function menuCls(active: boolean) {
-  return `group flex items-baseline py-[0.3vh] text-left font-display text-[clamp(1.6rem,min(5vw,5.2vh),3rem)] font-extrabold leading-tight transition-colors ${active ? "text-amber" : "text-net/80 hover:text-net"}`;
+  return `group flex items-baseline py-1 text-left font-display text-[clamp(1.6rem,5vw,3rem)] font-extrabold leading-tight transition-colors ${active ? "text-amber" : "text-net/80 hover:text-net"}`;
 }
