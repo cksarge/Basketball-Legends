@@ -115,7 +115,8 @@ export interface HudSnapshot {
   awayTimeouts: number;
   possession: 0 | 1;
   bonus: [boolean, boolean];
-  meter: { active: boolean; fill: number; ideal: number; result: "green" | "good" | "early" | "late" | null; side: 0 | 1 } | null;
+  /** `green` is the half-height of the green band, in fill units (it matches the engine's window). */
+  meter: { active: boolean; fill: number; ideal: number; green: number; result: "green" | "good" | "early" | "late" | null; side: 0 | 1 } | null;
   controlled: { name: string; number: number; stamina: number; team: 0 | 1 } | null;
 }
 

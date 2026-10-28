@@ -97,6 +97,7 @@ export function ShotMeter() {
   if (!show) return null;
   const fill = meter?.fill ?? 1;
   const ideal = meter?.ideal ?? 0.74;
+  const green = meter?.green ?? 0.03;
   const label =
     flash === "green"
       ? "Perfect release"
@@ -112,7 +113,7 @@ export function ShotMeter() {
     // the bar is pinned in place; the result text hangs below it without moving the bar
     <div className="pointer-events-none fixed right-[18%] top-1/2 z-20 -translate-y-1/2" aria-hidden>
       <div className="relative h-44 w-4 overflow-hidden rounded-full bg-navy/80 ring-1 ring-line">
-        <div className="absolute inset-x-0 h-3 bg-good/80" style={{ bottom: `calc(${ideal * 100}% - 6px)` }} />
+        <div className="absolute inset-x-0 min-h-1 bg-good/80" style={{ bottom: `${(ideal - green) * 100}%`, height: `${green * 200}%` }} />
         <div className="absolute inset-x-0 bottom-0 rounded-full" style={{ height: `${fill * 100}%`, background: color, transition: "background 120ms" }} />
       </div>
       {label && (

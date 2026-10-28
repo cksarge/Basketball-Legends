@@ -5,7 +5,7 @@ import { ToneMappingMode } from "postprocessing";
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import type { Match } from "@/game/sim/match";
+import { type Match, METER_SCALE, greenWindow, releaseGrade } from "@/game/sim/match";
 import type { AgentIntent } from "@/game/sim/state";
 import type { InputManager, DeviceId } from "@/game/input";
 import { frameToIntent } from "@/game/controls";
@@ -502,26 +502,29 @@ function SimDriver(
 
     // HUD at ~20 Hz
     const now = performance.now();
-    if (now - lastHud.current > 50) {
+    const shooter = s.agents.find(
+      (a) =>
+        a.human !== null &&
+        (["jumper", "fadeaway", "floater", "hook", "layup"].includes(a.action.kind) || (a.action.kind === "freeThrow" && a.action.data.started)),
+    );
+    const metering = !!shooter && settings.gameplay.shotMeter && Number(shooter.action.data.releasedAt ?? -1) < 0;
+    // every frame while the meter fills, so what you see is what you time
+    if (metering || now - lastHud.current > 50) {
       lastHud.current = now;
       const ctrl = s.agents.find((a) => a.human === 0) ?? null;
-      const shooter = s.agents.find(
-        (a) =>
-          a.human !== null &&
-          (["jumper", "fadeaway", "floater", "hook", "layup"].includes(a.action.kind) || (a.action.kind === "freeThrow" && a.action.data.started)),
-      );
       let meter: HudSnapshot["meter"] = null;
       if (shooter && settings.gameplay.shotMeter) {
         const d = shooter.action.data;
         const ideal = Number(d.ideal ?? 0.5);
         const relAt = Number(d.releasedAt ?? -1);
         const t = relAt >= 0 ? relAt : shooter.action.t;
-        const q = Math.abs((t - ideal) / 0.22);
+        const greenW = Number(d.greenW ?? greenWindow(50));
         meter = {
           active: relAt < 0,
           fill: Math.min(1, t / (ideal * 1.35)),
           ideal: 1 / 1.35,
-          result: relAt < 0 ? null : q < 0.08 ? "green" : q < 0.22 ? "good" : t < ideal ? "early" : "late",
+          green: (greenW * METER_SCALE) / (ideal * 1.35),
+          result: relAt < 0 ? null : releaseGrade((t - ideal) / METER_SCALE, greenW),
           side: shooter.team,
         };
       }
