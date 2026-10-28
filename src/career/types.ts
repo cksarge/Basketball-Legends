@@ -43,6 +43,8 @@ export interface CareerPlayer extends Player {
   xp: number;
   /** Age in years on the career start date. */
   birthYear: number;
+  /** Natural development has been applied up to this date. */
+  devDate?: IsoDate;
 }
 
 export type GameKind = "nonregion" | "region" | "tournament" | "playoff" | "scrimmage";
@@ -56,6 +58,8 @@ export interface ScheduledGame {
   kind: GameKind;
   /** Bracket or tournament round label ("Quarterfinal", "Holiday Classic, game 2"). */
   label?: string;
+  /** Played at a neutral site (state championship games). */
+  neutral?: boolean;
   result?: GameResult;
 }
 
@@ -106,6 +110,21 @@ export interface HsSeason {
   stats: Partial<Record<HsLevel, StatLine & { gp: number; gs: number }>>;
   awards: string[];
   gpa?: number;
+  /** State playoff brackets (Open Division and each class), created when the regular season ends. */
+  playoffs?: Bracket[];
+  /** Final region table, kept when a finished season is trimmed to your school's games. */
+  regionTable?: { teamId: string; w: number; l: number; rw: number; rl: number }[];
+}
+
+export interface Bracket {
+  id: string;
+  name: string;
+  /** Teams in seed order (best first). With a play-in, seeds 9-24 play in for the last eight spots. */
+  seeds: string[];
+  playIn: boolean;
+  /** Game ids per round, in bracket order. */
+  rounds: string[][];
+  champion?: string;
 }
 
 export interface InboxMessage {

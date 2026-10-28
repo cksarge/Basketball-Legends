@@ -117,6 +117,14 @@ export default function HowToPlay() {
         Press Esc (or Menu) to pause. From the pause menu you can see the box score and play-by-play, make substitutions, call a timeout, change the camera,
         simulate the rest of the game or restart. T calls a timeout when your team has the ball, and Y cycles through the cameras.
       </p>
+      <H2>Career mode</H2>
+      <p>
+        Create a player, pick an Arizona hometown and high school, and start the summer before freshman year. In November, tryouts place you on the
+        freshman/sophomore team, JV or varsity, depending on which teams your school fields, your ratings and how you do in three quick drills. Play well and
+        the coach calls you up mid-season; struggle and you may be sent down. From the career hub you can play each game in 3D (you control only your player),
+        sim one game, sim three, or sim to the playoffs. When the coach sits you, choose to watch, fast-forward until you check back in, or sim to the end. Your
+        ratings grow on their own through practice and games, and skill points from XP let you push the skills you care about, up to the caps your body allows.
+      </p>
       <H2>Saving and resuming</H2>
       <p>
         Games save themselves every few seconds. If you close the tab, or choose Save and quit from the pause menu, the main menu shows Resume game with the

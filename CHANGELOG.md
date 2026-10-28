@@ -15,6 +15,19 @@ In testing at legends.carterscoding.com/beta/. These notes grow as Phase 2 lands
 - **Starting skills:** spend 45 points (up to 10 per skill) or auto-fill by archetype.
 - **Career settings:** difficulty, quarter length, what happens when you go to the bench, and how often story events appear.
 - **Several careers:** each saves in your browser after everything you do. Export a career as a `.blcareer` file to back it up or move it, and import it on any device.
+- **High school seasons:**
+  - **Full schedules for all 283 schools:** home-and-away region play from January (single round robin in regions of eight or more), non-region games from Thanksgiving week, and a holiday tournament between Christmas and New Year's.
+  - **Tryouts:** three drills in November (spot shooting, defensive slides, conditioning) whose results nudge where the coach places you. A great freshman can make varsity; most start on the freshman/sophomore team or JV. Seniors always make varsity, and schools with only a varsity team start you there.
+  - **Call-ups and send-downs:** after each game the coach looks at your last three games and your overall rating, and moves you up a level or back down.
+  - **Your games:** play each one in 3D with control locked to your player, or sim one, three, or the rest of the season. Simulated games still run through the real game engine, so your box scores are authentic.
+  - **The bench:** when the coach sits you in a game you're playing, choose to watch, fast-forward until you check back in, or sim to the end, and optionally remember the choice.
+  - **State playoffs:** an Open Division for the 16 best 6A–4A teams, 16-team brackets for 6A–3A and 24-team brackets with a play-in round for 2A and 1A, seeded by power rankings (win percentage, strength of schedule and margin). The state championship is at a neutral site.
+  - **Every school's season is simulated:** standings, region tables, and a state champion in every class.
+  - **Development:** ratings grow on their own every few weeks toward the caps your body allows, faster when you're young, with more room to grow, or with a strong work ethic. XP from games and practice earns skill points to spend on any rating, costing more near the cap. You also grow taller through high school.
+  - **Teammates who stay:** your school's rosters carry over year to year. Everyone moves up a class and improves, seniors graduate, the best underclassmen move up a level, and a new freshman class arrives.
+  - **Honors:** region champion, All-Region first and second teams, Region Player of the Year, All-State teams, Player of the Year and state champion, all in your career log.
+  - **Career hub:** a next-up card, messages from your coach and trainer, recent games, a full schedule with box scores, season and career averages, rosters for every level, the region table, the state bracket, and ratings with skill-point upgrades.
+  - **Four years, then graduation:** recruiting, college and the pros come in a later beta.
 - **Real high school levels:** each Arizona school now knows which boys basketball teams it fields (varsity, JV, JV 2, freshman/sophomore), from the AIA's official AZPreps365 team pages. 205 of the 283 schools run a freshman/sophomore team.
 
 ## v0.1.0 — October 28, 2026

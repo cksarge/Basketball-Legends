@@ -6,7 +6,8 @@ import { Match, type MatchSetup } from "@/game/sim/match";
 import { clearSuspended, loadSuspended, saveSuspended } from "@/state/suspended";
 import type { TeamIdx } from "@/game/sim/state";
 import { InputManager, type DeviceId } from "@/game/input";
-import { simulateToEnd } from "@/game/simulate";
+import { SIM_DT, simulateToEnd } from "@/game/simulate";
+import { useCareer } from "@/state/careerStore";
 import { gameScore } from "@/game/sim/stats";
 import { audio } from "@/audio/engine";
 import { overall } from "@/engine/player";
@@ -35,7 +36,7 @@ const CAMERAS: { id: CameraMode; label: string }[] = [
   { id: "skycam", label: "Skycam" },
 ];
 
-type Screen = "intro" | "playing" | "paused" | "final" | "simming" | "break";
+type Screen = "intro" | "playing" | "paused" | "final" | "simming" | "break" | "bench" | "ffwd";
 
 function buildMatch(p: PendingMatch, quarterMinutes: number, g: ReturnType<typeof useSettings.getState>["gameplay"], tapShots: boolean) {
   const home = p.home,
@@ -48,7 +49,7 @@ function buildMatch(p: PendingMatch, quarterMinutes: number, g: ReturnType<typeo
     home: { team: home.team, roster: home.roster, tactics: home.tactics, human: humansHome.length > 0, humans: humansHome, starters: home.starters },
     away: { team: away.team, roster: away.roster, tactics: away.tactics, human: humansAway.length > 0, humans: humansAway, starters: away.starters },
     quarterMinutes,
-    difficulty: g.difficulty,
+    difficulty: p.difficulty ?? g.difficulty,
     shotMeter: g.shotMeter && !tapShots,
     fatigue: g.fatigue,
     injuries: g.injuries,
@@ -199,10 +200,11 @@ export function GameView({ pending }: { pending: PendingMatch }) {
         quarterMinutes: s.cfg.quarterMinutes,
         simulated,
         injuries: s.injuries,
+        career: pending.career,
       });
       setScreen("final");
     },
-    [match, pending.mode, setResult],
+    [match, pending.mode, pending.career, setResult],
   );
 
   // quarter breaks, halftime and timeouts open the break panel (the sim holds the break meanwhile)
@@ -263,6 +265,64 @@ export function GameView({ pending }: { pending: PendingMatch }) {
     setScreen("simming");
     await simulateToEnd(match, setSimProgress);
     finish(true);
+  };
+
+  // ---- career: your player on the bench (ask, watch, fast-forward until you check back in, or sim)
+  const lockId = pending.lockPlayerId;
+  const [benchMode, setBenchMode] = useState<"ask" | "watch" | "skip" | "sim">(pending.bench ?? "ask");
+  const [benched, setBenched] = useState(false);
+  const wasOnCourt = useRef<boolean | null>(null);
+  const fastForward = useCallback(async () => {
+    setScreen("ffwd");
+    const s = match.state;
+    const fast = s.cfg.fast;
+    s.cfg.fast = true;
+    await new Promise<void>((resolve) => {
+      const tick = () => {
+        const t0 = performance.now();
+        while (performance.now() - t0 < 12) {
+          match.step(SIM_DT);
+          if (s.phase === "final" || s.agents.some((a) => a.player.id === lockId)) {
+            resolve();
+            return;
+          }
+        }
+        setTimeout(tick, 0);
+      };
+      tick();
+    });
+    s.cfg.fast = fast;
+    wasOnCourt.current = true;
+    setBenched(false);
+    if (s.phase === "final") finish(false);
+    else setScreen("playing");
+  }, [match, lockId, finish]);
+  useEffect(() => {
+    if (!lockId || screen !== "playing" || pending.practice) return;
+    const h = setInterval(() => {
+      const on = match.state.agents.some((a) => a.player.id === lockId);
+      if (on === wasOnCourt.current) return;
+      wasOnCourt.current = on;
+      setBenched(!on);
+      if (on || match.state.phase === "final") return;
+      if (benchMode === "ask") setScreen("bench");
+      else if (benchMode === "skip") fastForward();
+      else if (benchMode === "sim") simToEnd();
+    }, 400);
+    return () => clearInterval(h);
+    // simToEnd is recreated each render; the latest one is fine to call
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lockId, screen, benchMode, match, fastForward, pending.practice]);
+  const chooseBench = (choice: "watch" | "skip" | "sim", remember: boolean) => {
+    if (remember) {
+      setBenchMode(choice);
+      const careerId = pending.career?.careerId;
+      const cs = useCareer.getState();
+      if (careerId && cs.career?.id === careerId) cs.update((c) => ({ ...c, settings: { ...c.settings, bench: choice } }));
+    }
+    if (choice === "watch") setScreen("playing");
+    else if (choice === "skip") fastForward();
+    else simToEnd();
   };
 
   const restart = () => {
@@ -360,8 +420,8 @@ export function GameView({ pending }: { pending: PendingMatch }) {
               ? undefined
               : () => {
                   saveSuspended(match, pending);
-                  toast("Game saved. Resume it from the main menu.", "good");
-                  router.push("/");
+                  toast(pending.career ? "Game saved. Resume it from your career hub." : "Game saved. Resume it from the main menu.", "good");
+                  router.push(pending.career ? pending.returnTo : "/");
                 }
           }
           onReplay={() => {
@@ -376,6 +436,23 @@ export function GameView({ pending }: { pending: PendingMatch }) {
           }}
           highlightCount={replay.highlights.length}
         />
+      )}
+      {screen === "bench" && <BenchPrompt onChoose={chooseBench} />}
+      {screen === "ffwd" && (
+        <div className="fixed inset-0 z-40 grid place-items-center bg-navy/80 backdrop-blur" role="status">
+          <p className="font-display text-3xl font-black">Fast-forwarding until you check back in…</p>
+        </div>
+      )}
+      {screen === "playing" && benched && lockId && (
+        <div className="pointer-events-auto fixed left-1/2 top-3 z-30 flex -translate-x-1/2 items-center gap-3 rounded-full bg-navy/85 px-4 py-2 text-sm ring-1 ring-line backdrop-blur">
+          <span>You&apos;re on the bench</span>
+          <button className="font-semibold text-amber underline" onClick={fastForward}>
+            Fast-forward
+          </button>
+          <button className="text-steel underline" onClick={simToEnd}>
+            Sim to the end
+          </button>
+        </div>
       )}
       {screen === "simming" && (
         <div className="fixed inset-0 z-40 grid place-items-center bg-navy/85 backdrop-blur" role="status">
@@ -856,6 +933,45 @@ function FinalScreen({
             Continue
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function BenchPrompt({ onChoose }: { onChoose: (choice: "watch" | "skip" | "sim", remember: boolean) => void }) {
+  const [remember, setRemember] = useState(false);
+  return (
+    <div className="fixed inset-0 z-40 grid place-items-center bg-navy/75 backdrop-blur" role="dialog" aria-modal="true" aria-labelledby="bench-title">
+      <div className="w-[min(28rem,92vw)] rounded-[var(--radius-panel)] bg-deck p-6 ring-1 ring-line">
+        <h2 id="bench-title" className="font-display text-3xl font-black">
+          You&apos;re on the bench
+        </h2>
+        <p className="mt-1 text-steel">The coach sat you down. What do you want to do until you check back in?</p>
+        <div className="mt-4 flex flex-col gap-2">
+          <button
+            autoFocus
+            onClick={() => onChoose("watch", remember)}
+            className="rounded-[var(--radius-chip)] bg-amber px-4 py-2.5 text-left font-display text-xl font-bold text-navy"
+          >
+            Watch from the bench
+          </button>
+          <button
+            onClick={() => onChoose("skip", remember)}
+            className="rounded-[var(--radius-chip)] bg-deck-2 px-4 py-2.5 text-left font-display text-xl font-bold ring-1 ring-line"
+          >
+            Fast-forward until I&apos;m back
+          </button>
+          <button
+            onClick={() => onChoose("sim", remember)}
+            className="rounded-[var(--radius-chip)] bg-deck-2 px-4 py-2.5 text-left font-display text-xl font-bold ring-1 ring-line"
+          >
+            Sim to the end of the game
+          </button>
+        </div>
+        <label className="mt-4 flex items-center gap-2 text-sm text-steel">
+          <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="accent-amber" />
+          Remember my choice (change it any time in career settings)
+        </label>
       </div>
     </div>
   );

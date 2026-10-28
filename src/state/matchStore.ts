@@ -5,6 +5,13 @@ import type { UniformStyle } from "@/game3d/character/uniformTexture";
 import type { ArenaKind } from "@/game3d/Arena";
 import type { BoxScore } from "@/game/sim/stats";
 import type { InjuryRecord, MatchState } from "@/game/sim/match";
+import type { Difficulty } from "@/game/sim/state";
+
+/** Links a match to a career game so the result can be recorded when it ends. */
+export interface CareerGameRef {
+  careerId: string;
+  gameId: string;
+}
 
 export type MatchMode = "quick" | "career" | "franchise" | "practice" | "online";
 
@@ -38,6 +45,12 @@ export interface PendingMatch {
   resume?: boolean;
   /** Guided controls tutorial (runs on top of a practice session). */
   tutorial?: boolean;
+  /** Career game this match belongs to. */
+  career?: CareerGameRef;
+  /** Overrides the difficulty from Settings (careers have their own). */
+  difficulty?: Difficulty;
+  /** Career: what to do when the locked player goes to the bench. */
+  bench?: "ask" | "watch" | "skip" | "sim";
 }
 
 export interface MatchResult {
@@ -53,6 +66,7 @@ export interface MatchResult {
   quarterMinutes: number;
   simulated: boolean;
   injuries: InjuryRecord[];
+  career?: CareerGameRef;
 }
 
 interface MatchStore {

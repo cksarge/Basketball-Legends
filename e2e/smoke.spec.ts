@@ -97,6 +97,18 @@ test("create a career, then find it on the career screen after a reload", async 
   await page.waitForURL(/career\/hub\/\?id=/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Test Rookie");
   await expect(page.getByText("Welcome to the program")).toBeVisible();
+  // tryouts (skipping the drills), then simulate the first game
+  await page.getByRole("button", { name: "Go to tryouts" }).click();
+  await page.getByRole("button", { name: /Skip the drills/ }).click();
+  await expect(page.getByText(/Tryout results:/).first()).toBeVisible();
+  await page.getByRole("button", { name: "On to the season" }).click();
+  await page.getByRole("button", { name: "Sim game", exact: true }).click();
+  await expect(page.getByText("Recent games")).toBeVisible({ timeout: 60_000 });
+  await page.getByRole("tab", { name: "Schedule" }).click();
+  await expect(page.getByText(/^[WL]$/).first()).toBeVisible();
+  await page.getByRole("tab", { name: "Team" }).click();
+  await expect(page.getByRole("cell", { name: "Test Rookie" })).toBeVisible();
+  await page.getByRole("tab", { name: "Stats" }).click();
   await page.getByRole("tab", { name: "Player" }).click();
   await expect(page.getByText("Ratings")).toBeVisible();
   await page.goto("career/");
