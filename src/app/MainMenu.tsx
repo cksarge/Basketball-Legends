@@ -195,19 +195,22 @@ export function MainMenu() {
 
   return (
     <div className="relative min-h-dvh overflow-x-hidden bg-navy">
-      {/* the backdrop stays put while the menu scrolls on short screens */}
+      {/* the backdrop stays put while the menu scrolls; on wide screens only the menu column scrolls */}
       <div className="fixed inset-0" aria-hidden>
         {team && <MenuBackdrop team={team} kind="pro" />}
       </div>
       <div className="fixed inset-0 bg-gradient-to-r from-navy via-navy/75 to-transparent" aria-hidden />
-      <div className="relative flex min-h-dvh flex-col px-6 py-6 sm:px-12">
+      <div className="relative flex min-h-dvh flex-col px-6 py-6 sm:px-12 lg:h-dvh">
         <header className="flex items-center gap-4">
           {team && <TeamLogo team={team} size={44} />}
           <p className="font-display text-xl font-bold text-steel">Tonight at {team?.arena.name ?? "the arena"}</p>
         </header>
         {IS_BETA && <BetaWarning />}
-        <div className="flex flex-1 flex-col justify-center gap-10 lg:flex-row lg:items-center lg:justify-between">
-          <nav aria-label="Main menu" className="flex flex-col">
+        <div className="flex flex-1 flex-col justify-center gap-10 lg:min-h-0 lg:flex-row lg:items-center lg:justify-between">
+          <nav
+            aria-label="Main menu"
+            className="flex flex-col lg:-ml-2 lg:max-h-full lg:overflow-y-auto lg:py-2 lg:pl-2 lg:pr-6 lg:[mask-image:linear-gradient(to_bottom,transparent,black_12px,black_calc(100%-12px),transparent)] lg:[scrollbar-width:thin]"
+          >
             <h1 className="mb-6 font-display text-[clamp(3rem,9vw,7.5rem)] font-black leading-[0.85] tracking-tight">
               Basketball
               <br />
