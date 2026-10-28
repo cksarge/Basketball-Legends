@@ -28,6 +28,8 @@ A free, open-source 3D basketball game that runs in the browser. Play pro basket
 
 Career mode, Franchise mode, roster editing, accounts and online play are in development.
 
+Release notes for every version are in [CHANGELOG.md](CHANGELOG.md), also shown in the game at [/changelog](https://legends.carterscoding.com/changelog/) (the version number in the main menu footer links there).
+
 ## Leagues and teams
 
 | League              | In the game as            | Teams                                                          |
@@ -81,6 +83,8 @@ scripts/        data builders, Blender build scripts, sitemap, icons
 ### Deploying
 
 Pushing to `main` runs `.github/workflows/deploy.yml`, which typechecks, tests, builds and publishes `out/` to GitHub Pages. The custom domain comes from `public/CNAME`.
+
+Releasing a version: bump `version` in `package.json` (MAJOR.MINOR.PATCH; the main menu footer reads it at build time), add a section at the top of `CHANGELOG.md`, and paste that section into the GitHub release notes.
 
 ## Credits and license
 

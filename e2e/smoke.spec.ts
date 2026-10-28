@@ -57,6 +57,7 @@ const PAGES: [string, RegExp][] = [
   ["/credits/", /Credits/],
   ["/legal/terms/", /Terms of Service/],
   ["/legal/privacy/", /Privacy Policy/],
+  ["/changelog/", /Changelog/],
 ];
 
 for (const [path, heading] of PAGES) {
@@ -68,6 +69,13 @@ for (const [path, heading] of PAGES) {
     expect(errors).toEqual([]);
   });
 }
+
+test("the main menu version links to the changelog", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: /^Version \d+\.\d+\.\d+/ }).click();
+  await expect(page).toHaveURL(/\/changelog\/$/);
+  await expect(page.getByRole("heading", { level: 2 }).first()).toHaveText(/^v\d+\.\d+\.\d+/);
+});
 
 test("unknown pages show the 404", async ({ page }) => {
   const res = await page.goto("/no-such-page/");
@@ -84,7 +92,7 @@ test("site files are published", async ({ request }) => {
   expect(robots).toContain("Sitemap:");
   expect(robots).toContain("Disallow: /dev/");
   const sitemap = await (await request.get("/sitemap.xml")).text();
-  for (const p of ["/play/", "/how-to-play/", "/legal/privacy/"]) expect(sitemap).toContain(p);
+  for (const p of ["/play/", "/how-to-play/", "/legal/privacy/", "/changelog/"]) expect(sitemap).toContain(p);
 });
 
 test("quick play starts a game that loads and plays @gpu", async ({ page }) => {

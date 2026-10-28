@@ -301,6 +301,9 @@ export function MainMenu() {
             <a href="https://github.com/cksarge/Basketball-Legends" className="hover:text-net" rel="noreferrer">
               Source code
             </a>
+            <Link href="/changelog/" className="hover:text-net">
+              Version {process.env.APP_VERSION}
+            </Link>
           </nav>
         </footer>
       </div>
