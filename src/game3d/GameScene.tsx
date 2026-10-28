@@ -169,9 +169,15 @@ function SimDriver(
     ballPos: React.RefObject<THREE.Vector3 | null>;
     scoreRef: React.RefObject<{ h: number; a: number; period: string; clock: string }>;
     benchExcite: React.RefObject<[number, number]>;
+    /** How hard the home [0] and visiting [1] fans are reacting right now (0..1, decays). */
+    crowdReactRef: React.RefObject<[number, number]>;
   },
 ) {
   const { match, input, devices } = props;
+  const crowdReact = (fans: 0 | 1, amount: number) => {
+    const r = props.crowdReactRef.current!;
+    r[fans] = Math.max(r[fans], amount);
+  };
   const acc = useRef(0);
   const settings = useSettings();
   const setHud = useHud((s) => s.set);
@@ -183,6 +189,8 @@ function SimDriver(
   const lastDribblePhase = useRef(0);
   const prevOwner = useRef<number | null>(null);
   const callFor = useRef<number | null>(null);
+  /** Each player's velocity a beat ago, to hear hard plants and cuts. */
+  const cutRef = useRef<{ vx: number; vz: number; t: number }[]>([]);
 
   useFrame((_, dtRaw) => {
     const s = match.state;
@@ -252,7 +260,8 @@ function SimDriver(
     }
     callFor.current = (s as typeof s & { callFor?: number | null }).callFor ?? null;
     if (rp.autoCandidate) {
-      if (settings.presentation.replays && !s.cfg.practice && s.phase !== "final") rp.play(rp.autoCandidate, { auto: true });
+      const mode = settings.presentation.autoReplays;
+      if (mode !== "off" && (mode === "all" || rp.autoCandidate.scoring) && !s.cfg.practice && s.phase !== "final") rp.play(rp.autoCandidate, { auto: true });
       else rp.autoCandidate = null;
     }
 
@@ -349,39 +358,84 @@ function SimDriver(
         case "make": {
           audio.netRustle();
           const big = e.kind === "dunk" || e.points === 3;
-          audio.cheer(big ? 0.9 : 0.5);
+          const homeTeam = s.agents[e.shooter]?.team === 0;
+          const clutch = s.period >= s.cfg.rules.periods && s.clock < 60;
+          // the home crowd erupts; a road basket gets a groan, or a reluctant "ooh" for a big dunk
+          if (homeTeam) audio.react(e.kind === "dunk" || e.andOne || clutch ? "roar" : big ? "roar" : "cheer", e.kind === "dunk" ? 1 : big ? 0.85 : 0.55);
+          else if (e.kind === "dunk") audio.react("ooh", 0.75);
+          else if (big || clutch) audio.react("aww", 0.45);
+          else audio.react("applause", 0.12);
           if (e.kind === "dunk" && settings.camera.shake) props.camState.current!.shake = 0.8;
-          props.exciteRef.current = big ? 1 : 0.7;
+          props.exciteRef.current = homeTeam ? (big ? 1 : 0.7) : big ? 0.55 : 0.35;
+          crowdReact(homeTeam ? 0 : 1, big || e.andOne ? 1 : 0.6);
           if (big || e.andOne) props.benchExcite.current![s.agents[e.shooter].team] = 2.6;
           const sh = s.agents[e.shooter];
           if (sh.human !== null && settings.gameplay.vibration) input.rumble(devices[sh.human], 0.4, 0.6, 180);
           break;
         }
-        case "block":
+        case "block": {
           audio.board(3);
-          audio.cheer(0.7);
-          props.exciteRef.current = 0.9;
+          const homeTeam = s.agents[e.blocker]?.team === 0;
+          audio.react(homeTeam ? "roar" : "ooh", homeTeam ? 0.85 : 0.6);
+          props.exciteRef.current = homeTeam ? 0.9 : 0.5;
+          crowdReact(homeTeam ? 0 : 1, 0.9);
           props.benchExcite.current![s.agents[e.blocker].team] = 2.2;
           break;
+        }
         case "foul":
-        case "violation":
+        case "violation": {
           audio.whistle();
+          // a call against the home team draws boos; one on the visitors gets a cheer
+          const by = e.t === "foul" ? s.agents[e.player]?.team : e.team;
+          if (by === 0) audio.react("boo", e.t === "foul" && e.kind === "charge" ? 0.75 : 0.5);
+          else if (by === 1) audio.react("applause", 0.35);
+          break;
+        }
+        case "freeThrow": {
+          const homeTeam = s.agents[e.shooter]?.team === 0;
+          if (homeTeam) audio.react(e.made ? "applause" : "aww", e.made ? 0.5 : 0.35);
+          else if (!e.made) audio.react("cheer", 0.35);
+          break;
+        }
+        case "dribbleMove":
+          if (e.broke !== null) {
+            const homeTeam = s.agents[e.player]?.team === 0;
+            audio.react(homeTeam ? "roar" : "ooh", 0.8);
+            crowdReact(homeTeam ? 0 : 1, 0.8);
+            props.exciteRef.current = Math.max(props.exciteRef.current ?? 0, homeTeam ? 0.85 : 0.5);
+          }
           break;
         case "buzzer":
           audio.buzzer();
           break;
-        case "steal":
-          audio.catchBall();
-          audio.cheer(0.5);
+        case "timeout":
+        case "periodEnd":
+          audio.react("applause", 0.4);
           break;
+        case "final":
+          audio.react(e.winner === 0 ? "roar" : "aww", 1);
+          if (e.winner === 0) crowdReact(0, 1);
+          break;
+        case "steal": {
+          audio.catchBall();
+          const homeTeam = s.agents[e.player]?.team === 0;
+          audio.react(homeTeam ? "cheer" : "aww", homeTeam ? 0.6 : 0.3);
+          if (homeTeam) crowdReact(0, 0.6);
+          break;
+        }
         case "pass":
           break;
         case "crowd":
           props.exciteRef.current = Math.max(props.exciteRef.current ?? 0, e.level);
           break;
-        case "miss":
-          audio.groan();
+        case "miss": {
+          // a home miss off the rim draws an "aww"; the visitors missing gets a cheer
+          const homeTeam = s.agents[e.shooter]?.team === 0;
+          const late = s.period >= s.cfg.rules.periods && s.clock < 120;
+          if (homeTeam && (s.ball.phys.touchedRim || late || e.points === 3)) audio.react("aww", late ? 0.7 : 0.4);
+          else if (!homeTeam && late) audio.react("cheer", 0.4);
           break;
+        }
         default:
           break;
       }
@@ -396,22 +450,41 @@ function SimDriver(
     // dribble sounds on each bounce
     if (s.ball.mode === "dribble") {
       const ph = s.ball.dribblePhase;
-      if (ph < lastDribblePhase.current - 0.5 || (lastDribblePhase.current < 0.5 && ph >= 0.5)) audio.dribble(pan(s.ball.phys.pos.x), 0.7);
+      // the ball meets the floor at phase 0.5 (it's back in the hand at 0 and 1)
+      if (lastDribblePhase.current < 0.5 && ph >= 0.5) audio.dribble(pan(s.ball.phys.pos.x), 0.7);
       lastDribblePhase.current = ph;
     }
     if (prevOwner.current !== s.ball.owner && s.ball.owner !== null) audio.catchBall(pan(s.ball.phys.pos.x));
     prevOwner.current = s.ball.owner;
-    // sneaker squeaks on hard cuts
+    // sneaker squeaks only when a player really plants: a hard stop or a sharp cut at speed
+    const cuts = cutRef.current;
     for (const a of s.agents) {
-      const sp = Math.hypot(a.vel.x, a.vel.z);
-      if (sp > 4 && a.stun === 0 && Math.random() < dt * 0.6 && a.action.kind !== "idle") audio.squeak(pan(a.pos.x));
+      const c = (cuts[a.idx] ??= { vx: a.vel.x, vz: a.vel.z, t: 0 });
+      c.t += dt;
+      if (c.t < 0.12) continue;
+      const was = Math.hypot(c.vx, c.vz),
+        now = Math.hypot(a.vel.x, a.vel.z);
+      const turn = was > 0.5 && now > 0.5 ? Math.acos(THREE.MathUtils.clamp((c.vx * a.vel.x + c.vz * a.vel.z) / (was * now), -1, 1)) : 0;
+      const stop = was - now;
+      if (a.y < 0.02 && a.stun === 0 && was > 3.2 && (stop > 2.4 || turn > 0.85)) audio.squeak(pan(a.pos.x), Math.min(1, Math.max(stop / 5, turn / 2)));
+      c.vx = a.vel.x;
+      c.vz = a.vel.z;
+      c.t = 0;
     }
-    // crowd energy: decays toward a baseline that rises late in close games
+    // crowd energy: decays toward a baseline that rises late in close games; the home crowd
+    // hushes for its own free throws and gets loud to rattle the visitors' shooter
     const close = Math.abs(s.teams[0].score - s.teams[1].score) <= 6;
     const late = s.period >= s.cfg.rules.periods && s.clock < 120;
-    const base = 0.25 + (close && late ? 0.35 : 0) + (s.phase === "freethrows" ? -0.15 : 0);
+    const ftHome = s.phase === "freethrows" && s.offense === 0;
+    const base = 0.25 + (close && late ? 0.35 : 0) + (s.phase === "freethrows" ? (ftHome ? -0.15 : 0.3) : 0);
     props.exciteRef.current = THREE.MathUtils.damp(props.exciteRef.current ?? base, base, 0.6, dt);
     audio.crowdLevel(props.exciteRef.current);
+    // "DE-FENSE!" when the visitors have it in a tight finish
+    const tight = s.period >= s.cfg.rules.periods && s.clock < 180 && Math.abs(s.teams[0].score - s.teams[1].score) <= 8;
+    audio.chant(!s.cfg.practice && tight && s.offense === 1 && (s.phase === "live" || s.phase === "inbound"));
+    const cr = props.crowdReactRef.current!;
+    cr[0] = Math.max(0, cr[0] - dt * 0.45);
+    cr[1] = Math.max(0, cr[1] - dt * 0.45);
 
     // shared refs for scene props
     for (const ref of props.clockRefs)
@@ -674,6 +747,7 @@ export function GameScene(props: GameSceneProps) {
   const camState = useRef<CameraState>({ forward: new THREE.Vector2(0, -1), shake: 0, override: null, cut: false });
   const replayFrame = useRef<ViewFrame | null>(null);
   const benchExcite = useRef<[number, number]>([0, 0]);
+  const crowdReact = useRef<[number, number]>([0, 0]);
   const benchSize = props.match.state.cfg.practice ? 0 : g.preset === "low" ? 0 : g.preset === "medium" ? 4 : 9;
   const excite = useRef(0.3);
   const clockA = useRef({ shot: 24, game: 720 });
@@ -691,9 +765,10 @@ export function GameScene(props: GameSceneProps) {
   const dpr = Math.min(typeof window !== "undefined" ? window.devicePixelRatio : 1, 2) * g.resolutionScale;
 
   useEffect(() => {
+    audio.setVenue(venue.kind === "gym" ? "gym" : venue.id.startsWith("college") ? "college" : "pro");
     audio.startCrowd();
     return () => audio.stopCrowd();
-  }, []);
+  }, [venue]);
 
   return (
     <Canvas
@@ -702,7 +777,8 @@ export function GameScene(props: GameSceneProps) {
       gl={{ antialias: !g.antialias ? false : false, powerPreference: "high-performance", stencil: false }}
       camera={{ fov: 30, near: 0.5, far: 400, position: [0, 9, 26] }}
       onCreated={({ gl, scene, camera }) => {
-        if (process.env.NODE_ENV !== "production") (window as unknown as { __bl: unknown }).__bl = { scene, camera, gl, match: props.match, THREE, camState };
+        if (process.env.NODE_ENV !== "production")
+          (window as unknown as { __bl: unknown }).__bl = { scene, camera, gl, match: props.match, THREE, camState, audio };
         gl.toneMapping = THREE.NoToneMapping;
         gl.outputColorSpace = THREE.SRGBColorSpace;
       }}
@@ -716,7 +792,17 @@ export function GameScene(props: GameSceneProps) {
       <Environment />
       <Lights venue={venue} shadows={g.shadows} />
       <Suspense fallback={null}>
-        <Arena court={court} home={home} away={away} venue={venue} quality={quality} crowdDensity={g.crowdDensity} exciteRef={excite} scoreRef={scoreRef} />
+        <Arena
+          court={court}
+          home={home}
+          away={away}
+          venue={venue}
+          quality={quality}
+          crowdDensity={g.crowdDensity}
+          exciteRef={excite}
+          reactRef={crowdReact}
+          scoreRef={scoreRef}
+        />
         {([1, -1] as const).map((side, i) => (
           <Hoop
             key={side}
@@ -731,7 +817,15 @@ export function GameScene(props: GameSceneProps) {
           />
         ))}
         <BallMesh ref={ballMesh} radius={court.ballRadius} />
-        <Players match={props.match} uniforms={props.uniforms} ballMesh={ballMesh} replayFrame={replayFrame} benchSize={benchSize} benchExcite={benchExcite} />
+        <Players
+          match={props.match}
+          uniforms={props.uniforms}
+          ballMesh={ballMesh}
+          replayFrame={replayFrame}
+          benchSize={benchSize}
+          benchExcite={benchExcite}
+          onFootstep={(x, sp) => audio.footstep(THREE.MathUtils.clamp(x / court.halfL, -1, 1) * 0.8, sp)}
+        />
         <Officials match={props.match} replayFrame={replayFrame} crewSize={g.preset === "low" ? 0 : 4} />
         <ControlMarkers match={props.match} replayFrame={replayFrame} />
         <NameTags match={props.match} replayFrame={replayFrame} visible={props.overlaysVisible ?? true} />
@@ -755,6 +849,7 @@ export function GameScene(props: GameSceneProps) {
         ballPos={ballPos}
         scoreRef={scoreRef}
         benchExcite={benchExcite}
+        crowdReactRef={crowdReact}
       />
       <EffectComposer multisampling={0} enableNormalPass={false}>
         {g.ambientOcclusion ? <N8AO aoRadius={1.2} intensity={2.2} distanceFalloff={0.6} halfRes /> : <></>}

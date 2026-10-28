@@ -108,24 +108,37 @@ function parseSeats(raw: string): SeatSpot[] {
 }
 
 // --------------------------------------------------------------- crowd
+/** Two silhouettes side by side: sitting/standing, and on their feet with both arms up. */
 function crowdTexture() {
   const c = document.createElement("canvas");
-  c.width = 64;
+  c.width = 128;
   c.height = 128;
   const g = c.getContext("2d")!;
   g.fillStyle = "#fff";
-  // head
+  for (const ox of [0, 64]) {
+    // head
+    g.beginPath();
+    g.arc(ox + 32, 26, 13, 0, Math.PI * 2);
+    g.fill();
+    // torso + shoulders
+    g.beginPath();
+    g.moveTo(ox + 10, 128);
+    g.lineTo(ox + 12, 62);
+    g.quadraticCurveTo(ox + 14, 44, ox + 32, 44);
+    g.quadraticCurveTo(ox + 50, 44, ox + 52, 62);
+    g.lineTo(ox + 54, 128);
+    g.fill();
+  }
+  // raised arms
+  g.strokeStyle = "#fff";
+  g.lineCap = "round";
+  g.lineWidth = 9;
   g.beginPath();
-  g.arc(32, 26, 13, 0, Math.PI * 2);
-  g.fill();
-  // torso + shoulders
-  g.beginPath();
-  g.moveTo(10, 128);
-  g.lineTo(12, 62);
-  g.quadraticCurveTo(14, 44, 32, 44);
-  g.quadraticCurveTo(50, 44, 52, 62);
-  g.lineTo(54, 128);
-  g.fill();
+  g.moveTo(64 + 15, 56);
+  g.lineTo(64 + 7, 6);
+  g.moveTo(64 + 49, 56);
+  g.lineTo(64 + 57, 6);
+  g.stroke();
   const t = new THREE.CanvasTexture(c);
   return t;
 }
@@ -134,19 +147,26 @@ const crowdVertex = /* glsl */ `
 attribute vec3 iColor;
 attribute float iPhase;
 attribute float iSkin;
+attribute float iFan;
 uniform float uTime;
 uniform float uExcite;
+uniform float uReactHome;
+uniform float uReactAway;
 varying vec3 vColor;
 varying vec2 vUv;
 varying float vSkin;
 void main() {
-  vUv = uv;
   vColor = iColor;
   vSkin = iSkin;
   vec3 p = position;
+  // a big play for your team: up out of the seat, arms in the air, jumping
+  float react = mix(uReactAway, uReactHome, iFan);
+  float arms = step(0.2 + fract(iPhase * 7.31) * 0.6, react);
+  vUv = vec2((uv.x + arms) * 0.5, uv.y);
   float bounce = max(0.0, sin(uTime * (5.0 + iPhase * 3.0) + iPhase * 40.0)) * uExcite * 0.35;
-  float stand = smoothstep(0.55, 0.9, uExcite + fract(iPhase * 13.7) * 0.25) * 0.45;
-  p.y += bounce + stand;
+  float jump = max(0.0, sin(uTime * (8.0 + iPhase * 4.0) + iPhase * 25.0)) * react * 0.3;
+  float stand = max(smoothstep(0.55, 0.9, uExcite + fract(iPhase * 13.7) * 0.25), smoothstep(0.15, 0.45, react)) * 0.45;
+  p.y += bounce + jump + stand;
   p.x += sin(uTime * 1.3 + iPhase * 20.0) * 0.03;
   vec4 mv = modelViewMatrix * instanceMatrix * vec4(p, 1.0);
   gl_Position = projectionMatrix * mv;
@@ -166,7 +186,21 @@ void main() {
   #include <colorspace_fragment>
 }`;
 
-function Crowd({ seats, home, away, density, exciteRef }: { seats: SeatSpot[]; home: Team; away: Team; density: number; exciteRef: React.RefObject<number> }) {
+function Crowd({
+  seats,
+  home,
+  away,
+  density,
+  exciteRef,
+  reactRef,
+}: {
+  seats: SeatSpot[];
+  home: Team;
+  away: Team;
+  density: number;
+  exciteRef: React.RefObject<number>;
+  reactRef?: React.RefObject<[number, number]>;
+}) {
   const mesh = useRef<THREE.InstancedMesh>(null);
   const rng = useMemo(() => new Rng(`crowd:${home.id}`), [home.id]);
   const chosen = useMemo(() => seats.filter(() => rng.next() < density), [seats, density, rng]);
@@ -176,7 +210,8 @@ function Crowd({ seats, home, away, density, exciteRef }: { seats: SeatSpot[]; h
     const n = chosen.length;
     const col = new Float32Array(n * 3),
       ph = new Float32Array(n),
-      skin = new Float32Array(n);
+      skin = new Float32Array(n),
+      fan = new Float32Array(n);
     const palette = [
       home.colors.primary,
       home.colors.primary,
@@ -190,7 +225,10 @@ function Crowd({ seats, home, away, density, exciteRef }: { seats: SeatSpot[]; h
       "#556b2f",
     ];
     chosen.forEach((_, i) => {
-      const c = new THREE.Color(palette[Math.floor(rng.next() * palette.length)]);
+      const pi = Math.floor(rng.next() * palette.length);
+      const c = new THREE.Color(palette[pi]);
+      // fans in the visitors' colours (and a few others) cheer for the visitors
+      fan[i] = pi === 7 ? 0 : pi <= 2 ? 1 : rng.next() < 0.82 ? 1 : 0;
       c.offsetHSL(0, 0, rng.range(-0.08, 0.06));
       col.set([c.r, c.g, c.b], i * 3);
       ph[i] = rng.next();
@@ -199,6 +237,7 @@ function Crowd({ seats, home, away, density, exciteRef }: { seats: SeatSpot[]; h
     g.setAttribute("iColor", new THREE.InstancedBufferAttribute(col, 3));
     g.setAttribute("iPhase", new THREE.InstancedBufferAttribute(ph, 1));
     g.setAttribute("iSkin", new THREE.InstancedBufferAttribute(skin, 1));
+    g.setAttribute("iFan", new THREE.InstancedBufferAttribute(fan, 1));
     return g;
   }, [chosen, home, away, rng]);
   const mat = useMemo(
@@ -206,7 +245,7 @@ function Crowd({ seats, home, away, density, exciteRef }: { seats: SeatSpot[]; h
       new THREE.ShaderMaterial({
         vertexShader: crowdVertex,
         fragmentShader: crowdFragment,
-        uniforms: { uTime: { value: 0 }, uExcite: { value: 0.2 }, uMap: { value: crowdTexture() } },
+        uniforms: { uTime: { value: 0 }, uExcite: { value: 0.2 }, uReactHome: { value: 0 }, uReactAway: { value: 0 }, uMap: { value: crowdTexture() } },
       }),
     [],
   );
@@ -233,6 +272,9 @@ function Crowd({ seats, home, away, density, exciteRef }: { seats: SeatSpot[]; h
     mat.uniforms.uTime.value = st.clock.elapsedTime;
     const target = exciteRef.current ?? 0.2;
     mat.uniforms.uExcite.value = THREE.MathUtils.damp(mat.uniforms.uExcite.value, target, 2.5, dt);
+    const r = reactRef?.current;
+    mat.uniforms.uReactHome.value = THREE.MathUtils.damp(mat.uniforms.uReactHome.value, r?.[0] ?? 0, 6, dt);
+    mat.uniforms.uReactAway.value = THREE.MathUtils.damp(mat.uniforms.uReactAway.value, r?.[1] ?? 0, 6, dt);
   });
   if (!chosen.length) return null;
   return <instancedMesh ref={mesh} args={[geom, mat, chosen.length]} frustumCulled={false} />;
@@ -679,10 +721,12 @@ export interface ArenaProps {
   quality: Quality;
   crowdDensity: number;
   exciteRef: React.RefObject<number>;
+  /** Home [0] / visiting [1] fans reacting to a big play (0..1). */
+  reactRef?: React.RefObject<[number, number]>;
   scoreRef: ScoreRef;
 }
 
-export function Arena({ court, home, away, venue, quality, crowdDensity, exciteRef, scoreRef }: ArenaProps) {
+export function Arena({ court, home, away, venue, quality, crowdDensity, exciteRef, reactRef, scoreRef }: ArenaProps) {
   const urls = venueUrl(venue.id);
   const gltf = useGLTF(urls.glb) as unknown as GLTF;
   const rawSeats = useLoader(THREE.FileLoader, urls.seats) as string;
@@ -710,7 +754,7 @@ export function Arena({ court, home, away, venue, quality, crowdDensity, exciteR
       <group scale={[sx, 1, 1]}>
         <primitive object={dressed.root} />
         {quality !== "low" && <SeatRows seats={seats} models={dressed.seatModels} home={home} venue={venue} />}
-        <Crowd seats={seats} home={home} away={away} density={Math.min(1, crowdDensity * turnout)} exciteRef={exciteRef} />
+        <Crowd seats={seats} home={home} away={away} density={Math.min(1, crowdDensity * turnout)} exciteRef={exciteRef} reactRef={reactRef} />
       </group>
       {venue.style.adBoards &&
         [1, -1].map((s) => (

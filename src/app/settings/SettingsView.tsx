@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import {
   ACTION_LABELS,
   type ActionName,
+  type AutoReplays,
   type CameraMode,
   type ColorblindMode,
   DEFAULT_KEYS,
@@ -303,11 +304,16 @@ export function SettingsView() {
           {tab === "presentation" && (
             <Panel>
               <Toggle label="Commentary" checked={st.presentation.commentary} onChange={(v) => set("presentation", { commentary: v })} />
-              <Toggle
+              <Select<AutoReplays>
                 label="Automatic instant replays"
                 hint="Big plays replay in slow motion. Press the replay button any time to watch the last few seconds."
-                checked={st.presentation.replays}
-                onChange={(v) => set("presentation", { replays: v })}
+                value={st.presentation.autoReplays}
+                onChange={(v) => set("presentation", { autoReplays: v })}
+                options={[
+                  { value: "baskets", label: "After baskets" },
+                  { value: "all", label: "All big plays" },
+                  { value: "off", label: "Off" },
+                ]}
               />
               <Toggle
                 label="Big-play banners"

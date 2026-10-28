@@ -67,19 +67,32 @@ export function ScoreBug({ home, away }: { home: Team; away: Team }) {
   );
 }
 
+/**
+ * Shot timing: the bar fills while the shot button is held; let go when it reaches the green
+ * band. After the release the bar keeps the result colour and names it for a moment.
+ */
 export function ShotMeter() {
   const meter = useHud((s) => s.hud?.meter ?? null);
   const [flash, setFlash] = useState<string | null>(null);
-  const last = useRef<string | null>(null);
+  const shown = useRef<string | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const result = meter?.result ?? null;
   useEffect(() => {
-    if (meter?.result && meter.result !== last.current) {
-      setFlash(meter.result);
-      const h = setTimeout(() => setFlash(null), 900);
-      last.current = meter.result;
-      return () => clearTimeout(h);
+    // one flash per shot: the HUD snapshot is rebuilt every frame, so key off the result itself
+    if (result && result !== shown.current) {
+      shown.current = result;
+      setFlash(result);
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(() => setFlash(null), 900);
     }
-    if (!meter) last.current = null;
-  }, [meter]);
+    if (!meter) shown.current = null;
+  }, [result, meter]);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
   const show = meter || flash;
   if (!show) return null;
   const fill = meter?.fill ?? 1;
@@ -96,13 +109,17 @@ export function ShotMeter() {
             : null;
   const color = flash === "green" ? "var(--color-good)" : flash === "good" ? "var(--color-amber)" : flash ? "var(--color-bad)" : "var(--color-net)";
   return (
-    <div className="pointer-events-none fixed right-[18%] top-1/2 z-20 flex -translate-y-1/2 flex-col items-center gap-2">
+    // the bar is pinned in place; the result text hangs below it without moving the bar
+    <div className="pointer-events-none fixed right-[18%] top-1/2 z-20 -translate-y-1/2" aria-hidden>
       <div className="relative h-44 w-4 overflow-hidden rounded-full bg-navy/80 ring-1 ring-line">
         <div className="absolute inset-x-0 h-3 bg-good/80" style={{ bottom: `calc(${ideal * 100}% - 6px)` }} />
         <div className="absolute inset-x-0 bottom-0 rounded-full" style={{ height: `${fill * 100}%`, background: color, transition: "background 120ms" }} />
       </div>
       {label && (
-        <span className="font-display text-lg font-bold" style={{ color }}>
+        <span
+          className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded bg-navy/80 px-2 py-0.5 font-display text-lg font-bold"
+          style={{ color }}
+        >
           {label}
         </span>
       )}

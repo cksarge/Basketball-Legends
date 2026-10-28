@@ -58,9 +58,9 @@ export default function HowToPlay() {
       <H2>The shot meter</H2>
       <p>
         Hold the shoot button to rise into your shot and release it at the top of your jump. The bar on the right fills while you hold; the green band is the
-        ideal release. A perfect release raises your chance a lot, a slightly early or late one barely changes it, and a badly mistimed one is far less likely
-        to go in. Better shooters get a wider green window. You can turn the meter off in Settings to use rating-based shooting, or choose tap-to-shoot under
-        Accessibility.
+        ideal release, and after you let go it tells you how you timed it (perfect, good, slightly early or slightly late). A perfect release raises your chance
+        a lot, a slightly early or late one barely changes it, and a badly mistimed one is far less likely to go in. Better shooters get a wider green window.
+        You can turn the meter off in Settings to use rating-based shooting, or choose tap-to-shoot under Accessibility.
       </p>
       <p>
         Where you shoot from matters: open catch-and-shoot threes and shots at the rim are the most efficient. Contested shots, shots off a hard dribble and
@@ -128,9 +128,10 @@ export default function HowToPlay() {
         and change the speed, and Y switches between the orbit, baseline, above-the-rim, courtside and broadcast cameras. Press R or Esc to go back to the game.
       </p>
       <p>
-        Big plays (dunks, blocks, ankle breakers, clutch shots and buzzer beaters) replay automatically in slow motion; press Space to skip one. The best plays
-        are also saved as highlights you can watch from the pause menu, at quarter breaks and after the final buzzer. You can turn automatic replays off in
-        Settings under Presentation.
+        Big baskets (dunks, threes, and-ones, clutch shots and buzzer beaters) replay automatically in slow motion once the ball is through the net, so a great
+        pass or block never stops live play; press Space to skip one. Blocks, steals and ankle breakers are still saved with the best plays as highlights you
+        can watch from the pause menu, at quarter breaks and after the final buzzer. In Settings under Presentation you can have every big play replay
+        automatically instead, or turn automatic replays off.
       </p>
       <H2>Breaks, timeouts and injuries</H2>
       <p>

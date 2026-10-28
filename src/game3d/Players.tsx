@@ -42,9 +42,11 @@ export interface PlayersProps {
   benchSize?: number;
   /** Seconds of excitement left for each team's bench (set on big plays). */
   benchExcite?: React.RefObject<[number, number]>;
+  /** A player's foot hit the floor (live play only, not replays). */
+  onFootstep?: (x: number, speed: number) => void;
 }
 
-export function Players({ match, uniforms, ballMesh, avatarsRef, replayFrame, benchSize = BENCH_SEATS, benchExcite }: PlayersProps) {
+export function Players({ match, uniforms, ballMesh, avatarsRef, replayFrame, benchSize = BENCH_SEATS, benchExcite, onFootstep }: PlayersProps) {
   const gltf = useGLTF(PLAYER_GLB) as unknown as GLTF;
   const masks = useMasks();
   const group = useRef<THREE.Group>(null);
@@ -59,7 +61,12 @@ export function Players({ match, uniforms, ballMesh, avatarsRef, replayFrame, be
   useEffect(() => {
     const map = avatars.current;
     return () => {
-      for (const a of map.values()) a.dispose();
+      // take the bodies out of the scene too: if the group outlives this effect (a hot reload
+      // or a remount), the next frame builds fresh avatars and the old ones would stand frozen
+      for (const a of map.values()) {
+        a.root.removeFromParent();
+        a.dispose();
+      }
       map.clear();
     };
   }, []);
@@ -116,6 +123,7 @@ export function Players({ match, uniforms, ballMesh, avatarsRef, replayFrame, be
         catchBall: v.ball.mode === "pass" && v.ball.passTo === ag.idx ? new THREE.Vector3(ballP.x, ballP.y, ballP.z) : null,
       };
       av.root.visible = true;
+      av.onStep = onFootstep && !replayFrame?.current ? (sp) => onFootstep(ag.pos.x, sp) : null;
       av.update(pose);
       if (hasBall && v.ball.mode === "held" && ballMesh.current) {
         // the ball sits between the hands

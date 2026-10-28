@@ -83,6 +83,8 @@ export class Avatar {
   private jerseyTex: ReturnType<typeof makeCanvasTexture>;
   private shortsTex: ReturnType<typeof makeCanvasTexture>;
   private gait = 0;
+  /** Called when a foot plants (the gait's contact points), with the running speed in m/s. */
+  onStep: ((speed: number) => void) | null = null;
   private smooth = { lean: 0, crouch: 0, sideLean: 0, idleT: Math.random() * 10 };
   /** World-space hand positions after posing (for ball attachment). */
   handL = new THREE.Vector3();
@@ -431,7 +433,13 @@ export class Avatar {
     // gait phase
     const strideLen = 1.1 + Math.min(speed, 9) * 0.16;
     const moving = speed > 0.25 && !p.airborne && act !== "fall";
-    if (moving) this.gait = (this.gait + (speed / strideLen) * dt) % 1;
+    if (moving) {
+      const g0 = this.gait;
+      const g1 = g0 + (speed / strideLen) * dt;
+      this.gait = g1 % 1;
+      // feet come down at a quarter and three quarters of the cycle (where each foot's lift ends)
+      if (this.onStep && speed > 0.6 && ((g0 < 0.25 && g1 >= 0.25) || (g0 < 0.75 && g1 >= 0.75) || (g0 < 1.25 && g1 >= 1.25))) this.onStep(speed);
+    }
     const bob = moving ? Math.abs(Math.cos(this.gait * Math.PI * 2)) * 0.03 * Math.min(1, speed / 4) : Math.sin(s.idleT * 2.2) * 0.004;
 
     // fall: drop onto the hips, catch with the hands behind, then get back up (hurt players stay down)
@@ -792,12 +800,15 @@ export class Avatar {
     } else if (p.hasBall) {
       // dribbling: hand follows the ball on top; off-arm protects
       if (p.dribbling && ball) {
-        const top = this.toWorld(0, 0, 0, new THREE.Vector3());
-        void top;
+        // the palm rides the top of the ball only through a short push (hip to just above the
+        // knee) and waits there for it to come back up; the wrist does the rest
         const handT = ball.clone();
-        handT.y = Math.max(ball.y + 0.12 * scale, 0.6 * scale);
+        handT.y = Math.max(ball.y + 0.12 * scale, (0.8 + rootY) * scale);
         setHand(sh, handT, this.toWorld(shSign * 0.7, 1.0, -0.4, new THREE.Vector3()));
-        setHand(off, this.toWorld(-shSign * 0.38, 1.1 + rootY, 0.32, new THREE.Vector3()), this.toWorld(-shSign * 0.8, 1.0, 0, new THREE.Vector3()));
+        const push = THREE.MathUtils.clamp((ball.y / scale - 0.8) / 0.3, 0, 1);
+        this.rotateWorld(`hand${sh}`, worldRot(0.5 + (1 - push) * 0.5, 0, 0));
+        // off arm: forearm up across the front to shield the ball from the defender
+        setHand(off, this.toWorld(-shSign * 0.3, 1.18 + rootY, 0.36, new THREE.Vector3()), this.toWorld(-shSign * 0.75, 1.05, 0.15, new THREE.Vector3()));
       } else {
         if (act === "post") {
           // chin the ball: up at the chest, elbows out to protect it

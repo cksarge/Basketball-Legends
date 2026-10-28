@@ -53,6 +53,8 @@ export interface Clip {
   team: TeamIdx | null;
   period: number;
   clock: number;
+  /** The play ended in a made basket (the only kind replayed by default). */
+  scoring?: boolean;
 }
 
 export type ReplayCam = "broadcast" | "baseline" | "orbit" | "courtside" | "rim";
@@ -142,6 +144,7 @@ interface PendingCut {
   team: TeamIdx | null;
   period: number;
   clock: number;
+  scoring: boolean;
 }
 
 export class ReplayDirector {
@@ -239,7 +242,7 @@ export class ReplayDirector {
       }
       if (!weight || !s.agents[focus ?? 0]) continue;
       const team = focus !== null ? s.agents[focus].team : null;
-      this.pending.push({ at: s.time, label, weight, focus, team, period: s.period, clock: s.clock });
+      this.pending.push({ at: s.time, label, weight, focus, team, period: s.period, clock: s.clock, scoring: e.t === "make" });
     }
   }
 
@@ -253,7 +256,18 @@ export class ReplayDirector {
       frames.findIndex((f) => f.time >= p.at),
     );
     // follow the player by id (agent slots can shift after substitutions)
-    return { id: this.nextId++, label: p.label, weight: p.weight, frames, keyIndex, focus: p.focus, team: p.team, period: p.period, clock: p.clock };
+    return {
+      id: this.nextId++,
+      label: p.label,
+      weight: p.weight,
+      frames,
+      keyIndex,
+      focus: p.focus,
+      team: p.team,
+      period: p.period,
+      clock: p.clock,
+      scoring: p.scoring,
+    };
   }
 
   private addHighlight(clip: Clip) {

@@ -163,7 +163,8 @@ export interface Settings {
   accessibility: { colorblind: ColorblindMode; subtitles: boolean; reducedMotion: boolean; uiScale: number; highContrastHud: boolean; holdToTap: boolean };
   presentation: {
     commentary: boolean;
-    replays: boolean;
+    /** Automatic slow-motion replays: made baskets only (the game keeps flowing), every big play, or never. */
+    autoReplays: AutoReplays;
     playBanners: boolean;
     statOverlays: boolean;
     breakScreens: boolean;
@@ -171,6 +172,8 @@ export interface Settings {
     showTips: boolean;
   };
 }
+
+export type AutoReplays = "baskets" | "all" | "off";
 
 export const DEFAULT_SETTINGS: Settings = {
   graphics: {
@@ -204,7 +207,7 @@ export const DEFAULT_SETTINGS: Settings = {
   camera: { mode: "broadcast", zoom: 1, height: 1, shake: true },
   controls: { keys: DEFAULT_KEYS, pad: DEFAULT_PAD, prompts: "auto", stickDeadzone: 0.18, invertCamera: false },
   accessibility: { colorblind: "off", subtitles: true, reducedMotion: false, uiScale: 1, highContrastHud: false, holdToTap: false },
-  presentation: { commentary: true, replays: true, playBanners: true, statOverlays: true, breakScreens: true, skipIntros: false, showTips: true },
+  presentation: { commentary: true, autoReplays: "baskets", playBanners: true, statOverlays: true, breakScreens: true, skipIntros: false, showTips: true },
 };
 
 export const PRESETS: Record<GraphicsPreset, Partial<Settings["graphics"]>> = {
@@ -266,6 +269,10 @@ export const useSettings = create<SettingsStore>()(
         for (const k of Object.keys(DEFAULT_SETTINGS) as Section[]) {
           (out as Record<string, unknown>)[k] = { ...DEFAULT_SETTINGS[k], ...(p[k] ?? {}) };
         }
+        // the old on/off replay switch: off stays off
+        const oldReplays = (p.presentation as { replays?: boolean } | undefined)?.replays;
+        if (oldReplays === false && !p.presentation?.autoReplays) out.presentation = { ...out.presentation, autoReplays: "off" };
+        delete (out.presentation as { replays?: boolean }).replays;
         out.gameplay = { ...out.gameplay, sliders: { ...DEFAULT_SLIDERS, ...(p.gameplay?.sliders ?? {}) } };
         // nested maps must keep any new default actions
         out.controls = { ...out.controls, keys: { ...DEFAULT_KEYS, ...(p.controls?.keys ?? {}) }, pad: { ...DEFAULT_PAD, ...(p.controls?.pad ?? {}) } };

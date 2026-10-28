@@ -1630,7 +1630,7 @@ export class Match {
     }
     // ball on the far hand is harder to reach
     const angleToD = Math.atan2(d.pos.x - h.pos.x, d.pos.z - h.pos.z);
-    const handSide = Math.sin(angDiff(h.facing, angleToD)) * h.hand; // >0 ball exposed
+    const handSide = -Math.sin(angDiff(h.facing, angleToD)) * h.hand; // >0 ball exposed (defender on the dribble-hand side)
     const exposed = clamp(0.5 + handSide * 0.5, 0.15, 1);
     let p =
       (0.05 + (this.r(d, "steal") - this.r(h, "ballHandle")) * 0.0028) *
@@ -1742,8 +1742,9 @@ export class Match {
     if (dribbling) b.dribblePhase = (b.dribblePhase + dt * rate) % 1;
     const fx = Math.sin(h.facing),
       fz = Math.cos(h.facing);
-    const sx = Math.cos(h.facing) * h.hand,
-      sz = -Math.sin(h.facing) * h.hand;
+    // the ball sits on the dribble hand's side (hand 1 = right, which is the body's -x)
+    const sx = -Math.cos(h.facing) * h.hand,
+      sz = Math.sin(h.facing) * h.hand;
     const hh = this.heightM(h);
     if (dribbling) {
       // ball height follows |sin| bounce between hand (~waist) and floor
