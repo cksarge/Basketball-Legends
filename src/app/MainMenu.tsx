@@ -13,6 +13,7 @@ import { useInputDevice } from "@/ui/MenuNavigator";
 import { KeyHint } from "@/ui/KeyHint";
 import { toast } from "@/ui/Toaster";
 import { clearSuspended, useSuspended } from "@/state/suspended";
+import { IS_BETA, SITE_URL } from "@/lib/site";
 
 const MenuBackdrop = dynamic(() => import("@/game3d/MenuBackdrop"), { ssr: false });
 
@@ -203,6 +204,7 @@ export function MainMenu() {
           {team && <TeamLogo team={team} size={44} />}
           <p className="font-display text-xl font-bold text-steel">Tonight at {team?.arena.name ?? "the arena"}</p>
         </header>
+        {IS_BETA && <BetaWarning />}
         <div className="flex flex-1 flex-col justify-center gap-10 lg:flex-row lg:items-center lg:justify-between">
           <nav aria-label="Main menu" className="flex flex-col">
             <h1 className="mb-[2.5vh] font-display text-[clamp(3rem,min(9vw,11vh),7.5rem)] font-black leading-[0.85] tracking-tight">
@@ -308,6 +310,25 @@ export function MainMenu() {
         </footer>
       </div>
     </div>
+  );
+}
+
+/** Shown only in the beta build (/beta/), which shares this browser's saves and settings with the live game. */
+function BetaWarning() {
+  return (
+    <aside
+      aria-label="Beta warning"
+      className="mt-4 w-full rounded-[var(--radius-panel)] bg-navy/85 p-4 ring-2 ring-amber backdrop-blur lg:absolute lg:right-12 lg:top-[3vh] lg:mt-0 lg:max-w-md"
+    >
+      <p className="font-display text-2xl font-black text-amber">You&apos;re playing the beta</p>
+      <p className="mt-1 text-sm text-net/90">
+        Version {process.env.APP_VERSION} is an untested preview of the next update. It shares saves and settings with the main game in this browser, so a bug
+        here could change or erase them, including a game you saved to resume.
+      </p>
+      <a href={`${SITE_URL}/`} className="mt-3 inline-block rounded-md bg-amber px-4 py-2 text-sm font-bold text-navy hover:brightness-110">
+        Play the main game instead (recommended)
+      </a>
+    </aside>
   );
 }
 

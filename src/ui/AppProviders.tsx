@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { detectPreset, useSettings } from "@/state/settings";
 import { MenuNavigator } from "./MenuNavigator";
 import { toast, Toaster } from "./Toaster";
+import { asset } from "@/lib/site";
 
 /** Global client providers: applies settings to <html>, menu navigation, toasts. */
 export function AppProviders({ children }: { children: React.ReactNode }) {
@@ -31,7 +32,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     if (process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) return;
     const firstInstall = !navigator.serviceWorker.controller;
     navigator.serviceWorker
-      .register("/sw.js")
+      .register(asset("/sw.js"))
       .then((reg) => {
         if (!firstInstall) return;
         reg.addEventListener("updatefound", () => {

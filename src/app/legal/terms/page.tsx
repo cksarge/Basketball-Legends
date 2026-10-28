@@ -5,7 +5,7 @@ export const metadata: Metadata = { title: "Terms of Service", description: "The
 
 export default function Terms() {
   return (
-    <ProsePage title="Terms of Service" updated="October 27, 2026">
+    <ProsePage title="Terms of Service" updated="October 28, 2026">
       <p>
         These terms apply to the Basketball Legends website at legends.carterscoding.com and the game it serves (together, &quot;the game&quot;). By playing,
         you agree to them. If you don&apos;t agree, please don&apos;t use the game.
@@ -32,6 +32,11 @@ export default function Terms() {
         Settings and saved games are stored in your browser. Clearing your browser data, using a private window or switching devices can remove them. Please
         export saves you care about. To play offline, your browser also keeps a cached copy of the game&apos;s files; clearing site data removes it, and it
         downloads again on your next visit.
+      </p>
+      <H2>The beta</H2>
+      <p>
+        legends.carterscoding.com/beta/ runs an untested preview of the next version. It shares settings and saved games with the main game in the same browser,
+        so a bug in the beta can change or erase them. Play the beta only if you accept that risk; the main game is the stable version.
       </p>
       <H2>No warranty</H2>
       <p>

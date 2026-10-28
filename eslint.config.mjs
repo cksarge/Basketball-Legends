@@ -13,5 +13,5 @@ export default defineConfig([
     files: ["src/game3d/**/*.{ts,tsx}", "src/ui/game/**/*.{ts,tsx}", "src/app/dev/**/*.{ts,tsx}"],
     rules: { "react-hooks/immutability": "off", "react-hooks/purity": "off" },
   },
-  globalIgnores([".next/**", "out/**", "node_modules/**", "next-env.d.ts", "scripts/blender/**", "public/sw.js"]),
+  globalIgnores([".next/**", "out/**", ".e2e-beta/**", "node_modules/**", "next-env.d.ts", "scripts/blender/**", "public/sw.js"]),
 ]);

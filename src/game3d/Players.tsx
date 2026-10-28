@@ -10,12 +10,13 @@ import { Avatar, type PoseInput } from "./character/Avatar";
 import type { MaskSet } from "./character/skinMaterial";
 import { liveView, type ViewFrame } from "./replay";
 import { BENCH_SEATS, benchSeat } from "@/game/court";
+import { asset } from "@/lib/site";
 
 /** Cushion height of the bench chairs (m); Arena builds chairs to match. */
 export const SEAT_HEIGHT = 0.5;
 
-export const PLAYER_GLB = "/models/player.glb";
-export const MASK_URLS = ["/models/player_maskA.png", "/models/player_maskB.png", "/models/player_maskC.png", "/models/player_maskD.png"];
+export const PLAYER_GLB = asset("/models/player.glb");
+export const MASK_URLS = ["A", "B", "C", "D"].map((k) => asset(`/models/player_mask${k}.png`));
 
 export function useMasks(): MaskSet {
   const [A, B, C, D] = useTexture(MASK_URLS);

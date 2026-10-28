@@ -2,5 +2,7 @@ User-agent: *
 Allow: /
 # developer tools, not part of the game
 Disallow: /dev/
+# the beta (prerelease test build)
+Disallow: /beta/
 
 Sitemap: https://legends.carterscoding.com/sitemap.xml

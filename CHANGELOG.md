@@ -59,8 +59,9 @@ The first public version: a full 5v5 basketball game in the browser. You can pla
 - Runs in any modern browser with no download or account.
 - **Offline play:** after one visit the whole game is cached and playable without a connection, and it can be installed as an app.
 - Settings and saved games stay in your browser. No accounts, ads, analytics or cookies.
+- **The beta:** legends.carterscoding.com/beta/ runs the next version while it's being tested. A card on its main menu explains that it shares saves with the main game and links back to the main game. It has its own offline copy and is kept out of search results.
 
 ### Under the hood
 
-- Static Next.js site on GitHub Pages at legends.carterscoding.com, open source under the MIT License.
+- Static Next.js site on GitHub Pages at legends.carterscoding.com, open source under the MIT License. The `main` branch is the live game and the `prerelease` branch is the beta; one workflow builds, tests and publishes both.
 - Every deploy typechecks, lints, checks formatting with Prettier, and runs the unit tests (rules, injuries, saves, input, deterministic save and resume), a camera sweep that flies every camera through every venue and fails if any clip, and browser smoke tests for every page.

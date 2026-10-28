@@ -2,6 +2,7 @@
 import type { LogoIcon, LogoSpec, TeamColors } from "@/engine/types";
 import { hashString } from "@/engine/rng";
 import { displayFont } from "@/lib/fonts";
+import { asset } from "@/lib/site";
 
 /** Icon glyphs drawn in a 100x100 box centred on (50,50). */
 const ICONS: Record<LogoIcon, string> = {
@@ -50,7 +51,8 @@ function shapePath(shape: LogoSpec["shape"]): string {
 export function logoSvg(spec: LogoSpec, colors: TeamColors, opts: { monogram?: boolean; size?: number } = {}): string {
   const size = opts.size ?? 100;
   if (spec.image) {
-    return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100" width="${size}" height="${size}"><image href="${spec.image}" xlink:href="${spec.image}" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/></svg>`;
+    const href = asset(spec.image);
+    return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100" width="${size}" height="${size}"><image href="${href}" xlink:href="${href}" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/></svg>`;
   }
   const cid = `lc${hashString(spec.monogram + spec.shape + spec.icon + colors.primary + colors.secondary + size)}`;
   const ring = spec.shape === "roundel" ? `<circle cx="50" cy="50" r="38" fill="none" stroke="${colors.accent}" stroke-width="3"/>` : "";
@@ -80,5 +82,5 @@ export function logoDataUrl(spec: LogoSpec, colors: TeamColors, size = 256) {
 
 /** Image source for canvas drawing: an image logo directly, otherwise the generated SVG. */
 export function logoImageSrc(spec: LogoSpec, colors: TeamColors, size = 256) {
-  return spec.image ?? logoDataUrl(spec, colors, size);
+  return spec.image ? asset(spec.image) : logoDataUrl(spec, colors, size);
 }

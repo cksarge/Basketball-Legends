@@ -5,7 +5,7 @@ export const metadata: Metadata = { title: "Privacy Policy", description: "What 
 
 export default function Privacy() {
   return (
-    <ProsePage title="Privacy Policy" updated="October 27, 2026">
+    <ProsePage title="Privacy Policy" updated="October 28, 2026">
       <p>Basketball Legends is built to work without collecting personal information. There are no accounts, ads, analytics, tracking pixels or cookies.</p>
       <H2>What stays on your device</H2>
       <ul className="list-disc pl-6">
@@ -28,6 +28,10 @@ export default function Privacy() {
         </li>
         <li>
           <b>Instant replays and highlights</b> are recorded in memory during a game and discarded when you leave it.
+        </li>
+        <li>
+          <b>The beta</b> at legends.carterscoding.com/beta/ reads and writes the same settings and saved games as the main game, and keeps its own offline copy
+          of its files in your browser&apos;s cache. Like the main game, it sends nothing about you anywhere.
         </li>
       </ul>
       <p>You can remove all of this at any time by clearing this site&apos;s data in your browser settings.</p>

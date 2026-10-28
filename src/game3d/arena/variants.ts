@@ -5,6 +5,7 @@ import type { Team } from "@/engine/types";
 import { hashString } from "@/engine/rng";
 import type { CourtSpec } from "@/game/court";
 import { FLOOR_MARGIN, floorSize } from "../courtTexture";
+import { asset } from "@/lib/site";
 
 export type ArenaKind = "pro" | "college" | "gym";
 export type SeatKind = "chair" | "backed" | "bench";
@@ -88,7 +89,7 @@ export function pickVariant(kind: ArenaKind, team: Team): VariantId {
 }
 
 export function venueUrl(id: VariantId) {
-  return { glb: `/models/arenas/${id}.glb`, seats: `/models/arenas/${id}.seats.json` };
+  return { glb: asset(`/models/arenas/${id}.glb`), seats: asset(`/models/arenas/${id}.seats.json`) };
 }
 
 function nativeHalf(v: VenueVariant) {

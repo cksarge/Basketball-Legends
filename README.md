@@ -28,6 +28,8 @@ A free, open-source 3D basketball game that runs in the browser. Play pro basket
 
 Career mode, Franchise mode, roster editing, accounts and online play are in development.
 
+Want to try what's coming next? The beta at https://legends.carterscoding.com/beta/ runs the version in testing. It shares saves with the main game, so a bug there can affect them.
+
 Release notes for every version are in [CHANGELOG.md](CHANGELOG.md), also shown in the game at [/changelog](https://legends.carterscoding.com/changelog/) (the version number in the main menu footer links there).
 
 ## Leagues and teams
@@ -82,7 +84,16 @@ scripts/        data builders, Blender build scripts, sitemap, icons
 
 ### Deploying
 
-Pushing to `main` runs `.github/workflows/deploy.yml`, which typechecks, tests, builds and publishes `out/` to GitHub Pages. The custom domain comes from `public/CNAME`.
+The site has two builds on one GitHub Pages site:
+
+| Branch       | URL                                     | What it is                               |
+| ------------ | --------------------------------------- | ---------------------------------------- |
+| `main`       | https://legends.carterscoding.com/      | the live game                            |
+| `prerelease` | https://legends.carterscoding.com/beta/ | the beta: the next version, being tested |
+
+Pushing to either branch runs `.github/workflows/deploy.yml`. It checks out both branches, typechecks, lints, tests and builds each one (the beta with `BL_CHANNEL=beta`), runs the browser smoke tests against both, and publishes them together. If the beta fails on a push to `main`, the live game still deploys, together with the last beta that passed. If the beta fails on a push to `prerelease`, nothing deploys. The custom domain comes from `public/CNAME`.
+
+`BL_CHANNEL=beta npm run build` builds the beta locally. It sets Next.js's `basePath` to `/beta`, so file paths go through `asset()` in `src/lib/site.ts`. It also shows a warning card on the main menu (the beta shares the browser's saves with the live game), tells search engines not to index the beta, renames the web app manifest, and gives the beta its own service worker, scoped to `/beta/`, with its own `bl-beta-*` caches. The live service worker ignores `/beta/`, and `robots.txt` disallows it. To run the smoke tests against a beta build, copy `out/` into `.e2e-beta/beta/` and run `E2E_BASE=/beta E2E_SERVE_DIR=.e2e-beta npm run test:e2e`.
 
 Releasing a version: bump `version` in `package.json` (MAJOR.MINOR.PATCH; the main menu footer reads it at build time), add a section at the top of `CHANGELOG.md`, and paste that section into the GitHub release notes.
 

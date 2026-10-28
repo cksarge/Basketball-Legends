@@ -1,5 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 
+// Paths are relative to baseURL so the same tests run against the live build (/) and the beta build (/beta/, with E2E_BASE=/beta).
+const BASE = process.env.E2E_BASE ?? "";
+
 /**
  * Game-flow tests run on the Low preset with intros skipped: headless Chrome renders in
  * software, so full graphics would run the simulation in slow motion.
@@ -50,14 +53,14 @@ function watchErrors(page: Page) {
 }
 
 const PAGES: [string, RegExp][] = [
-  ["/", /Basketball\s*Legends/],
-  ["/play/", /Quick Play/],
-  ["/settings/", /Settings/],
-  ["/how-to-play/", /How to play/],
-  ["/credits/", /Credits/],
-  ["/legal/terms/", /Terms of Service/],
-  ["/legal/privacy/", /Privacy Policy/],
-  ["/changelog/", /Changelog/],
+  ["./", /Basketball\s*Legends/],
+  ["play/", /Quick Play/],
+  ["settings/", /Settings/],
+  ["how-to-play/", /How to play/],
+  ["credits/", /Credits/],
+  ["legal/terms/", /Terms of Service/],
+  ["legal/privacy/", /Privacy Policy/],
+  ["changelog/", /Changelog/],
 ];
 
 for (const [path, heading] of PAGES) {
@@ -71,27 +74,33 @@ for (const [path, heading] of PAGES) {
 }
 
 test("the main menu version links to the changelog", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("./");
   await page.getByRole("link", { name: /^Version \d+\.\d+\.\d+/ }).click();
   await expect(page).toHaveURL(/\/changelog\/$/);
   await expect(page.getByRole("heading", { level: 2 }).first()).toHaveText(/^v\d+\.\d+\.\d+/);
 });
 
+test("the beta warning shows only in the beta build", async ({ page }) => {
+  await page.goto("./");
+  await expect(page.getByRole("complementary", { name: "Beta warning" })).toHaveCount(BASE === "/beta" ? 1 : 0);
+});
+
 test("unknown pages show the 404", async ({ page }) => {
-  const res = await page.goto("/no-such-page/");
+  const res = await page.goto("no-such-page/");
   expect(res?.status()).toBe(404);
   await expect(page.getByText("Airball")).toBeVisible();
 });
 
 test("site files are published", async ({ request }) => {
-  for (const f of ["/robots.txt", "/sitemap.xml", "/favicon.ico", "/apple-touch-icon.png", "/manifest.webmanifest", "/sw.js", "/models/player.glb"]) {
+  for (const f of ["robots.txt", "sitemap.xml", "favicon.ico", "apple-touch-icon.png", "manifest.webmanifest", "sw.js", "models/player.glb"]) {
     const r = await request.get(f);
     expect(r.status(), f).toBe(200);
   }
-  const robots = await (await request.get("/robots.txt")).text();
+  const robots = await (await request.get("robots.txt")).text();
   expect(robots).toContain("Sitemap:");
   expect(robots).toContain("Disallow: /dev/");
-  const sitemap = await (await request.get("/sitemap.xml")).text();
+  expect(robots).toContain("Disallow: /beta/");
+  const sitemap = await (await request.get("sitemap.xml")).text();
   for (const p of ["/play/", "/how-to-play/", "/legal/privacy/", "/changelog/"]) expect(sitemap).toContain(p);
 });
 
@@ -99,7 +108,7 @@ test("quick play starts a game that loads and plays @gpu", async ({ page }) => {
   test.setTimeout(150_000);
   const errors = watchErrors(page);
   await lowGraphics(page);
-  await page.goto("/play/");
+  await page.goto("play/");
   await expect(page.getByRole("heading", { name: "Coaching" })).toBeVisible();
   await page.getByRole("button", { name: "Play game" }).click();
   await page.waitForURL("**/game/");
@@ -119,14 +128,14 @@ test("quick play starts a game that loads and plays @gpu", async ({ page }) => {
 test("save and quit, then resume from the main menu @gpu", async ({ page }) => {
   test.setTimeout(180_000);
   await lowGraphics(page);
-  await page.goto("/play/");
+  await page.goto("play/");
   await page.getByRole("button", { name: "Play game" }).click();
   await page.waitForURL("**/game/");
   await expect(page.getByText("Loading the arena")).toBeHidden({ timeout: 60_000 });
   await clockRuns(page);
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Save and quit" }).click();
-  await page.waitForURL((u) => new URL(u).pathname === "/");
+  await page.waitForURL((u) => new URL(u).pathname === `${BASE}/`);
   const resume = page.getByRole("button", { name: "Resume game" });
   await expect(resume).toBeVisible();
   await resume.click();
@@ -135,7 +144,7 @@ test("save and quit, then resume from the main menu @gpu", async ({ page }) => {
 });
 
 test("settings persist across reloads", async ({ page }) => {
-  await page.goto("/settings/");
+  await page.goto("settings/");
   await page
     .getByRole("tab", { name: "Presentation" })
     .or(page.getByRole("button", { name: "Presentation" }))
@@ -156,7 +165,7 @@ test("settings persist across reloads", async ({ page }) => {
 test("the tutorial starts and advances @gpu", async ({ page }) => {
   test.setTimeout(150_000);
   await lowGraphics(page);
-  await page.goto("/");
+  await page.goto("./");
   await page.getByRole("button", { name: "Tutorial" }).click();
   await page.waitForURL("**/game/");
   const panel = page.getByRole("region", { name: "Tutorial" });

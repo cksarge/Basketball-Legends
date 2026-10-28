@@ -1,24 +1,32 @@
 name: Deploy to GitHub Pages
 
+# One Pages site, two builds:
+#   main       -> https://legends.carterscoding.com/        (the live game)
+#   prerelease -> https://legends.carterscoding.com/beta/   (the beta, built with BL_CHANNEL=beta)
+# A push to either branch rebuilds and tests both, then publishes them together.
 on:
   push:
-    branches: [main]
+    branches: [main, prerelease]
   workflow_dispatch:
 
 permissions:
   contents: read
   pages: write
   id-token: write
+  actions: read # to reuse the last good beta when this run's beta build fails
 
 concurrency:
   group: pages
   cancel-in-progress: true
 
 jobs:
-  build:
+  live:
+    name: Live game (main)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -32,15 +40,75 @@ jobs:
       # browser smoke tests against the static build (uses the runner's installed Chrome).
       # Full-game flows (@gpu) need a GPU to run at speed, so they run locally with `npm run test:e2e`.
       - run: npx playwright test --grep-invert @gpu
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
+          name: live
           path: out
+          retention-days: 1
+
+  beta:
+    name: Beta (prerelease)
+    runs-on: ubuntu-latest
+    env:
+      BL_CHANNEL: beta
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: prerelease
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npx vitest run
+      - run: npm run build
+      # serve the build at /beta/ exactly as Pages will
+      - run: mkdir -p .e2e-beta/beta && cp -R out/. .e2e-beta/beta/ && cp out/404.html .e2e-beta/
+      - run: npx playwright test --grep-invert @gpu
+        env:
+          E2E_BASE: /beta
+          E2E_SERVE_DIR: .e2e-beta
+      - uses: actions/upload-artifact@v4
+        with:
+          name: beta
+          path: out
+          retention-days: 90
+
   deploy:
-    needs: build
+    needs: [live, beta]
+    # a broken beta never blocks the live game: on a push to main it deploys with the last good beta.
+    # A push to prerelease whose beta fails deploys nothing, so the site stays as it was.
+    if: always() && needs.live.result == 'success' && (needs.beta.result == 'success' || github.ref_name == 'main')
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: live
+          path: site
+      - uses: actions/download-artifact@v4
+        if: needs.beta.result == 'success'
+        with:
+          name: beta
+          path: site/beta
+      - name: Reuse the last good beta
+        if: needs.beta.result != 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          id=$(gh run list -R "$GITHUB_REPOSITORY" --workflow deploy.yml --status success --limit 1 --json databaseId -q '.[0].databaseId')
+          if [ -n "$id" ] && gh run download "$id" -R "$GITHUB_REPOSITORY" -n beta -D site/beta; then
+            echo "::warning::The beta build failed, so /beta/ was redeployed from run $id."
+          else
+            echo "::warning::The beta build failed and no earlier beta was found, so this deploy has no /beta/."
+          fi
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
       - id: deployment
         uses: actions/deploy-pages@v4
