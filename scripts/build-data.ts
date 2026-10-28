@@ -8,7 +8,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { Rng, hashString } from "../src/engine/rng";
-import type { Conference, LogoIcon, LogoSpec, Team } from "../src/engine/types";
+import type { Conference, LogoIcon, LogoSpec, Team, TeamLevel } from "../src/engine/types";
 
 const RAW = path.join(__dirname, "raw");
 const OUT = path.join(__dirname, "..", "src", "data", "generated");
@@ -594,6 +594,8 @@ interface HsRaw {
 function buildHs() {
   const raw = read<HsRaw[]>("aia-boys-basketball-2026.json");
   const cities = read<Record<string, string>>("aia-cities.json");
+  // which levels each school fields (varsity, JV, JV 2, freshman/sophomore), from the AIA's AZPreps365 team pages
+  const levels = read<{ levels: Record<string, TeamLevel[]> }>("aia-team-levels-2026.json").levels;
   const conferences: Conference[] = [];
   const teams: Team[] = [];
   const classBase: Record<string, number> = { "6A": 0.62, "5A": 0.52, "4A": 0.42, "3A": 0.34, "2A": 0.26, "1A": 0.18 };
@@ -637,6 +639,7 @@ function buildHs() {
             name: `${display.split(" (")[0]} ${rng.pick(["Gymnasium", "Gym", "Fieldhouse", "Activity Center", "Event Center"])}`,
             capacity: Math.round(400 + Math.min(4500, enroll * 1.2)),
           },
+          levels: levels[s.name] ?? ["varsity", "jv"],
         });
       }
     }

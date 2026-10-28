@@ -49,9 +49,10 @@ export default function Credits() {
       <H2>Team and school data</H2>
       <p>
         The list of Arizona high schools and their classifications and regions comes from the Arizona Interscholastic Association&apos;s public 2026-2028
-        alignment. College lists come from public Wikipedia lists of NCAA institutions. Only factual names, locations and affiliations are used. Every nickname,
-        logo, color scheme, arena name, conference name and player in the game is original and fictional, with one exception: Brophy College Preparatory appears
-        as the Broncos in its real red and white. Those names belong to the school.
+        alignment. Which teams each school fields (varsity, JV, freshman/sophomore) comes from the AIA&apos;s AZPreps365 team pages. College lists come from
+        public Wikipedia lists of NCAA institutions. Only factual names, locations and affiliations are used. Every nickname, logo, color scheme, arena name,
+        conference name and player in the game is original and fictional, with one exception: Brophy College Preparatory appears as the Broncos in its real red
+        and white. Those names belong to the school.
       </p>
       <p>Basketball Legends is not affiliated with, endorsed by or sponsored by the NBA, the NCAA, the AIA, or any team, school, college or university.</p>
       <H2>Open-source libraries</H2>

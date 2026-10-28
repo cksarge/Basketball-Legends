@@ -48,9 +48,12 @@ const ITEMS: Item[] = [
     id: "career",
     label: "Career",
     href: "/career/",
-    soon: true,
     blurb: "One player, from freshman year to the Hall of Fame.",
-    detail: ["High school, recruiting, college, the draft, the pros", "Interviews and press conferences with real consequences", "Arrives in the next update"],
+    detail: [
+      "Build your player and pick your Arizona high school",
+      "Tryouts, call-ups and a run at the state title",
+      "Recruiting, college, the draft and the pros are coming in this beta",
+    ],
   },
   {
     id: "franchise",

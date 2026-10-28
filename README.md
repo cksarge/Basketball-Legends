@@ -26,7 +26,7 @@ A free, open-source 3D basketball game that runs in the browser. Play pro basket
 - **Works offline:** after one visit the whole game is cached and playable without a connection, and it can be installed as an app.
 - **Settings for everyone:** graphics presets with auto-detect, full key and button remapping, colorblind modes, subtitles, reduced motion, UI scale and tap-to-shoot.
 
-Career mode, Franchise mode, roster editing, accounts and online play are in development.
+Career mode is being built in the beta: create a player (name, Arizona hometown and school, position, archetype, body with rating caps, look with a live 3D preview, starting skills), with several careers saved in the browser, autosave, and export/import as `.blcareer` files. Franchise mode, roster editing, accounts and online play are in development.
 
 Want to try what's coming next? The beta at https://legends.carterscoding.com/beta/ runs the version in testing. It shares saves with the main game, so a bug there can affect them.
 

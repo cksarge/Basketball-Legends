@@ -6,7 +6,7 @@ import type { Appearance, Archetype, ClassYear, LeagueId, Player, Position, Rati
 // Overall rating
 // ---------------------------------------------------------------------------
 
-type Weights = Partial<Record<RatingKey, number>>;
+export type Weights = Partial<Record<RatingKey, number>>;
 
 const OVR_WEIGHTS: Record<Position, Weights> = {
   PG: {
@@ -110,7 +110,7 @@ export const playerOvr = (p: Player) => overall(p.ratings, p.pos);
 // ---------------------------------------------------------------------------
 
 /** Rating offsets relative to the player's base talent. */
-const ARCHETYPES: Record<Archetype, { positions: Position[]; mods: Weights }> = {
+export const ARCHETYPES: Record<Archetype, { positions: Position[]; mods: Weights }> = {
   "Floor General": {
     positions: ["PG"],
     mods: { passAccuracy: 14, passVision: 16, ballHandle: 12, iq: 10, three: 2, dunk: -12, strength: -10, block: -15, interiorD: -12, offReb: -12 },
@@ -147,7 +147,7 @@ export const ARCHETYPE_LIST = Object.keys(ARCHETYPES) as Archetype[];
 export const archetypesFor = (pos: Position) => ARCHETYPE_LIST.filter((a) => ARCHETYPES[a].positions.includes(pos));
 
 /** Position baseline shapes (relative to talent). */
-const POS_BASE: Record<Position, Weights> = {
+export const POS_BASE: Record<Position, Weights> = {
   PG: {
     speed: 8,
     accel: 8,
@@ -185,7 +185,7 @@ const POS_BASE: Record<Position, Weights> = {
   },
 };
 
-const ALL_KEYS: RatingKey[] = [
+export const ALL_KEYS: RatingKey[] = [
   "speed",
   "accel",
   "strength",

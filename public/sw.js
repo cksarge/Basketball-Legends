@@ -8,7 +8,7 @@ const VERSION = "bl-v1";
 const BASE = ""; // "/beta" in the beta build, set by scripts/gen-sw.ts
 const IS_BETA = BASE !== "";
 const ownCache = (k) => IS_BETA === k.startsWith("bl-beta-");
-const PAGES = ["/", "/play/", "/game/", "/settings/", "/how-to-play/", "/credits/", "/changelog/", "/legal/terms/", "/legal/privacy/", "/404.html"].map((p) => BASE + p);
+const PAGES = ["/", "/play/", "/game/", "/settings/", "/how-to-play/", "/career/", "/career/new/", "/career/hub/", "/credits/", "/changelog/", "/legal/terms/", "/legal/privacy/", "/404.html"].map((p) => BASE + p);
 const ASSETS = [
   "/logos/brophy.png", "/favicon.ico", "/icon.svg", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png", "/manifest.webmanifest",
 ].map((p) => BASE + p);

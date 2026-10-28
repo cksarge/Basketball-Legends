@@ -20,6 +20,10 @@ export default function Privacy() {
           and quit. It is deleted when the game ends, when you quit without saving, or when you discard it.
         </li>
         <li>
+          <b>Careers</b> are saved in your browser&apos;s IndexedDB storage after everything you do. Exporting a career downloads a .blcareer file to your
+          device; nothing is uploaded.
+        </li>
+        <li>
           <b>Saved games and roster files</b> you create are stored in your browser and never uploaded.
         </li>
         <li>

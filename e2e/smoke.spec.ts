@@ -61,6 +61,8 @@ const PAGES: [string, RegExp][] = [
   ["legal/terms/", /Terms of Service/],
   ["legal/privacy/", /Privacy Policy/],
   ["changelog/", /Changelog/],
+  ["career/", /Career/],
+  ["career/new/", /Create a player/],
 ];
 
 for (const [path, heading] of PAGES) {
@@ -78,6 +80,30 @@ test("the main menu version links to the changelog", async ({ page }) => {
   await page.getByRole("link", { name: /^Version \d+\.\d+\.\d+/ }).click();
   await expect(page).toHaveURL(/\/changelog\/$/);
   await expect(page.getByRole("heading", { level: 2 }).first()).toHaveText(/^v\d+\.\d+\.\d+/);
+});
+
+test("create a career, then find it on the career screen after a reload", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto("career/new/");
+  await page.getByLabel("First name").fill("Test");
+  await page.getByLabel("Last name").fill("Rookie");
+  await page.getByRole("button", { name: "2. Position" }).click();
+  await page.getByRole("radio", { name: "PG" }).click();
+  await page.getByRole("button", { name: "5. Skills" }).click();
+  await page.getByRole("button", { name: "Auto-fill" }).click();
+  await expect(page.getByText(/^0$/).first()).toBeVisible();
+  await page.getByRole("button", { name: "6. Start" }).click();
+  await page.getByRole("button", { name: "Start career" }).click();
+  await page.waitForURL(/career\/hub\/\?id=/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Test Rookie");
+  await expect(page.getByText("Welcome to the program")).toBeVisible();
+  await page.getByRole("tab", { name: "Player" }).click();
+  await expect(page.getByText("Ratings")).toBeVisible();
+  await page.goto("career/");
+  await page.reload();
+  await expect(page.getByText("Test Rookie")).toBeVisible();
+  await expect(page.getByText("PG ·", { exact: false }).first()).toBeVisible();
+  expect(errors).toEqual([]);
 });
 
 test("the beta warning shows only in the beta build", async ({ page }) => {

@@ -15,11 +15,12 @@
 
 ## Data
 
-| Data                                                       | Source                                                      | Notes                                                                                        |
-| ---------------------------------------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Arizona high schools, classifications, regions, enrollment | AIA public 2026–2028 basketball alignment                   | Facts only (names, regions, sizes)                                                           |
-| College institutions, cities, conferences                  | Wikipedia lists of NCAA Division I, II and III institutions | Facts only; real nicknames are kept only as an avoid list so generated nicknames never match |
-| City list for pro teams                                    | Public knowledge                                            | City names only                                                                              |
+| Data                                                       | Source                                                         | Notes                                                                                        |
+| ---------------------------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Arizona high schools, classifications, regions, enrollment | AIA public 2026–2028 basketball alignment                      | Facts only (names, regions, sizes)                                                           |
+| Team levels each school fields (varsity, JV, FR/SO)        | AIA AZPreps365 boys basketball team pages (fetched 2026-10-28) | Facts only                                                                                   |
+| College institutions, cities, conferences                  | Wikipedia lists of NCAA Division I, II and III institutions    | Facts only; real nicknames are kept only as an avoid list so generated nicknames never match |
+| City list for pro teams                                    | Public knowledge                                               | City names only                                                                              |
 
 All team identities (nicknames, colors, logos, conference names, arenas) and all players are original and fictional. The one exception is Brophy College Preparatory, which uses its real nickname (Broncos) and colors (red and white); the Broncos and Brophy names belong to Brophy College Preparatory.
 

@@ -2,6 +2,21 @@
 
 Every release of Basketball Legends is listed here, newest first. Each version's section doubles as its release notes on GitHub.
 
+## v0.2.0 (in beta)
+
+In testing at legends.carterscoding.com/beta/. These notes grow as Phase 2 lands.
+
+### Career mode
+
+- **Create a player:** first and last name, Arizona hometown (114 cities) and high school, any of the 283 schools through open enrollment, and jersey number.
+- **Position and archetype:** the archetype sets your starting ratings and how high each skill can grow.
+- **Body:** pick the adult height you grow into by senior year, plus weight and wingspan. Every rating gets a cap from your body: taller and heavier players can grow size skills higher, smaller and lighter ones speed and handles, and a long wingspan helps on defense. Freshmen start shorter and grow through high school.
+- **Look:** skin tone, hair, facial hair, face shape, shoes, headband, arm sleeve and knee pads, with a live 3D preview in your school's uniform.
+- **Starting skills:** spend 45 points (up to 10 per skill) or auto-fill by archetype.
+- **Career settings:** difficulty, quarter length, what happens when you go to the bench, and how often story events appear.
+- **Several careers:** each saves in your browser after everything you do. Export a career as a `.blcareer` file to back it up or move it, and import it on any device.
+- **Real high school levels:** each Arizona school now knows which boys basketball teams it fields (varsity, JV, JV 2, freshman/sophomore), from the AIA's official AZPreps365 team pages. 205 of the 283 schools run a freshman/sophomore team.
+
 ## v0.1.0 — October 28, 2026
 
 The first public version: a full 5v5 basketball game in the browser. You can play any pro, college or Arizona high school team in Quick Play, practice, or learn the controls in the tutorial. Career, Franchise and online play come in later versions.

@@ -62,7 +62,11 @@ export interface Team {
   /** 0..1 program strength; drives roster talent and recruiting appeal. */
   prestige: number;
   arena: { name: string; capacity: number };
+  /** High school only: the boys basketball teams the school fields (AIA data). "frso" is a freshman/sophomore team. */
+  levels?: TeamLevel[];
 }
+
+export type TeamLevel = "varsity" | "jv" | "jv2" | "frso";
 
 export interface Conference {
   id: string;
