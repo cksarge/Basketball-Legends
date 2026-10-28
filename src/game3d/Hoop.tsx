@@ -190,8 +190,8 @@ export function Hoop({ court, side, team, ceilingHung, mountY = 8.4, ballRef, cl
     // rim shake after hard contact
     const shake = rimShake.current?.[side === 1 ? 0 : 1] ?? 0;
     if (rimGroup.current) {
-      rimGroup.current.rotation.z = Math.sin(performance.now() * 0.06) * shake * 0.05;
-      rimGroup.current.position.y = -shake * 0.02;
+      // dips toward the floor and rings back (the hinge is at the board, so this is a tilt)
+      rimGroup.current.rotation.z = side * (0.5 + 0.5 * Math.sin(performance.now() * 0.06)) * shake * 0.05;
     }
     if (rimShake.current) rimShake.current[side === 1 ? 0 : 1] = Math.max(0, shake - 0.04);
   });
@@ -243,14 +243,17 @@ export function Hoop({ court, side, team, ceilingHung, mountY = 8.4, ballRef, cl
           <meshBasicMaterial map={led.tex} toneMapped={false} />
         </mesh>
       </group>
-      {/* rim + net hooks */}
-      <group ref={rimGroup}>
-        <mesh position={[rim.x, rim.y, rim.z]} rotation={[Math.PI / 2, 0, 0]} material={rimMat} castShadow>
-          <torusGeometry args={[court.rimRadius, 0.0095, 10, 48]} />
-        </mesh>
-        <mesh position={[(rim.x + bx) / 2 + side * 0.03, rim.y - 0.02, 0]} material={rimMat}>
-          <boxGeometry args={[Math.abs(bx - rim.x) - court.rimRadius + 0.06, 0.03, 0.12]} />
-        </mesh>
+      {/* rim + net hooks, hinged where the bracket meets the board so a hard hit makes the
+          front of the rim dip and wobble a centimetre or two */}
+      <group position={[bx, rim.y, 0]}>
+        <group ref={rimGroup}>
+          <mesh position={[rim.x - bx, 0, rim.z]} rotation={[Math.PI / 2, 0, 0]} material={rimMat} castShadow>
+            <torusGeometry args={[court.rimRadius, 0.0095, 10, 48]} />
+          </mesh>
+          <mesh position={[(rim.x - bx) / 2 + side * 0.03, -0.02, 0]} material={rimMat}>
+            <boxGeometry args={[Math.abs(bx - rim.x) - court.rimRadius + 0.06, 0.03, 0.12]} />
+          </mesh>
+        </group>
       </group>
       <Net sim={sim} ballRef={ballRef} />
       {/* support */}
