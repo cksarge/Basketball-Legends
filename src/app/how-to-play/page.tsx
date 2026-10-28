@@ -58,9 +58,10 @@ export default function HowToPlay() {
       <H2>The shot meter</H2>
       <p>
         Hold the shoot button to rise into your shot and release it at the top of your jump. The bar on the right fills while you hold; the green band is the
-        ideal release, and after you let go it tells you how you timed it (perfect, good, slightly early or slightly late). A perfect release raises your chance
-        a lot, a slightly early or late one barely changes it, and a badly mistimed one is far less likely to go in. Better shooters get a wider green window.
-        You can turn the meter off in Settings to use rating-based shooting, or choose tap-to-shoot under Accessibility.
+        ideal release, and after you let go it tells you how you timed it (perfect, good, slightly early or slightly late). A perfect release goes in nearly
+        every time, a slightly early or late one barely changes it, and a badly mistimed one is far less likely to go in. Better shooters get a wider green
+        window, and the band on the meter shows its real size. You can turn the meter off in Settings to use rating-based shooting, or choose tap-to-shoot under
+        Accessibility.
       </p>
       <p>
         Where you shoot from matters: open catch-and-shoot threes and shots at the rim are the most efficient. Contested shots, shots off a hard dribble and

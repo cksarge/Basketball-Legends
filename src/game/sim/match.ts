@@ -32,6 +32,23 @@ import { type Crew, createCrew, crewOnEvent, crewStartHandoff, crewStep, refHand
 export const AGENT_RADIUS = 0.32;
 const DT_DECIDE = 0.2;
 
+/** Seconds of timing error per unit of shot-meter quality. */
+export const METER_SCALE = 0.22;
+
+/**
+ * Half-width of the green window in quality units for a shooting rating: about 15 ms either side
+ * for poor shooters, 22 ms at 50 and 40 ms for elite shooters. The HUD draws exactly this band.
+ */
+export const greenWindow = (rating: number) => clamp(0.1 + (rating - 50) * 0.002, 0.07, 0.2);
+
+export type ReleaseGrade = "green" | "good" | "early" | "late";
+
+/** How a release reads on the meter. The make chance uses the same grade, so they always agree. */
+export function releaseGrade(quality: number, greenW: number): ReleaseGrade {
+  const q = Math.abs(quality);
+  return q < greenW ? "green" : q < 0.22 ? "good" : quality < 0 ? "early" : "late";
+}
+
 export interface MatchSetup {
   league: LeagueId;
   home: { team: Team; roster: Player[]; tactics?: Partial<TeamTactics>; human?: boolean; starters?: string[]; humans?: number[] };
@@ -1218,7 +1235,9 @@ export class Match {
     const tm = timing[kind];
     const apexT = tm.jumpAt + Math.sqrt(2 * 9.81 * Math.max(0.05, tm.jump)) / 9.81;
     const release = kind === "layup" ? apexT - 0.03 : kind === "dunk" ? apexT : apexT - 0.02;
+    const three = kind !== "dunk" && kind !== "layup" && isThree(s.cfg.court, this.attackSide(a.team), a.pos.x, a.pos.z);
     this.startAction(a, kind as ActionKind, tm.dur, {
+      greenW: greenWindow(this.r(a, three ? "three" : "midRange")),
       jumpAt: tm.jumpAt,
       jumpH: tm.jump,
       release,
@@ -1263,8 +1282,8 @@ export class Match {
     if (ac.data.released || (ac.data.releasedAt as number) >= 0) return;
     ac.data.releasedAt = ac.t;
     const ideal = ac.data.ideal as number;
-    // window scales with shooting skill: better shooters get bigger green windows
-    ac.data.quality = (ac.t - ideal) / 0.22;
+    // window scales with shooting skill: better shooters get bigger green windows (see greenWindow)
+    ac.data.quality = (ac.t - ideal) / METER_SCALE;
     ac.data.release = Math.max(ac.t, Math.min(ideal + 0.12, ac.t + 0.02));
   }
 
@@ -1283,7 +1302,7 @@ export class Match {
     // human never released: auto-release late
     if (d.human && !d.released && (d.releasedAt as number) < 0 && ac.t >= (d.ideal as number) + 0.18 && s.cfg.shotMeter) {
       d.releasedAt = ac.t;
-      d.quality = (ac.t - (d.ideal as number)) / 0.22;
+      d.quality = (ac.t - (d.ideal as number)) / METER_SCALE;
       d.release = ac.t;
     }
     if (s.ball.owner !== a.idx && !d.released) {
@@ -1326,7 +1345,7 @@ export class Match {
     return def === "zone23" ? contest + (1 - contest) * 0.1 : contest;
   }
 
-  makeProbability(a: Agent, kind: ShotKind, dist: number, three: boolean, contest: number, quality: number): number {
+  makeProbability(a: Agent, kind: ShotKind, dist: number, three: boolean, contest: number, quality: number, greenW?: number): number {
     const s = this.state;
     const sl = s.cfg.sliders;
     let p: number;
@@ -1375,17 +1394,20 @@ export class Match {
       if (s.clock < 120 && s.period >= s.cfg.rules.periods && lead <= 6) p *= 0.94 + this.r(a, "clutch") * 0.0011;
     }
     // shot meter timing
+    let green = false;
     if (!Number.isNaN(quality)) {
       const q = Math.abs(quality);
-      const greenW = 0.06 + (this.r(a, kind === "freeThrow" ? "freeThrow" : three ? "three" : "midRange") - 50) * 0.0012;
-      if (q < greenW) p = Math.max(p, Math.min(0.97, p * 1.6 + 0.12));
-      else if (q < 0.22) p *= 1.04;
+      const grade = releaseGrade(quality, greenW ?? greenWindow(this.r(a, kind === "freeThrow" ? "freeThrow" : three ? "three" : "midRange")));
+      if (grade === "green") green = true;
+      else if (grade === "good") p *= 1.04;
       else if (q < 0.45) p *= 0.78;
       else p *= 0.35;
     }
     p *= sl.shotSuccess * LEAGUE_TUNING[s.cfg.league].makes;
     if (three) p *= sl.threeSuccess;
     if (kind === "layup" || kind === "dunk") p *= sl.layupSuccess;
+    // a perfect release goes in nearly every time; only a hand right in your face takes a little off
+    if (green) p = Math.max(p, 0.97 - 0.12 * contest);
     return clamp(p, 0.01, 0.99);
   }
 
@@ -1399,7 +1421,7 @@ export class Match {
     const three = kind !== "dunk" && kind !== "layup" && isThree(c, side, d.fromX as number, d.fromZ as number);
     const contest = this.contestOn(a);
     const quality = d.human && s.cfg.shotMeter ? (d.quality as number) : NaN;
-    let pMake = this.makeProbability(a, kind, dist, three, this.zoneHelp(a, contest), quality);
+    let pMake = this.makeProbability(a, kind, dist, three, this.zoneHelp(a, contest), quality, d.greenW as number | undefined);
 
     // shooting foul?
     let fouled = false;
@@ -2260,7 +2282,15 @@ export class Match {
   static FT_IDEAL = 0.72;
 
   private startFreeThrowStroke(a: Agent, human: boolean) {
-    a.action = act("freeThrow", 1.6, { started: true, start: this.state.time, ideal: Match.FT_IDEAL, release: Match.FT_IDEAL, releasedAt: -1, human });
+    a.action = act("freeThrow", 1.6, {
+      started: true,
+      start: this.state.time,
+      ideal: Match.FT_IDEAL,
+      release: Match.FT_IDEAL,
+      releasedAt: -1,
+      human,
+      greenW: greenWindow(this.r(a, "freeThrow")),
+    });
   }
 
   private ftInput(phase: "press" | "release") {
@@ -2363,8 +2393,8 @@ export class Match {
       if (a.action.data.human && rel < 0 && a.action.t < ideal + 0.35) return;
       if (a.action.t < ideal) return;
       // shoot
-      const q = a.action.data.human ? ((rel < 0 ? a.action.t : rel) - ideal) / 0.22 : NaN;
-      const p = this.makeProbability(a, "freeThrow", 4.6, false, 0, a.action.data.human ? q : NaN);
+      const q = a.action.data.human ? ((rel < 0 ? a.action.t : rel) - ideal) / METER_SCALE : NaN;
+      const p = this.makeProbability(a, "freeThrow", 4.6, false, 0, a.action.data.human ? q : NaN, a.action.data.greenW as number);
       const make = this.rng.chance(p);
       const side = this.attackSide(ft.team);
       const rim = rimPos(c, side);

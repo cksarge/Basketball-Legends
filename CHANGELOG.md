@@ -2,6 +2,21 @@
 
 Every release of Basketball Legends is listed here, newest first. Each version's section doubles as its release notes on GitHub.
 
+## v0.1.1 — October 28, 2026
+
+A patch for shooting and the main menu.
+
+### Shooting
+
+- **Perfect releases go in:** a green release now goes in about 97% of the time for any shooter, and still about 85% with a hand in your face. Before, the meter's green band and the game's green window didn't match, so many releases that showed "Perfect release" were scored as merely good. Even a true green on a contested three only went in about half the time.
+- **Fairer green windows:** the window is wider (about 15 ms either side of perfect for poor shooters, 22 ms for average and 40 ms for great ones), and the green band on the meter is drawn at exactly that size, so a better shooter visibly gets a bigger target.
+- **Smoother meter:** the bar now updates every frame while you hold the shot instead of 20 times a second, so where you see it is where it really is.
+
+### Main menu
+
+- **Same spacing on every screen:** the menu no longer squeezes together in short windows; if it doesn't fit, it scrolls, and the arena backdrop stays fixed behind it.
+- **Only the menu scrolls on wide screens:** the title, the info card and the footer links stay in place while the menu column scrolls, with soft fades at its top and bottom edges.
+
 ## v0.1.0 — October 28, 2026
 
 The first public version: a full 5v5 basketball game in the browser. You can play any pro, college or Arizona high school team in Quick Play, practice, or learn the controls in the tutorial. Career, Franchise and online play come in later versions.
