@@ -15,13 +15,25 @@ import { generateVarsitySchedule } from "./schedule";
 import { simScore, standings } from "./sim";
 import { ELIGIBLE_GPA, gpaLabel, practiceMultiplier, semesterGpa } from "./academics";
 import { rankCareer, rankingText } from "./rankings";
+import { refreshRecruiting } from "../recruiting";
 import { CAMPS, attendCamp, campDate, clubRoster, scheduleShowcase, showcaseExposure, showcaseFor } from "./summer";
 
 export interface HsContext {
   teams: Team[];
   byId: Map<string, Team>;
+  /** College programs, for recruiting (optional so pure high school tests can skip them). */
+  colleges?: Team[];
+  collegeById?: Map<string, Team>;
 }
-export const hsContext = (teams: Team[]): HsContext => ({ teams, byId: new Map(teams.map((t) => [t.id, t])) });
+export const hsContext = (teams: Team[], colleges?: Team[]): HsContext => ({
+  teams,
+  byId: new Map(teams.map((t) => [t.id, t])),
+  colleges,
+  collegeById: colleges ? new Map(colleges.map((t) => [t.id, t])) : undefined,
+});
+
+/** Recruiting refresh, when the context knows the colleges. */
+export const recruitStep = (c: Career, ctx: HsContext, date: IsoDate) => (ctx.colleges ? refreshRecruiting(c, ctx.colleges, date) : c);
 
 const GRADE_CLASS: Record<number, ClassYear> = { 9: "FR", 10: "SO", 11: "JR", 12: "SR" };
 export const XP_PER_POINT = 40;
@@ -186,7 +198,7 @@ export function nextEvent(c: Career): NextEvent {
   if (next) return { kind: "game", date: next.date, game: next };
   if (!s.wrapped) return { kind: "seasonEnd", date: cal.seasonEnd };
   if (!s.grades.spring) return { kind: "finals", date: cal.springGrades, semester: "spring" };
-  if (s.grade === 12) return { kind: "graduated", date: iso(year + 1, 5, 28) };
+  if (s.grade === 12 || c.recruiting?.reclassified) return { kind: "graduated", date: iso(year + 1, 5, 28) };
   if (!s.summer?.camp) return { kind: "camp", date: campDate(year) };
   // AAU showcase: first pick up the club (no game yet), then play its games
   if (!s.summer.showcase) return { kind: "showcase", date: campDate(year) };
@@ -384,6 +396,9 @@ export function applyUserGame(c: Career, gameId: string, o: UserGameOutcome, ctx
     if (game.label?.endsWith("State Championship") && ourWin)
       next = { ...next, log: [...next.log, log(game.date, `Won the ${game.label.replace(" State Championship", "")} state championship!`, "award")] };
   }
+  // college coaches check in every few games
+  const played = userGames(currentSeason(next)!).filter((g) => g.result).length;
+  if (played % 4 === 0) next = recruitStep(next, ctx, game.date);
   return checkLevelMove(next, ctx);
 }
 
@@ -505,7 +520,7 @@ export function finishSeason(c: Career, ctx: HsContext): Career {
     hs: { ...c.hs, seasons: [...c.hs.seasons.slice(0, -1), wrappedSeason] },
     log: [...c.log, ...awards.map((a) => log(end, a, "award"))],
   };
-  next = rerank(next, end);
+  next = recruitStep(rerank(next, end), ctx, end);
   const champion = s.playoffs?.find((b) => b.champion === s.schoolId);
   return {
     ...next,
@@ -633,7 +648,7 @@ export function startNextYear(c: Career, ctx: HsContext): Career {
   const newYear = s.year + 1;
   const developed = develop(c, iso(newYear, 8, 1));
   const aged = { ...developed, date: iso(newYear, 8, 1), player: { ...developed.player, age: developed.player.age + 1 } };
-  return startSeason(aged, newYear, ctx);
+  return recruitStep(startSeason(aged, newYear, ctx), ctx, iso(newYear, 8, 1));
 }
 
 /** Graduation day after senior year. */

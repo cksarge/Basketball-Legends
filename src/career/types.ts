@@ -150,6 +150,40 @@ export interface RecruitRanking {
   exposure: number;
 }
 
+export type OfferStatus = "interested" | "offered" | "committed" | "signed" | "withdrawn";
+
+export interface Offer {
+  teamId: string;
+  /** When the program first reached out. */
+  date: IsoDate;
+  status: OfferStatus;
+  /** How much the program wants you (0..100). */
+  interest: number;
+  /** How much you like the program (0..100); visits and your choices move it. */
+  myInterest: number;
+  /** Projected NIL value per year, in dollars (D1 only). */
+  nil: number;
+  /** What the coaches pitch for your first season. */
+  role: string;
+  visited?: boolean;
+  /** Your own shortlist. */
+  favorite?: boolean;
+}
+
+export interface Recruiting {
+  offers: Offer[];
+  visitsUsed: number;
+  /** Official visits allowed (NCAA: five). */
+  visitsAllowed: number;
+  committedTo?: string;
+  commitDate?: IsoDate;
+  signedDate?: IsoDate;
+  /** Graduating a year early (skips senior year). */
+  reclassified?: boolean;
+  /** Last date offers were refreshed. */
+  updated?: IsoDate;
+}
+
 export interface Bracket {
   id: string;
   name: string;
@@ -189,6 +223,8 @@ export interface Career {
   player: CareerPlayer;
   settings: CareerSettings;
   hs: { schoolId: string; seasons: HsSeason[] };
+  /** College recruiting, from the summer after sophomore year until you sign. */
+  recruiting?: Recruiting;
   inbox: InboxMessage[];
   log: CareerLogEntry[];
 }

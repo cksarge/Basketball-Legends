@@ -16,6 +16,7 @@ import {
   startNextYear,
   takeFinals,
   applyTryout,
+  recruitStep,
   applyUserGame,
   currentSeason,
   finishSeason,
@@ -34,7 +35,7 @@ import { clearSuspended, loadSuspended } from "@/state/suspended";
 export function useHsContext(): HsContext | null {
   const [ctx, setCtx] = useState<HsContext | null>(null);
   useEffect(() => {
-    loadLeague("hs").then((d) => setCtx(hsContext(d.teams)));
+    Promise.all([loadLeague("hs"), loadLeague("college")]).then(([h, col]) => setCtx(hsContext(h.teams, col.teams)));
   }, []);
   return ctx;
 }
@@ -61,14 +62,18 @@ export async function applyFinishedMatch(ctx: HsContext) {
   if (show) {
     if (show.result) return false;
     await update((x) =>
-      applyShowcaseGame(x, show.id, {
-        homeScore: res.homeScore,
-        awayScore: res.awayScore,
-        overtimes: Math.max(0, res.periods - 4),
-        box: res.box,
-        played: !res.simulated,
-        playerOfGame: res.playerOfGame,
-      }),
+      recruitStep(
+        applyShowcaseGame(x, show.id, {
+          homeScore: res.homeScore,
+          awayScore: res.awayScore,
+          overtimes: Math.max(0, res.periods - 4),
+          box: res.box,
+          played: !res.simulated,
+          playerOfGame: res.playerOfGame,
+        }),
+        ctx,
+        show.date,
+      ),
     );
     return true;
   }
@@ -153,16 +158,19 @@ export async function finishCurrentSeason(ctx: HsContext) {
 export async function finalsAction(semester: "fall" | "spring", exam: number, ctx: HsContext) {
   const ev = nextEvent(cur());
   if (ev.kind !== "finals") return;
-  await update((x) => takeFinals(advanceTo(x, ev.date, ctx), semester, exam));
+  await update((x) => {
+    const y = takeFinals(advanceTo(x, ev.date, ctx), semester, exam);
+    return recruitStep(y, ctx, y.date);
+  });
 }
 
-export const campAction = (campId: string) => update((x) => goToCamp(x, campId));
+export const campAction = (campId: string, ctx: HsContext) => update((x) => recruitStep(goToCamp(x, campId), ctx, x.date));
 export const showcaseAction = () => update((x) => prepareShowcase(x));
 export const nextYearAction = (ctx: HsContext) => update((x) => startNextYear(x, ctx));
 export const graduateAction = (ctx: HsContext) => update((x) => graduate(x, ctx));
 
 /** Simulates the remaining showcase games through the real engine. */
-export async function simShowcase(onProgress: (p: SimProgress | null) => void) {
+export async function simShowcase(ctx: HsContext, onProgress: (p: SimProgress | null) => void) {
   for (let i = 0; i < 5; i++) {
     const ev = nextEvent(cur());
     if (ev.kind !== "showcase" || !ev.game) break;
@@ -172,7 +180,7 @@ export async function simShowcase(onProgress: (p: SimProgress | null) => void) {
     onProgress({ index: i + 1, total: 3, label, fraction: 0 });
     const match = new Match({ ...setup, fast: true });
     await simulateToEnd(match, (f) => onProgress({ index: i + 1, total: 3, label, fraction: f }));
-    await update((x) => applyShowcaseGame(x, game.id, outcomeFromMatch(match, false)));
+    await update((x) => recruitStep(applyShowcaseGame(x, game.id, outcomeFromMatch(match, false)), ctx, game.date));
   }
   onProgress(null);
 }

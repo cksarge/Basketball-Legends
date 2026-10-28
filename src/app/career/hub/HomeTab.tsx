@@ -278,7 +278,7 @@ function NextUp({ career, ctx }: { career: Career; ctx: HsContext }) {
             <li key={camp.id}>
               <button
                 disabled={!camp.invited || busy}
-                onClick={() => run(() => campAction(camp.id))}
+                onClick={() => run(() => campAction(camp.id, ctx))}
                 className="h-full w-full rounded-[var(--radius-chip)] bg-deck-2 p-3 text-left ring-1 ring-line hover:ring-amber disabled:opacity-40"
               >
                 <span className="block font-display text-xl font-black">{camp.name}</span>
@@ -333,7 +333,7 @@ function NextUp({ career, ctx }: { career: Career; ctx: HsContext }) {
               Play
             </Button>
           )}
-          <Button variant="secondary" disabled={busy} onClick={() => run(() => simShowcase(setProgress))}>
+          <Button variant="secondary" disabled={busy} onClick={() => run(() => simShowcase(ctx, setProgress))}>
             Sim {left > 1 ? `all ${left}` : "game"}
           </Button>
         </div>
