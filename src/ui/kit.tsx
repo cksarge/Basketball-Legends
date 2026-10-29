@@ -168,13 +168,16 @@ export function Segmented<T extends string | number>({
   options,
   onChange,
   label,
+  showLabel,
 }: {
   value: T;
   options: { value: T; label: string }[];
   onChange: (v: T) => void;
   label: string;
+  /** Print the label above the options (otherwise it's only announced to screen readers). */
+  showLabel?: boolean;
 }) {
-  return (
+  const group = (
     <div role="radiogroup" aria-label={label} className="inline-flex flex-wrap gap-1 rounded-[var(--radius-chip)] bg-deck p-1 ring-1 ring-line">
       {options.map((o) => (
         <button
@@ -187,6 +190,15 @@ export function Segmented<T extends string | number>({
           {o.label}
         </button>
       ))}
+    </div>
+  );
+  if (!showLabel) return group;
+  return (
+    <div>
+      <p className="mb-1 text-sm text-steel" aria-hidden>
+        {label}
+      </p>
+      {group}
     </div>
   );
 }

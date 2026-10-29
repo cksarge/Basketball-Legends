@@ -34,8 +34,9 @@ export function saveSuspended(match: Match, pending: PendingMatch) {
       away: s.teams[1].team.name,
       homeScore: s.teams[0].score,
       awayScore: s.teams[1].score,
-      period: periodText(match),
-      clock: `${Math.floor(s.clock / 60)}:${String(Math.floor(s.clock % 60)).padStart(2, "0")}`,
+      // park games have no clock: the summary names the target instead
+      period: s.cfg.park ? (s.cfg.park.game === "21" ? "21" : `Game to ${s.cfg.park.target}`) : periodText(match),
+      clock: s.cfg.park ? "no clock" : `${Math.floor(s.clock / 60)}:${String(Math.floor(s.clock % 60)).padStart(2, "0")}`,
     },
   };
   try {

@@ -3,8 +3,8 @@
 import { clamp } from "@/engine/rng";
 import { distToRim, inLane, isThree, rimPos } from "../court";
 import { dist2, distToSeg2, v2, type V2 } from "../vec";
-import type { Match } from "./match";
-import { type Agent, LEAGUE_TUNING, type TeamIdx } from "./state";
+import { type Match, PARK_POSSESSION } from "./match";
+import { type Agent, type TeamIdx, tuningFor } from "./state";
 
 interface AIMemo {
   target?: V2;
@@ -47,6 +47,8 @@ export function runAI(match: Match, dt: number, decide: boolean) {
   COURT_HALF = { x: s.cfg.court.halfL, z: s.cfg.court.halfW };
   for (const a of s.agents) {
     if (a.human !== null) continue;
+    // park shooting games move their own players
+    if (match.drill?.controls(a)) continue;
     if (s.cfg.practice && a.team === 1) {
       holdStill(a);
       continue;
@@ -171,6 +173,20 @@ function deadBallMove(match: Match, a: Agent) {
     return;
   }
   const side = match.attackSide(ib.team);
+  if (ib.check) {
+    // park check: the ball handler walks up top, everyone else finds their spot
+    const holder = s.agents[ib.inbounder];
+    if (a.idx === ib.inbounder) goTo(a, ib.spot, { slow: 1.2, face: rimPos(s.cfg.court, side) });
+    else if (a.team === ib.team) goTo(a, match.spacingSpot(a.role, side, M(a).variant), { slow: 2 });
+    else if (holder && a.guarding === holder.idx) goTo(a, v2(ib.spot.x + side * 1.3, ib.spot.z), { slow: 1.2, face: ib.spot });
+    else {
+      const man = a.guarding !== null ? s.agents[a.guarding] : null;
+      const rim = rimPos(s.cfg.court, side);
+      const spot = man ? match.spacingSpot(man.role, side, M(man).variant) : v2(rim.x - side * 3, 0);
+      goTo(a, v2(spot.x + (rim.x - spot.x) * 0.25, spot.z * 0.8), { slow: 2 });
+    }
+    return;
+  }
   if (a.team === ib.team) {
     // jog toward own backcourt / spacing
     const spot = ib.afterScore ? v2(-side * 6 + ((a.idx % 5) - 2) * 1.2, ((a.idx % 5) - 2) * 2.4) : match.spacingSpot(a.role, side, M(a).variant);
@@ -245,9 +261,25 @@ function offenseAI(match: Match, a: Agent, decide: boolean) {
       holdStill(a);
       return;
     }
+    // half court at the park: after a change of possession, take it back past the arc before scoring
+    if (s.cfg.park?.halfCourt && s.park && !s.park.cleared) {
+      const out = v2(rim.x - side * (c.threeRadius + 1.4), clamp(a.pos.z * 0.6, -4, 4));
+      goTo(a, out, { slow: 0.6, sprint: distToRim(c, side, a.pos.x, a.pos.z) < 3 });
+      if (decide && (m.nextPassOk ?? 0) < s.time) {
+        const outlet = match
+          .agentsOf(a.team)
+          .find((t) => t !== a && isThree(c, side, t.pos.x, t.pos.z) && openness(match, t) > 0.6 && passLaneClear(match, a, t));
+        if (outlet && match.rng.chance(0.35)) {
+          a.intent.act = { type: "pass", to: outlet.idx, kind: "chest" };
+          m.nextPassOk = s.time + 0.8;
+        }
+      }
+      keepInBounds(match, a);
+      return;
+    }
     const front = a.pos.x * side > 0;
     const dRim = distToRim(c, side, a.pos.x, a.pos.z);
-    const shotClock = s.cfg.rules.shotClock ? s.shotClock : 99;
+    const shotClock = s.cfg.rules.shotClock || s.cfg.park ? s.shotClock : 99;
     const humanCaller = (s as typeof s & { callFor?: number | null }).callFor;
 
     // pass to a human teammate who's calling for the ball
@@ -287,11 +319,11 @@ function offenseAI(match: Match, a: Agent, decide: boolean) {
       const ev = match.shotValue(a);
       const three = isThree(c, side, a.pos.x, a.pos.z);
       const tac = s.teams[a.team].tactics;
-      const tune = LEAGUE_TUNING[s.cfg.league];
+      const tune = tuningFor(s.cfg);
       const threePref = (0.85 + tac.threeRate * 0.3) * tune.threeBias;
       const clockPressure = shotClock < 5 ? 0.35 : shotClock < 9 ? 0.15 : 0;
       // possession maturity: early in the clock only take clearly good shots
-      const shotClockMax = s.cfg.rules.shotClock ?? 35;
+      const shotClockMax = s.cfg.park ? PARK_POSSESSION : (s.cfg.rules.shotClock ?? 35);
       const elapsed = shotClockMax - shotClock;
       const patience = 9 + tune.patience + (1 - tac.pace) * 9;
       const early = elapsed < patience ? 0.4 * (1 - elapsed / patience) : 0;
@@ -616,6 +648,18 @@ function defenseAI(match: Match, a: Agent, decide: boolean) {
       const guardSpot = v2(intruder.pos.x + toR.x * 1.1, intruder.pos.z + toR.z * 1.1);
       target = v2(spot.x * 0.3 + guardSpot.x * 0.7, spot.z * 0.3 + guardSpot.z * 0.7);
     } else target = spot;
+  } else if (onBall && s.cfg.park?.game === "21" && handler && match.agentsOf(a.team).length > 1) {
+    // 21: the closest defender plays the ball, the rest wall off the paint
+    const defenders = match.agentsOf(a.team).sort((x, y) => dist2(x.pos, handler.pos) - dist2(y.pos, handler.pos));
+    const k = defenders.indexOf(a);
+    if (k === 0) target = v2(man.pos.x + toRim.x * 1.05, man.pos.z + toRim.z * 1.05);
+    else {
+      const lat = v2(-toRim.z, toRim.x);
+      const off = (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 1.5;
+      const depth = 2.4 + Math.ceil(k / 2) * 0.6;
+      target = v2(man.pos.x + toRim.x * depth + lat.x * off, man.pos.z + toRim.z * depth + lat.z * off);
+      onBall = false;
+    }
   } else if (onBall) {
     // respect shooters, give cushion to quick drivers
     const shooter = match.r(man, "three") > 78;
@@ -660,7 +704,7 @@ function defenseAI(match: Match, a: Agent, decide: boolean) {
   }
   // pump fake bite handled in match; steals
   if (onBall && d < 1.1 && !shooting) {
-    const pSteal = 0.02 * (match.r(a, "steal") / 75) * aggression * (handler.action.kind === "dribbleMove" ? 1.6 : 1) * LEAGUE_TUNING[s.cfg.league].steals;
+    const pSteal = 0.02 * (match.r(a, "steal") / 75) * aggression * (handler.action.kind === "dribbleMove" ? 1.6 : 1) * tuningFor(s.cfg).steals;
     if (match.rng.chance(pSteal)) a.intent.act = { type: "steal" };
   }
   // double team stars
@@ -702,6 +746,7 @@ function reboundAI(match: Match, a: Agent, decide: boolean) {
     if (offense) {
       const crasher = a.role === "post" || (a.role === "corner" && crash > 0.35) || (crash > 0.7 && a.role !== "ball");
       if (crasher && a.idx !== s.ball.shot.shooter) goTo(a, v2(rim.x - side * 1.6, a.pos.z * 0.5), { sprint: true });
+      else if (s.cfg.park?.halfCourt) goTo(a, v2(rim.x - side * (c.threeRadius + 1), a.pos.z * 0.8), { slow: 2 });
       else goTo(a, v2(-side * 4, a.pos.z * 0.5), { sprint: false, slow: 3 }); // get back
     } else {
       // zones box out whoever is closest; man defenders find their own man
@@ -725,7 +770,8 @@ function reboundAI(match: Match, a: Agent, decide: boolean) {
   } else {
     // safety: retreat on defense, space on offense
     // offense: get back in transition; defense: hold position between ball and the basket
-    goTo(a, offense ? v2(rim.x - side * 9, a.pos.z * 0.5) : v2((land.x + rim.x) / 2, (land.z + rim.z) / 2), { slow: 1.5 });
+    const back = s.cfg.park?.halfCourt ? c.threeRadius + 1 : 9;
+    goTo(a, offense ? v2(rim.x - side * back, a.pos.z * 0.5) : v2((land.x + rim.x) / 2, (land.z + rim.z) / 2), { slow: 1.5 });
   }
 }
 

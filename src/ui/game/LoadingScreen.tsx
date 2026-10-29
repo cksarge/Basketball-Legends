@@ -8,7 +8,7 @@ import { TeamLogo } from "../TeamLogo";
 import { formatTip, TIPS } from "./tips";
 
 /** Covers the scene while the arena and players load: matchup, real progress and rotating tips. */
-export function LoadingScreen({ home, away, ready }: { home: Team; away: Team; ready: boolean }) {
+export function LoadingScreen({ home, away, ready, place }: { home: Team; away: Team; ready: boolean; place?: { name: string; where: string } }) {
   const { progress, active } = useProgress();
   const showTips = useSettings((s) => s.presentation.showTips);
   const keys = useSettings((s) => s.controls.keys);
@@ -32,20 +32,27 @@ export function LoadingScreen({ home, away, ready }: { home: Team; away: Team; r
       role="status"
       aria-live="polite"
     >
-      <div className="flex items-center gap-10">
-        <div className="flex flex-col items-center gap-2">
-          <TeamLogo team={away} size={110} />
-          <span className="font-display text-2xl font-bold">{away.name}</span>
+      {place ? (
+        <div className="text-center">
+          <p className="font-display text-5xl font-black">{place.name}</p>
+          <p className="text-lg text-steel">{place.where}</p>
         </div>
-        <span className="font-display text-4xl font-black text-steel">at</span>
-        <div className="flex flex-col items-center gap-2">
-          <TeamLogo team={home} size={110} />
-          <span className="font-display text-2xl font-bold">{home.name}</span>
+      ) : (
+        <div className="flex items-center gap-10">
+          <div className="flex flex-col items-center gap-2">
+            <TeamLogo team={away} size={110} />
+            <span className="font-display text-2xl font-bold">{away.name}</span>
+          </div>
+          <span className="font-display text-4xl font-black text-steel">at</span>
+          <div className="flex flex-col items-center gap-2">
+            <TeamLogo team={home} size={110} />
+            <span className="font-display text-2xl font-bold">{home.name}</span>
+          </div>
         </div>
-      </div>
+      )}
       <div className="w-[min(520px,85vw)]">
         <div className="mb-2 flex justify-between text-sm text-steel">
-          <span>{ready ? "Ready" : "Loading the arena"}</span>
+          <span>{ready ? "Ready" : place ? "Heading to the park" : "Loading the arena"}</span>
           <span className="tabular-nums">{pct}%</span>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-deck">

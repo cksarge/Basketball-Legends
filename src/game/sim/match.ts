@@ -19,18 +19,25 @@ import {
   type FreeThrowState,
   type InboundState,
   type MatchConfig,
+  type ParkRules,
+  type ParkState,
   type Phase,
+  type ShotInfo,
   type ShotKind,
   type TeamGameState,
   type TeamIdx,
   LEAGUE_TUNING,
+  tuningFor,
 } from "./state";
 import { type BoxScore, emptyLine } from "./stats";
 import { exportAIMemory, importAIMemory, runAI } from "./ai";
+import type { Drill } from "./drill";
 import { type Crew, createCrew, crewOnEvent, crewStartHandoff, crewStep, refHand } from "./officials";
 
 export const AGENT_RADIUS = 0.32;
 const DT_DECIDE = 0.2;
+/** Seconds a pickup possession usually lasts before someone puts it up (paces the AI; never a violation). */
+export const PARK_POSSESSION = 22;
 
 /** Seconds of timing error per unit of shot-meter quality. */
 export const METER_SCALE = 0.22;
@@ -66,6 +73,8 @@ export interface MatchSetup {
   fast?: boolean;
   boundaryAssist?: boolean;
   practice?: boolean;
+  /** Play in the Park: every roster player is on the floor (1 to 5 a side; 21 puts everyone on their own). */
+  park?: ParkRules;
 }
 
 export const DEFAULT_TACTICS: TeamTactics = { pace: 0.5, threeRate: 0.5, defense: "man", crashBoards: 0.4, doubleTeamStars: false };
@@ -109,6 +118,8 @@ export interface MatchState {
   pendingInjury: number | null;
   /** The officiating crew (null for instant sims and practice). */
   crew: Crew | null;
+  /** Play in the Park bookkeeping (null in regular games). */
+  park: ParkState | null;
 }
 
 export interface InjuryRecord {
@@ -146,7 +157,8 @@ export class Match {
 
   constructor(setup: MatchSetup) {
     const rules = LEAGUE_RULES[setup.league];
-    const court = courtFor(setup.league);
+    // park courts use high school dimensions (84 feet, a 19'9" arc)
+    const court = courtFor(setup.park ? "hs" : setup.league);
     const cfg: MatchConfig = {
       league: setup.league,
       rules,
@@ -162,10 +174,12 @@ export class Match {
       fast: setup.fast ?? false,
       boundaryAssist: setup.boundaryAssist ?? true,
       practice: setup.practice ?? false,
+      park: setup.park ?? null,
     };
     this.rng = new Rng(cfg.seed);
     const mkTeam = (s: MatchSetup["home"], side: 1 | -1): TeamGameState => {
-      const starters = s.starters && s.starters.length === 5 ? s.starters : pickStarters(s.roster);
+      // park games put everyone on the floor (the line of waiting players lives outside the match)
+      const starters = cfg.park ? s.roster.map((p) => p.id) : s.starters && s.starters.length === 5 ? s.starters : pickStarters(s.roster);
       return {
         team: s.team,
         roster: s.roster,
@@ -230,10 +244,19 @@ export class Match {
       injuries: [],
       pendingInjury: null,
       crew: null,
+      park: cfg.park ? { cleared: true, points: {}, winnerId: null } : null,
     };
+    if (cfg.park) {
+      // no clocks at the park: the game ends when someone reaches the target
+      this.state.clock = 1e9;
+      this.state.shotClock = PARK_POSSESSION;
+      for (const t of teams) t.timeouts = 0;
+      if (cfg.park.game === "21") for (const t of teams) for (const p of t.roster) this.state.park!.points[p.id] = 0;
+    }
     this.buildAgents();
-    if (!cfg.fast && !cfg.practice) this.state.crew = createCrew(this);
+    if (!cfg.fast && !cfg.practice && !cfg.park) this.state.crew = createCrew(this);
     if (cfg.practice) this.setupPractice();
+    else if (cfg.park) this.startPark();
     else this.setupJumpBall();
   }
 
@@ -286,6 +309,8 @@ export class Match {
   }
 
   private practiceRetrieve = 0;
+  /** Park shooting game run on top of practice mode (not saved: drills are never suspended). */
+  drill: Drill | null = null;
 
   /** Shootaround: offense spread out, the other team waits by its bench, ball to the human. */
   private setupPractice() {
@@ -295,7 +320,7 @@ export class Match {
       a.vel = v2();
       a.action = act("idle");
       if (a.team === 1) {
-        a.pos = v2(-6 + (a.idx - 5) * 1.3, -(c.halfW + 0.6));
+        a.pos = v2(-6 + this.agentsOf(1).indexOf(a) * 1.3, -(c.halfW + 0.6));
         a.facing = 0;
       } else {
         a.pos = this.spacingSpot(a.role, s.teams[0].attackSide);
@@ -319,6 +344,12 @@ export class Match {
     }
     this.stepBallLive(dt);
     if (s.phase !== "live") s.phase = "live";
+    // a park shooting game (HORSE, the 3-point contest) decides who gets the ball
+    if (this.drill) {
+      this.drill.step(this, dt);
+      s.offense = 0;
+      return;
+    }
     // return the ball to the human after a shot settles
     if (s.ball.owner === null && s.ball.mode !== "shot" && s.ball.mode !== "pass") {
       this.practiceRetrieve += dt;
@@ -338,12 +369,14 @@ export class Match {
     const s = this.state;
     const prev = s.agents;
     s.agents = [];
+    // agent index = position in s.agents (team 0 first); teams can have 1 to 5 players
     for (const ti of [0, 1] as TeamIdx[]) {
       const t = s.teams[ti];
-      t.onCourt.forEach((pid, slot) => {
+      t.onCourt.forEach((pid) => {
         const p = t.roster.find((r) => r.id === pid)!;
         const old = prev.find((a) => a.player.id === pid);
-        s.agents.push(old ? { ...old, idx: ti * 5 + slot } : newAgent(ti * 5 + slot, ti, p));
+        const idx = s.agents.length;
+        s.agents.push(old ? { ...old, idx, team: ti } : newAgent(idx, ti, p));
       });
     }
     // humans: keep existing assignments, otherwise hand out this team's controller slots
@@ -370,7 +403,11 @@ export class Match {
     const s = this.state;
     for (const ti of [0, 1] as TeamIdx[]) {
       const ags = s.agents.filter((a) => a.team === ti);
-      const order: Agent["role"][] = ["ball", "wing", "slot", "corner", "post"];
+      // smaller sides keep a ball handler, then a wing, then someone inside
+      const order: Agent["role"][] =
+        ags.length >= 5
+          ? ["ball", "wing", "slot", "corner", "post"]
+          : ([["ball"], ["ball", "wing"], ["ball", "wing", "post"], ["ball", "wing", "corner", "post"]] as Agent["role"][][])[Math.max(0, ags.length - 1)];
       const byPos = [...ags].sort((a, b) => posRank(a.player.pos) - posRank(b.player.pos));
       byPos.forEach((a, i) => (a.role = order[i]));
     }
@@ -378,7 +415,7 @@ export class Match {
     for (const ti of [0, 1] as TeamIdx[]) {
       const mine = s.agents.filter((a) => a.team === ti).sort((a, b) => posRank(a.player.pos) - posRank(b.player.pos));
       const theirs = s.agents.filter((a) => a.team !== ti).sort((a, b) => posRank(a.player.pos) - posRank(b.player.pos));
-      mine.forEach((a, i) => (a.guarding = theirs[i].idx));
+      mine.forEach((a, i) => (a.guarding = theirs.length ? theirs[i % theirs.length].idx : null));
     }
   }
 
@@ -433,7 +470,8 @@ export class Match {
     let v = a.player.ratings[k];
     if (s.cfg.fatigue) v *= 0.86 + 0.14 * a.stamina;
     const diff = DIFFICULTY_LEVELS.find((d) => d.id === s.cfg.difficulty)!;
-    const human = s.teams[a.team].humanControlled;
+    // in 21 sides change every possession, and in HORSE everyone shares a side: the boost follows the controlled player
+    const human = s.cfg.park?.game === "21" || this.drill ? a.human !== null : s.teams[a.team].humanControlled;
     const anyHuman = s.teams[0].humanControlled || s.teams[1].humanControlled;
     if (anyHuman) v *= human ? (diff.user - 1) * 0.6 + 1 : (diff.cpu - 1) * 0.6 + 1;
     return clamp(v, 20, 110);
@@ -490,7 +528,10 @@ export class Match {
     switch (s.phase) {
       case "pregame":
         s.phaseTimer -= dt;
-        if (s.phaseTimer <= 0) this.setupJumpBall();
+        if (s.phaseTimer <= 0) {
+          if (s.cfg.park) this.startPark();
+          else this.setupJumpBall();
+        }
         break;
       case "jumpball":
         this.stepJumpBall(dt);
@@ -658,12 +699,14 @@ export class Match {
       this.stepPractice(dt);
       return;
     }
-    // clocks
+    // clocks (none at the park)
     const ballInPlay = s.ball.mode !== "dead";
-    if (ballInPlay) {
+    if (ballInPlay && !s.cfg.park) {
       s.clock -= dt;
       if (r.shotClock && s.ball.mode !== "shot") s.shotClock -= dt;
     }
+    // no shot clock at the park, but players don't hold it forever: a hidden possession timer paces the AI
+    if (ballInPlay && s.cfg.park && s.ball.mode !== "shot") s.shotClock = Math.max(0, s.shotClock - dt);
     this.trackMinutes(dt);
     this.aiAndMove(dt);
     this.stepBallLive(dt);
@@ -675,6 +718,7 @@ export class Match {
     this.checkInjuryStoppage();
     if (s.phase !== "live") return;
 
+    if (s.cfg.park) return;
     // shot clock violation
     if (r.shotClock && s.shotClock <= 0 && s.ball.mode !== "shot" && s.clock > 0) {
       s.shotClock = 0;
@@ -737,7 +781,7 @@ export class Match {
     if (!s.cfg.fouls) return;
     const h = this.handler();
     if (!h || (s.ball.mode !== "dribble" && s.ball.mode !== "held")) return;
-    const tune = LEAGUE_TUNING[s.cfg.league];
+    const tune = tuningFor(s.cfg);
     for (const d of this.agentsOf(h.team === 0 ? 1 : 0)) {
       const dd = dist2(d.pos, h.pos);
       if (dd > 1.1) continue;
@@ -1211,7 +1255,7 @@ export class Match {
     const kind = forceKind ?? this.shotKindFor(a);
     // an extra step on the gather: weaker ball handlers (and younger leagues) get called more
     if ((kind === "layup" || kind === "dunk" || kind === "floater") && !forceKind && s.phase === "live" && Math.hypot(a.vel.x, a.vel.z) > 3) {
-      const p = 0.02 * Math.max(0.2, 1.45 - this.r(a, "ballHandle") / 100) * LEAGUE_TUNING[s.cfg.league].travels;
+      const p = 0.02 * Math.max(0.2, 1.45 - this.r(a, "ballHandle") / 100) * tuningFor(s.cfg).travels;
       if (this.rng.chance(p)) {
         this.violation(a.team, "travel", a.idx);
         return;
@@ -1403,7 +1447,7 @@ export class Match {
       else if (q < 0.45) p *= 0.78;
       else p *= 0.35;
     }
-    p *= sl.shotSuccess * LEAGUE_TUNING[s.cfg.league].makes;
+    p *= sl.shotSuccess * tuningFor(s.cfg).makes;
     if (three) p *= sl.threeSuccess;
     if (kind === "layup" || kind === "dunk") p *= sl.layupSuccess;
     // a perfect release goes in nearly every time; only a hand right in your face takes a little off
@@ -1427,7 +1471,7 @@ export class Match {
     let fouled = false;
     if (s.cfg.fouls) {
       const base = kind === "dunk" || kind === "layup" ? 0.34 : kind === "floater" || kind === "hook" ? 0.16 : 0.065;
-      const pf = base * contest * (0.45 + this.r(a, "drawFoul") / 110) * s.cfg.sliders.foulFrequency * LEAGUE_TUNING[s.cfg.league].shootingFouls;
+      const pf = base * contest * (0.45 + this.r(a, "drawFoul") / 110) * s.cfg.sliders.foulFrequency * tuningFor(s.cfg).shootingFouls;
       if (this.rng.chance(pf)) {
         fouled = true;
         if (kind === "dunk" || kind === "layup") this.injuryRoll(a, 0.3, false);
@@ -1437,7 +1481,7 @@ export class Match {
     // block?
     const blocker = this.checkBlock(a, kind, dist);
     const willMake = !blocker && this.rng.chance(pMake);
-    const points = (three ? 3 : 2) as 2 | 3;
+    const points = (s.cfg.park?.scoring === "ones" ? (three ? 2 : 1) : three ? 3 : 2) as 1 | 2 | 3;
     const assistFrom =
       s.ball.lastPasser !== null && s.ball.lastPasser !== a.idx && s.time - s.ball.lastPassTime < 4 && this.state.agents[s.ball.lastPasser].team === a.team
         ? s.ball.lastPasser
@@ -1659,7 +1703,7 @@ export class Match {
       exposed *
       (h.action.kind === "dribbleMove" ? 1.4 : 1) *
       s.cfg.sliders.stealSuccess *
-      LEAGUE_TUNING[s.cfg.league].steals;
+      tuningFor(s.cfg).steals;
     if (h.action.kind === "post") p *= 0.6;
     if (this.rng.chance(clamp(p, 0.005, 0.32))) {
       s.box[d.player.id].stl++;
@@ -1678,9 +1722,7 @@ export class Match {
       this.changePossessionTracking(d.team);
     } else if (
       s.cfg.fouls &&
-      this.rng.chance(
-        clamp(0.1 - this.r(d, "iq") * 0.0006 + (dist < 0.7 ? 0.05 : 0), 0.02, 0.15) * s.cfg.sliders.foulFrequency * LEAGUE_TUNING[s.cfg.league].fouls,
-      )
+      this.rng.chance(clamp(0.1 - this.r(d, "iq") * 0.0006 + (dist < 0.7 ? 0.05 : 0), 0.02, 0.15) * s.cfg.sliders.foulFrequency * tuningFor(s.cfg).fouls)
     ) {
       this.foul(d, h, "reach", false);
     } else {
@@ -1939,6 +1981,8 @@ export class Match {
     a.holdTime = 0;
     a.pickedUp = false;
     a.pivot = null;
+    // 21: whoever gets the ball is on their own against everyone else
+    if (s.cfg.park?.game === "21" && a.team !== 0) this.swap21(a);
     if (a.team !== s.offense) this.changePossessionTracking(a.team);
     if (s.phase === "inbound" && s.inbound && a.idx !== s.inbound.inbounder) this.inboundComplete();
     void prevOwnerTeam;
@@ -1968,7 +2012,8 @@ export class Match {
       s.offense = newOffense;
       s.frontcourt = false;
       s.backcourtTimer = 0;
-      if (s.cfg.rules.shotClock) s.shotClock = s.cfg.rules.shotClock;
+      if (s.cfg.park) s.shotClock = PARK_POSSESSION;
+      else if (s.cfg.rules.shotClock) s.shotClock = s.cfg.rules.shotClock;
       s.possessions[newOffense]++;
       for (const a of s.agents) {
         a.laneTime = 0;
@@ -1976,6 +2021,8 @@ export class Match {
       }
       s.teams[0].playCall = null;
       s.teams[1].playCall = null;
+      // half court: the new offense has to take it back past the arc
+      if (s.park) s.park.cleared = false;
       // defensive human controller moves to the nearest defender of the ball
       this.switchHumanToDefender(newOffense === 0 ? 1 : 0);
     }
@@ -2047,7 +2094,7 @@ export class Match {
       cands.map((c) => c.w),
     );
     // loose-ball foul in a crowded scrum
-    if (s.cfg.fouls && cands.length >= 2 && this.rng.chance(0.045 * s.cfg.sliders.foulFrequency * LEAGUE_TUNING[s.cfg.league].fouls)) {
+    if (s.cfg.fouls && cands.length >= 2 && this.rng.chance(0.045 * s.cfg.sliders.foulFrequency * tuningFor(s.cfg).fouls)) {
       const other = cands.find((c) => c.a.team !== winner.team);
       if (other) {
         this.foul(other.a, winner, "loose", false);
@@ -2105,6 +2152,10 @@ export class Match {
     const s = this.state;
     const sh = s.ball.shot!;
     if (!sh) return;
+    if (s.cfg.park) {
+      this.parkShotMade(sh);
+      return;
+    }
     const shooter = s.agents[sh.shooter];
     const pts = sh.points;
     s.teams[sh.team].score += pts;
@@ -2154,7 +2205,7 @@ export class Match {
     this.emit({ t: "miss", shooter: sh.shooter, kind: sh.kind, points: sh.points, distance: dist });
     if (!sh.fouled) {
       s.box[shooter.player.id].fga++;
-      if (sh.points === 3) s.box[shooter.player.id].tpa++;
+      if (sh.points === (s.cfg.park?.scoring === "ones" ? 2 : 3)) s.box[shooter.player.id].tpa++;
     }
     if (sh.fouled) {
       s.ball.shot = null;
@@ -2190,6 +2241,10 @@ export class Match {
     if (s.cfg.practice) return;
     const pfLine = s.box[fouler.player.id];
     pfLine.pf++;
+    if (s.cfg.park) {
+      this.parkFoul(fouler, on, kind);
+      return;
+    }
     const defensive = fouler.team !== s.offense || kind === "shooting";
     const team = s.teams[fouler.team];
     if (kind !== "charge") team.fouls++;
@@ -2428,16 +2483,29 @@ export class Match {
     if (!done) return;
     const line = s.box[a.player.id];
     line.fta++;
+    let bust = false;
     if (made) {
       line.ftm++;
       line.pts++;
-      s.teams[ft.team].score++;
-      this.addPlusMinus(ft.team, 1);
       ft.made++;
+      if (s.cfg.park) {
+        this.emit({ t: "freeThrow", shooter: a.idx, made, attempt: ft.attempt, total: ft.total });
+        const before = s.park!.points[a.player.id];
+        if (this.add21(a, 1)) {
+          s.freeThrows = null;
+          a.action = act("idle");
+          return;
+        }
+        bust = s.park!.points[a.player.id] < before;
+      } else {
+        s.teams[ft.team].score++;
+        this.addPlusMinus(ft.team, 1);
+      }
       this.trackRun(ft.team, 1);
     }
-    this.emit({ t: "freeThrow", shooter: a.idx, made, attempt: ft.attempt, total: ft.total });
-    const last = ft.attempt >= ft.total || (ft.oneAndOne && !made && ft.attempt === 1);
+    if (!s.cfg.park || !made) this.emit({ t: "freeThrow", shooter: a.idx, made, attempt: ft.attempt, total: ft.total });
+    // 21: keep shooting until a miss (or three in a row)
+    const last = ft.attempt >= ft.total || (ft.oneAndOne && !made && ft.attempt === 1) || (!!s.cfg.park && (!made || bust));
     if (ft.oneAndOne && made && ft.attempt === 1) ft.total = 2;
     if (!last) {
       ft.attempt++;
@@ -2448,7 +2516,12 @@ export class Match {
     }
     s.freeThrows = null;
     a.action = act("idle");
-    if (made) {
+    if (made && s.cfg.park) {
+      s.ball.mode = "dead";
+      // three in a row: check it up again; a bust sends the ball to someone else
+      if (bust) this.parkTurnover(ft.team);
+      else this.parkCheck(ft.team, a);
+    } else if (made) {
       s.ball.mode = "dead";
       this.toDeadBall(ft.team === 0 ? 1 : 0, true);
     } else {
@@ -2467,6 +2540,14 @@ export class Match {
     const s = this.state;
     const h = this.handler();
     const c = s.cfg.court;
+    if (s.cfg.park) {
+      // no three seconds or backcourt at the park; half court, the ball has to go back past the arc
+      if (s.cfg.park.halfCourt && s.park && !s.park.cleared && h && h.team === s.offense && isThree(c, this.attackSide(h.team), h.pos.x, h.pos.z)) {
+        s.park.cleared = true;
+        this.emit({ t: "park", kind: "cleared", player: h.idx, team: h.team });
+      }
+      return;
+    }
     const off = s.offense;
     const side = this.attackSide(off);
     // three seconds
@@ -2533,7 +2614,8 @@ export class Match {
     s.ball.owner = null;
     s.ball.shot = null;
     const b = s.ball.phys.pos;
-    this.toDeadBall(team === 0 ? 1 : 0, false, { x: b.x, z: b.z });
+    if (s.cfg.park) this.parkTurnover(team, { x: b.x, z: b.z });
+    else this.toDeadBall(team === 0 ? 1 : 0, false, { x: b.x, z: b.z });
   }
 
   private turnover(a: Agent, reason: TurnoverReason) {
@@ -2584,6 +2666,23 @@ export class Match {
     const ib = s.inbound;
     if (!ib) {
       s.phase = "live";
+      return;
+    }
+    if (ib.check) {
+      this.doCheck(ib);
+      return;
+    }
+    // 1-on-1 full court: nobody to inbound to, so you just step in with it
+    if (s.cfg.park && this.agentsOf(ib.team).length === 1) {
+      const solo = this.agentsOf(ib.team)[0];
+      const c = s.cfg.court;
+      solo.pos = v2(clamp(ib.spot.x, -c.halfL + 0.6, c.halfL - 0.6), clamp(ib.spot.z, -c.halfW + 0.6, c.halfW - 0.6));
+      solo.vel = v2();
+      s.inbound = null;
+      s.phase = "live";
+      s.frontcourt = !ib.backcourt;
+      s.backcourtTimer = 0;
+      this.giveBall(solo);
       return;
     }
     // choose inbounder: closest non-PG (or the C after scores)
@@ -2649,6 +2748,7 @@ export class Match {
   // ------------------------------------------------ subs, timeouts, periods
   private considerSubsAndTimeouts() {
     const s = this.state;
+    if (s.cfg.park) return;
     for (const ti of [0, 1] as TeamIdx[]) {
       const t = s.teams[ti];
       // AI timeouts: opponent on a 9-0 run, or late-game advance
@@ -2663,6 +2763,7 @@ export class Match {
 
   callTimeout(ti: TeamIdx): boolean {
     const s = this.state;
+    if (s.cfg.park) return false;
     const t = s.teams[ti];
     if (t.timeouts <= 0) return false;
     if (s.phase === "live" && s.ball.owner !== null && s.agents[s.ball.owner].team !== ti) return false;
@@ -2788,9 +2889,229 @@ export class Match {
     }
     for (const ti of [0, 1] as TeamIdx[]) {
       const hv = humanByTeam[ti];
-      if (hv !== null && !this.lockPlayerId && !s.agents.some((a) => a.team === ti && a.human !== null)) s.agents[ti * 5].human = hv;
+      const first = s.agents.find((a) => a.team === ti);
+      if (hv !== null && first && !this.lockPlayerId && !s.agents.some((a) => a.team === ti && a.human !== null)) first.human = hv;
     }
     s.ball.owner = ownerSlot;
+  }
+
+  // ------------------------------------------------------------------ park
+  /** Tip-off at the park: one side gets first ball (a check up top, or an inbound full court). */
+  private startPark() {
+    const s = this.state;
+    const rules = s.cfg.park!;
+    for (const a of s.agents) {
+      const side = this.attackSide(a.team === 0 ? 0 : 1);
+      const offSide = this.attackSide(0);
+      const spot = this.spacingSpot(a.role, offSide);
+      a.pos = a.team === 0 ? spot : v2(spot.x + offSide * 1.4, spot.z * 0.8);
+      a.vel = v2();
+      a.facing = side > 0 ? Math.PI / 2 : -Math.PI / 2;
+      a.action = act("idle");
+    }
+    const first = (this.rng.chance(0.5) ? 0 : 1) as TeamIdx;
+    s.offense = first === 0 ? 1 : 0;
+    if (rules.game === "21") this.parkCheck(0, this.rng.pick(s.agents));
+    else if (rules.halfCourt) this.parkCheck(first);
+    else this.toDeadBall(first, true);
+    s.phaseTimer = s.cfg.fast ? 0.1 : 2;
+    this.emit({ t: "periodStart", period: 1 });
+  }
+
+  /** Half court: the ball is checked at the top of the key (in 21, `holder` takes it and everyone else defends). */
+  private parkCheck(team: TeamIdx, holder?: Agent) {
+    const s = this.state;
+    if (s.cfg.park?.game === "21" && holder) {
+      this.swap21(holder);
+      team = 0;
+    }
+    s.phase = "deadball";
+    s.phaseTimer = s.cfg.fast ? 0.1 : 1.3;
+    s.ball.mode = "dead";
+    s.ball.owner = null;
+    s.ball.pass = null;
+    s.ball.shot = null;
+    const c = s.cfg.court;
+    const side = this.attackSide(team);
+    const rim = rimPos(c, side);
+    const mates = this.agentsOf(team);
+    const who = holder && holder.team === team ? holder : (mates.find((a) => a.human !== null) ?? mates.find((a) => a.role === "ball") ?? mates[0]);
+    s.inbound = { team, spot: v2(rim.x - side * (c.threeRadius + 1.2), 0), inbounder: who.idx, timer: 0, afterScore: false, backcourt: false, check: true };
+    this.changePossessionTracking(team);
+    for (const a of s.agents) {
+      if (a.action.kind === "fall" || a.action.kind === "celebrate") continue;
+      a.action = act("idle");
+    }
+  }
+
+  /** The defender hands the ball back and play is live. */
+  private doCheck(ib: InboundState) {
+    const s = this.state;
+    const holder = s.agents[ib.inbounder] ?? this.agentsOf(ib.team)[0];
+    const side = this.attackSide(ib.team);
+    holder.pos = { ...ib.spot };
+    holder.vel = v2();
+    holder.facing = side > 0 ? Math.PI / 2 : -Math.PI / 2;
+    const def = this.agentsOf(ib.team === 0 ? 1 : 0).find((d) => d.guarding === holder.idx) ?? this.nearestOpponent(holder);
+    if (def) {
+      def.pos = v2(ib.spot.x + side * 1.3, ib.spot.z);
+      def.vel = v2();
+      def.facing = holder.facing + Math.PI;
+    }
+    s.inbound = null;
+    s.phase = "live";
+    s.frontcourt = true;
+    s.backcourtTimer = 0;
+    this.giveBall(holder);
+    s.park!.cleared = true;
+    s.shotClock = PARK_POSSESSION;
+    this.emit({ t: "park", kind: "check", player: holder.idx, team: ib.team });
+  }
+
+  /** 21: `holder` becomes the lone offensive player (side 0); everyone else defends. */
+  private swap21(holder: Agent) {
+    const s = this.state;
+    if (holder.team === 0 && s.agents.filter((a) => a.team === 0).length === 1) return;
+    const all = [...s.teams[0].roster, ...s.teams[1].roster];
+    for (const a of s.agents) a.team = a === holder ? 0 : 1;
+    s.teams[0].roster = [holder.player];
+    s.teams[1].roster = all.filter((p) => p.id !== holder.player.id);
+    s.teams[0].onCourt = [holder.player.id];
+    s.teams[1].onCourt = s.agents.filter((a) => a !== holder).map((a) => a.player.id);
+    s.teams[0].humanControlled = holder.human !== null;
+    s.teams[1].humanControlled = s.agents.some((a) => a !== holder && a.human !== null);
+    this.assignRoles();
+    s.offense = 0;
+    s.possessions[0]++;
+    s.shotClock = PARK_POSSESSION;
+    for (const a of s.agents) {
+      a.laneTime = 0;
+      a.pickedUp = false;
+    }
+    if (s.park) s.park.cleared = false;
+  }
+
+  /** A basket at the park: count it (if the ball was cleared), then check the target. */
+  private parkShotMade(sh: ShotInfo) {
+    const s = this.state;
+    const rules = s.cfg.park!;
+    const park = s.park!;
+    const shooter = s.agents[sh.shooter];
+    const other = (sh.team === 0 ? 1 : 0) as TeamIdx;
+    s.ball.mode = "dead";
+    s.ball.shot = null;
+    if (rules.halfCourt && !park.cleared) {
+      this.emit({ t: "park", kind: "noClear", player: sh.shooter, team: sh.team });
+      this.log(`${this.name(shooter)} scores, but it doesn't count: the ball wasn't taken back`, sh.team);
+      this.parkTurnover(sh.team);
+      return;
+    }
+    const pts = sh.points;
+    const line = s.box[shooter.player.id];
+    line.pts += pts;
+    line.fgm++;
+    line.fga++;
+    if (pts === (rules.scoring === "ones" ? 2 : 3)) {
+      line.tpm++;
+      line.tpa++;
+    }
+    if (sh.kind === "dunk") line.dunks++;
+    if (sh.assistFrom !== null) s.box[s.agents[sh.assistFrom].player.id].ast++;
+    shooter.heat = clamp(shooter.heat + 0.25, -1, 1);
+    const dist = Math.hypot(sh.fromX - rimPos(s.cfg.court, sh.side).x, sh.fromZ);
+    const swish = !s.ball.phys.touchedRim && !s.ball.phys.touchedBoard;
+    this.emit({ t: "make", shooter: sh.shooter, kind: sh.kind, points: pts, assist: sh.assistFrom, andOne: false, distance: dist, swish });
+    this.log(`${this.name(shooter)} ${describeShot(sh.kind, pts, dist)}${sh.assistFrom !== null ? ` (assist ${this.name(sh.assistFrom)})` : ""}`, sh.team);
+    s.lastScoreTime = s.time;
+    if (rules.game === "21") {
+      if (this.add21(shooter, pts)) return;
+      // free throws, worth one each, until a miss
+      this.awardFreeThrows(shooter, 3, false);
+      return;
+    }
+    s.teams[sh.team].score += pts;
+    this.addPlusMinus(sh.team, pts);
+    this.trackRun(sh.team, pts);
+    const t = s.teams[sh.team].score,
+      o = s.teams[other].score;
+    if (t >= rules.target && t - o >= rules.winBy) {
+      this.parkFinal(sh.team);
+      return;
+    }
+    const next = rules.makeItTakeIt ? sh.team : other;
+    if (rules.halfCourt) this.parkCheck(next);
+    else this.toDeadBall(next, true);
+  }
+
+  /** 21: adds points; going over the target drops you back (to 13 in a game to 21). Returns true when someone wins. */
+  private add21(a: Agent, pts: number): boolean {
+    const s = this.state;
+    const rules = s.cfg.park!;
+    const park = s.park!;
+    const id = a.player.id;
+    park.points[id] = (park.points[id] ?? 0) + pts;
+    if (park.points[id] > rules.target) {
+      park.points[id] = Math.round(rules.target * 0.62);
+      this.emit({ t: "park", kind: "bust", player: a.idx, team: a.team });
+      this.log(`${this.name(a)} goes over ${rules.target} and drops back to ${park.points[id]}`, a.team);
+      return false;
+    }
+    if (park.points[id] === rules.target) {
+      park.winnerId = id;
+      this.parkFinal(a.team);
+      return true;
+    }
+    return false;
+  }
+
+  /** Called fouls: no free throws, the player who was fouled checks it back up (a charge goes the other way). */
+  private parkFoul(fouler: Agent, on: Agent, kind: FoulKind) {
+    const s = this.state;
+    const charge = kind === "charge";
+    if (charge) {
+      s.box[fouler.player.id].tov++;
+      this.emit({ t: "turnover", player: fouler.idx, reason: "offensiveFoul" });
+    }
+    this.emit({ t: "foul", player: fouler.idx, on: on.idx, kind, shooting: kind === "shooting", fts: 0 });
+    this.emit({ t: "park", kind: "foulCall", player: on.idx, team: on.team });
+    this.log(`${this.name(on)} calls ${charge ? "a charge" : "a foul"} on ${this.name(fouler)}`, on.team);
+    s.ball.mode = "dead";
+    s.ball.owner = null;
+    s.ball.shot = null;
+    if (s.cfg.park!.halfCourt) this.parkCheck(on.team, on);
+    else this.toDeadBall(on.team, false, { x: on.pos.x, z: on.pos.z });
+  }
+
+  /** Change of possession on a dead ball: a check for the other side (21: the closest other player). */
+  private parkTurnover(from: TeamIdx, at?: { x: number; z: number }) {
+    const s = this.state;
+    const rules = s.cfg.park!;
+    s.ball.mode = "dead";
+    s.ball.owner = null;
+    s.ball.shot = null;
+    const other = (from === 0 ? 1 : 0) as TeamIdx;
+    if (rules.game === "21") {
+      const b = s.ball.phys.pos;
+      const pick = [...this.agentsOf(other)].sort((x, y) => Math.hypot(x.pos.x - b.x, x.pos.z - b.z) - Math.hypot(y.pos.x - b.x, y.pos.z - b.z))[0];
+      this.parkCheck(0, pick);
+      return;
+    }
+    if (rules.halfCourt) this.parkCheck(other);
+    else this.toDeadBall(other, false, at);
+  }
+
+  private parkFinal(winner: TeamIdx) {
+    const s = this.state;
+    s.phase = "final";
+    s.winner = winner;
+    s.ball.mode = "dead";
+    s.ball.owner = null;
+    s.freeThrows = null;
+    s.inbound = null;
+    for (const t of s.teams) t.periodScores = [t.score];
+    this.emit({ t: "final", winner });
+    const w = s.park?.winnerId ? s.agents.find((a) => a.player.id === s.park!.winnerId) : null;
+    this.log(w ? `${this.name(w)} wins 21` : `Game: ${s.teams[0].team.name} ${s.teams[0].score}, ${s.teams[1].team.name} ${s.teams[1].score}`, winner);
   }
 
   private endPeriod() {
@@ -2873,6 +3194,9 @@ export class Match {
     const three = kind === "jumper" && isThree(c, side, a.pos.x, a.pos.z);
     const contest = this.contestOn(a);
     const p = this.makeProbability(a, kind, dist, three, contest, NaN);
+    // on the same scale as regular games (a two is worth 2); in 1s and 2s a long two is worth double,
+    // but pickup players still mostly get to the rim, so it's valued a little under that
+    if (s.cfg.park?.scoring === "ones") return p * (three ? 3.2 : 2);
     return p * (three ? 3 : 2);
   }
 

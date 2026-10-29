@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { Match } from "@/game/sim/match";
+import type { Player } from "@/engine/types";
 import type { UniformStyle } from "./character/uniformTexture";
 import { Avatar, type PoseInput } from "./character/Avatar";
 import type { MaskSet } from "./character/skinMaterial";
@@ -45,9 +46,11 @@ export interface PlayersProps {
   benchExcite?: React.RefObject<[number, number]>;
   /** A player's foot hit the floor (live play only, not replays). */
   onFootstep?: (x: number, speed: number) => void;
+  /** Park games: street clothes per player (shirt and shorts colors) instead of team uniforms. */
+  street?: (p: Player, team: 0 | 1) => { shirt: string; shorts: string };
 }
 
-export function Players({ match, uniforms, ballMesh, avatarsRef, replayFrame, benchSize = BENCH_SEATS, benchExcite, onFootstep }: PlayersProps) {
+export function Players({ match, uniforms, ballMesh, avatarsRef, replayFrame, benchSize = BENCH_SEATS, benchExcite, onFootstep, street }: PlayersProps) {
   const gltf = useGLTF(PLAYER_GLB) as unknown as GLTF;
   const masks = useMasks();
   const group = useRef<THREE.Group>(null);
@@ -86,7 +89,10 @@ export function Players({ match, uniforms, ballMesh, avatarsRef, replayFrame, be
       let av = avatars.current.get(id);
       if (!av) {
         const team = s.teams[ag.team].team;
-        av = new Avatar(gltf, masks, ag.player, team, uniforms[ag.team]);
+        if (street) {
+          const o = street(ag.player, ag.team);
+          av = new Avatar(gltf, masks, ag.player, { ...team, colors: { primary: o.shirt, secondary: o.shorts, accent: o.shorts } }, "home", "street");
+        } else av = new Avatar(gltf, masks, ag.player, team, uniforms[ag.team]);
         avatars.current.set(id, av);
         g.add(av.root);
       }

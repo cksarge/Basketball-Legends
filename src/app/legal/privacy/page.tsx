@@ -20,6 +20,10 @@ export default function Privacy() {
           and quit. It is deleted when the game ends, when you quit without saving, or when you discard it.
         </li>
         <li>
+          <b>Play in the Park choices</b> (the park, game and rules you last picked, and who you play as) are saved in local storage so the setup is ready next
+          time. A next-game-up line in progress is kept in session storage and clears when you close the tab.
+        </li>
+        <li>
           <b>Saved games and roster files</b> you create are stored in your browser and never uploaded.
         </li>
         <li>

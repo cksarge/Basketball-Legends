@@ -45,6 +45,13 @@ const ITEMS: Item[] = [
     ],
   },
   {
+    id: "park",
+    label: "Play in the Park",
+    href: "/park/",
+    blurb: "Pickup ball at five outdoor courts.",
+    detail: ["1-on-1 up to 5-on-5, half or full court", "Next game up, 21, HORSE and a 3-point contest", "Call your own fouls, check ball, win by 2"],
+  },
+  {
     id: "career",
     label: "Career",
     href: "/career/",
@@ -114,7 +121,11 @@ export function MainMenu() {
         id: "resume",
         label: "Resume game",
         blurb: `${g.away} ${g.awayScore}, ${g.home} ${g.homeScore}`,
-        detail: [`${g.period}, ${g.clock} left`, `Saved ${when}`, "Picks up exactly where you left off"],
+        detail: [
+          g.clock === "no clock" ? `Park game, ${g.period.toLowerCase()}` : `${g.period}, ${g.clock} left`,
+          `Saved ${when}`,
+          "Picks up exactly where you left off",
+        ],
       },
       ...ITEMS,
     ];

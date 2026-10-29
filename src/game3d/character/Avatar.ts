@@ -12,13 +12,15 @@ import {
   drawPlainShorts,
   drawShorts,
   drawStaffShirt,
+  drawStreetShirt,
   makeCanvasTexture,
   type UniformStyle,
   uniformColors,
 } from "./uniformTexture";
 
 /** What the person is wearing: a team uniform, a referee's stripes, or a staff polo. */
-export type Outfit = "player" | "official" | "staff";
+/** "street": park clothes (the team's primary color is the shirt, its accent the shorts). */
+export type Outfit = "player" | "official" | "staff" | "street";
 
 export const MODEL_HEIGHT = 2.0;
 
@@ -210,6 +212,9 @@ export class Avatar {
     } else if (this.outfit === "staff") {
       drawStaffShirt(this.jerseyTex.canvas, this.team.colors.primary, this.team.colors.secondary);
       drawPlainShorts(this.shortsTex.canvas, "#2a2d33");
+    } else if (this.outfit === "street") {
+      drawStreetShirt(this.jerseyTex.canvas, this.team.colors.primary, p.jersey);
+      drawPlainShorts(this.shortsTex.canvas, this.team.colors.accent);
     } else {
       drawJersey(this.jerseyTex.canvas, this.team, style, p.jersey, p.lastName);
       drawShorts(this.shortsTex.canvas, this.team, style);
@@ -224,11 +229,15 @@ export class Avatar {
         ? "#141414"
         : this.outfit === "staff"
           ? "#2a2d33"
-          : col.trim === col.base
-            ? "#ffffff"
-            : style === "away"
-              ? col.base
-              : "#f4f4f4";
+          : this.outfit === "street"
+            ? p.jersey % 3 === 0
+              ? "#1d1f23"
+              : "#f4f4f4"
+            : col.trim === col.base
+              ? "#ffffff"
+              : style === "away"
+                ? col.base
+                : "#f4f4f4";
     if (this.meshes.Socks)
       this.meshes.Socks.material = new THREE.MeshStandardMaterial({ color: new THREE.Color(sockColor), roughness: 0.95, side: THREE.DoubleSide });
     const accColor = new THREE.Color(col.trim);
@@ -238,7 +247,7 @@ export class Avatar {
       m.visible = on;
       if (on) m.material = new THREE.MeshStandardMaterial({ color: accColor, roughness: 0.9, side: THREE.DoubleSide });
     };
-    const gear = this.outfit === "player";
+    const gear = this.outfit === "player" || this.outfit === "street";
     acc("Acc_Headband", gear && ap.headband);
     acc("Acc_SleeveL", gear && ap.armSleeve === "left");
     acc("Acc_SleeveR", gear && ap.armSleeve === "right");

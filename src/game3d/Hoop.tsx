@@ -82,11 +82,17 @@ class NetSim {
   }
 }
 
-function Net({ sim, ballRef }: { sim: NetSim; ballRef: React.RefObject<THREE.Vector3 | null> }) {
+function Net({ sim, ballRef, chain }: { sim: NetSim; ballRef: React.RefObject<THREE.Vector3 | null>; chain?: boolean }) {
   const mesh = useRef<THREE.InstancedMesh>(null);
   const tmp = useMemo(() => new THREE.Object3D(), []);
-  const geom = useMemo(() => new THREE.CylinderGeometry(0.0045, 0.0045, 1, 4, 1, true), []);
-  const mat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#f4f4f4", roughness: 0.9 }), []);
+  const geom = useMemo(() => new THREE.CylinderGeometry(chain ? 0.006 : 0.0045, chain ? 0.006 : 0.0045, 1, 4, 1, true), [chain]);
+  const mat = useMemo(
+    () =>
+      chain
+        ? new THREE.MeshStandardMaterial({ color: "#a7adb3", roughness: 0.35, metalness: 0.85 })
+        : new THREE.MeshStandardMaterial({ color: "#f4f4f4", roughness: 0.9 }),
+    [chain],
+  );
   useFrame((_, dt) => {
     sim.step(Math.min(dt, 1 / 30), ballRef.current, 0.12);
     const m = mesh.current;
@@ -146,9 +152,11 @@ export interface HoopProps {
   ballRef: React.RefObject<THREE.Vector3 | null>;
   clockRef: React.RefObject<{ shot: number; game: number }>;
   rimShake: React.RefObject<number[]>;
+  /** Park hoop: a pole behind the baseline, no shot clock or padding, steel or acrylic board, chain or nylon net. */
+  outdoor?: { board: "steel" | "acrylic"; net: "chain" | "nylon" };
 }
 
-export function Hoop({ court, side, team, ceilingHung, mountY = 8.4, ballRef, clockRef, rimShake }: HoopProps) {
+export function Hoop({ court, side, team, ceilingHung, mountY = 8.4, ballRef, clockRef, rimShake, outdoor }: HoopProps) {
   const rim = rimPos(court, side);
   const bx = boardX(court, side);
   const sim = useMemo(() => new NetSim(new THREE.Vector3(rim.x, rim.y - 0.01, rim.z), court.rimRadius), [rim.x, rim.y, rim.z, court.rimRadius]);
@@ -156,10 +164,21 @@ export function Hoop({ court, side, team, ceilingHung, mountY = 8.4, ballRef, cl
   const rimGroup = useRef<THREE.Group>(null);
   const lastDraw = useRef("");
 
+  const steelBoard = outdoor?.board === "steel";
   const boardMat = useMemo(
     () =>
-      new THREE.MeshPhysicalMaterial({ color: "#dfefff", roughness: 0.05, metalness: 0, transparent: true, opacity: 0.22, clearcoat: 1, depthWrite: false }),
-    [],
+      steelBoard
+        ? new THREE.MeshStandardMaterial({ color: "#c4c9ce", roughness: 0.55, metalness: 0.55 })
+        : new THREE.MeshPhysicalMaterial({
+            color: "#dfefff",
+            roughness: outdoor ? 0.2 : 0.05,
+            metalness: 0,
+            transparent: true,
+            opacity: outdoor ? 0.35 : 0.22,
+            clearcoat: 1,
+            depthWrite: false,
+          }),
+    [steelBoard, outdoor],
   );
   const lineMat = useMemo(() => new THREE.MeshBasicMaterial({ color: "#ffffff" }), []);
   const padMat = useMemo(() => new THREE.MeshStandardMaterial({ color: team.colors.primary, roughness: 0.7 }), [team.colors.primary]);
@@ -230,11 +249,13 @@ export function Hoop({ court, side, team, ceilingHung, mountY = 8.4, ballRef, cl
       {frame(bw, bh, boardCenterY, stripe)}
       {frame(innerW, innerH, rim.y + 0.03 + innerH / 2, stripe * 0.8)}
       {/* board padding along the bottom */}
-      <mesh position={[bx, bb - 0.03, 0]} material={padMat}>
-        <boxGeometry args={[0.08, 0.07, bw + 0.04]} />
-      </mesh>
+      {!outdoor && (
+        <mesh position={[bx, bb - 0.03, 0]} material={padMat}>
+          <boxGeometry args={[0.08, 0.07, bw + 0.04]} />
+        </mesh>
+      )}
       {/* shot clock on top of the board */}
-      <group position={[bx + side * 0.02, bb + bh + 0.22, 0]}>
+      <group position={[bx + side * 0.02, bb + bh + 0.22, 0]} visible={!outdoor}>
         <mesh material={steel}>
           <boxGeometry args={[0.16, 0.36, 0.7]} />
         </mesh>
@@ -255,9 +276,22 @@ export function Hoop({ court, side, team, ceilingHung, mountY = 8.4, ballRef, cl
           </mesh>
         </group>
       </group>
-      <Net sim={sim} ballRef={ballRef} />
+      <Net sim={sim} ballRef={ballRef} chain={outdoor?.net === "chain"} />
       {/* support */}
-      {ceilingHung ? (
+      {outdoor ? (
+        <group>
+          {/* a steel pole behind the baseline and a gooseneck arm out to the board */}
+          <mesh position={[bx + side * 1.15, (bb + bh * 0.5) / 2, 0]} material={steel} castShadow>
+            <cylinderGeometry args={[0.09, 0.11, bb + bh * 0.5, 12]} />
+          </mesh>
+          <mesh position={[bx + side * 0.6, bb + bh * 0.5, 0]} rotation={[0, 0, Math.PI / 2]} material={steel} castShadow>
+            <cylinderGeometry args={[0.07, 0.07, 1.15, 10]} />
+          </mesh>
+          <mesh position={[bx + side * 0.6, bb + bh * 0.15, 0]} rotation={[0, 0, side * 0.9]} material={steel}>
+            <cylinderGeometry args={[0.04, 0.04, 1.0, 8]} />
+          </mesh>
+        </group>
+      ) : ceilingHung ? (
         <group>
           {/* drop pipe to the girder, plus a diagonal brace back toward the end wall */}
           <mesh position={[bx + side * 0.35, (bb + bh + mountY) / 2, 0]} material={steel}>

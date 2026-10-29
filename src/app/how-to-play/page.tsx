@@ -156,6 +156,46 @@ export default function HowToPlay() {
         arena, and pro teams in one of two big arenas. Seats, walls, banners and scoreboards are dressed in the home team&apos;s colors and history. In Quick
         Play you can move any game to a pro arena, a college arena or a high school gym with the Venue option.
       </p>
+      <H2>Play in the Park</H2>
+      <p>
+        Pickup games at five outdoor courts, against each park&apos;s regulars. There&apos;s no clock and no referees: the first side to the target wins (by
+        two, unless you turn that off).
+      </p>
+      <ul className="list-disc pl-6">
+        <li>
+          <b>Scoring:</b> 1s and 2s (1 inside the arc, 2 beyond it) or 2s and 3s.
+        </li>
+        <li>
+          <b>Check ball:</b> half court, every possession starts with the ball checked at the top of the key: after a basket, a foul or the ball going out. With
+          make it, take it on, the team that scores keeps the ball; otherwise the other team gets it.
+        </li>
+        <li>
+          <b>Take it back:</b> half court, after a miss, a steal or a rebound, the ball has to go back behind the arc (by dribble or pass) before you can score.
+          A basket that wasn&apos;t taken back doesn&apos;t count and the other side gets the ball.
+        </li>
+        <li>
+          <b>Call your own fouls:</b> no free throws. The player who was fouled checks it back up; on a charge the defense gets the ball. Nobody fouls out.
+        </li>
+        <li>
+          <b>Full court:</b> after a basket the other team inbounds from under the basket (the scoring team, with make it, take it). One-on-one, you just step
+          in with it.
+        </li>
+        <li>
+          <b>Next game up:</b> winners stay on the court and the losers go to the back of the line. The games ahead of you are played out while you wait.
+        </li>
+        <li>
+          <b>21:</b> everyone plays for themselves. Score and you shoot free throws (1 point each) until you miss, three at most; make all three and you check
+          it again. Hit the target exactly: go over and you drop back (to 13 in a game to 21).
+        </li>
+        <li>
+          <b>HORSE:</b> make a shot from anywhere and everyone has to make the same shot from the same spot, or take a letter. Miss your own shot and the next
+          player sets one. Spell HORSE (or PIG) and you&apos;re out.
+        </li>
+        <li>
+          <b>3-point contest:</b> 25 balls on five racks around the arc in 60 seconds. Walk to the rack and the next ball comes to you. The last ball on each
+          rack (gold) is worth 2. Your rivals&apos; rounds are played out alongside yours.
+        </li>
+      </ul>
       <H2>League rules</H2>
       <ul className="list-disc pl-6">
         <li>

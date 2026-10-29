@@ -61,6 +61,7 @@ const PAGES: [string, RegExp][] = [
   ["legal/terms/", /Terms of Service/],
   ["legal/privacy/", /Privacy Policy/],
   ["changelog/", /Changelog/],
+  ["park/", /Play in the Park/],
 ];
 
 for (const [path, heading] of PAGES) {
@@ -185,4 +186,34 @@ test("the tutorial starts and advances @gpu", async ({ page }) => {
       { timeout: 90_000, intervals: [0] },
     )
     .toContain("Step 2 of 10");
+});
+
+test("play in the park: the setup remembers your choices, and a 1-on-1 game starts @gpu", async ({ page }) => {
+  test.setTimeout(150_000);
+  const errors = watchErrors(page);
+  await lowGraphics(page);
+  await page.goto("park/");
+  await page.getByRole("button", { name: /Ironside Cage/ }).click();
+  await page.getByRole("radio", { name: "1v1" }).click();
+  await page.getByRole("radio", { name: "2s and 3s" }).click();
+  await page.reload();
+  await expect(page.getByRole("button", { name: /Ironside Cage/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("radio", { name: "1v1" })).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByText("The other side")).toBeVisible();
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.waitForURL("**/game/");
+  await expect(page.getByText(/Game to 15 · win by 2 · 2s and 3s · half court/)).toBeVisible({ timeout: 60_000 });
+  expect(errors).toEqual([]);
+});
+
+test("play in the park: the 3-point contest shows its clock and racks @gpu", async ({ page }) => {
+  test.setTimeout(150_000);
+  await lowGraphics(page);
+  await page.goto("park/");
+  await page.getByRole("radio", { name: "3-point contest" }).click();
+  await expect(page.getByText("Rivals", { exact: true }).first()).toBeVisible();
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.waitForURL("**/game/");
+  await expect(page.getByText("Gold balls are worth 2", { exact: false }).or(page.getByText("Get ready…"))).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText("L corner")).toBeVisible();
 });

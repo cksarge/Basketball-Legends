@@ -7,7 +7,8 @@ import type { CourtSpec } from "@/game/court";
 import { FLOOR_MARGIN, floorSize } from "../courtTexture";
 import { asset } from "@/lib/site";
 
-export type ArenaKind = "pro" | "college" | "gym";
+/** "park": an outdoor court (built in src/game3d/park, not a venue model). */
+export type ArenaKind = "pro" | "college" | "gym" | "park";
 export type SeatKind = "chair" | "backed" | "bench";
 
 export interface BankTier {
@@ -58,7 +59,7 @@ export interface VenueVariant {
 }
 
 const VARIANTS = spec.variants as unknown as Record<string, Omit<VenueVariant, "id">>;
-export type VariantId = "gym_small" | "gym_classic" | "gym_modern" | "college_fieldhouse" | "college_arena" | "pro_bowl" | "pro_modern";
+export type VariantId = "gym_small" | "gym_classic" | "gym_modern" | "college_fieldhouse" | "college_arena" | "pro_bowl" | "pro_modern" | "park";
 
 export function variant(id: VariantId): VenueVariant {
   return { id, ...VARIANTS[id] } as VenueVariant;
