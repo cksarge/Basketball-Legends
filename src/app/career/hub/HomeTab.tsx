@@ -33,6 +33,7 @@ import {
 } from "./actions";
 import { FinalsQuiz } from "./FinalsQuiz";
 import { TryoutDrills } from "./TryoutDrills";
+import { CollegeChoice } from "./RecruitingTab";
 
 function primaryDevice(device: string): string {
   if (device === "keyboard" || typeof navigator === "undefined") return "keyboard";
@@ -353,17 +354,26 @@ function NextUp({ career, ctx }: { career: Career; ctx: HsContext }) {
 
   if (ev.kind === "graduated") {
     const done = career.log.some((e) => e.text.startsWith("Graduated from"));
+    const college = career.recruiting?.college ? ctx.collegeById?.get(career.recruiting.college.teamId) : undefined;
     return (
       <Panel title={done ? "High school graduate" : "Graduation day"}>
-        <p className="mb-2">
-          Four years at {ctx.byId.get(career.hs.schoolId)?.name}. Overall {playerOvr(career.player)}. {rankingText(s?.ranking)}.
+        <p className="mb-3">
+          {career.recruiting?.reclassified ? "Three years" : "Four years"} at {ctx.byId.get(career.hs.schoolId)?.name}. Overall {playerOvr(career.player)}.{" "}
+          {rankingText(s?.ranking)}.
         </p>
         {done ? (
-          <p className="text-steel">Recruiting, college and the pros arrive in an upcoming beta update. Your career is saved and will pick up right here.</p>
+          <p className="text-steel">
+            {college ? `Next stop: ${college.name}${career.recruiting?.college?.walkOn ? " as a walk-on" : ""}. ` : ""}College seasons and the pros arrive in an
+            upcoming beta update. Your career is saved and will pick up right here.
+          </p>
         ) : (
-          <Button disabled={busy} onClick={() => run(() => graduateAction(ctx))}>
-            Walk at graduation
-          </Button>
+          <>
+            <CollegeChoice career={career} ctx={ctx} />
+            <Button disabled={busy || !college} onClick={() => run(() => graduateAction(ctx))}>
+              Walk at graduation
+            </Button>
+            {!college && <p className="mt-2 text-sm text-steel">Pick a college first.</p>}
+          </>
         )}
       </Panel>
     );

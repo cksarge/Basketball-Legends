@@ -28,6 +28,7 @@ import {
   type HsContext,
 } from "@/career/hs/season";
 import { outcomeFromMatch } from "@/career/hs/play";
+import { chooseCollege, commit, decommit, officialVisit, reclassify, toggleFavorite, type VisitFocus } from "@/career/recruiting";
 import { useCareer } from "@/state/careerStore";
 import { useMatchStore, type MatchResult, type PendingMatch } from "@/state/matchStore";
 import { clearSuspended, loadSuspended } from "@/state/suspended";
@@ -35,7 +36,7 @@ import { clearSuspended, loadSuspended } from "@/state/suspended";
 export function useHsContext(): HsContext | null {
   const [ctx, setCtx] = useState<HsContext | null>(null);
   useEffect(() => {
-    Promise.all([loadLeague("hs"), loadLeague("college")]).then(([h, col]) => setCtx(hsContext(h.teams, col.teams)));
+    Promise.all([loadLeague("hs"), loadLeague("college")]).then(([h, col]) => setCtx(hsContext(h.teams, col.teams, col.conferences)));
   }, []);
   return ctx;
 }
@@ -168,6 +169,19 @@ export const campAction = (campId: string, ctx: HsContext) => update((x) => recr
 export const showcaseAction = () => update((x) => prepareShowcase(x));
 export const nextYearAction = (ctx: HsContext) => update((x) => startNextYear(x, ctx));
 export const graduateAction = (ctx: HsContext) => update((x) => graduate(x, ctx));
+
+// recruiting
+export const commitAction = (teamId: string, ctx: HsContext) => update((x) => commit(x, teamId, ctx.colleges ?? [], x.date));
+export const decommitAction = (ctx: HsContext) => update((x) => decommit(x, ctx.colleges ?? [], x.date));
+export const favoriteAction = (teamId: string) => update((x) => toggleFavorite(x, teamId));
+export const reclassifyAction = () => update((x) => reclassify(x, x.date));
+export const chooseCollegeAction = (teamId: string, ctx: HsContext) => update((x) => chooseCollege(x, teamId, ctx.colleges ?? [], x.date));
+/** Takes an official visit and returns how it went. */
+export async function visitAction(teamId: string, focus: VisitFocus, ctx: HsContext) {
+  const { career, story } = officialVisit(cur(), teamId, focus, ctx.colleges ?? [], cur().date);
+  await update(() => career);
+  return story;
+}
 
 /** Simulates the remaining showcase games through the real engine. */
 export async function simShowcase(ctx: HsContext, onProgress: (p: SimProgress | null) => void) {

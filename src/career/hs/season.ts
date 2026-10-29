@@ -24,19 +24,22 @@ export interface HsContext {
   /** College programs, for recruiting (optional so pure high school tests can skip them). */
   colleges?: Team[];
   collegeById?: Map<string, Team>;
+  /** College conference names, for display. */
+  conferences?: Map<string, { name: string; short?: string }>;
 }
-export const hsContext = (teams: Team[], colleges?: Team[]): HsContext => ({
+export const hsContext = (teams: Team[], colleges?: Team[], conferences?: { id: string; name: string; short?: string }[]): HsContext => ({
   teams,
   byId: new Map(teams.map((t) => [t.id, t])),
   colleges,
   collegeById: colleges ? new Map(colleges.map((t) => [t.id, t])) : undefined,
+  conferences: conferences ? new Map(conferences.map((x) => [x.id, x])) : undefined,
 });
 
 /** Recruiting refresh, when the context knows the colleges. */
 export const recruitStep = (c: Career, ctx: HsContext, date: IsoDate) => (ctx.colleges ? refreshRecruiting(c, ctx.colleges, date) : c);
 
 const GRADE_CLASS: Record<number, ClassYear> = { 9: "FR", 10: "SO", 11: "JR", 12: "SR" };
-export const XP_PER_POINT = 40;
+export const XP_PER_POINT = 60;
 /** Share of the remaining gap to each cap closed per week of natural development (about +6-8 overall a year for a freshman). */
 export const DEV_RATE = 0.0034;
 
@@ -656,11 +659,14 @@ export function graduate(c: Career, ctx: HsContext): Career {
   const s = currentSeason(c)!;
   const date = iso(s.year + 1, 5, 28);
   if (c.log.some((e) => e.text.startsWith("Graduated from"))) return c;
+  // you need somewhere to go first (when the career knows the colleges)
+  if (ctx.colleges && !c.recruiting?.college) return c;
+  const college = c.recruiting?.college && ctx.collegeById?.get(c.recruiting.college.teamId);
   return {
     ...c,
     date,
     log: [...c.log, log(date, `Graduated from ${ctx.byId.get(s.schoolId)?.name ?? "high school"}.`)],
-    inbox: [...c.inbox, msg(date, "Family", "Graduation day", "We're so proud of you. College ball is next.")],
+    inbox: [...c.inbox, msg(date, "Family", "Graduation day", `We're so proud of you. ${college ? `Next stop: ${college.name}.` : "College ball is next."}`)],
   };
 }
 

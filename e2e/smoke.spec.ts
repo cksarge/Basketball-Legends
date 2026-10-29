@@ -109,6 +109,10 @@ test("create a career, then find it on the career screen after a reload", async 
   await page.getByRole("tab", { name: "Team" }).click();
   await expect(page.getByRole("cell", { name: "Test Rookie" })).toBeVisible();
   await page.getByRole("tab", { name: "Stats" }).click();
+  // freshmen can't be contacted yet: recruiting opens after sophomore year
+  await page.getByRole("tab", { name: "Recruiting" }).click();
+  await expect(page.getByRole("heading", { name: /Recruiting opens/ })).toBeVisible();
+  await expect(page.getByText("Your recruitment")).toBeVisible();
   await page.getByRole("tab", { name: "Player" }).click();
   await expect(page.getByText("Ratings")).toBeVisible();
   await page.goto("career/");

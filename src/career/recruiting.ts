@@ -9,13 +9,21 @@ import type { Career, InboxMessage, IsoDate, Offer, Recruiting } from "./types";
 import { D1_GPA } from "./hs/academics";
 
 export const VISITS_ALLOWED = 5;
+/** Programs on your board that haven't offered. */
 export const MAX_TRACKED = 24;
+/** Even the top recruit in the country hears from about thirty schools. */
+export const MAX_OFFERS = 30;
 
-/** The recruiting score a program usually lands, by division and prestige. */
+/**
+ * The recruiting score a program usually lands, by division and prestige: blue bloods sign
+ * top-40 prospects, mid-majors three-stars, low-major D1 two-stars, D2 and D3 unranked players.
+ */
 export function programBar(t: Team) {
   const p = t.prestige;
-  return t.tier === "D1" ? 60 + p * 20 : t.tier === "D2" ? 51 + p * 12 : 43 + p * 12;
+  return t.tier === "D1" ? 56 + p * 15 : t.tier === "D2" ? 48 + p * 12 : 42 + p * 12;
 }
+/** The highest bar any program has: recruits above it are judged against it. */
+export const TOP_BAR = 71;
 
 /** Your latest GPA (fall and spring of every year), for academic requirements. */
 export function cumulativeGpa(c: Career) {
@@ -37,8 +45,8 @@ export function programInterest(c: Career, t: Team, rng: Rng) {
   let fit = score - programBar(t) + (isAz(t) ? 4 : 0) + rng.normal(0, 2.2);
   if (t.tier === "D3" && gpa !== null) fit += (gpa - 3) * 2;
   // programs far below your level know they can't land you
-  const reach = score - programBar(t);
-  const reachPenalty = reach > 12 ? clamp(1 - (reach - 12) / 10, 0.1, 1) : 1;
+  const reach = Math.min(score, TOP_BAR) - programBar(t);
+  const reachPenalty = reach > 8 ? clamp(1 - (reach - 8) / 8, 0.05, 1) : 1;
   return Math.round(clamp(100 / (1 + Math.exp(-fit / 3)), 0, 100) * reachPenalty);
 }
 
@@ -53,7 +61,8 @@ export function nilValue(c: Career, t: Team) {
 /** The coaches' pitch for your first year, from how your overall compares with their level. */
 export function projectedRole(c: Career, t: Team) {
   const ovr = playerOvr(c.player);
-  const starter = t.tier === "D1" ? 56 + t.prestige * 20 : t.tier === "D2" ? 50 + t.prestige * 14 : 45 + t.prestige * 12;
+  // roughly each program's fifth-best player (from generated rosters)
+  const starter = t.tier === "D1" ? 56 + t.prestige * 15 : t.tier === "D2" ? 48 + t.prestige * 8 : 43 + t.prestige * 6;
   const gap = ovr + 3 - starter; // you'll improve before you get there
   return gap >= 4
     ? "Starter from day one"
@@ -92,21 +101,36 @@ export function refreshRecruiting(c: Career, colleges: Team[], date: IsoDate): C
   const log = [...c.log];
   // re-score programs already in touch, and find the best new ones
   const tracked = new Map(rec.offers.map((o) => [o.teamId, o]));
-  const candidates = colleges
-    .map((t) => ({ t, interest: programInterest(c, t, rng) }))
-    .filter((x) => x.interest >= 35 || tracked.has(x.t.id))
-    .sort((a, b) => b.interest - a.interest || b.t.prestige - a.t.prestige)
+  const scored = colleges.map((t) => ({ t, interest: programInterest(c, t, rng) }));
+  // programs that have offered (or pulled an offer) stay on your board and are re-scored every time
+  const keep = scored.filter((x) => (tracked.get(x.t.id)?.status ?? "interested") !== "interested");
+  const kept = new Set(keep.map((x) => x.t.id));
+  // the rest of the board: the most interested programs, leaning toward the bigger names
+  const board = scored
+    .filter((x) => !kept.has(x.t.id) && (x.interest >= 35 || tracked.has(x.t.id)))
+    .sort((a, b) => b.interest + b.t.prestige * 25 - (a.interest + a.t.prestige * 25))
     .slice(0, MAX_TRACKED);
+  let offerCount = rec.offers.filter((o) => o.status === "offered" || o.status === "committed" || o.status === "signed").length;
   const offers: Offer[] = [];
   const newOffers: Team[] = [];
-  for (const { t, interest } of candidates) {
+  const pulled: Team[] = [];
+  const gpa = cumulativeGpa(c);
+  const gradesLow = gpa !== null && gpa < D1_GPA;
+  for (const { t, interest } of [...keep, ...board]) {
     const prev = tracked.get(t.id);
     const blended = prev ? Math.round(prev.interest * 0.5 + interest * 0.5) : interest;
     let status = prev?.status ?? "interested";
-    if (status === "interested" && blended >= 68) {
+    if (status === "interested" && blended >= 68 && offerCount < MAX_OFFERS) {
       status = "offered";
+      offerCount++;
       newOffers.push(t);
-    } else if (status === "offered" && blended < 40 && rec.committedTo !== t.id) status = "withdrawn";
+    } else if (status === "offered" && blended < 40 && rec.committedTo !== t.id) {
+      status = "withdrawn";
+      offerCount--;
+      pulled.push(t);
+    } else if (status === "withdrawn" && blended >= 55) status = "interested"; // back in touch; a new offer can follow
+    // a program that pulled its offer and lost all interest drops off your board
+    if (status === "withdrawn" && prev?.status === "withdrawn" && blended < 10) continue;
     offers.push({
       teamId: t.id,
       date: prev?.date ?? date,
@@ -118,11 +142,16 @@ export function refreshRecruiting(c: Career, colleges: Team[], date: IsoDate): C
       visited: prev?.visited,
       favorite: prev?.favorite,
     });
-    if (prev?.status === "offered" && status === "withdrawn")
-      inbox.push(msg(date, `${t.name} coaches`, "Offer withdrawn", `${t.name} has moved on to other recruits.`));
   }
-  // keep offers that dropped off the list so you never lose a committed school
-  for (const o of rec.offers) if (!offers.some((x) => x.teamId === o.teamId) && (o.status === "committed" || o.status === "offered")) offers.push(o);
+  if (pulled.length) {
+    const d1 = gradesLow && pulled.some((t) => t.tier === "D1");
+    const why = d1 ? ` Division I schools need a ${D1_GPA.toFixed(1)} core GPA; get your grades back up and they can come back.` : "";
+    inbox.push(
+      pulled.length === 1
+        ? msg(date, `${pulled[0].name} coaches`, "Offer withdrawn", `${pulled[0].name} has pulled its offer.${why || " They've moved on to other recruits."}`)
+        : msg(date, "Recruiting", `${pulled.length} offers withdrawn`, `${pulled.map((t) => t.name).join(", ")} pulled their offers.${why}`),
+    );
+  }
   for (const t of newOffers.slice(0, 6)) {
     inbox.push(
       msg(date, `${t.name} coaches`, `Scholarship offer from ${t.name}`, `${t.name} (${t.tier}) is offering you a scholarship. ${projectedRole(c, t)}.`),
@@ -141,8 +170,10 @@ function autoSign(c: Career, byId: Map<string, Team>, date: IsoDate): Career {
   const senior = c.hs.seasons.at(-1);
   if (!rec.committedTo || rec.signedDate || !senior || (senior.grade !== 12 && !rec.reclassified)) return c;
   const year = senior.year;
-  const signDay = date >= earlySigning(year) ? (date >= lateSigning(year) ? lateSigning(year) : earlySigning(year)) : null;
-  if (!signDay) return c;
+  const window = date >= earlySigning(year) ? (date >= lateSigning(year) ? lateSigning(year) : earlySigning(year)) : null;
+  if (!window) return c;
+  // committing after a signing day means signing right away
+  const signDay = rec.commitDate && rec.commitDate > window ? rec.commitDate : window;
   const t = byId.get(rec.committedTo);
   return {
     ...c,
@@ -288,3 +319,50 @@ export const liveOffers = (c: Career) =>
   (c.recruiting?.offers ?? [])
     .filter((o) => o.status === "offered" || o.status === "committed" || o.status === "signed")
     .sort((a, b) => b.myInterest - a.myInterest);
+
+/**
+ * Programs that would take you as a walk-on (no scholarship, earn your spot): ones already in touch
+ * that didn't offer, plus every Arizona program within reach. Division I still needs the GPA bar.
+ */
+export function walkOnOptions(c: Career, colleges: Team[]): Team[] {
+  const score = recruitScore(c);
+  const gpa = cumulativeGpa(c);
+  const offered = new Set(liveOffers(c).map((o) => o.teamId));
+  const tracked = new Set((c.recruiting?.offers ?? []).map((o) => o.teamId));
+  return colleges
+    .filter((t) => !offered.has(t.id))
+    .filter((t) => !(t.tier === "D1" && gpa !== null && gpa < D1_GPA))
+    .filter((t) => tracked.has(t.id) || (isAz(t) && score >= programBar(t) - 14))
+    .sort((a, b) => b.prestige - a.prestige)
+    .slice(0, 12);
+}
+
+/**
+ * Picks your college: an offer (signing your letter of intent if you hadn't yet) or a walk-on spot.
+ * Required before graduation; can be changed until you graduate.
+ */
+export function chooseCollege(c: Career, teamId: string, colleges: Team[], date: IsoDate): Career {
+  if (c.stage !== "hs") return c;
+  const t = colleges.find((x) => x.id === teamId);
+  if (!t) return c;
+  const rec: Recruiting = c.recruiting ?? { offers: [], visitsUsed: 0, visitsAllowed: VISITS_ALLOWED };
+  const offer = liveOffers(c).find((o) => o.teamId === teamId);
+  if (rec.signedDate && rec.committedTo !== teamId) return c; // a signed letter of intent is binding
+  if (!offer && !walkOnOptions(c, colleges).some((x) => x.id === teamId)) return c;
+  const walkOn = !offer;
+  const offers = rec.offers.map((o) =>
+    o.teamId === teamId && !walkOn ? { ...o, status: "signed" as const } : o.status === "committed" ? { ...o, status: "offered" as const } : o,
+  );
+  return {
+    ...c,
+    recruiting: {
+      ...rec,
+      offers,
+      committedTo: walkOn ? undefined : teamId,
+      commitDate: walkOn ? undefined : rec.committedTo === teamId ? rec.commitDate : date,
+      signedDate: walkOn ? undefined : (rec.signedDate ?? date),
+      college: { teamId, walkOn, date },
+    },
+    log: [...c.log, { date, text: walkOn ? `Will walk on at ${t.name}.` : `Chose ${t.name} on scholarship.`, kind: "milestone" }],
+  };
+}

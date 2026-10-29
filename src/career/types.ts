@@ -182,6 +182,8 @@ export interface Recruiting {
   reclassified?: boolean;
   /** Last date offers were refreshed. */
   updated?: IsoDate;
+  /** Where you're going: chosen before graduation, on scholarship or as a walk-on. */
+  college?: { teamId: string; walkOn: boolean; date: IsoDate };
 }
 
 export interface Bracket {
