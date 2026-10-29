@@ -2,6 +2,12 @@
 
 Every release of Basketball Legends is listed here, newest first. Each version's section doubles as its release notes on GitHub.
 
+## v0.2.2 — October 29, 2026
+
+### Saving
+
+- **Resume game shows your save slots:** Resume game on the main menu now always lists the autosave (when there is one) and all three slots, with the score, the mode and where each game stands, so you can pick which game to resume or delete one. Empty slots are listed too. Before, a single save resumed right away, and the list only appeared as "Saved games" once you had two or more.
+
 ## v0.2.1 — October 29, 2026
 
 Bigger, livelier parks, a real check up top, save slots and a new look for the logo.

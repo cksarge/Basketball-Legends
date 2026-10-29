@@ -140,7 +140,10 @@ test("save slots: a quick game and a park game saved side by side, then resumed 
   await expect(page.getByText("Saved to slot 1:")).toBeVisible();
   await page.getByRole("button", { name: "Quit to main menu" }).click();
   await page.waitForURL((u) => new URL(u).pathname === `${BASE}/`);
-  await expect(page.getByRole("button", { name: "Resume game" })).toBeVisible();
+  // Resume game lists the slots: slot 1 has the game, 2 and 3 are empty
+  await page.getByRole("button", { name: "Resume game" }).click();
+  await expect(page.getByRole("button", { name: /Slot 1.*Quick Play/ })).toBeFocused();
+  await expect(page.getByText("Slot 2")).toBeVisible();
   // a park game goes in slot 2 without touching slot 1
   await page.goto("park/");
   await page.getByRole("radio", { name: "1v1" }).click();
@@ -153,7 +156,7 @@ test("save slots: a quick game and a park game saved side by side, then resumed 
   await page.getByRole("button", { name: /^2 Empty/ }).click();
   await page.getByRole("button", { name: "Quit to main menu" }).click();
   await page.waitForURL((u) => new URL(u).pathname === `${BASE}/`);
-  await page.getByRole("button", { name: "Saved games" }).click();
+  await page.getByRole("button", { name: "Resume game" }).click();
   await expect(page.getByRole("button", { name: /Slot 1.*Quick Play/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /Slot 2.*Play in the Park/ })).toBeVisible();
   await page.getByRole("button", { name: /Slot 1.*Quick Play/ }).click();
