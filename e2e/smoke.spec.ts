@@ -168,8 +168,8 @@ test("quick play starts a game that loads and plays @gpu", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test("save and quit, then resume from the main menu @gpu", async ({ page }) => {
-  test.setTimeout(180_000);
+test("save slots: a quick game and a park game saved side by side, then resumed @gpu", async ({ page }) => {
+  test.setTimeout(240_000);
   await lowGraphics(page);
   await page.goto("play/");
   await page.getByRole("button", { name: "Play game" }).click();
@@ -177,11 +177,28 @@ test("save and quit, then resume from the main menu @gpu", async ({ page }) => {
   await expect(page.getByText("Loading the arena")).toBeHidden({ timeout: 60_000 });
   await clockRuns(page);
   await page.keyboard.press("Escape");
-  await page.getByRole("button", { name: "Save and quit" }).click();
+  await page.getByRole("button", { name: "Save game" }).click();
+  await page.getByRole("button", { name: /^1 Empty/ }).click();
+  await expect(page.getByText("Saved to slot 1:")).toBeVisible();
+  await page.getByRole("button", { name: "Quit to main menu" }).click();
   await page.waitForURL((u) => new URL(u).pathname === `${BASE}/`);
-  const resume = page.getByRole("button", { name: "Resume game" });
-  await expect(resume).toBeVisible();
-  await resume.click();
+  await expect(page.getByRole("button", { name: "Resume game" })).toBeVisible();
+  // a park game goes in slot 2 without touching slot 1
+  await page.goto("park/");
+  await page.getByRole("radio", { name: "1v1" }).click();
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.waitForURL("**/game/");
+  await expect(page.getByText(/Game to 15/)).toBeVisible({ timeout: 60_000 });
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Save game" }).click();
+  await expect(page.getByRole("button", { name: /^1 .*Quick Play/ })).toBeVisible();
+  await page.getByRole("button", { name: /^2 Empty/ }).click();
+  await page.getByRole("button", { name: "Quit to main menu" }).click();
+  await page.waitForURL((u) => new URL(u).pathname === `${BASE}/`);
+  await page.getByRole("button", { name: "Saved games" }).click();
+  await expect(page.getByRole("button", { name: /Slot 1.*Quick Play/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Slot 2.*Play in the Park/ })).toBeVisible();
+  await page.getByRole("button", { name: /Slot 1.*Quick Play/ }).click();
   await page.waitForURL("**/game/");
   await expect(page.getByRole("dialog", { name: "Paused" })).toBeVisible({ timeout: 60_000 });
 });

@@ -57,8 +57,12 @@ export interface PendingMatch {
   occasion?: string;
   /** Shootaround with no opponent or clock. */
   practice?: boolean;
-  /** Continue the suspended game saved in local storage instead of starting fresh. */
+  /** Continue a saved game instead of starting fresh. */
   resume?: boolean;
+  /** Which save to continue (the autosave unless a slot is named). */
+  resumeFrom?: "auto" | 1 | 2 | 3;
+  /** The save slot this game belongs to (it was loaded from or saved to it); Save game offers it first. */
+  saveSlot?: 1 | 2 | 3;
   /** Guided controls tutorial (runs on top of a practice session). */
   tutorial?: boolean;
   /** Career game this match belongs to. */

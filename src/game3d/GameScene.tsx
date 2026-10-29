@@ -26,7 +26,7 @@ import { rimPos } from "@/game/court";
 import { liveView, REPLAY_CAMS, type ReplayDirector, type ViewFrame } from "./replay";
 import { ordinal } from "@/game/commentary";
 import type { Park } from "@/game/park/parks";
-import { ContestRacks, PARK_VENUE, ParkLights, ParkScene, parkSky } from "./park/ParkScene";
+import { ContestRacks, PARK_VENUE, PARK_WORLD, ParkLights, ParkScene, parkSky } from "./park/ParkScene";
 import type { PlayersProps } from "./Players";
 
 export const SIM_STEP = 1 / 60;
@@ -777,10 +777,17 @@ export function GameScene(props: GameSceneProps) {
   const dpr = Math.min(typeof window !== "undefined" ? window.devicePixelRatio : 1, 2) * g.resolutionScale;
 
   useEffect(() => {
-    audio.setVenue(venue.kind === "park" ? "park" : venue.kind === "gym" ? "gym" : venue.id.startsWith("college") ? "college" : "pro");
+    audio.setVenue(
+      venue.kind === "park" ? "park" : venue.kind === "gym" ? "gym" : venue.id.startsWith("college") ? "college" : "pro",
+      park?.crowd.loudness ?? 0,
+    );
     audio.startCrowd();
-    return () => audio.stopCrowd();
-  }, [venue]);
+    if (park) audio.startAmbience(park.ambience);
+    return () => {
+      audio.stopCrowd();
+      audio.stopAmbience();
+    };
+  }, [venue, park]);
 
   return (
     <Canvas
@@ -799,14 +806,17 @@ export function GameScene(props: GameSceneProps) {
       {g.fpsCap > 0 && g.fpsCap < 120 && <FrameCap fps={g.fpsCap} />}
       {g.showFps && <FpsCounter />}
       <color attach="background" args={[park ? parkSky(park).horizon : props.arena === "gym" ? "#bdb4a3" : "#05070a"]} />
-      <fog attach="fog" args={park ? [parkSky(park).horizon, 70, 300] : [props.arena === "gym" ? "#bdb4a3" : "#05070a", 45, 140]} />
+      <fog
+        attach="fog"
+        args={park ? [parkSky(park).horizon, PARK_WORLD.fogNear, PARK_WORLD.fogFar] : [props.arena === "gym" ? "#bdb4a3" : "#05070a", 45, 140]}
+      />
       <ReplayDriver match={props.match} replay={props.replay} frameRef={replayFrame} camState={camState} ballPos={ballPos} />
       <Environment intensity={park?.time === "night" ? 0.12 : park?.time === "sunset" ? 0.4 : 0.55} />
-      {park ? <ParkLights park={park} shadows={g.shadows} court={court} /> : <Lights venue={venue} shadows={g.shadows} />}
+      {park ? <ParkLights park={park} shadows={g.shadows} /> : <Lights venue={venue} shadows={g.shadows} />}
       <Suspense fallback={null}>
         {park ? (
           <>
-            <ParkScene park={park} court={court} quality={quality} />
+            <ParkScene park={park} court={court} quality={quality} exciteRef={excite} reactRef={crowdReact} />
             <ContestRacks match={props.match} ballRadius={court.ballRadius} />
           </>
         ) : (
