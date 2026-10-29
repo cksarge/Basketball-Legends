@@ -132,10 +132,11 @@ export default function HowToPlay() {
       </p>
       <H2>Saving and resuming</H2>
       <p>
-        Games save themselves every few seconds, so if you close the tab the main menu shows Resume game with the score and time left. To keep games side by
-        side, choose Save game from the pause menu and pick one of three slots (say, a Quick Play game in slot 1 and a park game in slot 2); a game in a slot
-        keeps saving itself there as you play. With more than one save, the main menu shows Saved games, where you can resume or delete each one. Resumed games
-        start paused so you can get ready. Finishing a game clears its save; quitting a game that isn&apos;t in a slot discards it.
+        Games save themselves every few seconds, so if you close the tab you can pick up where you left off from Resume game on the main menu. To keep games
+        side by side, choose Save game from the pause menu and pick one of three slots (say, a Quick Play game in slot 1 and a park game in slot 2); a game in a
+        slot keeps saving itself there as you play. Resume game on the main menu lists the autosave and all three slots, with the score and where each game
+        stands, to resume or delete. Resumed games start paused so you can get ready. Finishing a game clears its save; quitting a game that isn&apos;t in a
+        slot discards it.
       </p>
       <H2>Replays and highlights</H2>
       <p>

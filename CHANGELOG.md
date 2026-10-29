@@ -37,6 +37,12 @@ In testing at legends.carterscoding.com/beta/. These notes grow as Phase 2 lands
   - **Balance:** skill points cost more XP (60 instead of 40), so a great player finishes high school as a top recruit without being better than most college players.
 - **Real high school levels:** each Arizona school now knows which boys basketball teams it fields (varsity, JV, JV 2, freshman/sophomore), from the AIA's official AZPreps365 team pages. 205 of the 283 schools run a freshman/sophomore team.
 
+## v0.2.2 — October 29, 2026
+
+### Saving
+
+- **Resume game shows your save slots:** Resume game on the main menu now always lists the autosave (when there is one) and all three slots, with the score, the mode and where each game stands, so you can pick which game to resume or delete one. Empty slots are listed too. Before, a single save resumed right away, and the list only appeared as "Saved games" once you had two or more.
+
 ## v0.2.1 — October 29, 2026
 
 Bigger, livelier parks, a real check up top, save slots and a new look for the logo.

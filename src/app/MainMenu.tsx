@@ -12,7 +12,7 @@ import { TeamLogo } from "@/ui/TeamLogo";
 import { useInputDevice } from "@/ui/MenuNavigator";
 import { KeyHint } from "@/ui/KeyHint";
 import { toast } from "@/ui/Toaster";
-import { clearSuspended, modeLabel, type SaveSlot, type SuspendedGame, useSaves, whereText } from "@/state/suspended";
+import { clearSuspended, modeLabel, type SaveSlot, SLOTS, type SuspendedGame, useSaves, whereText } from "@/state/suspended";
 import { IS_BETA, SITE_URL } from "@/lib/site";
 
 const MenuBackdrop = dynamic(() => import("@/game3d/MenuBackdrop"), { ssr: false });
@@ -117,28 +117,13 @@ export function MainMenu() {
   const saves = useSaves();
   const items = useMemo<Item[]>(() => {
     if (!saves.length) return ITEMS;
-    if (saves.length > 1)
-      return [
-        {
-          id: "resume",
-          label: "Saved games",
-          blurb: `${saves.length} games waiting where you left them.`,
-          detail: [],
-        },
-        ...ITEMS,
-      ];
-    const { slot, game } = saves[0];
-    const g = game.summary;
+    // the panel lists the autosave (if any) and every save slot
     return [
       {
         id: "resume",
         label: "Resume game",
-        blurb: `${g.away} ${g.awayScore}, ${g.home} ${g.homeScore}`,
-        detail: [
-          `${g.mode ?? modeLabel(game.pending)} · ${whereText(game)}`,
-          `${slot === "auto" ? "Autosaved" : `Slot ${slot}, saved`} ${savedWhen(game)}`,
-          "Picks up exactly where you left off",
-        ],
+        blurb: saves.length === 1 ? "1 game waiting where you left it." : `${saves.length} games waiting where you left them.`,
+        detail: [],
       },
       ...ITEMS,
     ];
@@ -170,14 +155,18 @@ export function MainMenu() {
     setPending({ ...game.pending, resume: true, resumeFrom: slot, saveSlot: slot === "auto" ? game.pending.saveSlot : slot });
     router.push("/game/");
   };
-  const resume = () => {
-    if (saves.length === 1) resumeSave(saves[0].slot, saves[0].game);
-    // several: the panel lists them
-    else document.querySelector<HTMLButtonElement>("[data-save-row]")?.focus();
-  };
+  // the panel lists the saves: Resume game moves the cursor into that list
+  const resume = () => document.querySelector<HTMLButtonElement>("[data-save-row]")?.focus();
+  const rows: { slot: SaveSlot; game: SuspendedGame | null }[] = [
+    ...saves.filter((x) => x.slot === "auto"),
+    ...SLOTS.map((slot) => ({ slot, game: saves.find((x) => x.slot === slot)?.game ?? null })),
+  ];
   const discard = (slot: SaveSlot) => {
     clearSuspended(slot);
-    if (saves.length <= 1) setFocused(ITEMS[0].id);
+    if (saves.length <= 1) {
+      setFocused(ITEMS[0].id);
+      first.current?.focus();
+    }
     toast(slot === "auto" ? "Autosave deleted" : `Slot ${slot} deleted`);
   };
 
@@ -316,42 +305,41 @@ export function MainMenu() {
                 </li>
               ))}
             </ul>
-            {item.id === "resume" && saves.length === 1 && (
-              <button
-                onClick={() => discard(saves[0].slot)}
-                className="mt-4 text-sm font-semibold text-steel underline-offset-4 hover:text-bad hover:underline"
-              >
-                Discard this game
-              </button>
-            )}
-            {item.id === "resume" && saves.length > 1 && (
+            {item.id === "resume" && (
               <ul className="mt-3 flex flex-col gap-2">
-                {saves.map(({ slot, game }) => (
-                  <li key={String(slot)} className="flex items-stretch gap-1">
-                    <button
-                      data-save-row
-                      onClick={() => resumeSave(slot, game)}
-                      onFocus={() => setFocused("resume")}
-                      className="flex-1 rounded-[var(--radius-chip)] bg-deck-2 px-3 py-2 text-left ring-1 ring-line hover:ring-amber focus-visible:ring-amber"
-                    >
-                      <span className="block text-xs font-semibold text-amber">{slot === "auto" ? "Autosave" : `Slot ${slot}`}</span>
-                      <span className="block font-semibold leading-tight">
-                        {game.summary.away} {game.summary.awayScore}, {game.summary.home} {game.summary.homeScore}
-                      </span>
-                      <span className="block text-xs text-steel">
-                        {game.summary.mode ?? modeLabel(game.pending)} · {whereText(game)} · {savedWhen(game)}
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => discard(slot)}
-                      onFocus={() => setFocused("resume")}
-                      aria-label={`Delete ${slot === "auto" ? "the autosave" : `slot ${slot}`}`}
-                      className="rounded-[var(--radius-chip)] px-2 text-steel hover:text-bad"
-                    >
-                      ✕
-                    </button>
-                  </li>
-                ))}
+                {rows.map(({ slot, game }) =>
+                  !game ? (
+                    <li key={String(slot)} className="rounded-[var(--radius-chip)] px-3 py-2 ring-1 ring-line/60">
+                      <span className="block text-xs font-semibold text-steel">Slot {slot}</span>
+                      <span className="block text-sm text-steel">Empty. Choose Save game in the pause menu to keep a game here.</span>
+                    </li>
+                  ) : (
+                    <li key={String(slot)} className="flex items-stretch gap-1">
+                      <button
+                        data-save-row
+                        onClick={() => resumeSave(slot, game)}
+                        onFocus={() => setFocused("resume")}
+                        className="flex-1 rounded-[var(--radius-chip)] bg-deck-2 px-3 py-2 text-left ring-1 ring-line hover:ring-amber focus-visible:ring-amber"
+                      >
+                        <span className="block text-xs font-semibold text-amber">{slot === "auto" ? "Autosave" : `Slot ${slot}`}</span>
+                        <span className="block font-semibold leading-tight">
+                          {game.summary.away} {game.summary.awayScore}, {game.summary.home} {game.summary.homeScore}
+                        </span>
+                        <span className="block text-xs text-steel">
+                          {game.summary.mode ?? modeLabel(game.pending)} · {whereText(game)} · {savedWhen(game)}
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => discard(slot)}
+                        onFocus={() => setFocused("resume")}
+                        aria-label={`Delete ${slot === "auto" ? "the autosave" : `slot ${slot}`}`}
+                        className="rounded-[var(--radius-chip)] px-2 text-steel hover:text-bad"
+                      >
+                        ✕
+                      </button>
+                    </li>
+                  ),
+                )}
               </ul>
             )}
           </aside>
