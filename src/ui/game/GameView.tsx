@@ -24,6 +24,9 @@ import { BreakScreen, type BreakKind } from "./BreakScreen";
 import { TacticsPanel } from "../TacticsPanel";
 import { LoadingScreen } from "./LoadingScreen";
 import { TutorialOverlay } from "./TutorialOverlay";
+import { ParkFinal, ParkHud, parkOutcome } from "./ParkHud";
+import { HorseDrill, ThreePointDrill, simulateContestRound } from "@/game/sim/drill";
+import { parkById } from "@/game/park/parks";
 
 const GameScene = dynamic(() => import("@/game3d/GameScene").then((m) => m.GameScene), { ssr: false });
 
@@ -59,6 +62,7 @@ function buildMatch(p: PendingMatch, quarterMinutes: number, g: ReturnType<typeo
     lockPlayerId: p.lockPlayerId,
     practice: p.practice,
     sliders: g.sliders,
+    park: p.park?.rules && !p.practice ? p.park.rules : undefined,
   };
   // pick up a suspended game where it left off (falls back to a fresh game if the save is unreadable)
   let match: Match | null = null;
@@ -71,6 +75,9 @@ function buildMatch(p: PendingMatch, quarterMinutes: number, g: ReturnType<typeo
     }
   }
   match ??= new Match(setup);
+  // park shooting games run on top of practice mode
+  if (p.park?.mode === "horse") match.drill = new HorseDrill(match, p.park.word ?? "HORSE", p.seed);
+  if (p.park?.mode === "three") match.drill = new ThreePointDrill(match);
   const devices = [...home.controllers, ...away.controllers] as DeviceId[];
   // the coach's auto-subs setting applies to human-controlled teams
   for (const t of match.state.teams) if (t.humanControlled) (t as typeof t & { autoSubs?: boolean }).autoSubs = g.autoSubs;
@@ -93,7 +100,10 @@ export function GameView({ pending }: { pending: PendingMatch }) {
       ),
     [pending, runId],
   );
-  const [screen, setScreen] = useState<Screen>(pending.resume ? "paused" : settings.presentation.skipIntros || pending.practice ? "playing" : "intro");
+  // park games skip the TV intro (there are no team introductions at the park)
+  const [screen, setScreen] = useState<Screen>(
+    pending.resume ? "paused" : settings.presentation.skipIntros || pending.practice || pending.park ? "playing" : "intro",
+  );
   const [camera, setCamera] = useState<CameraMode>(settings.camera.mode);
   const [simProgress, setSimProgress] = useState(0);
   const input = useMemo(
@@ -201,11 +211,24 @@ export function GameView({ pending }: { pending: PendingMatch }) {
         simulated,
         injuries: s.injuries,
         career: pending.career,
+        park: pending.park ? parkOutcome(match, pending.park, contestRivals(pending)) : undefined,
       });
       setScreen("final");
     },
-    [match, pending.mode, pending.career, setResult],
+    [match, pending, setResult],
   );
+
+  // park shooting games end when the drill says so (there's no final buzzer in practice mode)
+  useEffect(() => {
+    if (!match.drill || screen !== "playing") return;
+    const h = setInterval(() => {
+      if (match.drill?.done) {
+        clearInterval(h);
+        setTimeout(() => finish(false), 1800);
+      }
+    }, 200);
+    return () => clearInterval(h);
+  }, [match, screen, finish]);
 
   // quarter breaks, halftime and timeouts open the break panel (the sim holds the break meanwhile)
   useEffect(() => {
@@ -255,7 +278,8 @@ export function GameView({ pending }: { pending: PendingMatch }) {
 
   const requestTimeout = useCallback(
     (team: 0 | 1) => {
-      if (match.callTimeout(team as TeamIdx)) toast(`Timeout, ${match.state.teams[team].team.name}`);
+      if (match.state.cfg.park) toast("No timeouts at the park", "bad");
+      else if (match.callTimeout(team as TeamIdx)) toast(`Timeout, ${match.state.teams[team].team.name}`);
       else toast("You can only call a timeout when your team has the ball", "bad");
     },
     [match],
@@ -330,11 +354,21 @@ export function GameView({ pending }: { pending: PendingMatch }) {
     finished.current = false;
     useHud.setState({ hud: null, feed: [] });
     setRunId((r) => r + 1);
-    setScreen(settings.presentation.skipIntros ? "playing" : "intro");
+    setScreen(settings.presentation.skipIntros || pending.park ? "playing" : "intro");
   };
 
   const home = match.state.teams[0].team,
     away = match.state.teams[1].team;
+  const park = pending.park ? parkById(pending.park.parkId) : undefined;
+  const street = useMemo(() => {
+    const sess = pending.park;
+    if (!sess) return undefined;
+    return (p: { id: string }, team: 0 | 1) => {
+      const o = sess.outfits[p.id] ?? { shirt: "#f4f4f2", shorts: "#1d1f23" };
+      // in team games a side matches; in 21 and the shooting games everyone wears their own
+      return sess.sideShirts && sess.rules?.game !== "21" ? { shirt: sess.sideShirts[team], shorts: o.shorts } : o;
+    };
+  }, [pending.park]);
   const humanTeams = new Set(match.state.agents.filter((a) => a.human !== null).map((a) => a.team));
   const humanOffense = humanTeams.has(match.state.offense);
 
@@ -347,6 +381,8 @@ export function GameView({ pending }: { pending: PendingMatch }) {
         devices={devices}
         uniforms={[pending.home.uniform, pending.away.uniform]}
         arena={pending.arena}
+        park={park}
+        street={street}
         paused={!ready || (screen !== "playing" && screen !== "break")}
         cameraMode={camera}
         onPauseRequest={() => setScreen((s) => (s === "playing" ? "paused" : s === "paused" ? "playing" : s))}
@@ -356,10 +392,22 @@ export function GameView({ pending }: { pending: PendingMatch }) {
         onReady={() => setReady(true)}
         overlaysVisible={ready && (screen === "playing" || screen === "break")}
       />
-      <LoadingScreen key={`loading-${runId}`} home={home} away={away} ready={ready} />
+      <LoadingScreen
+        key={`loading-${runId}`}
+        home={home}
+        away={away}
+        ready={ready}
+        place={park ? { name: park.name, where: `${park.city}, ${park.state}` } : undefined}
+      />
       {screen !== "intro" && screen !== "final" && (
         <>
-          {pending.practice ? !replaying && <PracticeStats match={match} /> : <ScoreBug home={home} away={away} />}
+          {pending.park ? (
+            !replaying && <ParkHud match={match} session={pending.park} />
+          ) : pending.practice ? (
+            !replaying && <PracticeStats match={match} />
+          ) : (
+            <ScoreBug home={home} away={away} />
+          )}
           {!replaying && <ShotMeter />}
           {!replaying && <PlayerTag />}
           <CommentaryFeed />
@@ -464,7 +512,16 @@ export function GameView({ pending }: { pending: PendingMatch }) {
           </div>
         </div>
       )}
-      {screen === "final" && !replaying && (
+      {screen === "final" && !replaying && pending.park && (
+        <ParkFinal
+          outcome={parkOutcome(match, pending.park, contestRivals(pending))}
+          onAgain={restart}
+          onBack={() => router.push(pending.returnTo)}
+          nextLabel="See the line"
+          onNext={pending.park.mode === "line" ? () => router.push(pending.returnTo) : undefined}
+        />
+      )}
+      {screen === "final" && !replaying && !pending.park && (
         <FinalScreen
           match={match}
           onContinue={() => router.push(pending.returnTo)}
@@ -621,9 +678,10 @@ function PauseMenu({
         {item("Resume", onResume, tab === "menu" ? first : undefined)}
         {/* practice and the tutorial have no opponent, clock or rotation */}
         {!s.cfg.practice && item("Box score", () => setTab("box"))}
-        {!s.cfg.practice && item("Substitutions", () => setTab("subs"))}
-        {!s.cfg.practice && item("Tactics", () => setTab("tactics"))}
+        {!s.cfg.practice && !s.cfg.park && item("Substitutions", () => setTab("subs"))}
+        {!s.cfg.practice && !s.cfg.park && item("Tactics", () => setTab("tactics"))}
         {!s.cfg.practice &&
+          !s.cfg.park &&
           item(`Timeout (${s.teams[humanTeam].timeouts} left)`, () => {
             onTimeout(humanTeam as 0 | 1);
             onResume();
@@ -975,4 +1033,9 @@ function BenchPrompt({ onChoose }: { onChoose: (choice: "watch" | "skip" | "sim"
       </div>
     </div>
   );
+}
+
+/** 3-point contest rivals' rounds (simulated, the same every time for this game). */
+function contestRivals(p: PendingMatch) {
+  return (p.park?.rivals ?? []).map((r) => ({ name: `${r.firstName[0]}. ${r.lastName}`, shots: simulateContestRound(r, `${p.seed}:${r.id}`) }));
 }

@@ -27,7 +27,9 @@ export type GameEvent =
   | { t: "buzzer"; kind: "shotClock" | "period" }
   | { t: "crowd"; level: number }
   | { t: "injury"; player: number; name: string; games: number }
-  | { t: "foulOut"; player: number };
+  | { t: "foulOut"; player: number }
+  /** Park: ball checked up top, a basket that didn't count, a foul call, a 21 bust. */
+  | { t: "park"; kind: "check" | "noClear" | "foulCall" | "bust" | "cleared"; player: number | null; team: TeamIdx };
 
 export type TurnoverReason =
   "steal" | "badPass" | "outOfBounds" | "travel" | "offensiveFoul" | "shotClock" | "threeSeconds" | "backcourt" | "tenSeconds" | "fiveSeconds" | "lostBall";

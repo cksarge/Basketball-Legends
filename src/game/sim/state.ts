@@ -179,6 +179,31 @@ export interface InboundState {
   timer: number; // 5-second count
   afterScore: boolean;
   backcourt: boolean;
+  /** Park half court: the ball is checked at the top of the key instead of inbounded. */
+  check?: boolean;
+}
+
+/** Pickup rules for Play in the Park. */
+export interface ParkRules {
+  /** A team game (1v1 to 5v5) or 21, where every player is on their own. */
+  game: "team" | "21";
+  halfCourt: boolean;
+  /** "ones": 1 inside the arc and 2 beyond it; "twos": 2 and 3. */
+  scoring: "ones" | "twos";
+  /** Points to win (exactly this in 21). */
+  target: number;
+  winBy: 1 | 2;
+  /** The team that scores keeps the ball (otherwise the other team gets it). */
+  makeItTakeIt: boolean;
+}
+
+export interface ParkState {
+  /** Half court: the ball has been taken back past the arc since the last change of possession. */
+  cleared: boolean;
+  /** 21: points per player id. */
+  points: Record<string, number>;
+  /** 21: the player who won. */
+  winnerId: string | null;
 }
 
 export interface TeamGameState {
@@ -220,6 +245,8 @@ export interface MatchConfig {
   boundaryAssist: boolean;
   /** Shootaround: no clocks, no defense, the ball comes back after every shot. */
   practice: boolean;
+  /** Play in the Park rules (no clocks, officials or free throws; first to the target). */
+  park: ParkRules | null;
 }
 
 /** Per-league feel: younger leagues hold the ball longer, foul more and turn it over more. */
@@ -245,6 +272,12 @@ export const LEAGUE_TUNING: Record<import("@/engine/types").LeagueId, LeagueTuni
   college: { patience: 10, threeBias: 1.06, fouls: 1.5, shootingFouls: 1, steals: 1.1, makes: 1.02, travels: 1.4 },
   hs: { patience: 6, threeBias: 1.18, fouls: 1.6, shootingFouls: 1.05, steals: 1.75, makes: 1, travels: 2.4 },
 };
+
+/** Pickup ball: patient enough, called fouls only on clear contact, few travel calls. */
+export const PARK_TUNING: LeagueTuning = { patience: 3, threeBias: 1.05, fouls: 0.6, shootingFouls: 0.55, steals: 1.2, makes: 0.97, travels: 0.6 };
+
+/** The tuning a match plays with (park games use their own). */
+export const tuningFor = (cfg: Pick<MatchConfig, "league" | "park">): LeagueTuning => (cfg.park ? PARK_TUNING : LEAGUE_TUNING[cfg.league]);
 
 export type Difficulty = "rookie" | "pro" | "allstar" | "superstar" | "hof" | "legend";
 

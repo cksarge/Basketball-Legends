@@ -222,3 +222,37 @@ export function drawPlainShorts(canvas: HTMLCanvasElement, color: string) {
   g.fillStyle = "rgba(0,0,0,0.25)";
   g.fillRect(0, 0, canvas.width, canvas.height * 0.08);
 }
+
+/**
+ * A pickup-game tee in one color: soft cotton texture, a ribbed collar, and (sometimes) a faded chest print.
+ * `seed` keeps each player's shirt the same every time it's drawn.
+ */
+export function drawStreetShirt(canvas: HTMLCanvasElement, color: string, seed: number) {
+  const W = canvas.width,
+    H = canvas.height;
+  const g = canvas.getContext("2d")!;
+  g.fillStyle = color;
+  g.fillRect(0, 0, W, H);
+  // cotton grain
+  const light = new THREE.Color(color).getHSL({ h: 0, s: 0, l: 0 }).l > 0.6;
+  g.globalAlpha = 0.05;
+  g.fillStyle = light ? "#000000" : "#ffffff";
+  for (let y = 0; y < H; y += 3) g.fillRect(0, y, W, 1);
+  // ribbed collar and hem
+  g.globalAlpha = 0.18;
+  g.fillStyle = light ? "#000000" : "#ffffff";
+  g.fillRect(0, H * 0.955, W, H * 0.045);
+  g.fillRect(0, 0, W, H * 0.03);
+  g.globalAlpha = 1;
+  // a faded print on about half the shirts
+  if (seed % 2 === 0) {
+    g.globalAlpha = 0.32;
+    g.fillStyle = light ? "#2a2d33" : "#f4f4f2";
+    g.font = `900 ${Math.round(H * 0.08)}px ${FONT_STACK()}`;
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    const words = ["HOOPS", "PARK", "NEXT", "BALL", "RUN IT"];
+    g.fillText(words[seed % words.length], W * 0.25, H * 0.66);
+    g.globalAlpha = 1;
+  }
+}

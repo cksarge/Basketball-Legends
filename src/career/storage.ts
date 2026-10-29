@@ -72,7 +72,7 @@ export async function deleteCareer(id: string) {
 export function migrate(c: Career): Career {
   if (!c || typeof c !== "object" || !c.player || !c.id) throw new Error("Not a Basketball Legends career");
   if (c.version > CAREER_VERSION) throw new Error("This career was saved by a newer version of the game. Update the game to open it.");
-  // fields added during the 0.2.0 betas get their defaults
+  // fields added during the 0.3.0 betas get their defaults
   return {
     ...c,
     player: { ...c.player, academics: c.player.academics ?? 0.6 },

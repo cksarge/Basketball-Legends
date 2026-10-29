@@ -8,7 +8,7 @@ import path from "node:path";
 
 const SITE = "https://legends.carterscoding.com";
 const APP = path.join(__dirname, "..", "src", "app");
-const PRIORITY: Record<string, number> = { "/": 1.0, "/play/": 0.9, "/how-to-play/": 0.7, "/settings/": 0.5 };
+const PRIORITY: Record<string, number> = { "/": 1.0, "/play/": 0.9, "/park/": 0.9, "/how-to-play/": 0.7, "/settings/": 0.5 };
 
 function walk(dir: string, route = "/"): string[] {
   const out: string[] = [];

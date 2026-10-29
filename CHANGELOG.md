@@ -2,7 +2,7 @@
 
 Every release of Basketball Legends is listed here, newest first. Each version's section doubles as its release notes on GitHub.
 
-## v0.2.0 (in beta)
+## v0.3.0 (in beta)
 
 In testing at legends.carterscoding.com/beta/. These notes grow as Phase 2 lands.
 
@@ -36,6 +36,35 @@ In testing at legends.carterscoding.com/beta/. These notes grow as Phase 2 lands
   - **Graduation:** pick your college first, signing with an offer or walking on at a program that would take you. College seasons and the pros come in a later beta.
   - **Balance:** skill points cost more XP (60 instead of 40), so a great player finishes high school as a top recruit without being better than most college players.
 - **Real high school levels:** each Arizona school now knows which boys basketball teams it fields (varsity, JV, JV 2, freshman/sophomore), from the AIA's official AZPreps365 team pages. 205 of the 283 schools run a freshman/sophomore team.
+
+## v0.2.0 — October 28, 2026
+
+Play in the Park: pickup basketball on outdoor courts, from the main menu.
+
+### Parks
+
+- **Five original courts:** Copper Flats Courts in Phoenix (a desert park with a shade ramada, saguaros and mountains), Ironside Cage in New York (a fenced court between brick buildings at sunset), Boardwalk Courts in Los Angeles (a beach court with palms and the ocean at sunset), Maple Street Park in Chicago (a neighborhood blacktop under the lights) and Rooftop on Ninth in Kansas City (a court on a parking garage with the skyline lit up all around).
+- **Outdoor courts:** worn asphalt with cracks and patches, or painted sport surfaces; chain-link fences; light poles that come on at night; poles with steel or acrylic backboards and chain or nylon nets; daylight, sunset and night skies with shadows to match.
+- **Park regulars:** each park has 18 regulars with nicknames, reputations ("Never misses from the corner", "Calls next every game") and street clothes, the same people every time you show up. Some parks are friendly runs, others are high-level. Older regulars have lost a step but know every trick.
+- **Anyone can play:** pick your player and every spot from the park's regulars or from any team in the three leagues, or shuffle the regulars.
+
+### Pickup rules
+
+- **1-on-1 up to 5-on-5**, on a half court or a full court.
+- **Scoring:** 1s and 2s or 2s and 3s, games to 11, 15 or 21, win by 2 (or not).
+- **Make it, take it** or losers' ball after every basket.
+- **Check ball:** half court, the ball is checked at the top of the key after every basket, foul and turnover.
+- **Take it back:** half court, after a miss, a steal or a rebound, the ball has to go back past the arc before you can score. A basket that wasn't taken back doesn't count.
+- **Call your own fouls:** no referees and no free throws. The fouled player checks it back up, a charge goes the other way, and nobody fouls out.
+- **No clock:** no game clock, shot clock or timeouts. The AI still moves the ball and looks for its shot.
+- **Street sounds:** no whistles, buzzers or announcer, and a few onlookers instead of an arena crowd.
+
+### More ways to play
+
+- **Next game up:** your crew calls next against the crew holding the court, with up to four crews waiting. Winners stay on, losers go to the back of the line, and the games ahead of you are played out while you wait. The line tracks your winning streak and every result.
+- **21:** three to six players, each on their own: whoever has the ball plays against everyone else. Score and you shoot free throws until you miss (make three and you check it again). Hit the target exactly: go over and you drop back to 13.
+- **HORSE:** against up to three regulars. Make a shot and everyone has to match it from the same spot, or take a letter. Play HORSE or PIG.
+- **3-point contest:** 25 balls on five racks in 60 seconds, with a gold money ball worth 2 on every rack, against up to five rivals.
 
 ## v0.1.1 — October 28, 2026
 

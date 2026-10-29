@@ -25,6 +25,9 @@ import type { UniformStyle } from "./character/uniformTexture";
 import { rimPos } from "@/game/court";
 import { liveView, REPLAY_CAMS, type ReplayDirector, type ViewFrame } from "./replay";
 import { ordinal } from "@/game/commentary";
+import type { Park } from "@/game/park/parks";
+import { ContestRacks, PARK_VENUE, ParkLights, ParkScene, parkSky } from "./park/ParkScene";
+import type { PlayersProps } from "./Players";
 
 export const SIM_STEP = 1 / 60;
 
@@ -35,6 +38,10 @@ export interface GameSceneProps {
   devices: DeviceId[];
   uniforms: [UniformStyle, UniformStyle];
   arena: ArenaKind;
+  /** Play in the Park: the outdoor court to build (with arena "park"). */
+  park?: Park;
+  /** Park games: street clothes per player. */
+  street?: PlayersProps["street"];
   paused: boolean;
   cameraMode: CameraMode;
   onPauseRequest: () => void;
@@ -48,19 +55,19 @@ export interface GameSceneProps {
   overlaysVisible?: boolean;
 }
 
-function Environment() {
+function Environment({ intensity = 0.55 }: { intensity?: number }) {
   const { gl, scene } = useThree();
   useEffect(() => {
     const pm = new THREE.PMREMGenerator(gl);
     const env = pm.fromScene(new RoomEnvironment(), 0.04).texture;
     scene.environment = env;
-    scene.environmentIntensity = 0.55;
+    scene.environmentIntensity = intensity;
     return () => {
       env.dispose();
       pm.dispose();
       scene.environment = null;
     };
-  }, [gl, scene]);
+  }, [gl, scene, intensity]);
   return null;
 }
 
@@ -439,7 +446,8 @@ function SimDriver(
         default:
           break;
       }
-      if (settings.presentation.commentary) {
+      // no announcer at the park
+      if (settings.presentation.commentary && !match.state.cfg.park && !match.drill) {
         const line = commentFor(match, e);
         if (line) {
           pushFeed(line, "team" in e && typeof e.team === "number" ? e.team : null);
@@ -751,7 +759,8 @@ export function GameScene(props: GameSceneProps) {
   const replayFrame = useRef<ViewFrame | null>(null);
   const benchExcite = useRef<[number, number]>([0, 0]);
   const crowdReact = useRef<[number, number]>([0, 0]);
-  const benchSize = props.match.state.cfg.practice ? 0 : g.preset === "low" ? 0 : g.preset === "medium" ? 4 : 9;
+  const park = props.park;
+  const benchSize = props.match.state.cfg.practice || park ? 0 : g.preset === "low" ? 0 : g.preset === "medium" ? 4 : 9;
   const excite = useRef(0.3);
   const clockA = useRef({ shot: 24, game: 720 });
   const clockB = useRef({ shot: 24, game: 720 });
@@ -764,11 +773,11 @@ export function GameScene(props: GameSceneProps) {
   const home = s.teams[0].team,
     away = s.teams[1].team;
   const quality = g.preset;
-  const venue = useMemo(() => variant(pickVariant(props.arena, home)), [props.arena, home]);
+  const venue = useMemo(() => (park ? PARK_VENUE : variant(pickVariant(props.arena, home))), [park, props.arena, home]);
   const dpr = Math.min(typeof window !== "undefined" ? window.devicePixelRatio : 1, 2) * g.resolutionScale;
 
   useEffect(() => {
-    audio.setVenue(venue.kind === "gym" ? "gym" : venue.id.startsWith("college") ? "college" : "pro");
+    audio.setVenue(venue.kind === "park" ? "park" : venue.kind === "gym" ? "gym" : venue.id.startsWith("college") ? "college" : "pro");
     audio.startCrowd();
     return () => audio.stopCrowd();
   }, [venue]);
@@ -789,23 +798,30 @@ export function GameScene(props: GameSceneProps) {
     >
       {g.fpsCap > 0 && g.fpsCap < 120 && <FrameCap fps={g.fpsCap} />}
       {g.showFps && <FpsCounter />}
-      <color attach="background" args={[props.arena === "gym" ? "#bdb4a3" : "#05070a"]} />
-      <fog attach="fog" args={[props.arena === "gym" ? "#bdb4a3" : "#05070a", 45, 140]} />
+      <color attach="background" args={[park ? parkSky(park).horizon : props.arena === "gym" ? "#bdb4a3" : "#05070a"]} />
+      <fog attach="fog" args={park ? [parkSky(park).horizon, 70, 300] : [props.arena === "gym" ? "#bdb4a3" : "#05070a", 45, 140]} />
       <ReplayDriver match={props.match} replay={props.replay} frameRef={replayFrame} camState={camState} ballPos={ballPos} />
-      <Environment />
-      <Lights venue={venue} shadows={g.shadows} />
+      <Environment intensity={park?.time === "night" ? 0.12 : park?.time === "sunset" ? 0.4 : 0.55} />
+      {park ? <ParkLights park={park} shadows={g.shadows} court={court} /> : <Lights venue={venue} shadows={g.shadows} />}
       <Suspense fallback={null}>
-        <Arena
-          court={court}
-          home={home}
-          away={away}
-          venue={venue}
-          quality={quality}
-          crowdDensity={g.crowdDensity}
-          exciteRef={excite}
-          reactRef={crowdReact}
-          scoreRef={scoreRef}
-        />
+        {park ? (
+          <>
+            <ParkScene park={park} court={court} quality={quality} />
+            <ContestRacks match={props.match} ballRadius={court.ballRadius} />
+          </>
+        ) : (
+          <Arena
+            court={court}
+            home={home}
+            away={away}
+            venue={venue}
+            quality={quality}
+            crowdDensity={g.crowdDensity}
+            exciteRef={excite}
+            reactRef={crowdReact}
+            scoreRef={scoreRef}
+          />
+        )}
         {([1, -1] as const).map((side, i) => (
           <Hoop
             key={side}
@@ -814,6 +830,7 @@ export function GameScene(props: GameSceneProps) {
             team={home}
             ceilingHung={venue.kind === "gym"}
             mountY={venue.girderY}
+            outdoor={park?.hoop}
             ballRef={ballPos}
             clockRef={i === 0 ? clockA : clockB}
             rimShake={rimShake}
@@ -828,8 +845,9 @@ export function GameScene(props: GameSceneProps) {
           benchSize={benchSize}
           benchExcite={benchExcite}
           onFootstep={(x, sp) => audio.footstep(THREE.MathUtils.clamp(x / court.halfL, -1, 1) * 0.8, sp)}
+          street={props.street}
         />
-        <Officials match={props.match} replayFrame={replayFrame} crewSize={g.preset === "low" ? 0 : 4} />
+        <Officials match={props.match} replayFrame={replayFrame} crewSize={g.preset === "low" || park ? 0 : 4} />
         <ControlMarkers match={props.match} replayFrame={replayFrame} />
         <NameTags match={props.match} replayFrame={replayFrame} visible={props.overlaysVisible ?? true} />
         <ReadySignal onReady={props.onReady} />

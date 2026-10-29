@@ -87,9 +87,14 @@ class AudioEngine {
   }
 
   /** Room size: gyms are tight and boomy, arenas ring longer. */
-  setVenue(kind: "gym" | "college" | "pro") {
+  /** Outdoors: no officials or buzzers, and a handful of onlookers instead of a crowd. */
+  private outdoor = false;
+
+  setVenue(kind: "gym" | "college" | "pro" | "park") {
+    this.outdoor = kind === "park";
     if (!this.ctx) return;
-    this.reverb.buffer = impulse(this.ctx, kind === "gym" ? 1.5 : kind === "college" ? 2.1 : 2.7);
+    // outdoors there's almost no room sound
+    this.reverb.buffer = impulse(this.ctx, kind === "park" ? 0.35 : kind === "gym" ? 1.5 : kind === "college" ? 2.1 : 2.7);
   }
 
   setMix(m: Partial<Mix>) {
@@ -203,10 +208,12 @@ class AudioEngine {
     this.noise("lowpass", 1400, 0.8, 0.001, 0.06, 0.18, pan);
   }
   whistle() {
+    if (this.outdoor) return;
     this.tone("sine", 2900, 0.02, 0.45, 0.2, 3000);
     this.tone("sine", 3150, 0.02, 0.45, 0.12, 3200);
   }
   buzzer() {
+    if (this.outdoor) return;
     this.tone("square", 196, 0.01, 1.3, 0.18);
     this.tone("sawtooth", 98, 0.01, 1.3, 0.08);
   }
@@ -228,7 +235,7 @@ class AudioEngine {
 
   // ---- crowd
   startCrowd() {
-    if (!this.ctx || !this.noiseBuf || this.crowdNoise) return;
+    if (!this.ctx || !this.noiseBuf || this.crowdNoise || this.outdoor) return;
     // a low room tone under the voices (air handling, distant feet)
     const src = this.ctx.createBufferSource();
     src.buffer = this.noiseBuf;
@@ -287,6 +294,11 @@ class AudioEngine {
   /** The crowd reacts: `amount` 0..1 scales how many people join in. */
   react(kind: CrowdReaction, amount = 0.7) {
     if (!this.ctx) return;
+    // the few people watching at the park only react to the big moments
+    if (this.outdoor) {
+      if (amount < 0.7 || kind === "boo" || kind === "applause") return;
+      amount *= 0.3;
+    }
     const now = this.ctx.currentTime;
     // the same reaction twice in a row just swells the first one
     if (now - (this.lastReact.get(kind) ?? -9) < 0.35) return;
