@@ -16,8 +16,9 @@ export default function Privacy() {
           <b>The current match setup</b> is kept in session storage so a page reload doesn&apos;t lose it. It clears when you close the tab.
         </li>
         <li>
-          <b>A game in progress</b> is saved in local storage every few seconds so you can resume it from the main menu after closing the tab or choosing Save
-          and quit. It is deleted when the game ends, when you quit without saving, or when you discard it.
+          <b>Saved games</b> are kept in local storage: an autosave every few seconds (so you can resume after closing the tab) and up to three save slots you
+          choose from the pause menu. A save is deleted when its game ends, when you quit a game that isn&apos;t in a slot, or when you delete it from the main
+          menu.
         </li>
         <li>
           <b>Play in the Park choices</b> (the park, game and rules you last picked, and who you play as) are saved in local storage so the setup is ready next
@@ -27,8 +28,8 @@ export default function Privacy() {
           <b>Saved games and roster files</b> you create are stored in your browser and never uploaded.
         </li>
         <li>
-          <b>An offline copy of the game</b> (pages, code, the 3D players and venues, and images; about 12 MB) is kept in your browser&apos;s cache by a service
-          worker so the game loads and plays without an internet connection. It contains only the game&apos;s own files, nothing about you.
+          <b>An offline copy of the game</b> (pages, code, the 3D players, arenas and parks, and images; about 21 MB) is kept in your browser&apos;s cache by a
+          service worker so the game loads and plays without an internet connection. It contains only the game&apos;s own files, nothing about you.
         </li>
         <li>
           <b>Instant replays and highlights</b> are recorded in memory during a game and discarded when you leave it.

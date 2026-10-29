@@ -123,6 +123,7 @@ export function constrainPose(venue: VenueVariant, c: CourtSpec, pose: CameraPos
   pos.z = THREE.MathUtils.clamp(pos.z, -box.z, box.z);
   pos.y = Math.min(Math.max(pos.y, venueClearance(venue, c, pos.x, pos.y, pos.z)), venueCeiling(venue, pos.z));
   clearBaskets(venue, c, pos);
+  clearParkFence(venue, pos);
   const after = Math.max(1, pos.distanceTo(pose.look));
   if (after < before - 1e-3) fov = Math.min(75, THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(fov) / 2) * (before / after))));
   return { pos, look: pose.look, fov };
@@ -157,5 +158,20 @@ export function constrainPoint(venue: VenueVariant, c: CourtSpec, p: THREE.Vecto
   tmp.set(THREE.MathUtils.clamp(p.x, -box.x, box.x), 0, THREE.MathUtils.clamp(p.z, -box.z, box.z));
   tmp.y = Math.min(Math.max(p.y, venueClearance(venue, c, tmp.x, p.y, tmp.z)), venueCeiling(venue, tmp.z));
   clearBaskets(venue, c, tmp);
+  clearParkFence(venue, tmp);
   return p.copy(tmp);
+}
+
+/**
+ * Parks: the end fences stand just past the baselines (15.4 m from center court at the cage, 16.2 m elsewhere,
+ * up to 10.8 m to each side). A camera never parks in the wire: it steps back outside the fence and looks
+ * through it.
+ */
+export const PARK_FENCE_SLAB = { from: 14.7, to: 17.7, halfZ: 11.5, farZ: -9.0, overY: 6.5 };
+function clearParkFence(venue: VenueVariant, pos: THREE.Vector3) {
+  if (venue.kind !== "park") return;
+  // the far fence has spectators packed against it: low cameras (replay orbits) stay on the court side of it
+  if (pos.z < PARK_FENCE_SLAB.farZ && pos.y < PARK_FENCE_SLAB.overY) pos.z = PARK_FENCE_SLAB.farZ;
+  const ax = Math.abs(pos.x);
+  if (ax > PARK_FENCE_SLAB.from && ax < PARK_FENCE_SLAB.to && Math.abs(pos.z) < PARK_FENCE_SLAB.halfZ) pos.x = Math.sign(pos.x) * PARK_FENCE_SLAB.to;
 }

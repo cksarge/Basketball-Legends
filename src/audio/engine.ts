@@ -87,11 +87,14 @@ class AudioEngine {
   }
 
   /** Room size: gyms are tight and boomy, arenas ring longer. */
-  /** Outdoors: no officials or buzzers, and a handful of onlookers instead of a crowd. */
+  /** Outdoors: no officials or buzzers; the crowd is as big as the park's (`parkCrowd`, 0..1). */
   private outdoor = false;
+  private parkCrowd = 0;
+  private ambient: { stop: () => void } | null = null;
 
-  setVenue(kind: "gym" | "college" | "pro" | "park") {
+  setVenue(kind: "gym" | "college" | "pro" | "park", crowd = 0) {
     this.outdoor = kind === "park";
+    this.parkCrowd = kind === "park" ? crowd : 0;
     if (!this.ctx) return;
     // outdoors there's almost no room sound
     this.reverb.buffer = impulse(this.ctx, kind === "park" ? 0.35 : kind === "gym" ? 1.5 : kind === "college" ? 2.1 : 2.7);
@@ -235,7 +238,7 @@ class AudioEngine {
 
   // ---- crowd
   startCrowd() {
-    if (!this.ctx || !this.noiseBuf || this.crowdNoise || this.outdoor) return;
+    if (!this.ctx || !this.noiseBuf || this.crowdNoise || (this.outdoor && this.parkCrowd < 0.2)) return;
     // a low room tone under the voices (air handling, distant feet)
     const src = this.ctx.createBufferSource();
     src.buffer = this.noiseBuf;
@@ -268,6 +271,104 @@ class AudioEngine {
     this.bed = { calm: calm.s, loud: loud.s, calmGain: calm.g, loudGain: loud.g };
   }
 
+  /** The sound of the place under the game: surf, traffic, crickets, desert wind and birds, the city below. */
+  startAmbience(kind: "desert" | "city" | "waves" | "night" | "rooftop") {
+    if (!this.ctx || !this.noiseBuf || this.ambient) return;
+    const ctx = this.ctx;
+    const out = ctx.createGain();
+    out.gain.value = 0;
+    out.gain.setTargetAtTime(1, ctx.currentTime, 1.5);
+    out.connect(this.crowdBus);
+    const nodes: AudioScheduledSourceNode[] = [];
+    const timers: ReturnType<typeof setInterval>[] = [];
+    const noise = (type: BiquadFilterType, freq: number, q: number, gain: number) => {
+      const src = ctx.createBufferSource();
+      src.buffer = this.noiseBuf;
+      src.loop = true;
+      src.playbackRate.value = 0.6 + Math.random() * 0.2;
+      const f = ctx.createBiquadFilter();
+      f.type = type;
+      f.frequency.value = freq;
+      f.Q.value = q;
+      const g = ctx.createGain();
+      g.gain.value = gain;
+      src.connect(f).connect(g).connect(out);
+      src.start();
+      nodes.push(src);
+      return g;
+    };
+    /** A slow swell on a gain (waves rolling in, gusts of wind). */
+    const swell = (g: GainNode, base: number, depth: number, hz: number) => {
+      const lfo = ctx.createOscillator();
+      lfo.frequency.value = hz;
+      const d = ctx.createGain();
+      d.gain.value = depth;
+      lfo.connect(d).connect(g.gain);
+      g.gain.value = base;
+      lfo.start();
+      nodes.push(lfo);
+    };
+    const chirp = (f0: number, f1: number, dur: number, vol: number) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      const t = ctx.currentTime;
+      o.frequency.setValueAtTime(f0, t);
+      o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(vol, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g).connect(out);
+      o.start(t);
+      o.stop(t + dur + 0.05);
+    };
+    if (kind === "waves") {
+      swell(noise("lowpass", 520, 0.7, 0.05), 0.05, 0.04, 0.09);
+      swell(noise("highpass", 2200, 0.5, 0.012), 0.012, 0.01, 0.09);
+    } else if (kind === "city" || kind === "rooftop") {
+      noise("lowpass", 240, 0.8, kind === "rooftop" ? 0.05 : 0.035);
+      swell(noise("bandpass", 900, 0.6, 0.006), 0.006, 0.004, 0.05);
+      // a horn or a siren now and then, far off
+      timers.push(
+        setInterval(() => {
+          if (Math.random() < 0.35) chirp(420, 400, 0.35, 0.012);
+          else if (Math.random() < 0.15) chirp(700, 1100, 1.6, 0.006);
+        }, 6500),
+      );
+    } else if (kind === "night") {
+      noise("lowpass", 300, 0.7, 0.015);
+      // crickets: quick high trills in bursts
+      timers.push(
+        setInterval(() => {
+          for (let k = 0; k < 3; k++) setTimeout(() => chirp(4600 + Math.random() * 300, 4500, 0.05, 0.006), k * 70);
+        }, 900),
+      );
+    } else {
+      swell(noise("bandpass", 650, 0.5, 0.02), 0.02, 0.016, 0.07);
+      // birds
+      timers.push(
+        setInterval(() => {
+          if (Math.random() < 0.5)
+            for (let k = 0; k < 2 + Math.floor(Math.random() * 3); k++) setTimeout(() => chirp(2600 + Math.random() * 900, 3600, 0.09, 0.008), k * 140);
+        }, 3200),
+      );
+    }
+    this.ambient = {
+      stop: () => {
+        for (const t of timers) clearInterval(t);
+        out.gain.setTargetAtTime(0, ctx.currentTime, 0.3);
+        setTimeout(() => {
+          for (const n of nodes) n.stop();
+          out.disconnect();
+        }, 1500);
+      },
+    };
+  }
+
+  stopAmbience() {
+    this.ambient?.stop();
+    this.ambient = null;
+  }
+
   stopCrowd() {
     this.crowdNoise?.stop();
     this.crowdNoise = null;
@@ -283,7 +384,16 @@ class AudioEngine {
   crowdLevel(level: number) {
     if (!this.ctx || !this.crowdNoise) return;
     const t = this.ctx.currentTime;
-    const l = Math.max(0, Math.min(1, level));
+    // a park crowd is a fraction of an arena's
+    const l = Math.max(0, Math.min(1, level)) * (this.outdoor ? this.parkCrowd * 0.7 : 1);
+    if (this.outdoor) {
+      this.crowdGain.gain.setTargetAtTime(0.004, t, 0.5);
+      if (this.bed) {
+        this.bed.calmGain.gain.setTargetAtTime(0.25 + this.parkCrowd * 0.55 + l * 0.6, t, 0.5);
+        this.bed.loudGain.gain.setTargetAtTime(Math.pow(Math.max(0, l - 0.25) / 0.75, 1.4) * 1.6, t, 0.5);
+      }
+      return;
+    }
     this.crowdGain.gain.setTargetAtTime(0.012 + l * 0.03, t, 0.5);
     if (this.bed) {
       this.bed.calmGain.gain.setTargetAtTime(1.1 + l * 0.8, t, 0.5);
@@ -294,10 +404,10 @@ class AudioEngine {
   /** The crowd reacts: `amount` 0..1 scales how many people join in. */
   react(kind: CrowdReaction, amount = 0.7) {
     if (!this.ctx) return;
-    // the few people watching at the park only react to the big moments
+    // a park crowd reacts to big moments (and nobody boos at the park); the showtime crowds go wild
     if (this.outdoor) {
-      if (amount < 0.7 || kind === "boo" || kind === "applause") return;
-      amount *= 0.3;
+      if (kind === "boo" || this.parkCrowd < 0.2 || amount * this.parkCrowd < 0.25) return;
+      amount *= 0.3 + this.parkCrowd * 0.7;
     }
     const now = this.ctx.currentTime;
     // the same reaction twice in a row just swells the first one

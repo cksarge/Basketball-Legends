@@ -204,7 +204,7 @@ export const DEFAULT_SETTINGS: Settings = {
     lockToPlayer: false,
     sliders: DEFAULT_SLIDERS,
   },
-  camera: { mode: "broadcast", zoom: 1, height: 1, shake: true },
+  camera: { mode: "player", zoom: 1, height: 1, shake: true },
   controls: { keys: DEFAULT_KEYS, pad: DEFAULT_PAD, prompts: "auto", stickDeadzone: 0.18, invertCamera: false },
   accessibility: { colorblind: "off", subtitles: true, reducedMotion: false, uiScale: 1, highContrastHud: false, holdToTap: false },
   presentation: { commentary: true, autoReplays: "baskets", playBanners: true, statOverlays: true, breakScreens: true, skipIntros: false, showTips: true },

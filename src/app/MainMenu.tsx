@@ -12,7 +12,7 @@ import { TeamLogo } from "@/ui/TeamLogo";
 import { useInputDevice } from "@/ui/MenuNavigator";
 import { KeyHint } from "@/ui/KeyHint";
 import { toast } from "@/ui/Toaster";
-import { clearSuspended, useSuspended } from "@/state/suspended";
+import { clearSuspended, modeLabel, type SaveSlot, type SuspendedGame, useSaves, whereText } from "@/state/suspended";
 import { IS_BETA, SITE_URL } from "@/lib/site";
 
 const MenuBackdrop = dynamic(() => import("@/game3d/MenuBackdrop"), { ssr: false });
@@ -111,25 +111,35 @@ export function MainMenu() {
   const setPending = useMatchStore((s) => s.setPending);
   const quarter = useSettings((s) => s.gameplay.quarterMinutes);
   const first = useRef<HTMLButtonElement>(null);
-  const suspended = useSuspended();
+  const saves = useSaves();
   const items = useMemo<Item[]>(() => {
-    if (!suspended) return ITEMS;
-    const g = suspended.summary;
-    const when = new Date(suspended.savedAt).toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" });
+    if (!saves.length) return ITEMS;
+    if (saves.length > 1)
+      return [
+        {
+          id: "resume",
+          label: "Saved games",
+          blurb: `${saves.length} games waiting where you left them.`,
+          detail: [],
+        },
+        ...ITEMS,
+      ];
+    const { slot, game } = saves[0];
+    const g = game.summary;
     return [
       {
         id: "resume",
         label: "Resume game",
         blurb: `${g.away} ${g.awayScore}, ${g.home} ${g.homeScore}`,
         detail: [
-          g.clock === "no clock" ? `Park game, ${g.period.toLowerCase()}` : `${g.period}, ${g.clock} left`,
-          `Saved ${when}`,
+          `${g.mode ?? modeLabel(game.pending)} · ${whereText(game)}`,
+          `${slot === "auto" ? "Autosaved" : `Slot ${slot}, saved`} ${savedWhen(game)}`,
           "Picks up exactly where you left off",
         ],
       },
       ...ITEMS,
     ];
-  }, [suspended]);
+  }, [saves]);
 
   useEffect(() => {
     loadLeague("pro").then((d) => {
@@ -146,21 +156,26 @@ export function MainMenu() {
   }, []);
 
   // when a saved game shows up (after hydration), put the cursor on Resume
-  const hasSaved = suspended !== null;
+  const hasSaved = saves.length > 0;
   useEffect(() => {
     if (hasSaved) first.current?.focus();
   }, [hasSaved]);
 
-  const resume = () => {
-    if (!suspended) return;
+  const resumeSave = (slot: SaveSlot, game: SuspendedGame) => {
     audio.unlock();
-    setPending({ ...suspended.pending, resume: true });
+    // a slot's game keeps saving back to that slot; the autosave remembers the slot its game came from
+    setPending({ ...game.pending, resume: true, resumeFrom: slot, saveSlot: slot === "auto" ? game.pending.saveSlot : slot });
     router.push("/game/");
   };
-  const discard = () => {
-    clearSuspended();
-    setFocused(ITEMS[0].id);
-    toast("Saved game discarded");
+  const resume = () => {
+    if (saves.length === 1) resumeSave(saves[0].slot, saves[0].game);
+    // several: the panel lists them
+    else document.querySelector<HTMLButtonElement>("[data-save-row]")?.focus();
+  };
+  const discard = (slot: SaveSlot) => {
+    clearSuspended(slot);
+    if (saves.length <= 1) setFocused(ITEMS[0].id);
+    toast(slot === "auto" ? "Autosave deleted" : `Slot ${slot} deleted`);
   };
 
   const playNow = async () => {
@@ -222,11 +237,24 @@ export function MainMenu() {
             aria-label="Main menu"
             className="flex flex-col lg:-ml-2 lg:max-h-full lg:overflow-y-auto lg:py-2 lg:pl-2 lg:pr-6 lg:[mask-image:linear-gradient(to_bottom,transparent,black_12px,black_calc(100%-12px),transparent)] lg:[scrollbar-width:thin]"
           >
-            <h1 className="mb-6 font-display text-[clamp(3rem,9vw,7.5rem)] font-black leading-[0.85] tracking-tight">
-              Basketball
-              <br />
-              Legends
-            </h1>
+            <div className="relative mb-6 self-start">
+              {/* the title over faint court paint: a three-point arc, the lane and the free-throw circle */}
+              <svg
+                className="absolute -inset-x-6 -inset-y-4 h-[calc(100%+2rem)] w-[calc(100%+3rem)]"
+                viewBox="0 0 400 220"
+                preserveAspectRatio="none"
+                aria-hidden
+              >
+                <path d="M10 210 A190 190 0 0 1 390 210" fill="none" stroke="var(--color-amber)" strokeOpacity="0.45" strokeWidth="3" />
+                <rect x="140" y="80" width="120" height="130" fill="none" stroke="var(--color-amber)" strokeOpacity="0.35" strokeWidth="3" />
+                <circle cx="200" cy="80" r="60" fill="none" stroke="var(--color-amber)" strokeOpacity="0.3" strokeWidth="3" strokeDasharray="10 8" />
+              </svg>
+              <h1 className="relative font-display text-[clamp(3rem,9vw,7.5rem)] font-black leading-[0.85] tracking-tight">
+                <span className="text-net">Basketball</span>
+                <br />
+                <span className="text-amber">Legends</span>
+              </h1>
+            </div>
             <ul className="flex flex-col">
               {items.map((it, i) => (
                 <li key={it.id}>
@@ -285,10 +313,43 @@ export function MainMenu() {
                 </li>
               ))}
             </ul>
-            {item.id === "resume" && (
-              <button onClick={discard} className="mt-4 text-sm font-semibold text-steel underline-offset-4 hover:text-bad hover:underline">
+            {item.id === "resume" && saves.length === 1 && (
+              <button
+                onClick={() => discard(saves[0].slot)}
+                className="mt-4 text-sm font-semibold text-steel underline-offset-4 hover:text-bad hover:underline"
+              >
                 Discard this game
               </button>
+            )}
+            {item.id === "resume" && saves.length > 1 && (
+              <ul className="mt-3 flex flex-col gap-2">
+                {saves.map(({ slot, game }) => (
+                  <li key={String(slot)} className="flex items-stretch gap-1">
+                    <button
+                      data-save-row
+                      onClick={() => resumeSave(slot, game)}
+                      onFocus={() => setFocused("resume")}
+                      className="flex-1 rounded-[var(--radius-chip)] bg-deck-2 px-3 py-2 text-left ring-1 ring-line hover:ring-amber focus-visible:ring-amber"
+                    >
+                      <span className="block text-xs font-semibold text-amber">{slot === "auto" ? "Autosave" : `Slot ${slot}`}</span>
+                      <span className="block font-semibold leading-tight">
+                        {game.summary.away} {game.summary.awayScore}, {game.summary.home} {game.summary.homeScore}
+                      </span>
+                      <span className="block text-xs text-steel">
+                        {game.summary.mode ?? modeLabel(game.pending)} · {whereText(game)} · {savedWhen(game)}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => discard(slot)}
+                      onFocus={() => setFocused("resume")}
+                      aria-label={`Delete ${slot === "auto" ? "the autosave" : `slot ${slot}`}`}
+                      className="rounded-[var(--radius-chip)] px-2 text-steel hover:text-bad"
+                    >
+                      ✕
+                    </button>
+                  </li>
+                ))}
+              </ul>
             )}
           </aside>
         </div>
@@ -350,3 +411,5 @@ function BetaWarning() {
 function menuCls(active: boolean) {
   return `group flex items-baseline py-1 text-left font-display text-[clamp(1.6rem,5vw,3rem)] font-extrabold leading-tight transition-colors ${active ? "text-amber" : "text-net/80 hover:text-net"}`;
 }
+
+const savedWhen = (g: SuspendedGame) => new Date(g.savedAt).toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" });

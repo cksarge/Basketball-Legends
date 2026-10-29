@@ -545,6 +545,10 @@ export class Match {
         this.recoverBench(dt * 4);
         return;
       case "deadball":
+        if (s.inbound?.checkStage) {
+          this.stepCheck(dt);
+          return;
+        }
         s.phaseTimer -= dt;
         this.aiAndMove(dt);
         if (s.ball.owner === null) this.stepBallFlight(dt);
@@ -898,6 +902,8 @@ export class Match {
     }
     if (!ia) return;
     a.intent.act = undefined;
+    // the check is scripted: nobody shoots, passes or swipes until it's back in the handler's hands
+    if (s.phase === "deadball" && s.inbound?.checkStage) return;
     if (s.phase === "freethrows") {
       if (ia.type === "shoot" && s.freeThrows && s.freeThrows.shooter === a.idx) this.ftInput(ia.phase);
       return;
@@ -2944,20 +2950,127 @@ export class Match {
     }
   }
 
-  /** The defender hands the ball back and play is live. */
-  private doCheck(ib: InboundState) {
-    const s = this.state;
-    const holder = s.agents[ib.inbounder] ?? this.agentsOf(ib.team)[0];
+  /** The two players in a check: the ball handler up top and the defender facing them. */
+  private checkPair(ib: InboundState) {
+    const holder = this.state.agents[ib.inbounder] ?? this.agentsOf(ib.team)[0];
+    const def = this.agentsOf(ib.team === 0 ? 1 : 0).find((d) => d.guarding === holder.idx) ?? this.nearestOpponent(holder);
+    return { holder, def };
+  }
+
+  /** Both players square up at the top of the key: the handler facing the rim, the defender facing them. */
+  private setCheckSpots(ib: InboundState) {
     const side = this.attackSide(ib.team);
+    const { holder, def } = this.checkPair(ib);
     holder.pos = { ...ib.spot };
     holder.vel = v2();
     holder.facing = side > 0 ? Math.PI / 2 : -Math.PI / 2;
-    const def = this.agentsOf(ib.team === 0 ? 1 : 0).find((d) => d.guarding === holder.idx) ?? this.nearestOpponent(holder);
     if (def) {
       def.pos = v2(ib.spot.x + side * 1.3, ib.spot.z);
       def.vel = v2();
       def.facing = holder.facing + Math.PI;
     }
+    return { holder, def };
+  }
+
+  /** Check ball: the handler bounces it to the defender, who holds it a beat ("check") and bounces it back. */
+  private doCheck(ib: InboundState) {
+    const s = this.state;
+    const pair = this.checkPair(ib);
+    if (!s.cfg.fast && pair.def && ib.timer < 1.5) {
+      // still walking up: give them a moment more to get set (never more than a second and a half)
+      const side = this.attackSide(ib.team);
+      const off = Math.hypot(pair.holder.pos.x - ib.spot.x, pair.holder.pos.z - ib.spot.z);
+      const defOff = Math.hypot(pair.def.pos.x - ib.spot.x - side * 1.3, pair.def.pos.z - ib.spot.z);
+      if (off > 0.4 || defOff > 0.5) {
+        ib.timer += 0.25;
+        s.phaseTimer = 0.25;
+        return;
+      }
+    }
+    const { holder, def } = this.setCheckSpots(ib);
+    if (s.cfg.fast || !def) {
+      this.checkLive(ib);
+      return;
+    }
+    s.ball.owner = holder.idx;
+    s.ball.mode = "held";
+    s.ball.pass = null;
+    holder.pickedUp = true;
+    ib.checkStage = "toDef";
+    ib.checkT = 0;
+    this.throwCheck(holder, def);
+  }
+
+  private throwCheck(from: Agent, to: Agent) {
+    from.action = act("pass", CHECK.pass + 0.3, { to: to.idx, kind: "bounce", release: CHECK.release, thrown: true });
+  }
+
+  /** One step of the check: scripted bounce passes (no steals, no turnovers), then play is live. */
+  private stepCheck(dt: number) {
+    const s = this.state;
+    const ib = s.inbound!;
+    ib.checkT = (ib.checkT ?? 0) + dt;
+    this.aiAndMove(dt);
+    // everyone else drifts to their spots; the two in the check stay planted
+    const { holder, def } = this.setCheckSpots(ib);
+    const b = s.ball;
+    const flight = (from: Agent, to: Agent) => {
+      const t = ib.checkT! - CHECK.release;
+      if (t < 0) {
+        b.owner = from.idx;
+        b.mode = "held";
+        this.stepBallVisual(dt);
+        return false;
+      }
+      const k = Math.min(1, t / CHECK.pass);
+      const fx = Math.sin(from.facing),
+        fz = Math.cos(from.facing);
+      const a = { x: from.pos.x + fx * 0.45, y: this.heightM(from) * 0.62 };
+      const e = { x: to.pos.x - fx * 0.45, y: this.heightM(to) * 0.55 };
+      const r = s.cfg.court.ballRadius;
+      // down to the floor about 55% of the way, then up into the hands
+      const y = k < 0.55 ? a.y + (r - a.y) * (k / 0.55) ** 1.4 : r + (e.y - r) * Math.sin(((k - 0.55) / 0.45) * (Math.PI / 2));
+      b.owner = null;
+      b.mode = "pass";
+      b.pass = { from: from.idx, to: to.idx, kind: "bounce", target: { ...to.pos }, t, dur: CHECK.pass, rolled: [] };
+      b.phys.pos = v3(a.x + (e.x - a.x) * k, y, from.pos.z + fz * 0.45 + (to.pos.z - fz * 0.45 - from.pos.z - fz * 0.45) * k);
+      b.phys.vel = v3();
+      return k >= 1;
+    };
+    if (!def) {
+      this.checkLive(ib);
+      return;
+    }
+    if (ib.checkStage === "toDef") {
+      if (flight(holder, def)) {
+        // the defender has it: not a change of possession, just holding it for the check
+        b.owner = def.idx;
+        b.mode = "held";
+        b.pass = null;
+        def.pickedUp = true;
+        holder.pickedUp = false;
+        def.action = act("catch", 0.3);
+        ib.checkStage = "hold";
+        ib.checkT = 0;
+      }
+    } else if (ib.checkStage === "hold") {
+      this.stepBallVisual(dt);
+      if (ib.checkT >= CHECK.hold) {
+        this.throwCheck(def, holder);
+        ib.checkStage = "back";
+        ib.checkT = 0;
+      }
+    } else if (flight(def, holder)) {
+      def.pickedUp = false;
+      def.action = act("stance");
+      this.checkLive(ib);
+    }
+  }
+
+  /** The handler has it back: play is live. */
+  private checkLive(ib: InboundState) {
+    const s = this.state;
+    const holder = s.agents[ib.inbounder] ?? this.agentsOf(ib.team)[0];
     s.inbound = null;
     s.phase = "live";
     s.frontcourt = true;
@@ -3204,6 +3317,9 @@ export class Match {
 }
 
 // ---------------------------------------------------------------------------
+
+/** Check ball timing (seconds): the pass is released this far into the throw, flies this long, and is held this long. */
+const CHECK = { release: 0.14, pass: 0.42, hold: 0.45 };
 
 function act(kind: ActionKind, dur = 0, data: ActionState["data"] = {}): ActionState {
   return { kind, t: 0, dur, data };

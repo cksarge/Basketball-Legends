@@ -153,6 +153,35 @@ describe("park games", () => {
     expect(s.park!.cleared || s.ball.owner !== def.idx).toBe(true);
   });
 
+  it("check ball: a bounce pass to the defender, a beat holding it, and back to the handler before play is live", () => {
+    for (const game of ["team", "21"] as const) {
+      const m = parkMatch({ game, n: game === "21" ? 3 : 2 }, 5, false);
+      const s = m.state;
+      const seen: string[] = [];
+      let defHeld = false,
+        offense = -1;
+      for (let i = 0; i < 60 * 20 && parkEvents(m, "check").length === 0; i++) {
+        m.step(1 / 60);
+        const stage = s.inbound?.checkStage;
+        if (stage && seen[seen.length - 1] !== stage) seen.push(stage);
+        if (stage === "hold") {
+          const def = s.agents[s.ball.owner!];
+          defHeld = def.team !== s.inbound!.team;
+          // holding it for the check is not a change of possession
+          if (offense < 0) offense = s.offense;
+          expect(s.offense).toBe(offense);
+        }
+        if (stage) expect(s.phase).toBe("deadball");
+      }
+      expect(seen).toEqual(["toDef", "hold", "back"]);
+      expect(defHeld).toBe(true);
+      const ev = parkEvents(m, "check")[0] as { player: number; team: number };
+      expect(s.phase).toBe("live");
+      expect(s.ball.owner).toBe(ev.player);
+      expect(s.agents[ev.player].team).toBe(ev.team);
+    }
+  });
+
   it("called fouls: no free throws, the fouled player checks it back; a charge goes the other way", () => {
     const m = parkMatch({}, 6);
     for (let i = 0; i < 60 * 4 && m.state.phase !== "live"; i++) m.step(1 / 60);

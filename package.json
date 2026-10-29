@@ -1,6 +1,6 @@
 {
   "name": "basketball-legends",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "license": "MIT",
   "scripts": {
@@ -16,6 +16,8 @@
     "assets:player": "blender -b -P scripts/blender/build_player.py -- . && mkdir -p scripts/blender/out && cp public/models/player.glb scripts/blender/out/player.raw.glb && gltf-transform meshopt scripts/blender/out/player.raw.glb public/models/player.glb --level medium",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "assets:parks": "/Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup -P scripts/blender/build_crowd.py -- . && /Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup -P scripts/blender/build_parks.py -- . && tsx scripts/pack-parks.ts",
+    "assets:icons": "node scripts/brand/pack-icons.mjs",
     "assets:arenas": "/Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup -P scripts/blender/build_arenas.py -- . && tsx scripts/pack-arenas.ts"
   },
   "dependencies": {

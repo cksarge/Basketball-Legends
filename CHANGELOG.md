@@ -2,6 +2,36 @@
 
 Every release of Basketball Legends is listed here, newest first. Each version's section doubles as its release notes on GitHub.
 
+## v0.2.1 — October 29, 2026
+
+Bigger, livelier parks, a real check up top, save slots and a new look for the logo.
+
+### Play in the Park
+
+- **Real worlds around every court:** each park is now built in Blender and runs all the way to the horizon.
+  - **Copper Flats Courts:** a shade ramada with picnic tables, a second court, a playground, a parking lot, saguaros, palo verdes and boulders, with desert ranges in the distance.
+  - **Ironside Cage:** brick walk-ups with stoops, fire escapes and water towers, an elevated train, a mural wall, parked cabs and a downtown skyline.
+  - **Boardwalk Courts:** a boardwalk lined with stalls under striped awnings, rows of palms with string lights, a DJ booth, a lifeguard tower, animated ocean waves, and a pier with a Ferris wheel.
+  - **Maple Street Park:** two-flats and bungalows with lit windows and porches, a corner store with a neon sign, street lamps, parked cars, bikes on the fence and big oaks.
+  - **Rooftop on Ninth:** a lounge with couches, a bar, a DJ table and string lights hung from a steel pergola, planters, and a skyline of lit towers with the city's streets glowing below.
+- **Crowds:** real 3D spectators (standing around, arms crossed, filming on their phones, leaning on the fence, sitting in bleachers and on porches) in their own clothes. They jump up cheering or clap on big plays. Boardwalk Courts has a packed showtime crowd, Ironside Cage is three deep against the fence, and the quieter parks have a few friends and neighbors watching.
+- **Sound of the place:** surf at the beach, traffic and the odd horn in the city, crickets at night, wind and birds in the desert, and a crowd as loud as the park's.
+- **Night looks like night:** the court lights carry the scene and windows glow, instead of everything being evenly lit.
+- **No edge of the world:** the ground reaches past what any camera can see, the sky travels with the camera, and the far distance fades into the horizon, so no camera angle shows the end of the map. A new test checks every camera at every park.
+- **Cameras stay out of the fences and the crowd:** a camera that would end up in the wire steps back and looks through it.
+- **Checking it up:** the ball handler and their defender square up at the top of the key, the handler bounces it to the defender, the defender holds it a beat and bounces it back, and then it's live. Before, the ball just appeared in the handler's hands.
+
+### Saving
+
+- **Three save slots:** choose Save game in the pause menu and pick a slot, so a Quick Play game and a park game no longer overwrite each other. A game in a slot keeps saving itself there as you play.
+- **Saved games on the main menu:** with more than one save, the main menu lists the autosave and every slot, with what's in it, to resume or delete.
+
+### Look and settings
+
+- **New logo:** a badge with BASKETBALL LEGENDS around a ring and the ball in the middle, now the app icon, browser tab icon, home screen icon and link preview.
+- **Main menu title:** Basketball in white and Legends in amber over faint court lines (three-point arc, lane and free-throw circle). It follows the colorblind themes too.
+- **Player lock is the default camera** for new players. If you've already picked a camera, nothing changes; it's under Settings, Camera.
+
 ## v0.2.0 — October 28, 2026
 
 Play in the Park: pickup basketball on outdoor courts, from the main menu.

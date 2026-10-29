@@ -181,6 +181,9 @@ export interface InboundState {
   backcourt: boolean;
   /** Park half court: the ball is checked at the top of the key instead of inbounded. */
   check?: boolean;
+  /** The check itself, once both players are set: a bounce pass to the defender, a beat holding it, and back. */
+  checkStage?: "toDef" | "hold" | "back";
+  checkT?: number;
 }
 
 /** Pickup rules for Play in the Park. */

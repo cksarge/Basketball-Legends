@@ -30,6 +30,10 @@ export interface Park {
   level: [number, number];
   /** Shown on the setup screen. */
   vibe: string;
+  /** Who's watching: the share of spectator spots filled, how loud they get (0..1), and what they wear. */
+  crowd: { density: number; loudness: number; palette: string[] };
+  /** The sound of the place under the game. */
+  ambience: "desert" | "city" | "waves" | "night" | "rooftop";
 }
 
 export const PARKS: Park[] = [
@@ -45,6 +49,8 @@ export const PARKS: Park[] = [
     hoop: { board: "acrylic", net: "nylon" },
     level: [42, 66],
     vibe: "Friendly runs",
+    crowd: { density: 0.75, loudness: 0.35, palette: ["#f4f4f2", "#e66b1f", "#0c7c8c", "#d8c9a8", "#7b1e3a", "#1f4e9a", "#f2a900"] },
+    ambience: "desert",
   },
   {
     id: "ironside-cage",
@@ -58,6 +64,8 @@ export const PARKS: Park[] = [
     hoop: { board: "steel", net: "chain" },
     level: [55, 78],
     vibe: "Tough, physical games",
+    crowd: { density: 0.95, loudness: 0.85, palette: ["#1d1f23", "#f4f4f2", "#8d9399", "#c8102e", "#2a3550", "#3b2f2a", "#f2a900"] },
+    ambience: "city",
   },
   {
     id: "boardwalk",
@@ -71,6 +79,8 @@ export const PARKS: Park[] = [
     hoop: { board: "acrylic", net: "nylon" },
     level: [48, 72],
     vibe: "Showtime crowd",
+    crowd: { density: 1, loudness: 1, palette: ["#f4f4f2", "#f2a900", "#e66b1f", "#0c7c8c", "#c8102e", "#6a1b9a", "#7fd1c7", "#ff8fb1"] },
+    ambience: "waves",
   },
   {
     id: "maple-street",
@@ -84,6 +94,8 @@ export const PARKS: Park[] = [
     hoop: { board: "steel", net: "chain" },
     level: [38, 62],
     vibe: "Weekend warriors",
+    crowd: { density: 0.8, loudness: 0.45, palette: ["#1d1f23", "#2a3550", "#8d9399", "#2e7d32", "#7b1e3a", "#d8c9a8", "#14365e"] },
+    ambience: "night",
   },
   {
     id: "rooftop-ninth",
@@ -97,6 +109,8 @@ export const PARKS: Park[] = [
     hoop: { board: "acrylic", net: "nylon" },
     level: [58, 80],
     vibe: "High-level runs",
+    crowd: { density: 0.9, loudness: 0.6, palette: ["#1d1f23", "#f4f4f2", "#2a2d33", "#6a1b9a", "#c9a227", "#14365e", "#7b1e3a"] },
+    ambience: "rooftop",
   },
 ];
 
