@@ -3,7 +3,18 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Match, type MatchSetup } from "@/game/sim/match";
-import { clearSuspended, loadSuspended, modeLabel, saveSuspended, SLOTS, type SlotNumber, useSaves, whereText } from "@/state/suspended";
+import {
+  clearSuspended,
+  loadSuspended,
+  modeLabel,
+  saveGroupOf,
+  saveSuspended,
+  type SaveGroup,
+  SLOTS,
+  type SlotNumber,
+  useSaves,
+  whereText,
+} from "@/state/suspended";
 import type { TeamIdx } from "@/game/sim/state";
 import { InputManager, type DeviceId } from "@/game/input";
 import { SIM_DT, simulateToEnd } from "@/game/simulate";
@@ -67,7 +78,7 @@ function buildMatch(p: PendingMatch, quarterMinutes: number, g: ReturnType<typeo
   // pick up a suspended game where it left off (falls back to a fresh game if the save is unreadable)
   let match: Match | null = null;
   if (p.resume) {
-    const saved = loadSuspended(p.resumeFrom ?? "auto");
+    const saved = loadSuspended(p.resumeFrom ?? "auto", saveGroupOf(p));
     try {
       if (saved) match = Match.restore(setup, saved.match);
     } catch {
@@ -194,7 +205,7 @@ export function GameView({ pending }: { pending: PendingMatch }) {
       finished.current = true;
       // the game is over: its autosave and its save slot go
       clearSuspended();
-      if (slotRef.current) clearSuspended(slotRef.current);
+      if (slotRef.current) clearSuspended(slotRef.current, saveGroupOf(pending));
       const s = match.state;
       const all = [...s.teams[0].roster, ...s.teams[1].roster];
       const potg = all.reduce<{ id: string; gs: number } | null>((best, p) => {
@@ -473,15 +484,15 @@ export function GameView({ pending }: { pending: PendingMatch }) {
           onSaveCareer={
             pending.career && !pending.practice
               ? () => {
-                  // a career game saves with its career (resumed from the hub), not into a slot
-                  saveSuspended(match, pending);
+                  // stays in its Career slot if it has one; otherwise the autosave holds it for the hub
+                  saveSuspended(match, { ...pending, saveSlot: slotRef.current ?? undefined }, slotRef.current ?? "auto");
                   toast("Game saved. Resume it from your career hub.", "good");
                   router.push(pending.returnTo);
                 }
               : undefined
           }
           onSaveTo={
-            pending.practice || pending.career
+            pending.practice
               ? undefined
               : (slot) => {
                   if (!saveSuspended(match, { ...pending, saveSlot: slot }, slot)) {
@@ -497,7 +508,8 @@ export function GameView({ pending }: { pending: PendingMatch }) {
                 }
           }
           saveSlot={slot}
-          onQuitToMenu={() => router.push("/")}
+          saveGroup={saveGroupOf(pending)}
+          onQuitToMenu={() => router.push(pending.career ? pending.returnTo : "/")}
           onReplay={() => {
             const c = replay.recentClip();
             setScreen("playing");
@@ -663,6 +675,7 @@ function PauseMenu({
   onSaveTo,
   onSaveCareer,
   saveSlot,
+  saveGroup,
   onQuitToMenu,
   onReplay,
   onHighlights,
@@ -679,9 +692,10 @@ function PauseMenu({
   onQuit: () => void;
   /** Saves to a slot (false if it failed). Absent for games that can't be saved (practice). */
   onSaveTo?: (slot: SlotNumber) => boolean;
-  /** Career games save with their career instead of into a slot. */
+  /** Career games can also save and go straight back to the hub. */
   onSaveCareer?: () => void;
   saveSlot: SlotNumber | null;
+  saveGroup: SaveGroup;
   onQuitToMenu: () => void;
   onReplay: () => void;
   onHighlights: () => void;
@@ -736,7 +750,9 @@ function PauseMenu({
         {tab === "box" && <BoxScoreTable teams={[s.teams[1], s.teams[0]]} box={s.box} onCourt={[...s.teams[0].onCourt, ...s.teams[1].onCourt]} />}
         {tab === "subs" && <SubsPanel match={match} team={humanTeam as TeamIdx} />}
         {tab === "controls" && <ControlsReference />}
-        {tab === "save" && onSaveTo && <SavePanel match={match} current={saveSlot} onSave={onSaveTo} onQuitToMenu={onQuitToMenu} onResume={onResume} />}
+        {tab === "save" && onSaveTo && (
+          <SavePanel match={match} group={saveGroup} current={saveSlot} onSave={onSaveTo} onQuitToMenu={onQuitToMenu} onResume={onResume} />
+        )}
         {tab === "tactics" && (
           <div className="max-w-2xl">
             <h2 className="mb-1 font-display text-3xl font-black">Tactics</h2>
@@ -763,9 +779,9 @@ function PauseMenu({
             <p className="mt-2 text-sm text-steel">
               {confirm === "quit"
                 ? saveSlot
-                  ? `This game stays saved in slot ${saveSlot} (it saves itself as you play). Resume it any time from the main menu.`
+                  ? `This game stays saved in slot ${saveSlot} (it saves itself as you play). Resume it any time from ${onSaveCareer ? "your career hub or " : ""}the main menu.`
                   : onSaveCareer
-                    ? "This game will be lost. Choose Save and quit to finish it later from your career hub."
+                    ? "This game will be lost. Choose Save game or Save and quit to finish it later from your career hub."
                     : onSaveTo
                       ? "This game will be lost. Choose Save game to keep it in a slot."
                       : "Progress in this game will be lost."
@@ -1083,12 +1099,14 @@ function contestRivals(p: PendingMatch) {
 /** Pick one of the save slots; each shows what's already in it. */
 function SavePanel({
   match,
+  group,
   current,
   onSave,
   onQuitToMenu,
   onResume,
 }: {
   match: Match;
+  group: SaveGroup;
   current: SlotNumber | null;
   onSave: (slot: SlotNumber) => boolean;
   onQuitToMenu: () => void;
@@ -1108,12 +1126,13 @@ function SavePanel({
     <div className="max-w-2xl">
       <h2 className="mb-1 font-display text-3xl font-black">Save game</h2>
       <p className="mb-4 text-sm text-steel">
-        Three slots, so different games never overwrite each other. Once a game is in a slot it keeps saving itself there as you play; until then it saves to
-        the autosave, so a closed tab can always be picked up from the main menu.
+        {group === "play" ? "Three slots shared by Quick Play and the park" : "Three slots just for this mode"}, so different games never overwrite each other.
+        Once a game is in a slot it keeps saving itself there as you play; until then it saves to the autosave, so a closed tab can always be picked up from the
+        main menu.
       </p>
       <ul className="flex flex-col gap-2">
         {SLOTS.map((slot) => {
-          const g = saves.find((x) => x.slot === slot)?.game;
+          const g = saves.find((x) => x.slot === slot && x.group === group)?.game;
           const mine = current === slot;
           return (
             <li key={slot}>
@@ -1152,7 +1171,7 @@ function SavePanel({
           </p>
           <div className="mt-3 flex gap-2">
             <button onClick={onQuitToMenu} className="rounded-[var(--radius-chip)] bg-amber px-4 py-2 font-semibold text-navy">
-              Quit to main menu
+              {group === "career" ? "Back to your career" : "Quit to main menu"}
             </button>
             <button onClick={onResume} className="rounded-[var(--radius-chip)] px-4 py-2 text-steel hover:text-net">
               Keep playing

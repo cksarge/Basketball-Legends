@@ -11,6 +11,7 @@ import { campsFor } from "@/career/hs/summer";
 import { standings } from "@/career/hs/sim";
 import { useCareer } from "@/state/careerStore";
 import { useMatchStore } from "@/state/matchStore";
+import { pruneCareerSaves } from "@/state/suspended";
 import { useInputDevice } from "@/ui/MenuNavigator";
 import { audio } from "@/audio/engine";
 import { TeamLogo } from "@/ui/TeamLogo";
@@ -191,8 +192,12 @@ function NextUp({ career, ctx }: { career: Career; ctx: HsContext }) {
     const play = (resume: boolean) => {
       audio.unlock();
       const p = careerPending(career, g, ctx, primaryDevice(device));
-      setPending(resume && saved ? { ...saved.pending, resume: true } : p);
-      if (!resume) clearSuspended();
+      setPending(resume && saved ? saved.pending : p);
+      if (!resume) {
+        // starting over: no older copy of this game stays behind in a slot
+        clearSuspended();
+        pruneCareerSaves(career.id, (id) => id !== g.id);
+      }
       router.push("/game/");
     };
     return (
@@ -313,8 +318,12 @@ function NextUp({ career, ctx }: { career: Career; ctx: HsContext }) {
     const saved = suspendedFor(career.id, g.id);
     const play = (resume: boolean) => {
       audio.unlock();
-      setPending(resume && saved ? { ...saved.pending, resume: true } : careerPending(career, g, ctx, primaryDevice(device)));
-      if (!resume) clearSuspended();
+      setPending(resume && saved ? saved.pending : careerPending(career, g, ctx, primaryDevice(device)));
+      if (!resume) {
+        // starting over: no older copy of this game stays behind in a slot
+        clearSuspended();
+        pruneCareerSaves(career.id, (id) => id !== g.id);
+      }
       router.push("/game/");
     };
     return (

@@ -7,7 +7,7 @@ import { formatDate, GRADE_LABEL, LEVEL_SHORT, stageLabel } from "@/career/forma
 import { currentSeason } from "@/career/hs/season";
 import { useCareer } from "@/state/careerStore";
 import { PageShell, Panel } from "@/ui/kit";
-import { applyFinishedMatch, ensureSeason, useHsContext } from "./actions";
+import { applyFinishedMatch, ensureSeason, pruneFinishedSaves, useHsContext } from "./actions";
 import { HomeTab } from "./HomeTab";
 import { ScheduleTab } from "./ScheduleTab";
 import { StatsTab } from "./StatsTab";
@@ -40,6 +40,11 @@ export function CareerHub() {
       await ensureSeason(ctx);
     })();
   }, [ctx, career, id]);
+
+  // a game simmed from the hub can't be resumed anymore, so any save of it goes
+  useEffect(() => {
+    if (career && career.id === id) pruneFinishedSaves(career);
+  }, [career, id]);
 
   if (!id || status === "missing") {
     return (

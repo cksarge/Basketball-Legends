@@ -31,7 +31,7 @@ import { outcomeFromMatch } from "@/career/hs/play";
 import { chooseCollege, commit, decommit, officialVisit, reclassify, toggleFavorite, type VisitFocus } from "@/career/recruiting";
 import { useCareer } from "@/state/careerStore";
 import { useMatchStore, type MatchResult, type PendingMatch } from "@/state/matchStore";
-import { clearSuspended, loadSuspended } from "@/state/suspended";
+import { clearSuspended, findCareerSave, pruneCareerSaves } from "@/state/suspended";
 
 export function useHsContext(): HsContext | null {
   const [ctx, setCtx] = useState<HsContext | null>(null);
@@ -227,10 +227,14 @@ export function careerPending(c: Career, game: ScheduledGame, ctx: HsContext, co
   };
 }
 
-/** A suspended game that belongs to this career game, if one is saved. */
-export function suspendedFor(careerId: string, gameId: string) {
-  const s = loadSuspended();
-  return s?.pending.career?.careerId === careerId && s.pending.career.gameId === gameId ? s : null;
+/** A saved game that belongs to this career game (the autosave or any Career slot), ready to resume. */
+export const suspendedFor = findCareerSave;
+
+/** Clears saves of games that have since been simmed or have passed: only the current season's open games can resume. */
+export function pruneFinishedSaves(c: Career) {
+  const s = currentSeason(c);
+  const open = [...(s?.games ?? []), ...(s?.summer?.showcase ?? [])].filter((g) => !g.result).map((g) => g.id);
+  pruneCareerSaves(c.id, (gameId) => open.includes(gameId));
 }
 
 export { clearSuspended };

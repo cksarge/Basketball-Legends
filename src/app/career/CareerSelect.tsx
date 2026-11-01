@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CareerSummary } from "@/career/types";
 import { deleteCareer, exportCareer, importCareer, listCareers, loadCareer } from "@/career/storage";
+import { pruneCareerSaves } from "@/state/suspended";
 import { careerTeam } from "@/state/careerStore";
 import { Button, PageShell, Panel } from "@/ui/kit";
 import { toast } from "@/ui/Toaster";
@@ -44,6 +45,7 @@ export function CareerSelect() {
 
   const onDelete = async (id: string) => {
     await deleteCareer(id);
+    pruneCareerSaves(id, () => false);
     setConfirmDelete(null);
     toast("Career deleted");
     refresh();

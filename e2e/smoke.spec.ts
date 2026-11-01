@@ -123,6 +123,56 @@ test("create a career, then find it on the career screen after a reload", async 
   expect(errors).toEqual([]);
 });
 
+test("a career game saved to a Career slot resumes from the hub, and simming it clears the save @gpu", async ({ page }) => {
+  test.setTimeout(240_000);
+  await lowGraphics(page);
+  await page.goto("career/new/");
+  await page.getByLabel("First name").fill("Slot");
+  await page.getByLabel("Last name").fill("Saver");
+  await page.getByRole("button", { name: "2. Position" }).click();
+  await page.getByRole("radio", { name: "PG" }).click();
+  await page.getByRole("button", { name: "5. Skills" }).click();
+  await page.getByRole("button", { name: "Auto-fill" }).click();
+  await page.getByRole("button", { name: "6. Start" }).click();
+  await page.getByRole("button", { name: "Start career" }).click();
+  await page.waitForURL(/career\/hub\/\?id=/);
+  const hub = page.url();
+  await page.getByRole("button", { name: "Go to tryouts" }).click();
+  await page.getByRole("button", { name: /Skip the drills/ }).click();
+  await page.getByRole("button", { name: "On to the season" }).click();
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.waitForURL("**/game/");
+  await expect(page.getByText("Loading the arena")).toBeHidden({ timeout: 60_000 });
+  // a freshman usually starts on the bench
+  await page.getByRole("button", { name: "Watch from the bench" }).click({ timeout: 60_000 });
+  await clockRuns(page);
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Save game" }).click();
+  await page.getByRole("button", { name: /^1 Empty/ }).click();
+  await expect(page.getByText("Saved to slot 1:")).toBeVisible();
+  await page.getByRole("button", { name: "Back to your career" }).click();
+  await page.waitForURL(/career\/hub\/\?id=/);
+  // it sits in the Career slots, not the Quick Play ones
+  const slot = () => page.evaluate(() => [localStorage.getItem("bl-career-save-1") !== null, localStorage.getItem("bl-save-1") !== null]);
+  expect(await slot()).toEqual([true, false]);
+  await page.goto("./");
+  await page.getByRole("button", { name: "Resume game" }).click();
+  await expect(page.getByRole("button", { name: /Career slot 1.*Career/ })).toBeVisible();
+  // the hub resumes it from the slot
+  await page.goto(hub);
+  await page.getByRole("button", { name: /Resume game \(/ }).click();
+  await page.waitForURL("**/game/");
+  await expect(page.getByRole("dialog", { name: "Paused" })).toBeVisible({ timeout: 60_000 });
+  await page.getByRole("button", { name: "Quit game" }).click();
+  await expect(page.getByText(/stays saved in slot 1/)).toBeVisible();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Quit" }).click();
+  await page.waitForURL(/career\/hub\/\?id=/);
+  expect(await slot()).toEqual([true, false]);
+  // simming that game from the hub means the save can't resume anymore
+  await page.getByRole("button", { name: "Sim game", exact: true }).click();
+  await expect.poll(slot, { timeout: 60_000 }).toEqual([false, false]);
+});
+
 test("the beta warning shows only in the beta build", async ({ page }) => {
   await page.goto("./");
   await expect(page.getByRole("complementary", { name: "Beta warning" })).toHaveCount(BASE === "/beta" ? 1 : 0);
@@ -185,7 +235,8 @@ test("save slots: a quick game and a park game saved side by side, then resumed 
   // Resume game lists the slots: slot 1 has the game, 2 and 3 are empty
   await page.getByRole("button", { name: "Resume game" }).click();
   await expect(page.getByRole("button", { name: /Slot 1.*Quick Play/ })).toBeFocused();
-  await expect(page.getByText("Slot 2")).toBeVisible();
+  await expect(page.getByText("Slot 2", { exact: true })).toBeVisible();
+  await expect(page.getByText("Career slot 1", { exact: true })).toBeVisible();
   // a park game goes in slot 2 without touching slot 1
   await page.goto("park/");
   await page.getByRole("radio", { name: "1v1" }).click();

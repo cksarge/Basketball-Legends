@@ -4,6 +4,7 @@ import { useState } from "react";
 import { DIFFICULTY_LEVELS } from "@/game/sim/state";
 import type { Career, CareerSettings } from "@/career/types";
 import { deleteCareer, exportCareer } from "@/career/storage";
+import { pruneCareerSaves } from "@/state/suspended";
 import { useCareer } from "@/state/careerStore";
 import { Button, Panel, Select } from "@/ui/kit";
 import { downloadText, fileSlug } from "@/ui/download";
@@ -69,6 +70,7 @@ export function SettingsTab({ career }: { career: Career }) {
                 variant="secondary"
                 onClick={async () => {
                   await deleteCareer(career.id);
+                  pruneCareerSaves(career.id, () => false);
                   close();
                   toast("Career deleted");
                   router.push("/career/");

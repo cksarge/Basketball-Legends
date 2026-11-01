@@ -35,6 +35,7 @@ In testing at legends.carterscoding.com/beta/. These notes grow as Phase 2 lands
   - **Reclassify:** four- and five-star juniors with a 3.0 GPA can graduate a year early and skip senior year.
   - **Graduation:** pick your college first, signing with an offer or walking on at a program that would take you. College seasons and the pros come in a later beta.
   - **Balance:** skill points cost more XP (60 instead of 40), so a great player finishes high school as a top recruit without being better than most college players.
+- **Career save slots:** Career now has three save slots of its own, separate from the three shared by Quick Play and the park, so a career game can sit next to other games without overwriting them. Choose Save game in the pause menu, and the career hub resumes the game from any slot or the autosave. Resume game on the main menu lists the Career slots too. A saved career game is cleared once you sim it or delete that career.
 - **Real high school levels:** each Arizona school now knows which boys basketball teams it fields (varsity, JV, JV 2, freshman/sophomore), from the AIA's official AZPreps365 team pages. 205 of the 283 schools run a freshman/sophomore team.
 
 ## v0.2.2 — October 29, 2026

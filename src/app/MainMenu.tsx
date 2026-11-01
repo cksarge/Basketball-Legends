@@ -12,7 +12,18 @@ import { TeamLogo } from "@/ui/TeamLogo";
 import { useInputDevice } from "@/ui/MenuNavigator";
 import { KeyHint } from "@/ui/KeyHint";
 import { toast } from "@/ui/Toaster";
-import { clearSuspended, modeLabel, type SaveSlot, SLOTS, type SuspendedGame, useSaves, whereText } from "@/state/suspended";
+import {
+  clearSuspended,
+  modeLabel,
+  resumePending,
+  type SaveGroup,
+  type SaveSlot,
+  slotLabel,
+  SLOTS,
+  type SuspendedGame,
+  useSaves,
+  whereText,
+} from "@/state/suspended";
 import { IS_BETA, SITE_URL } from "@/lib/site";
 
 const MenuBackdrop = dynamic(() => import("@/game3d/MenuBackdrop"), { ssr: false });
@@ -151,23 +162,24 @@ export function MainMenu() {
 
   const resumeSave = (slot: SaveSlot, game: SuspendedGame) => {
     audio.unlock();
-    // a slot's game keeps saving back to that slot; the autosave remembers the slot its game came from
-    setPending({ ...game.pending, resume: true, resumeFrom: slot, saveSlot: slot === "auto" ? game.pending.saveSlot : slot });
+    setPending(resumePending(slot, game));
     router.push("/game/");
   };
   // the panel lists the saves: Resume game moves the cursor into that list
   const resume = () => document.querySelector<HTMLButtonElement>("[data-save-row]")?.focus();
-  const rows: { slot: SaveSlot; game: SuspendedGame | null }[] = [
+  const rows: { slot: SaveSlot; group: SaveGroup; game: SuspendedGame | null }[] = [
     ...saves.filter((x) => x.slot === "auto"),
-    ...SLOTS.map((slot) => ({ slot, game: saves.find((x) => x.slot === slot)?.game ?? null })),
+    ...(["play", "career"] as const).flatMap((group) =>
+      SLOTS.map((slot) => ({ slot, group, game: saves.find((x) => x.slot === slot && x.group === group)?.game ?? null })),
+    ),
   ];
-  const discard = (slot: SaveSlot) => {
-    clearSuspended(slot);
+  const discard = (slot: SaveSlot, group: SaveGroup) => {
+    clearSuspended(slot, group);
     if (saves.length <= 1) {
       setFocused(ITEMS[0].id);
       first.current?.focus();
     }
-    toast(slot === "auto" ? "Autosave deleted" : `Slot ${slot} deleted`);
+    toast(`${slotLabel(slot, group)} deleted`);
   };
 
   const playNow = async () => {
@@ -306,22 +318,24 @@ export function MainMenu() {
               ))}
             </ul>
             {item.id === "resume" && (
-              <ul className="mt-3 flex flex-col gap-2">
-                {rows.map(({ slot, game }) =>
+              <ul className="scrollbar-thin mt-3 flex max-h-[50vh] flex-col gap-2 overflow-y-auto p-0.5">
+                {rows.map(({ slot, group, game }) =>
                   !game ? (
-                    <li key={String(slot)} className="rounded-[var(--radius-chip)] px-3 py-2 ring-1 ring-line/60">
-                      <span className="block text-xs font-semibold text-steel">Slot {slot}</span>
-                      <span className="block text-sm text-steel">Empty. Choose Save game in the pause menu to keep a game here.</span>
+                    <li key={`${group}-${slot}`} className="rounded-[var(--radius-chip)] px-3 py-2 ring-1 ring-line/60">
+                      <span className="block text-xs font-semibold text-steel">{slotLabel(slot, group)}</span>
+                      <span className="block text-sm text-steel">
+                        Empty. Choose Save game in the pause menu to keep a {group === "career" ? "career " : ""}game here.
+                      </span>
                     </li>
                   ) : (
-                    <li key={String(slot)} className="flex items-stretch gap-1">
+                    <li key={`${group}-${slot}`} className="flex items-stretch gap-1">
                       <button
                         data-save-row
                         onClick={() => resumeSave(slot, game)}
                         onFocus={() => setFocused("resume")}
                         className="flex-1 rounded-[var(--radius-chip)] bg-deck-2 px-3 py-2 text-left ring-1 ring-line hover:ring-amber focus-visible:ring-amber"
                       >
-                        <span className="block text-xs font-semibold text-amber">{slot === "auto" ? "Autosave" : `Slot ${slot}`}</span>
+                        <span className="block text-xs font-semibold text-amber">{slotLabel(slot, group)}</span>
                         <span className="block font-semibold leading-tight">
                           {game.summary.away} {game.summary.awayScore}, {game.summary.home} {game.summary.homeScore}
                         </span>
@@ -330,9 +344,9 @@ export function MainMenu() {
                         </span>
                       </button>
                       <button
-                        onClick={() => discard(slot)}
+                        onClick={() => discard(slot, group)}
                         onFocus={() => setFocused("resume")}
-                        aria-label={`Delete ${slot === "auto" ? "the autosave" : `slot ${slot}`}`}
+                        aria-label={`Delete ${slot === "auto" ? "the autosave" : slotLabel(slot, group).toLowerCase()}`}
                         className="rounded-[var(--radius-chip)] px-2 text-steel hover:text-bad"
                       >
                         ✕
