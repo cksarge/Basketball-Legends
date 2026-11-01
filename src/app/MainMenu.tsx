@@ -4,9 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Team } from "@/engine/types";
-import { loadLeague, rosterFor } from "@/data/leagues";
+import { loadLeague } from "@/data/leagues";
 import { useMatchStore } from "@/state/matchStore";
-import { useSettings } from "@/state/settings";
 import { audio } from "@/audio/engine";
 import { TeamLogo } from "@/ui/TeamLogo";
 import { useInputDevice } from "@/ui/MenuNavigator";
@@ -39,21 +38,40 @@ interface Item {
 
 const ITEMS: Item[] = [
   {
-    id: "playnow",
-    label: "Play now",
-    blurb: "Jump straight into a game with a random matchup.",
-    detail: ["Picks two teams from the same league", "Uses your saved difficulty and quarter length", "Keyboard or controller, no setup"],
-  },
-  {
     id: "quick",
     label: "Quick Play",
     href: "/play/",
     blurb: "Any two teams from any league, your rules.",
     detail: [
       "1,405 teams: pro, college and every Arizona high school",
-      "Jerseys, arena, difficulty, quarter length",
+      "Fast start with random teams, or set up every detail",
       "Up to four local players, or sim instantly",
     ],
+  },
+  {
+    id: "career",
+    label: "Road to Legend",
+    href: "/career/",
+    blurb: "Your career, from freshman year to basketball immortality. Few ever become Legends.",
+    detail: [
+      "Build your player and pick your Arizona high school",
+      "Tryouts, recruiting, college and draft night",
+      "Pro seasons, the Hall of Legends and the final verdict",
+    ],
+  },
+  {
+    id: "franchise",
+    label: "Franchise",
+    soon: true,
+    blurb: "Coach and run a program for as many seasons as you like.",
+    detail: ["Rotations, playbooks, trades, recruiting, the draft", "Play or sim every game", "Arrives in a later update"],
+  },
+  {
+    id: "multiplayer",
+    label: "Multiplayer",
+    soon: true,
+    blurb: "Play against other people online.",
+    detail: ["Head-to-head games and online park runs", "Accounts and friends", "Arrives in a later update"],
   },
   {
     id: "park",
@@ -63,37 +81,11 @@ const ITEMS: Item[] = [
     detail: ["1-on-1 up to 5-on-5, half or full court", "Next game up, 21, HORSE and a 3-point contest", "Call your own fouls, check ball, win by 2"],
   },
   {
-    id: "career",
-    label: "Road to Legend",
-    href: "/career/",
-    blurb: "Your career, from freshman year to basketball immortality. Few ever become Legends.",
-    detail: [
-      "Build your player and pick your Arizona high school",
-      "Tryouts, call-ups and a run at the state title",
-      "Recruiting, college and a run at the national title",
-      "The draft and the pros are coming in this beta",
-    ],
-  },
-  {
-    id: "franchise",
-    label: "Franchise",
-    href: "/franchise/",
-    soon: true,
-    blurb: "Coach and run a program for as many seasons as you like.",
-    detail: ["Rotations, playbooks, trades, recruiting, the draft", "Play or sim every game", "Arrives in a later update"],
-  },
-  {
-    id: "tutorial",
-    label: "Tutorial",
-    blurb: "Learn the controls step by step on an open floor.",
-    detail: ["Moving, sprinting and dribble moves", "Shot timing, layups, threes and passing", "Uses your own key and button bindings"],
-  },
-  {
     id: "practice",
-    label: "Practice",
+    label: "Practice and Tutorial",
     href: "/play/?practice=1",
-    blurb: "Free shootaround in an empty gym.",
-    detail: ["Work on shot timing with the meter", "Try every dribble move and finish", "No clock, no defense"],
+    blurb: "Learn the controls, or shoot around in an empty gym.",
+    detail: ["A guided tutorial for every basic move", "Free shootaround with no clock and no defense", "Uses your own key and button bindings"],
   },
   {
     id: "settings",
@@ -112,20 +104,13 @@ const ITEMS: Item[] = [
 ];
 
 /** The controller to play with from the menu: the gamepad if that's what was used last. */
-function primaryDevice(device: string): string {
-  if (device === "keyboard" || typeof navigator === "undefined") return "keyboard";
-  const pad = [...(navigator.getGamepads?.() ?? [])].find((p): p is Gamepad => !!p && p.connected);
-  return pad ? `pad${pad.index}` : "keyboard";
-}
-
 export function MainMenu() {
   const router = useRouter();
   const [team, setTeam] = useState<Team | null>(null);
   const [focused, setFocused] = useState(ITEMS[0].id);
   const device = useInputDevice((s) => s.device);
   const setPending = useMatchStore((s) => s.setPending);
-  const quarter = useSettings((s) => s.gameplay.quarterMinutes);
-  const first = useRef<HTMLButtonElement>(null);
+  const first = useRef<HTMLButtonElement | HTMLAnchorElement>(null);
   const saves = useSaves();
   const items = useMemo<Item[]>(() => {
     if (!saves.length) return ITEMS;
@@ -183,45 +168,6 @@ export function MainMenu() {
     toast(`${slotLabel(slot, group)} deleted`);
   };
 
-  const playNow = async () => {
-    audio.unlock();
-    const d = await loadLeague("pro");
-    const pick = [...d.teams].sort(() => Math.random() - 0.5);
-    const [home, away] = [pick[0], pick[1]];
-    setPending({
-      mode: "quick",
-      league: "pro",
-      arena: "pro",
-      home: { team: home, roster: rosterFor(home), uniform: "home", controllers: [primaryDevice(device)] },
-      away: { team: away, roster: rosterFor(away), uniform: "away", controllers: [] },
-      quarterMinutes: quarter,
-      returnTo: "/",
-      seed: Math.floor(Math.random() * 1e6),
-    });
-    router.push("/game/");
-  };
-
-  // with a saved game, the panel starts on Resume until something else is focused
-  const tutorial = async () => {
-    audio.unlock();
-    const d = await loadLeague("pro");
-    const home = team ?? d.teams[0];
-    const away = d.teams.find((t) => t.id !== home.id) ?? d.teams[1];
-    setPending({
-      mode: "practice",
-      league: "pro",
-      arena: "pro",
-      home: { team: home, roster: rosterFor(home), uniform: "home", controllers: [primaryDevice(device)] },
-      away: { team: away, roster: rosterFor(away), uniform: "away", controllers: [] },
-      quarterMinutes: quarter,
-      returnTo: "/",
-      seed: Math.floor(Math.random() * 1e6),
-      practice: true,
-      tutorial: true,
-    });
-    router.push("/game/");
-  };
-
   const item = useMemo(() => items.find((i) => i.id === focused) ?? items[0], [focused, items]);
 
   return (
@@ -275,7 +221,7 @@ export function MainMenu() {
                     </button>
                   ) : it.id === "resume" ? (
                     <button
-                      ref={i === 0 ? first : undefined}
+                      ref={i === 0 ? (first as React.RefObject<HTMLButtonElement>) : undefined}
                       onClick={resume}
                       onFocus={() => setFocused(it.id)}
                       onMouseEnter={() => setFocused(it.id)}
@@ -283,22 +229,14 @@ export function MainMenu() {
                     >
                       {it.label}
                     </button>
-                  ) : it.id === "tutorial" ? (
-                    <button onClick={tutorial} onFocus={() => setFocused(it.id)} onMouseEnter={() => setFocused(it.id)} className={menuCls(focused === it.id)}>
-                      {it.label}
-                    </button>
-                  ) : it.id === "playnow" ? (
-                    <button
-                      ref={i === 0 ? first : undefined}
-                      onClick={playNow}
+                  ) : (
+                    <Link
+                      ref={i === 0 ? (first as React.RefObject<HTMLAnchorElement>) : undefined}
+                      href={it.href!}
                       onFocus={() => setFocused(it.id)}
                       onMouseEnter={() => setFocused(it.id)}
                       className={menuCls(focused === it.id)}
                     >
-                      {it.label}
-                    </button>
-                  ) : (
-                    <Link href={it.href!} onFocus={() => setFocused(it.id)} onMouseEnter={() => setFocused(it.id)} className={menuCls(focused === it.id)}>
                       {it.label}
                       {it.soon && <span className="ml-3 align-middle font-body text-sm font-semibold text-steel">Coming soon</span>}
                     </Link>

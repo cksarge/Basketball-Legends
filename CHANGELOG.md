@@ -56,6 +56,13 @@ Career mode has a new name and one ultimate goal: become a Basketball Legend.
 - **Retirement:** retire from age 30 on, or when the offers stop. Your jersey is retired where you earned it, the Hall of Fame votes, you give a speech shaped by who you thank first, and the final verdict comes in.
 - **Basketball Legend:** the title goes only to an Icon who retires with 2,000 Legend points.
 
+### Menu and How to Play
+
+- **New main menu order:** Resume, Quick Play, Road to Legend, Franchise, Multiplayer, Play in the Park, Practice and Tutorial, Settings, How to play.
+- **Quick Play has a fast start:** Play now is gone from the menu. Fast start in Quick Play jumps into a game with two random teams.
+- **Practice and Tutorial are one option,** with the tutorial a button on the practice screen.
+- **How to Play is easier to read,** with short sections and lists in place of long paragraphs.
+
 ### Fixes
 
 - **Main menu in the beta:** the beta warning and the Resume game panel no longer overlap. They stack in one column, and the panel scrolls in short windows.

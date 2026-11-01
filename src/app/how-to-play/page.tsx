@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { H2, ProsePage } from "@/ui/Prose";
+import { H2, H3, ProsePage } from "@/ui/Prose";
 
 export const metadata: Metadata = {
   title: "How to play",
@@ -26,8 +26,8 @@ export default function HowToPlay() {
         change every binding in Settings, and a controller works as soon as you press a button.
       </p>
       <p>
-        New to the game? Choose <b>Tutorial</b> on the main menu for a guided session that walks you through every basic move and checks off each one as you do
-        it.
+        New to the game? Choose <b>Practice and Tutorial</b> on the main menu, then <b>Start the tutorial</b>, for a guided session that checks off each basic
+        move as you do it.
       </p>
       <H2>Offense</H2>
       <table className="w-full text-left">
@@ -56,21 +56,27 @@ export default function HowToPlay() {
         </tbody>
       </table>
       <H2>The shot meter</H2>
-      <p>
-        Hold the shoot button to rise into your shot and release it at the top of your jump. The bar on the right fills while you hold; the green band is the
-        ideal release, and after you let go it tells you how you timed it (perfect, good, slightly early or slightly late). A perfect release goes in nearly
-        every time, a slightly early or late one barely changes it, and a badly mistimed one is far less likely to go in. Better shooters get a wider green
-        window, and the band on the meter shows its real size. You can turn the meter off in Settings to use rating-based shooting, or choose tap-to-shoot under
-        Accessibility.
-      </p>
-      <p>
-        Where you shoot from matters: open catch-and-shoot threes and shots at the rim are the most efficient. Contested shots, shots off a hard dribble and
-        shots late in a long stretch of minutes (fatigue) are harder.
-      </p>
-      <p>
-        A pump fake out of a dribble ends your dribble: from there you can pivot, pass or shoot, but walking more than a step is traveling. Careless ball
-        handlers can also get called for an extra step on drives.
-      </p>
+      <ul className="list-disc pl-6">
+        <li>
+          <b>Shooting:</b> hold the shoot button to rise, and release at the top of your jump.
+        </li>
+        <li>
+          <b>The green band:</b> this is the ideal release. Its size on the meter is its real size, and better shooters get a wider one.
+        </li>
+        <li>
+          <b>Timing:</b> a perfect release goes in nearly every time, slightly early or late barely hurts, and badly mistimed is far less likely to fall.
+        </li>
+        <li>
+          <b>Options:</b> turn the meter off in Settings for rating-based shooting, or choose tap-to-shoot under Accessibility.
+        </li>
+      </ul>
+      <H3>Good shots and bad shots</H3>
+      <ul className="list-disc pl-6">
+        <li>Open catch-and-shoot threes and shots at the rim are the most efficient.</li>
+        <li>Contested shots, shots off a hard dribble and shots when you&apos;re tired are harder.</li>
+        <li>A pump fake out of a dribble ends your dribble: pivot, pass or shoot, because walking more than a step is traveling.</li>
+        <li>Careless ball handlers can get called for an extra step on drives.</li>
+      </ul>
       <H2>Defense</H2>
       <table className="w-full text-left">
         <thead className="text-sm text-steel">
@@ -88,14 +94,16 @@ export default function HowToPlay() {
           {row("Take a charge", "F", "B / ○")}
         </tbody>
       </table>
-      <p>
-        Stay between your man and the basket. Reaching for steals from behind or from too far away risks a foul. Jump at the right moment to block: too early
-        and the shooter waits you out. A pump fake can get an eager defender off his feet.
-      </p>
+      <ul className="list-disc pl-6">
+        <li>Stay between your man and the basket.</li>
+        <li>Reaching for steals from behind or from too far away risks a foul.</li>
+        <li>Jump at the right moment to block: too early and the shooter waits you out.</li>
+        <li>A pump fake can get an eager defender off his feet.</li>
+      </ul>
       <H2>Coaching and tactics</H2>
       <p>
-        Before a Quick Play game, and any time from the pause menu (Tactics), you can set your team&apos;s pace, how much it hunts threes, how hard it crashes
-        the offensive glass, whether it doubles the other team&apos;s best scorer, and its defense:
+        Set these before a Quick Play game, or any time from Tactics in the pause menu: pace, how much you hunt threes, how hard you crash the glass, doubling
+        the other team&apos;s best scorer, and your defense.
       </p>
       <ul className="list-disc pl-6">
         <li>
@@ -114,71 +122,155 @@ export default function HowToPlay() {
       </ul>
       <p>Gameplay sliders in Settings change the balance of the whole game (shooting, steals, blocks, fouls, speed and more).</p>
       <H2>Game controls</H2>
-      <p>
-        Press Esc (or Menu) to pause. From the pause menu you can see the box score and play-by-play, make substitutions, call a timeout, change the camera,
-        simulate the rest of the game or restart. T calls a timeout when your team has the ball, and Y cycles through the cameras.
-      </p>
+      <ul className="list-disc pl-6">
+        <li>
+          <b>Pause:</b> Esc or Menu. From there: box score, play-by-play, substitutions, timeouts, cameras, sim to end or restart.
+        </li>
+        <li>
+          <b>Timeout:</b> T, when your team has the ball.
+        </li>
+        <li>
+          <b>Camera:</b> Y cycles through the cameras.
+        </li>
+      </ul>
       <H2>Road to Legend</H2>
       <p>
-        Create a player, pick an Arizona hometown and high school, and start the summer before freshman year. In November, tryouts place you on the
-        freshman/sophomore team, JV or varsity, depending on which teams your school fields, your ratings and how you do in three quick drills. Play well and
-        the coach calls you up mid-season; struggle and you may be sent down. From the career hub you can play each game in 3D (you control only your player),
-        sim one game, sim three, or sim to the playoffs. When the coach sits you, choose to watch, fast-forward until you check back in, or sim to the end. Your
-        ratings grow on their own through practice and games, and skill points from XP let you push the skills you care about, up to the caps your body allows.
-        Keep your grades up: finals are a short timed exam, and a fall GPA under 2.0 sits you for the rest of the season. Summers bring a camp of your choice
-        and AAU showcase games, which raise your exposure with college coaches and your recruiting ranking. From June 15 after sophomore year, college programs
-        start recruiting you: the Recruiting tab shows every program&apos;s interest, the offers and the role each coach pitches, and lets you take up to five
-        official visits, commit and decommit. Division I needs a 2.3 core GPA. Before you graduate, sign with an offer or walk on somewhere. In college your
-        coach&apos;s trust decides your role and minutes: beat what the coach expects and both grow. Play through non-conference games, conference play, your
-        conference tournament and, if your team earns it, the National Tournament or the National Invitational. NIL deals pay you, the transfer portal opens
-        after every season, and you can redshirt once. After each season decide whether to come back, transfer or declare for the draft. Declaring starts the
-        road to the draft: choose an agent, then the combine, team workouts and GM interviews all move your stock before two rounds of draft night. As a pro,
-        pick a training focus every summer, earn your minutes, make the playoffs, sign contracts in free agency and ask for a trade if you need a change. From
-        age 30 you can retire: jerseys are retired, the Hall of Fame votes, and an Icon with 2,000 Legend points is named a Basketball Legend. Every career
-        chases one thing: honors, titles, big moments you played yourself and your impact on the community earn Legend points that raise your rank from Local
-        Hero up to Icon. Only an Icon can become a Legend, the title is decided at retirement, and very few careers get there.
+        Every career chases one thing: becoming a Basketball Legend. Very few get there. Play each game in 3D, controlling only your player, or sim from your
+        career hub.
       </p>
+      <H3>The Legend rank</H3>
+      <ul className="list-disc pl-6">
+        <li>
+          <b>Ranks:</b> Local Hero, State Star, National Name, Pro, All-Star, Superstar, Icon, Legend.
+        </li>
+        <li>
+          <b>Legend points:</b> honors and records (Greatness), titles (Winning), big games you played yourself (Moments) and community work (Impact).
+        </li>
+        <li>
+          <b>Becoming a Legend:</b> decided only at retirement, for an Icon with 2,000 points. Once you&apos;re an Icon, the game shows your chances.
+        </li>
+      </ul>
+      <H3>High school</H3>
+      <ul className="list-disc pl-6">
+        <li>
+          <b>Tryouts:</b> November drills help place you on freshman/sophomore, JV or varsity. Play well and you&apos;re called up; struggle and you may be sent
+          down.
+        </li>
+        <li>
+          <b>The bench:</b> when the coach sits you, watch, fast-forward until you check back in, or sim to the end.
+        </li>
+        <li>
+          <b>Growth:</b> ratings rise on their own, and skill points from XP push the skills you choose, up to the caps your body allows.
+        </li>
+        <li>
+          <b>Grades:</b> finals are a short timed exam, and a fall GPA under 2.0 sits you for the rest of the season.
+        </li>
+        <li>
+          <b>Summers:</b> a camp of your choice and AAU showcase games raise your exposure and your ranking.
+        </li>
+      </ul>
+      <H3>Recruiting</H3>
+      <ul className="list-disc pl-6">
+        <li>Programs start recruiting you on June 15 after sophomore year.</li>
+        <li>The Recruiting tab shows interest, offers and the role each coach pitches.</li>
+        <li>Take up to five official visits, then commit or decommit. Division I needs a 2.3 core GPA.</li>
+        <li>Before you graduate, sign with an offer or walk on somewhere.</li>
+      </ul>
+      <H3>College</H3>
+      <ul className="list-disc pl-6">
+        <li>
+          <b>Coach trust:</b> it decides your role and minutes. Beat what the coach expects and both grow.
+        </li>
+        <li>
+          <b>The season:</b> non-conference games, conference play and your conference tournament, then the National Tournament or National Invitational if you
+          earn it.
+        </li>
+        <li>
+          <b>Off the court:</b> NIL deals pay you, and you can redshirt once.
+        </li>
+        <li>
+          <b>After each season:</b> come back, enter the transfer portal or declare for the draft.
+        </li>
+      </ul>
+      <H3>The draft</H3>
+      <ul className="list-disc pl-6">
+        <li>Choose an agent, then the combine, team workouts and GM interviews all move your draft stock.</li>
+        <li>Draft night is two rounds. If nobody calls, a two-way deal or the development league is your way in.</li>
+      </ul>
+      <H3>The pros</H3>
+      <ul className="list-disc pl-6">
+        <li>
+          <b>Each year:</b> pick a training focus, earn your minutes and chase the playoffs. Great seasons earn badges and an All-Star spot.
+        </li>
+        <li>
+          <b>Contracts:</b> when your deal ends, weigh offers in free agency. Ask for more, but they may walk away.
+        </li>
+        <li>
+          <b>Trades:</b> ask for one before the deadline, but your coach and teammates will notice.
+        </li>
+      </ul>
+      <H3>Retirement</H3>
+      <p>From age 30 you can hang it up. Jerseys are retired where you earned it, the Hall of Fame votes, you give your speech, and the verdict comes in.</p>
       <H2>Saving and resuming</H2>
-      <p>
-        Games save themselves every few seconds, so if you close the tab you can pick up where you left off from Resume game on the main menu. To keep games
-        side by side, choose Save game from the pause menu and pick a slot. Quick Play and the park share three slots (say, a Quick Play game in slot 1 and a
-        park game in slot 2), and Road to Legend has three of its own; a game in a slot keeps saving itself there as you play. Resume game on the main menu
-        lists the autosave and every slot, with the score and where each game stands, to resume or delete, and your career hub picks up a saved career game from
-        any of them. Resumed games start paused so you can get ready. Finishing a game clears its save; quitting a game that isn&apos;t in a slot discards it.
-      </p>
+      <ul className="list-disc pl-6">
+        <li>
+          <b>Autosave:</b> games save every few seconds. Pick up from Resume game on the main menu.
+        </li>
+        <li>
+          <b>Save slots:</b> choose Save game in the pause menu. Quick Play and the park share three slots, and Road to Legend has three of its own. A game in a
+          slot keeps saving itself there.
+        </li>
+        <li>
+          <b>Resume game:</b> lists the autosave and every slot to resume or delete. Your career hub picks up a saved career game too. Games resume paused.
+        </li>
+        <li>
+          <b>When saves go:</b> finishing a game clears its save, and quitting a game that isn&apos;t in a slot discards it.
+        </li>
+      </ul>
       <H2>Replays and highlights</H2>
-      <p>
-        Press R (or the left stick click) at any time to replay the last few seconds. In a replay, Space plays and pauses, the arrow keys scrub back and forth
-        and change the speed, and Y switches between the orbit, baseline, above-the-rim, courtside and broadcast cameras. Press R or Esc to go back to the game.
-      </p>
-      <p>
-        Big baskets (dunks, threes, and-ones, clutch shots and buzzer beaters) replay automatically in slow motion once the ball is through the net, so a great
-        pass or block never stops live play; press Space to skip one. Blocks, steals and ankle breakers are still saved with the best plays as highlights you
-        can watch from the pause menu, at quarter breaks and after the final buzzer. In Settings under Presentation you can have every big play replay
-        automatically instead, or turn automatic replays off.
-      </p>
+      <ul className="list-disc pl-6">
+        <li>
+          <b>Replay:</b> R or the left stick click replays the last few seconds. R or Esc goes back to the game.
+        </li>
+        <li>
+          <b>In a replay:</b> Space plays and pauses, arrow keys scrub and change speed, and Y switches cameras.
+        </li>
+        <li>
+          <b>Big baskets:</b> dunks, threes, and-ones and clutch shots replay in slow motion after the ball goes through. Space skips one.
+        </li>
+        <li>
+          <b>Highlights:</b> blocks, steals and ankle breakers are saved to watch from the pause menu, at breaks and after the game.
+        </li>
+        <li>
+          <b>Settings:</b> under Presentation, replay every big play or turn automatic replays off.
+        </li>
+      </ul>
       <H2>Breaks, timeouts and injuries</H2>
-      <p>
-        At the end of each quarter, at halftime and during timeouts, both teams huddle at their benches and a panel shows the line score, team stats, leaders
-        and any injuries. Make substitutions from there, watch highlights, or press Continue to get back to the game. When nobody is playing (CPU vs CPU) the
-        game continues on its own after ten seconds.
-      </p>
-      <p>
-        With injuries turned on in Settings, hard falls, collisions on drives and awkward landings can hurt a player. Play stops at the next safe moment and the
-        coach brings in a substitute, even if you manage substitutions yourself. Tougher players (higher durability) get hurt less often and recover sooner.
-      </p>
+      <ul className="list-disc pl-6">
+        <li>At quarter ends, halftime and timeouts, a panel shows the line score, stats, leaders and injuries.</li>
+        <li>Make substitutions there, watch highlights or press Continue.</li>
+        <li>CPU vs CPU games continue on their own after ten seconds.</li>
+        <li>With injuries on, falls, collisions and awkward landings can hurt a player. Play stops at the next safe moment and a substitute comes in.</li>
+        <li>Players with higher durability get hurt less often and recover sooner.</li>
+      </ul>
       <H2>Officials</H2>
-      <p>
-        Three referees work every game. Watch them for the call: a raised fist is a foul, rolling forearms is traveling, a hand behind the head is a charge,
-        hands on hips is a blocking foul, a T is a timeout, and a pointed arm shows which way the ball is going. On a three-point try the nearest official
-        raises one arm, and both arms go up when it falls. On inbounds the official counts the five seconds with his arm.
-      </p>
+      <p>Three referees work every game. Watch them for the call:</p>
+      <ul className="list-disc pl-6">
+        <li>Raised fist: foul</li>
+        <li>Rolling forearms: traveling</li>
+        <li>Hand behind the head: charge</li>
+        <li>Hands on hips: blocking foul</li>
+        <li>A T: timeout</li>
+        <li>Pointed arm: which way the ball is going</li>
+        <li>One arm up: three-point try. Both arms up: it went in.</li>
+      </ul>
       <H2>Venues</H2>
-      <p>
-        Every team plays in its own building. High schools play in small, classic or modern gyms depending on their size, colleges in a fieldhouse or a campus
-        arena, and pro teams in one of two big arenas. Seats, walls, banners and scoreboards are dressed in the home team&apos;s colors and history. In Quick
-        Play you can move any game to a pro arena, a college arena or a high school gym with the Venue option.
-      </p>
+      <ul className="list-disc pl-6">
+        <li>High schools play in small, classic or modern gyms depending on their size.</li>
+        <li>Colleges play in a fieldhouse or a campus arena, and pro teams in one of two big arenas.</li>
+        <li>Seats, walls, banners and scoreboards wear the home team&apos;s colors and history.</li>
+        <li>In Quick Play, the Venue option moves any game to a different building.</li>
+      </ul>
       <H2>Play in the Park</H2>
       <p>
         Pickup games at five outdoor courts, against each park&apos;s regulars. There&apos;s no clock and no referees: the first side to the target wins (by

@@ -20,6 +20,10 @@ export function ProsePage({ title, updated, children }: { title: string; updated
   );
 }
 
+export function H3({ children }: { children: React.ReactNode }) {
+  return <h3 className="mt-2 font-display text-xl font-bold text-amber">{children}</h3>;
+}
+
 export function H2({ children }: { children: React.ReactNode }) {
   return <h2 className="mt-4 font-display text-3xl font-black text-net">{children}</h2>;
 }

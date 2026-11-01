@@ -87,8 +87,8 @@ export function QuickPlay() {
 
   const devices = useMemo(() => ["keyboard", ...pads.map((i) => `pad${i}`)], [pads]);
 
-  const buildPending = (): PendingMatch | null => {
-    const { home, away } = teams;
+  const buildPending = (matchup: Record<Side, Team | null> = teams): PendingMatch | null => {
+    const { home, away } = matchup;
     if (!home || !away) return null;
     const ctrl = (side: Side) => devices.filter((d) => (assign[d] ?? (d === "keyboard" ? "home" : "cpu")) === side);
     // homegrown jerseys clash? swap the away team to its alternate automatically
@@ -120,6 +120,24 @@ export function QuickPlay() {
     if (!p) return;
     audio.unlock();
     setPending(p);
+    router.push("/game/");
+  };
+
+  /** Skips the setup: two random teams from the selected league, on your saved settings. */
+  const fastStart = () => {
+    const pool = [...(data?.[league].teams ?? [])].sort(() => Math.random() - 0.5);
+    const p = buildPending({ home: pool[0] ?? null, away: pool[1] ?? null });
+    if (!p) return;
+    audio.unlock();
+    setPending(p);
+    router.push("/game/");
+  };
+
+  const tutorial = () => {
+    const p = buildPending();
+    if (!p) return;
+    audio.unlock();
+    setPending({ ...p, returnTo: "/", tutorial: true });
     router.push("/game/");
   };
 
@@ -164,7 +182,7 @@ export function QuickPlay() {
   // placeholders at the panels' real size, so nothing jumps when the teams arrive
   if (!data)
     return (
-      <PageShell title={practice ? "Practice" : "Quick Play"} wide>
+      <PageShell title={practice ? "Practice and Tutorial" : "Quick Play"} wide>
         <p className="sr-only" role="status">
           Loading teams…
         </p>
@@ -179,7 +197,7 @@ export function QuickPlay() {
 
   return (
     <PageShell
-      title={practice ? "Practice" : "Quick Play"}
+      title={practice ? "Practice and Tutorial" : "Quick Play"}
       wide
       actions={
         <div className="flex gap-2">
@@ -334,6 +352,16 @@ export function QuickPlay() {
         {!practice && (
           <Button variant="secondary" onClick={simulate} disabled={simming !== null}>
             {simming !== null ? `Simulating ${Math.round(simming * 100)}%` : "Simulate"}
+          </Button>
+        )}
+        {practice && (
+          <Button variant="secondary" onClick={tutorial}>
+            Start the tutorial
+          </Button>
+        )}
+        {!practice && (
+          <Button variant="secondary" onClick={fastStart}>
+            Fast start (random teams)
           </Button>
         )}
         <Button onClick={play}>{practice ? "Start practice" : "Play game"}</Button>

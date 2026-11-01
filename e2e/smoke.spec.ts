@@ -497,6 +497,24 @@ test("save slots: a quick game and a park game saved side by side, then resumed 
   await expect(page.getByRole("dialog", { name: "Paused" })).toBeVisible({ timeout: 60_000 });
 });
 
+test("the main menu is in order, and Quick Play has a fast start @gpu", async ({ page }) => {
+  await lowGraphics(page);
+  await page.goto("./");
+  await expect(page.getByRole("navigation", { name: "Main menu" }).getByRole("listitem")).toHaveText([
+    "Quick Play",
+    "Road to Legend",
+    /^Franchise/,
+    /^Multiplayer/,
+    "Play in the Park",
+    "Practice and Tutorial",
+    "Settings",
+    "How to play",
+  ]);
+  await page.getByRole("link", { name: "Quick Play" }).click();
+  await page.getByRole("button", { name: "Fast start (random teams)" }).click();
+  await page.waitForURL("**/game/");
+});
+
 test("settings persist across reloads", async ({ page }) => {
   await page.goto("settings/");
   await page
@@ -520,7 +538,8 @@ test("the tutorial starts and advances @gpu", async ({ page }) => {
   test.setTimeout(150_000);
   await lowGraphics(page);
   await page.goto("./");
-  await page.getByRole("button", { name: "Tutorial" }).click();
+  await page.getByRole("link", { name: "Practice and Tutorial" }).click();
+  await page.getByRole("button", { name: "Start the tutorial" }).click();
   await page.waitForURL("**/game/");
   const panel = page.getByRole("region", { name: "Tutorial" });
   await expect(panel).toBeVisible({ timeout: 60_000 });
