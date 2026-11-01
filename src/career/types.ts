@@ -267,6 +267,60 @@ export interface CollegeCareer {
   declared?: { date: IsoDate; stock: DraftStock };
 }
 
+export type AgentId = "shark" | "brand" | "family";
+
+export interface PreDraft {
+  year: number;
+  agent?: AgentId;
+  /** Combine results. */
+  combine?: { scores: number[]; bonus: number; verticalIn: number; laneSec: number; threesMade: number };
+  /** Teams you've worked out for, and how each one came away feeling (added to its draft board). */
+  workouts: { teamId: string; grade: number; note: string }[];
+  /** Answers to GM interview questions (index of the answer picked). */
+  interviews: number[];
+  /** How the pre-draft process has moved your draft stock. */
+  stockDelta: number;
+}
+
+export interface DraftPick {
+  round: 1 | 2;
+  /** Overall pick number. */
+  pick: number;
+  teamId: string;
+  /** The team that owned the pick before a draft-night trade. */
+  via?: string;
+  name: string;
+  pos: string;
+  ovr: number;
+  isUser?: boolean;
+}
+
+export interface DraftNight {
+  year: number;
+  picks: DraftPick[];
+  trades: string[];
+  /** The team that traded for your rights after picking you. */
+  tradedTo?: string;
+  /** The team you end up on, or null if you went undrafted. */
+  teamId: string | null;
+  /** You've watched the night through. */
+  seen?: boolean;
+}
+
+export interface ProCareer {
+  preDraft: PreDraft;
+  draft?: DraftNight;
+  /** Where you stand with the league after the draft. */
+  status?: "standard" | "twoWay" | "dev";
+  /** Two-way offers if you went undrafted. */
+  undraftedOffers?: string[];
+  /** Personality from interviews: -1..1. */
+  confidence: number;
+  teamFirst: number;
+  /** After the agent's cut. */
+  earnings: number;
+}
+
 export interface InboxMessage {
   id: string;
   date: IsoDate;
@@ -298,6 +352,7 @@ export interface Career {
   /** College recruiting, from the summer after sophomore year until you sign. */
   recruiting?: Recruiting;
   college?: CollegeCareer;
+  pro?: ProCareer;
   inbox: InboxMessage[];
   log: CareerLogEntry[];
 }

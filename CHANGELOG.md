@@ -22,7 +22,15 @@ Career mode has a new name and one ultimate goal: become a Basketball Legend.
 - **The postseason:** conference tournament winners earn automatic bids to a 68-team National Tournament with an opening round, and a 32-team National Invitational takes the next best in Division I. Divisions II and III have 64-team tournaments.
 - **Honors:** All-Conference, Freshman of the Year, conference Player of the Year, All-American, National Player of the Year and Most Outstanding Player.
 - **NIL:** local, community and national deals every season. Community deals pay less but count toward your legacy, and big national deals cost a little coach trust.
-- **After each season:** come back, enter the transfer portal or declare for the draft with your projected draft stock. Withdrawing from the portal costs some trust. You get four years of eligibility and one redshirt. Draft night comes in a later beta.
+- **After each season:** come back, enter the transfer portal or declare for the draft with your projected draft stock. Withdrawing from the portal costs some trust. You get four years of eligibility and one redshirt. 
+
+### The draft
+
+- **Declaring starts the road to the draft:** pick from three agents (bigger contracts, better endorsements or a smaller fee), then go through the combine, three team workouts and GM interviews. Each step moves your draft stock, and your interview answers shape your personality.
+- **The combine:** shooting, agility and vertical drills with real measurements.
+- **Draft night:** two rounds and 60 picks on a live ticker, with trades during the draft, a lottery at the top and the odd player traded right after being picked. Skip to your pick or watch it all.
+- **Rookie deals:** a salary scale through the first round and small two-year deals in the second.
+- **Undrafted:** fringe prospects get two-way offers, and anyone can join a development team.
 
 ### Career mode
 

@@ -5,7 +5,7 @@ import { loadLeague } from "@/data/leagues";
 import { Match } from "@/game/sim/match";
 import { simulateToEnd } from "@/game/simulate";
 import { uniformColors } from "@/game3d/character/uniformTexture";
-import type { Career, ScheduledGame } from "@/career/types";
+import type { AgentId, Career, ScheduledGame } from "@/career/types";
 import {
   advanceTo,
   applyShowcaseGame,
@@ -49,6 +49,7 @@ import {
   withdrawFromPortal,
 } from "@/career/college/season";
 import { chooseCollege, commit, decommit, officialVisit, reclassify, toggleFavorite, type VisitFocus } from "@/career/recruiting";
+import { answerInterview, chooseAgent, enterPreDraft, finishDraft, joinDevLeague, runCombine, runDraft, signTwoWay, workOut } from "@/career/pro/draft";
 import { useCareer } from "@/state/careerStore";
 import { useMatchStore, type MatchResult, type PendingMatch } from "@/state/matchStore";
 import { clearSuspended, findCareerSave, pruneCareerSaves } from "@/state/suspended";
@@ -63,7 +64,9 @@ export function primaryDevice(device: string): string {
 export function useHsContext(): HsContext | null {
   const [ctx, setCtx] = useState<HsContext | null>(null);
   useEffect(() => {
-    Promise.all([loadLeague("hs"), loadLeague("college")]).then(([h, col]) => setCtx(hsContext(h.teams, col.teams, col.conferences)));
+    Promise.all([loadLeague("hs"), loadLeague("college"), loadLeague("pro")]).then(([h, col, pro]) =>
+      setCtx(hsContext(h.teams, col.teams, col.conferences, pro.teams)),
+    );
   }, []);
   return ctx;
 }
@@ -283,6 +286,17 @@ export const nextCollegeYearAction = (ctx: HsContext) => update((x) => startNext
 export const redshirtAction = (on: boolean) => update((x) => setRedshirt(x, on));
 export const signNilAction = (id: string) => update((x) => signNil(x, id));
 export const declineNilAction = (id: string) => update((x) => declineNil(x, id));
+
+const pros = (ctx: HsContext) => ctx.pros ?? [];
+export const preDraftAction = () => update((x) => enterPreDraft(x));
+export const agentAction = (id: AgentId) => update((x) => chooseAgent(x, id));
+export const combineAction = (scores: number[], bonus: number) => update((x) => runCombine(x, scores, bonus));
+export const workoutAction = (teamId: string, ctx: HsContext) => update((x) => workOut(x, teamId, pros(ctx)));
+export const interviewAction = (answer: number) => update((x) => answerInterview(x, answer));
+export const draftAction = (ctx: HsContext) => update((x) => runDraft(x, pros(ctx)));
+export const finishDraftAction = (ctx: HsContext) => update((x) => finishDraft(x, pros(ctx)));
+export const twoWayAction = (teamId: string, ctx: HsContext) => update((x) => signTwoWay(x, teamId, pros(ctx)));
+export const devLeagueAction = (teamId: string, ctx: HsContext) => update((x) => joinDevLeague(x, teamId, pros(ctx)));
 
 /** The 3D match for one of your college games: two halves, each as long as two of your career's quarters. */
 function collegePending(c: Career, game: ScheduledGame, ctx: HsContext, controller: string): PendingMatch {

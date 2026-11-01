@@ -26,13 +26,18 @@ export interface HsContext {
   collegeById?: Map<string, Team>;
   /** College conference names, for display. */
   conferences?: Map<string, { name: string; short?: string }>;
+  /** Pro teams, for the draft and the pros. */
+  pros?: Team[];
+  proById?: Map<string, Team>;
 }
-export const hsContext = (teams: Team[], colleges?: Team[], conferences?: { id: string; name: string; short?: string }[]): HsContext => ({
+export const hsContext = (teams: Team[], colleges?: Team[], conferences?: { id: string; name: string; short?: string }[], pros?: Team[]): HsContext => ({
   teams,
   byId: new Map(teams.map((t) => [t.id, t])),
   colleges,
   collegeById: colleges ? new Map(colleges.map((t) => [t.id, t])) : undefined,
   conferences: conferences ? new Map(conferences.map((x) => [x.id, x])) : undefined,
+  pros,
+  proById: pros ? new Map(pros.map((t) => [t.id, t])) : undefined,
 });
 
 /** Recruiting refresh, when the context knows the colleges. */

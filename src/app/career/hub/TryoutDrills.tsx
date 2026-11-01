@@ -35,7 +35,23 @@ function usePadButtons(onPress: (b: "a" | "left" | "right") => void) {
   }, [onPress]);
 }
 
-export function TryoutDrills({ ratings, onDone, onSkip }: { ratings: Ratings; onDone: (bonus: number, scores: number[]) => void; onSkip: () => void }) {
+export function TryoutDrills({
+  ratings,
+  onDone,
+  onSkip,
+  title = "Tryouts",
+  intro = "Three drills in front of the coaching staff. Your ratings set how forgiving each one is, and how you do nudges where you land.",
+  labels = ["Spot shooting", "Defensive slides", "Conditioning"],
+  skip = "Skip the drills (the coach goes by your ratings)",
+}: {
+  ratings: Ratings;
+  onDone: (bonus: number, scores: number[]) => void;
+  onSkip: () => void;
+  title?: string;
+  intro?: string;
+  labels?: string[];
+  skip?: string;
+}) {
   const [drill, setDrill] = useState<Drill>("shoot");
   const [scores, setScores] = useState<number[]>([]);
   const finish = (score: number, next: Drill) => {
@@ -45,15 +61,12 @@ export function TryoutDrills({ ratings, onDone, onSkip }: { ratings: Ratings; on
     if (next === "done") onDone(drillBonus(all), all);
   };
   return (
-    <Panel title="Tryouts">
-      <p className="mb-4 text-sm text-steel">
-        Three drills in front of the coaching staff. Your ratings set how forgiving each one is, and how you do nudges where you land. Space, Enter, a click or
-        a tap works for every drill; arrow keys or the d-pad for slides.
-      </p>
+    <Panel title={title}>
+      <p className="mb-4 text-sm text-steel">{intro} Space, Enter, a click or a tap works for every drill; arrow keys or the d-pad for slides.</p>
       <ol className="mb-4 flex gap-2 text-sm">
         {(["shoot", "slides", "sprint"] as const).map((d, i) => (
           <li key={d} className={`rounded-full px-3 py-1 ${drill === d ? "bg-amber text-navy" : i < scores.length ? "bg-good/30" : "bg-deck-2 text-steel"}`}>
-            {i + 1}. {d === "shoot" ? "Spot shooting" : d === "slides" ? "Defensive slides" : "Conditioning"}
+            {i + 1}. {labels[i]}
             {i < scores.length && ` · ${Math.round(scores[i] * 100)}`}
           </li>
         ))}
@@ -63,7 +76,7 @@ export function TryoutDrills({ ratings, onDone, onSkip }: { ratings: Ratings; on
       {drill === "sprint" && <SprintDrill skill={(ratings.stamina + ratings.speed) / 2} onDone={(s) => finish(s, "done")} />}
       {drill !== "done" && (
         <Button variant="ghost" className="mt-4" onClick={onSkip}>
-          Skip the drills (the coach goes by your ratings)
+          {skip}
         </Button>
       )}
     </Panel>

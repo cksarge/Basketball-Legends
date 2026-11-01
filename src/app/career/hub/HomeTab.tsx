@@ -39,6 +39,7 @@ import { TryoutDrills } from "./TryoutDrills";
 import { CollegeChoice } from "./RecruitingTab";
 import { CollegeNextUp, CollegePanels, CollegeRecent } from "./CollegeHome";
 import { LegendPanel } from "./LegendPanel";
+import { ProNextUp } from "./ProHome";
 
 export function HomeTab({ career, ctx }: { career: Career; ctx: HsContext }) {
   const update = useCareer((s) => s.update);
@@ -46,7 +47,9 @@ export function HomeTab({ career, ctx }: { career: Career; ctx: HsContext }) {
   return (
     <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
       <div className="flex flex-col gap-5">
-        {career.stage === "college" ? (
+        {career.stage === "pro" ? (
+          <ProNextUp career={career} ctx={ctx} />
+        ) : career.stage === "college" ? (
           <>
             <CollegeNextUp career={career} ctx={ctx} />
             <CollegeRecent career={career} ctx={ctx} />

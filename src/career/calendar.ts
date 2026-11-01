@@ -105,6 +105,14 @@ export function collegeCalendar(year: number): CollegeCalendar {
   };
 }
 
+/** Key dates of the pre-draft process, by the year of the draft. */
+export const draftCalendar = (year: number) => ({
+  combine: iso(year, 5, 12),
+  workouts: iso(year, 6, 2),
+  interviews: iso(year, 6, 16),
+  draft: onOrAfter(iso(year, 6, 22), 4),
+});
+
 /** The school year a date belongs to (fall year): Aug 1 starts a new one. */
 export function schoolYearOf(d: IsoDate) {
   const y = +d.slice(0, 4);

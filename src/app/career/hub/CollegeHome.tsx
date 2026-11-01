@@ -33,6 +33,7 @@ import {
   finishCollegeYear,
   nextCollegeYearAction,
   portalAction,
+  preDraftAction,
   primaryDevice,
   redshirtAction,
   returnAction,
@@ -276,12 +277,17 @@ export function CollegeNextUp({ career, ctx }: { career: Career; ctx: HsContext 
   return (
     <Panel title="You've declared for the draft">
       <p className="mb-1 font-semibold text-amber">Projection: {declared?.stock.label}</p>
-      <p className="mb-4 text-steel">Draft night and the pros arrive in an upcoming beta update. Your career is saved and will pick up right here.</p>
-      {canReturn(career) && (
-        <Button variant="secondary" disabled={busy} onClick={() => run(() => undeclareAction())}>
-          Change your mind and stay in school
+      <p className="mb-4 text-steel">Next up: pick an agent, then the combine, workouts and GM interviews on the way to draft night.</p>
+      <div className="flex flex-wrap gap-2">
+        <Button disabled={busy} onClick={() => run(() => preDraftAction())}>
+          Start the road to the draft
         </Button>
-      )}
+        {canReturn(career) && (
+          <Button variant="secondary" disabled={busy} onClick={() => run(() => undeclareAction())}>
+            Change your mind and stay in school
+          </Button>
+        )}
+      </div>
     </Panel>
   );
 }

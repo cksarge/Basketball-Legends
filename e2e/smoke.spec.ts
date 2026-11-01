@@ -173,12 +173,10 @@ test("a career game saved to a Legend slot resumes from the hub, and simming it 
   await expect.poll(slot, { timeout: 60_000 }).toEqual([false, false]);
 });
 
-test("a graduate moves on campus: college hub, a played game, sims, NIL and the Road to Legend card @gpu", async ({ page }) => {
-  test.setTimeout(240_000);
-  const errors = watchErrors(page);
-  await lowGraphics(page);
+/** Creates a career and jumps its save to a graduated senior headed to college. */
+async function graduate(page: Page, first: string) {
   await page.goto("career/new/");
-  await page.getByLabel("First name").fill("Campus");
+  await page.getByLabel("First name").fill(first);
   await page.getByLabel("Last name").fill("Star");
   await page.getByRole("button", { name: "2. Position" }).click();
   await page.getByRole("radio", { name: "PG" }).click();
@@ -194,7 +192,7 @@ test("a graduate moves on campus: college hub, a played game, sims, NIL and the 
   await page.getByRole("button", { name: "On to the season" }).click();
   // jump the save to a graduated senior headed to a college
   await page.evaluate(
-    () =>
+    (name) =>
       new Promise<void>((resolve, reject) => {
         const open = indexedDB.open("bl-career");
         open.onerror = () => reject(open.error);
@@ -202,7 +200,7 @@ test("a graduate moves on campus: college hub, a played game, sims, NIL and the 
           const store = open.result.transaction("careers", "readwrite").objectStore("careers");
           const all = store.getAll();
           all.onsuccess = () => {
-            const row = all.result.find((r) => r.data.player.firstName === "Campus");
+            const row = all.result.find((r) => r.data.player.firstName === name);
             const d = row.data;
             const s = d.hs.seasons.at(-1);
             Object.assign(s, {
@@ -219,8 +217,38 @@ test("a graduate moves on campus: college hub, a played game, sims, NIL and the 
           };
         };
       }),
+    first,
   );
   await page.reload();
+}
+
+/** Changes the open career's save, then reloads the hub. */
+async function patchCareer(page: Page, first: string, patch: string) {
+  await page.evaluate(
+    ([name, code]) =>
+      new Promise<void>((resolve, reject) => {
+        const open = indexedDB.open("bl-career");
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const store = open.result.transaction("careers", "readwrite").objectStore("careers");
+          const all = store.getAll();
+          all.onsuccess = () => {
+            const row = all.result.find((r) => r.data.player.firstName === name);
+            new Function("d", code)(row.data);
+            store.put(row).onsuccess = () => resolve();
+          };
+        };
+      }),
+    [first, patch],
+  );
+  await page.reload();
+}
+
+test("a graduate moves on campus: college hub, a played game, sims, NIL and the Road to Legend card @gpu", async ({ page }) => {
+  test.setTimeout(240_000);
+  const errors = watchErrors(page);
+  await lowGraphics(page);
+  await graduate(page, "Campus");
   await page.getByRole("button", { name: "Move in on campus" }).click();
   await expect(page.getByRole("button", { name: "Sim game", exact: true })).toBeVisible();
   await expect(page.getByRole("tab", { name: "Recruiting" })).toHaveCount(0);
@@ -252,6 +280,37 @@ test("a graduate moves on campus: college hub, a played game, sims, NIL and the 
   await expect(page.getByRole("cell", { name: "Campus Star" })).toBeVisible();
   await page.getByRole("tab", { name: "Stats" }).click();
   await expect(page.getByText("College career")).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("the road to the draft: agent, combine, workouts, interviews and draft night @gpu", async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors = watchErrors(page);
+  await lowGraphics(page);
+  await graduate(page, "Draft");
+  await page.getByRole("button", { name: "Move in on campus" }).click();
+  await expect(page.getByText("Coach trust")).toBeVisible();
+  await patchCareer(page, "Draft", 'd.college.declared = { date: d.date, stock: { pick: 12, label: "Lottery pick", score: 82.8 } };');
+  await page.getByRole("button", { name: "Start the road to the draft" }).click();
+  await page.getByRole("button", { name: "Sign with Dana" }).click();
+  await page.getByRole("button", { name: "Go to the combine" }).click();
+  await page.getByRole("button", { name: /Sit out the drills/ }).click();
+  await expect(page.getByText(/Combine: .* vertical/).first()).toBeVisible();
+  for (let i = 0; i < 3; i++) {
+    await expect(page.getByRole("heading", { name: `Team workouts (${i} of 3)` })).toBeVisible();
+    await page.getByRole("list", { name: "Teams asking for a workout" }).getByRole("button").first().click();
+  }
+  for (let i = 0; i < 3; i++) {
+    await expect(page.getByRole("heading", { name: `GM interviews (${i + 1} of 3)` })).toBeVisible();
+    await page
+      .getByRole("button", { name: /worst|outwork|learn everything|walked through/i })
+      .first()
+      .click();
+  }
+  await page.getByRole("button", { name: "Head to the draft" }).click();
+  await page.getByRole("button", { name: /Skip to/ }).click();
+  await page.getByRole("button", { name: /Continue|Leave the draft/ }).click();
+  await expect(page.getByText(/Drafted|Went undrafted/).first()).toBeVisible();
   expect(errors).toEqual([]);
 });
 

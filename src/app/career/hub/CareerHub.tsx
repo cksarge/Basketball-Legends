@@ -93,11 +93,11 @@ export function CareerHub() {
         {team && (
           <span>
             {team.name} {team.nickname}
-            {col ? ` · ${COLLEGE_ROLE[col.role]}` : s?.tryout && ` · ${LEVEL_SHORT[s.level]}`}
+            {col ? ` · ${COLLEGE_ROLE[col.role]}` : career.stage === "hs" && s?.tryout && ` · ${LEVEL_SHORT[s.level]}`}
           </span>
         )}
         <span>
-          {col ? classLabel(col.classYear) : s ? GRADE_LABEL[s.grade] : stageLabel(career.stage)} · {formatDate(career.date)}
+          {col ? classLabel(col.classYear) : s && career.stage === "hs" ? GRADE_LABEL[s.grade] : stageLabel(career.stage)} · {formatDate(career.date)}
         </span>
         <span className="ml-auto flex items-baseline gap-4">
           {p.skillPoints > 0 && (
