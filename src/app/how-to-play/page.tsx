@@ -29,6 +29,10 @@ export default function HowToPlay() {
         New to the game? Choose <b>Practice and Tutorial</b> on the main menu, then <b>Start the tutorial</b>, for a guided session that checks off each basic
         move as you do it.
       </p>
+      <p>
+        On a phone or tablet, you&apos;ll need a controller or a keyboard to play: there are no touch controls. Menus, your career hub and simming games all
+        work by touch.
+      </p>
       <H2>Offense</H2>
       <table className="w-full text-left">
         <thead className="text-sm text-steel">
@@ -174,7 +178,7 @@ export default function HowToPlay() {
           <b>Legend points:</b> honors and records (Greatness), titles (Winning), big games you played yourself (Moments) and community work (Impact).
         </li>
         <li>
-          <b>Becoming a Legend:</b> decided only at retirement, for an Icon with 2,000 points. Once you&apos;re an Icon, the game shows your chances.
+          <b>Becoming a Legend:</b> decided only at retirement, for an Icon with 2,400 points. Once you&apos;re an Icon, the game shows your chances.
         </li>
       </ul>
       <H3>High school</H3>
@@ -269,7 +273,8 @@ export default function HowToPlay() {
           <b>Runs:</b> the Park tab gives you three pickup runs every off-season. They earn street reputation and XP.
         </li>
         <li>
-          <b>New parks:</b> reputation opens tougher parks, which pay more.
+          <b>New parks:</b> reputation opens tougher parks, which pay more. Once a career earns a park, it&apos;s also open in Play in the Park on the main
+          menu.
         </li>
         <li>
           <b>Surprises:</b> known pros sometimes drop in, and your rival may call you out to one-on-one.
@@ -345,8 +350,8 @@ export default function HowToPlay() {
       </ul>
       <H2>Play in the Park</H2>
       <p>
-        Pickup games at five outdoor courts, against each park&apos;s regulars. There&apos;s no clock and no referees: the first side to the target wins (by
-        two, unless you turn that off).
+        Pickup games at five outdoor courts, against each park&apos;s regulars. Two are open from the start, and street reputation in Road to Legend opens the
+        rest. There&apos;s no clock and no referees: the first side to the target wins (by two, unless you turn that off).
       </p>
       <ul className="list-disc pl-6">
         <li>

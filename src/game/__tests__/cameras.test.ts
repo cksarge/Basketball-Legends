@@ -15,10 +15,12 @@ import type { CameraMode } from "@/state/settings";
 import { ALL_VARIANTS, variant, type VariantId, type VenueVariant, venueStretch } from "@/game3d/arena/variants";
 import { CAMERA_HEIGHT, CAMERA_ZOOM, type CameraPose, constrainPose, followPose, freeThrowPose, huddlePose, replayPose } from "@/game3d/cameraPose";
 import { REPLAY_CAMS } from "@/game3d/replay";
+import { trailerCameras } from "@/game3d/trailer/timeline";
 import { FLOOR_MARGIN } from "@/game3d/courtTexture";
 
 const NEAR = 0.6; // camera near plane is 0.5 m
 const BLOCK = 1.5; // an obstruction this close to the lens fills the shot
+const TRAILER_NEAR = 0.2; // the menu trailer's near plane is 0.1 m
 const MODES: CameraMode[] = ["broadcast", "2k", "low", "baseline", "player", "skycam"];
 
 interface Solids {
@@ -195,4 +197,35 @@ describe("cameras never intersect a venue", () => {
         }
         expect([...byKind.values()], `${failures.length} bad camera poses`).toEqual([]);
       });
+});
+
+describe("the menu trailer's cameras", () => {
+  beforeAll(async () => {
+    await MeshoptDecoder.ready;
+    for (const id of ALL_VARIANTS) if (!venueTris.has(id)) venueTris.set(id, await loadVenue(id));
+  });
+
+  // the trailer runs in a pro arena, so every pro building is checked
+  for (const id of ALL_VARIANTS.filter((x) => variant(x).kind === "pro"))
+    it(`${id}: every arena shot stays clear on every frame`, () => {
+      const v = variant(id);
+      const court = courtFor("pro");
+      const solids = solidsFor(v, court);
+      const r = rimPos(court, 1);
+      const shots = trailerCameras([r.x, r.y, r.z], [r.x, r.y, r.z]).filter((s) => s.id !== "park");
+      expect(new Set(shots.map((s) => s.id)).size).toBe(5);
+      const failures: string[] = [];
+      for (const { id: shot, t, cam } of shots) {
+        const pos = new THREE.Vector3(...cam.pos);
+        const look = new THREE.Vector3(...cam.look);
+        const near = solids.all.closestPointToPoint(pos, hit, 0, TRAILER_NEAR);
+        if (near && near.distance < TRAILER_NEAR) failures.push(`${shot} t=${t.toFixed(1)}: ${near.distance.toFixed(2)} m from geometry`);
+        const d = look.clone().sub(pos);
+        const len = d.length();
+        ray.set(pos, d.normalize());
+        const first = solids.opaque.raycastFirst(ray, THREE.DoubleSide);
+        if (first && first.distance < Math.min(BLOCK, len * 0.5)) failures.push(`${shot} t=${t.toFixed(1)}: view blocked ${first.distance.toFixed(1)} m out`);
+      }
+      expect(failures.slice(0, 5), `${failures.length} bad frames`).toEqual([]);
+    });
 });

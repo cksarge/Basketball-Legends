@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { loadLeague, rosterFor } from "@/data/leagues";
 import { useSettings } from "@/state/settings";
 import { type PendingMatch, useMatchStore } from "@/state/matchStore";
-import { GameView } from "@/ui/game/GameView";
+import { ControllerGate } from "@/ui/game/ControllerGate";
 
 /** Fallback matchup when /game is opened directly (bookmark, reload without session). */
 async function demoMatch(): Promise<PendingMatch> {
@@ -56,5 +56,5 @@ export function GamePageClient() {
       </div>
     );
   }
-  return <GameView pending={pending} />;
+  return <ControllerGate pending={pending} />;
 }

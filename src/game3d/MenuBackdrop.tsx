@@ -12,7 +12,7 @@ import { Arena, type ArenaKind } from "./Arena";
 import { pickVariant, variant } from "./arena/variants";
 import { Hoop } from "./Hoop";
 
-function Env() {
+export function Env() {
   const { gl, scene } = useThree();
   useEffect(() => {
     const pm = new THREE.PMREMGenerator(gl);

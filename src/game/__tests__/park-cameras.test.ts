@@ -13,10 +13,13 @@ import { boardX, courtFor, type CourtSpec, rimPos } from "@/game/court";
 import type { CameraMode } from "@/state/settings";
 import { CAMERA_HEIGHT, CAMERA_ZOOM, type CameraPose, constrainPose, followPose, freeThrowPose, replayPose } from "@/game3d/cameraPose";
 import { REPLAY_CAMS } from "@/game3d/replay";
+import { trailerCameras } from "@/game3d/trailer/timeline";
 import { PARKS } from "@/game/park/parks";
 import { PARK_VENUE, PARK_WORLD } from "@/game3d/park/world";
 
 const NEAR = 0.6;
+/** The trailer's cameras get closer than a game's: it sets its near plane at 0.1 m. */
+const TRAILER_NEAR = 0.2;
 const BLOCK = 1.5;
 const MODES: CameraMode[] = ["broadcast", "2k", "low", "baseline", "player", "skycam"];
 /** The widest screen we design for (ultrawide monitors see the most to the sides). */
@@ -211,6 +214,43 @@ describe("park worlds leave the court to the engine", () => {
       }
       expect(over.slice(0, 3), `${over.length} triangles over the court`).toEqual([]);
     });
+});
+
+describe("the menu trailer's park shot", () => {
+  beforeAll(async () => {
+    await MeshoptDecoder.ready;
+    if (!worlds.has("boardwalk")) worlds.set("boardwalk", await loadPark("boardwalk"));
+  });
+
+  it("stays clear of the world and never sees its edge, on any frame", () => {
+    const w = worlds.get("boardwalk")!;
+    const ex = extras("boardwalk", court);
+    const all = bvh(w.all, ex);
+    const opaque = bvh(w.opaque, ex);
+    const r = rimPos(court, 1);
+    const shots = trailerCameras([r.x, r.y, r.z], [r.x, r.y, r.z]).filter((s) => s.id === "park");
+    expect(shots.length).toBeGreaterThan(40);
+    const failures: string[] = [];
+    const ray = new THREE.Ray();
+    const hit = { point: new THREE.Vector3(), distance: 0, faceIndex: 0 };
+    for (const { t, cam } of shots) {
+      const p: CameraPose = { pos: new THREE.Vector3(...cam.pos), look: new THREE.Vector3(...cam.look), fov: cam.fov };
+      const near = all.closestPointToPoint(p.pos, hit, 0, TRAILER_NEAR);
+      if (near && near.distance < TRAILER_NEAR) failures.push(`t=${t.toFixed(1)}: ${near.distance.toFixed(2)} m from geometry`);
+      const d = p.look.clone().sub(p.pos);
+      const len = d.length();
+      ray.set(p.pos, d.normalize());
+      const first = opaque.raycastFirst(ray, THREE.DoubleSide);
+      if (first && first.distance < Math.min(BLOCK, len * 0.5)) failures.push(`t=${t.toFixed(1)}: view blocked ${first.distance.toFixed(1)} m out`);
+      for (const dir of frameRays(p)) {
+        if (dir.y >= 0) continue;
+        const dist = (p.pos.y - w.groundY) / -dir.y;
+        if (dist >= PARK_WORLD.cameraFar) continue;
+        if (Math.hypot(p.pos.x + dir.x * dist, p.pos.z + dir.z * dist) > w.groundRadius) failures.push(`t=${t.toFixed(1)}: sees past the terrain`);
+      }
+    }
+    expect(failures).toEqual([]);
+  });
 });
 
 describe("park cameras", () => {

@@ -32,6 +32,7 @@ import {
   marketValue,
   negotiate,
   nextProEvent,
+  playoffIntensity,
   proMatchSetup,
   proRole,
   recordThreeContest,
@@ -45,7 +46,7 @@ import {
 } from "../pro/season";
 import { LEGEND_BAR, RANK_POINTS, legendEvents, legendStatus } from "../legend";
 import { allTimeRank, careerTotals, nextToPass, retire } from "../pro/retire";
-import type { Career, ProCareer } from "../types";
+import type { Career, ProCareer, ScheduledGame } from "../types";
 
 const teams = pro.teams as unknown as Team[];
 const ctx = hsContext(hs.teams as unknown as Team[], college.teams as unknown as Team[], college.conferences, teams);
@@ -419,6 +420,28 @@ describe("contracts and free agency", () => {
   });
 });
 
+describe("playoff intensity", () => {
+  const roster = generateRoster(teams[0], 2031);
+  const game = (id: string, kind: ScheduledGame["kind"] = "playoff") => ({ id, kind }) as ScheduledGame;
+  const lift = (g: ScheduledGame) => playoffIntensity(g, roster)[0].ratings.speed - roster[0].ratings.speed;
+
+  it("lifts playoff opponents, more in the last two rounds, and leaves other games alone", () => {
+    expect(lift(game("g1", "region"))).toBe(0);
+    expect(lift(game("East-pi1-2031-g0"))).toBe(0);
+    expect(lift(game("East-r1-0-2031-g0"))).toBe(1);
+    expect(lift(game("West-r2-1-2031-g3"))).toBe(1);
+    expect(lift(game("East-r3-0-2031-g1"))).toBe(2);
+    expect(lift(game("finals-2031-g6"))).toBe(2);
+  });
+
+  it("builds every game plan around the very best", () => {
+    const at = (ovr: number) => playoffIntensity(game("finals-2031-g6"), roster, ovr)[0].ratings.speed - roster[0].ratings.speed;
+    expect(at(88)).toBe(2);
+    expect(at(95)).toBe(4);
+    expect(at(99)).toBeGreaterThan(at(95));
+  });
+});
+
 describe("the league's best", () => {
   const rate = (award: "mvp" | "first", impact: number) => {
     const years = Array.from({ length: 200 }, (_, i) => 2031 + i);
@@ -436,7 +459,7 @@ describe("the league's best", () => {
   });
 
   it("a dominant career's typical honors stop short of Legend without big moments of your own", () => {
-    const prime = 12 * 50 + 4 * 120 + 3 * 100 + 2 * 100 + 15 * 15 + 85 + 100;
+    const prime = 12 * 50 + 4 * 120 + 4 * 100 + 3 * 100 + 15 * 15 + 185 + 100;
     expect(prime).toBeLessThan(LEGEND_BAR);
   });
 });

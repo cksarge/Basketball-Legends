@@ -14,6 +14,7 @@ const libs: [string, string, string][] = [
   ["Tailwind CSS", "MIT", "https://github.com/tailwindlabs/tailwindcss"],
   ["glTF Transform", "MIT", "https://github.com/donmccurdy/glTF-Transform"],
   ["meshoptimizer", "MIT", "https://github.com/zeux/meshoptimizer"],
+  ["Dexie.js", "Apache-2.0", "https://github.com/dexie/Dexie.js"],
 ];
 
 export default function Credits() {

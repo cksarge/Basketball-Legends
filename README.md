@@ -24,6 +24,7 @@ A free, open-source 3D basketball game that runs in the browser. Play pro basket
 - **Injuries (optional):** falls, hard drives and awkward landings can hurt players, with forced substitutions and games-missed estimates.
 - **Never lose a game:** games in progress save automatically every few seconds, and separate save slots keep different games side by side: three shared by Quick Play and the park, and three for Road to Legend. Resume or delete any of them from the main menu.
 - **Loading screens** show real progress and gameplay tips that use your own key bindings.
+- **Phones and tablets:** there are no touch controls, so games need a controller or keyboard. Menus, career management and simming work by touch.
 - **Works offline:** after one visit the whole game is cached and playable without a connection, and it can be installed as an app.
 - **Settings for everyone:** graphics presets with auto-detect, full key and button remapping, colorblind modes, subtitles, reduced motion, UI scale and tap-to-shoot.
 

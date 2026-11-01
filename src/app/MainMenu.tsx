@@ -7,7 +7,6 @@ import type { Team } from "@/engine/types";
 import { loadLeague } from "@/data/leagues";
 import { useMatchStore } from "@/state/matchStore";
 import { audio } from "@/audio/engine";
-import { TeamLogo } from "@/ui/TeamLogo";
 import { useInputDevice } from "@/ui/MenuNavigator";
 import { KeyHint } from "@/ui/KeyHint";
 import { toast } from "@/ui/Toaster";
@@ -25,7 +24,7 @@ import {
 } from "@/state/suspended";
 import { IS_BETA, SITE_URL } from "@/lib/site";
 
-const MenuBackdrop = dynamic(() => import("@/game3d/MenuBackdrop"), { ssr: false });
+const MenuTrailer = dynamic(() => import("@/game3d/MenuTrailer"), { ssr: false });
 
 interface Item {
   id: string;
@@ -78,7 +77,7 @@ const ITEMS: Item[] = [
     label: "Play in the Park",
     href: "/park/",
     blurb: "Pickup ball at five outdoor courts.",
-    detail: ["1-on-1 up to 5-on-5, half or full court", "Next game up, 21, HORSE and a 3-point contest", "Call your own fouls, check ball, win by 2"],
+    detail: ["1-on-1 up to 5-on-5, half or full court", "Next game up, 21, HORSE and a 3-point contest", "Earn more parks in Road to Legend"],
   },
   {
     id: "practice",
@@ -106,7 +105,7 @@ const ITEMS: Item[] = [
 /** The controller to play with from the menu: the gamepad if that's what was used last. */
 export function MainMenu() {
   const router = useRouter();
-  const [team, setTeam] = useState<Team | null>(null);
+  const [teams, setTeams] = useState<[Team, Team] | null>(null);
   const [focused, setFocused] = useState(ITEMS[0].id);
   const device = useInputDevice((s) => s.device);
   const setPending = useMatchStore((s) => s.setPending);
@@ -127,16 +126,7 @@ export function MainMenu() {
   }, [saves]);
 
   useEffect(() => {
-    loadLeague("pro").then((d) => {
-      let idx = 0;
-      try {
-        idx = Number(sessionStorage.getItem("bl-menu-team") ?? Math.floor(Math.random() * d.teams.length));
-        sessionStorage.setItem("bl-menu-team", String(idx));
-      } catch {
-        idx = 23;
-      }
-      setTeam(d.teams[idx % d.teams.length]);
-    });
+    loadLeague("pro").then((d) => setTeams([d.teams.find((t) => t.id === "pro-phx") ?? d.teams[0], d.teams.find((t) => t.id === "pro-bos") ?? d.teams[1]]));
     first.current?.focus();
   }, []);
 
@@ -174,15 +164,11 @@ export function MainMenu() {
     <div className="relative min-h-dvh overflow-x-hidden bg-navy">
       {/* the backdrop stays put while the menu scrolls; on wide screens only the menu column scrolls */}
       <div className="fixed inset-0" aria-hidden>
-        {team && <MenuBackdrop team={team} kind="pro" />}
+        {teams && <MenuTrailer home={teams[0]} away={teams[1]} />}
       </div>
-      <div className="fixed inset-0 bg-gradient-to-r from-navy via-navy/75 to-transparent" aria-hidden />
+      <div className="fixed inset-0 bg-gradient-to-r from-navy/90 via-navy/30 to-transparent" aria-hidden />
       <div className="relative flex min-h-dvh flex-col px-6 py-6 sm:px-12 lg:h-dvh">
-        <header className="flex items-center gap-4">
-          {team && <TeamLogo team={team} size={44} />}
-          <p className="font-display text-xl font-bold text-steel">Tonight at {team?.arena.name ?? "the arena"}</p>
-        </header>
-        {IS_BETA && <BetaWarning className="mt-4 lg:hidden" />}
+        {IS_BETA && <BetaWarning className="lg:hidden" />}
         <div className="flex flex-1 flex-col justify-center gap-10 lg:min-h-0 lg:flex-row lg:items-center lg:justify-between">
           <nav
             aria-label="Main menu"
@@ -200,7 +186,7 @@ export function MainMenu() {
                 <rect x="140" y="80" width="120" height="130" fill="none" stroke="var(--color-amber)" strokeOpacity="0.35" strokeWidth="3" />
                 <circle cx="200" cy="80" r="60" fill="none" stroke="var(--color-amber)" strokeOpacity="0.3" strokeWidth="3" strokeDasharray="10 8" />
               </svg>
-              <h1 className="relative font-display text-[clamp(3rem,9vw,7.5rem)] font-black leading-[0.85] tracking-tight">
+              <h1 className="relative font-display text-[clamp(2.5rem,min(9vw,13vh),7.5rem)] font-black leading-[0.85] tracking-tight">
                 <span className="text-net">Basketball</span>
                 <br />
                 <span className="text-amber">Legends</span>
@@ -357,7 +343,7 @@ function BetaWarning({ className }: { className: string }) {
 }
 
 function menuCls(active: boolean) {
-  return `group flex items-baseline py-1 text-left font-display text-[clamp(1.6rem,5vw,3rem)] font-extrabold leading-tight transition-colors ${active ? "text-amber" : "text-net/80 hover:text-net"}`;
+  return `group flex items-baseline py-1 text-left font-display text-[clamp(1.4rem,min(5vw,5.4vh),3rem)] font-extrabold leading-tight transition-colors ${active ? "text-amber" : "text-net/80 hover:text-net"}`;
 }
 
 const savedWhen = (g: SuspendedGame) => new Date(g.savedAt).toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" });

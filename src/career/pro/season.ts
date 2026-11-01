@@ -505,6 +505,18 @@ export function advancePro(c: Career, date: IsoDate, ctx: HsContext): Career {
 
 const conferenceLabel = (conf: string) => (conf === "East" ? "Eastern" : "Western");
 
+/** Everyone locks in when it counts: playoff opponents raise their level, most of all in the last two rounds. */
+export function playoffIntensity(game: ScheduledGame, roster: Player[], yourOvr = 0): Player[] {
+  if (game.kind !== "playoff" || /-pi\d/.test(game.id)) return roster;
+  // the better you are, the more every game plan is built around stopping you
+  const lift = (/^finals|-r3-/.test(game.id) ? 2 : 1) + Math.max(0, Math.round((yourOvr - 90) * 0.35));
+  return roster.map((p) => {
+    const ratings = { ...p.ratings };
+    for (const k of Object.keys(ratings) as RatingKey[]) ratings[k] = Math.min(99, ratings[k] + lift);
+    return { ...p, ratings };
+  });
+}
+
 /** The match for one of your games: league game, development game or the All-Star Game. */
 export function proMatchSetup(c: Career, game: ScheduledGame, ctx: HsContext): MatchSetup {
   const s = currentPro(c)!;
@@ -521,7 +533,7 @@ export function proMatchSetup(c: Career, game: ScheduledGame, ctx: HsContext): M
   }
   if (s.role !== "starter" || upTop) starters = pickStarters(upTop ? s.leagueRoster! : s.roster);
   const rotation = { [c.player.id]: upTop ? ROLE_MINUTES.bench + 6 : ROLE_MINUTES[s.role] };
-  const theirs = inDevLeague(s) && !upTop ? devRoster(opp, s.year) : generateRoster(opp, s.year);
+  const theirs = playoffIntensity(game, inDevLeague(s) && !upTop ? devRoster(opp, s.year) : generateRoster(opp, s.year), playerOvr(c.player));
   const us = { team: t, roster: mine, starters, rotation };
   const them = { team: opp, roster: theirs, starters: pickStarters(theirs) };
   return {

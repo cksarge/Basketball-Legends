@@ -10,7 +10,6 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   const uiScale = useSettings((s) => s.accessibility.uiScale);
   const reducedMotion = useSettings((s) => s.accessibility.reducedMotion);
   const colorblind = useSettings((s) => s.accessibility.colorblind);
-  const autoDetected = useSettings((s) => s.graphics.autoDetected);
   const applyPreset = useSettings((s) => s.applyPreset);
   const set = useSettings((s) => s.set);
 
@@ -21,11 +20,12 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   }, [uiScale, reducedMotion, colorblind]);
 
   useEffect(() => {
-    if (!autoDetected) {
+    // read the store directly: during hydration a hook still returns the defaults, which would redo this on every load
+    if (!useSettings.getState().graphics.autoDetected) {
       applyPreset(detectPreset());
       set("graphics", { autoDetected: true });
     }
-  }, [autoDetected, applyPreset, set]);
+  }, [applyPreset, set]);
 
   // offline support (production builds only, so dev never serves stale code)
   useEffect(() => {

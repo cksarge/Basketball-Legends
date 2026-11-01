@@ -4,6 +4,7 @@ import { generatePlayer, generateRoster, playerOvr } from "@/engine/player";
 import { Rng, clamp } from "@/engine/rng";
 import type { Player, Team } from "@/engine/types";
 import { parkById } from "@/game/park/parks";
+import { PARK_LADDER, nextUnlock, unlockedParks } from "@/game/park/unlocks";
 import { simScore } from "@/game/park/line";
 import { parkRegulars } from "@/game/park/regulars";
 import { buildPark, pickCast, rulesFor } from "@/game/park/session";
@@ -15,14 +16,6 @@ import { currentPro } from "./pro/season";
 import { STORY_RATE } from "./story/rates";
 import type { ActiveRun, Career, IsoDate, StreetState } from "./types";
 
-/** The parks a career can reach, easiest first, and the reputation each one takes. */
-export const PARK_LADDER: { parkId: string; rep: number }[] = [
-  { parkId: "copper-flats", rep: 0 },
-  { parkId: "maple-street", rep: 0 },
-  { parkId: "boardwalk", rep: 25 },
-  { parkId: "ironside-cage", rep: 60 },
-  { parkId: "rooftop-ninth", rep: 110 },
-];
 export const RUNS_PER_WINDOW = 3;
 const REP_NAME: [number, string][] = [
   [160, "Park royalty"],
@@ -37,8 +30,7 @@ export const repName = (rep: number) => REP_NAME.find(([n]) => rep >= n)![1];
 const blank = (): StreetState => ({ rep: 0, wins: 0, losses: 0, window: "", used: 0, regulars: {}, callouts: [], moments: [] });
 export const streetOf = (c: Career): StreetState => c.street ?? blank();
 
-export const unlockedParks = (rep: number) => PARK_LADDER.filter((p) => rep >= p.rep).map((p) => p.parkId);
-export const nextUnlock = (rep: number) => PARK_LADDER.find((p) => rep < p.rep) ?? null;
+export { PARK_LADDER, nextUnlock, unlockedParks };
 
 /** The off-season you're in, if you can get to the park. Once you're retired, you can play whenever you like. */
 export function runWindow(c: Career): string | null {

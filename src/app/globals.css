@@ -171,3 +171,19 @@ html[data-reduced-motion="true"] *::after {
 .bl-lower-third {
   animation: bl-lower-third 4.2s ease-out forwards;
 }
+
+/* main menu trailer text */
+@keyframes trailer-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+}
+.trailer-caption {
+  animation: trailer-rise 0.8s 0.5s ease-out backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .trailer-caption {
+    animation: none;
+  }
+}

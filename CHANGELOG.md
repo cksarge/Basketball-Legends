@@ -88,19 +88,26 @@ Career mode has a new name and one ultimate goal: become a Basketball Legend.
 
 - **Legend ranks in the pros:** All-Star, Superstar and Icon are now reachable, and pro honors, playoff wins, scoring milestones and big games you play yourself all count.
 - **Your odds:** once you're an Icon, the Road to Legend card shows your chance of becoming a Legend at retirement.
+- **Playoff intensity:** opponents raise their level in the playoffs, most of all in the conference finals and the Finals.
 - **League's best:** awards now go to whoever beats that year's best rivals, so a great year can still come up short and an MVP is never automatic.
 - **Hall of Legends:** a new Legends tab ranks you against the all-time greats in six records, and lists everything that has built your legacy.
 - **Retirement:** retire from age 30 on, or when the offers stop. Your jersey is retired where you earned it, the Hall of Fame votes, you give a speech shaped by who you thank first, and the final verdict comes in.
-- **Basketball Legend:** the title goes only to an Icon who retires with 2,000 Legend points.
+- **Basketball Legend:** the title goes only to an Icon who retires with 2,400 Legend points.
 
 ### Play in the Park
 
+- **Earn your parks:** Copper Flats and Maple Street are open to everyone. The Boardwalk, the Ironside Cage and the rooftop open in standalone Play in the Park once any of your careers earns the street reputation for them.
 - **Call your own fouls** is now a choice: turn it off and the game plays straight through.
 - **Local players:** extra controllers can join either side in team games.
 - **Your players:** pick any of your career players, along with regulars and league players.
 
+### Phones and tablets
+
+- **Controller check:** the game has no touch controls, so games on a touch-only device now ask you to connect a controller, and that controller takes over when it connects. A physical keyboard works too. Menus, career management and simming still work by touch.
+
 ### Menu and How to Play
 
+- **A trailer on the main menu:** the arena flyover is now a cinematic trailer built from the game itself, opening on a fast break and running through a slow-motion dunk, a postgame interview, the Boardwalk at sunset and a half-court buzzer-beater before ending on a lone Legend. It plays the same way every time, and holds on a still image with Reduce motion on.
 - **New main menu order:** Resume, Quick Play, Road to Legend, Franchise, Multiplayer, Play in the Park, Practice and Tutorial, Settings, How to play.
 - **Quick Play has a fast start:** Play now is gone from the menu. Fast start in Quick Play jumps into a game with two random teams.
 - **Practice and Tutorial are one option,** with the tutorial a button on the practice screen.
@@ -108,6 +115,9 @@ Career mode has a new name and one ultimate goal: become a Basketball Legend.
 
 ### Fixes
 
+- **Smoother defaults:** auto-detect now picks High on Apple silicon Macs, which holds a steadier frame rate than Ultra. Ultra is still in Settings.
+- **Graphics settings stick:** your graphics preset is no longer reset to the auto-detected one every time a page loads.
+- **Changelog:** the top of this page now links to the beta from the main game, and back to the main game from the beta.
 - **Main menu in the beta:** the beta warning and the Resume game panel no longer overlap. They stack in one column, and the panel scrolls in short windows.
 
 ### High school and recruiting

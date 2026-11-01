@@ -339,7 +339,7 @@ function checkSave(c: Career) {
 
 describe("a whole career", () => {
   const seeds: Options[] = SOAK
-    ? [{ seed: 11, pts: 0, win: 0, retireAt: 33 }]
+    ? [{ seed: Number(process.env.SOAK_SEED ?? 11), pts: 0, win: 0, retireAt: 37 }]
     : [
         { seed: 1, pts: 26, win: 0.75 },
         { seed: 2, pts: 12, win: 0.5, transfer: true, retireAt: 33 },
@@ -372,6 +372,6 @@ describe("a whole career", () => {
       expect(c.pro!.seasons.length).toBeGreaterThan(3);
       expect(currentPro(c)!.wrapped).toBe(true);
     },
-    SOAK ? 3_000_000 : 180_000,
+    SOAK ? 6_000_000 : 180_000,
   );
 });

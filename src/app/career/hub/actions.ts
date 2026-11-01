@@ -71,6 +71,7 @@ import { retire } from "@/career/pro/retire";
 import { readThread, replyText, resolveEvent, skipEvent, storyTick } from "@/career/story/engine";
 import { declineCallout, finishRun, simRun, startRun } from "@/career/park";
 import { saveLegend } from "@/state/legends";
+import { recordStreetRep } from "@/state/streetRep";
 import { trackHistory } from "@/career/timeline";
 import { buildPark } from "@/game/park/session";
 import { DEFAULT_SETUP } from "@/state/parkStore";
@@ -102,6 +103,7 @@ let storyContext: HsContext | null = null;
 const update = (fn: (c: Career) => Career) =>
   useCareer.getState().update((x) => {
     const next = trackHistory(fn(x));
+    if (next.street) recordStreetRep(next.street.rep);
     return storyContext ? storyTick(next, storyContext) : next;
   });
 

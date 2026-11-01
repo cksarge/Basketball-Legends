@@ -30,6 +30,9 @@ export default function Privacy() {
           Play, Play in the Park and a new career.
         </li>
         <li>
+          <b>Your street reputation</b>, the highest any career has reached, is saved in local storage so the parks you&apos;ve earned stay open.
+        </li>
+        <li>
           <b>Play in the Park choices</b> (the park, game and rules you last picked, and who you play as) are saved in local storage so the setup is ready next
           time. A next-game-up line in progress is kept in session storage and clears when you close the tab.
         </li>

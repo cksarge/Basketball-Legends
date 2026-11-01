@@ -295,7 +295,7 @@ export function detectPreset(): GraphicsPreset {
   } catch {
     /* ignore */
   }
-  if (/rtx|radeon rx|apple m[2-9]|apple gpu/.test(gpu) && cores >= 8) return "ultra";
+  if (/rtx|radeon rx/.test(gpu) && cores >= 8) return "ultra";
   if (/intel|uhd|iris|mali|adreno|swiftshader|llvmpipe/.test(gpu) || cores <= 4 || mem <= 4) return "medium";
   return "high";
 }

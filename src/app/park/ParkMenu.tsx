@@ -5,6 +5,7 @@ import { heightStr, playerOvr } from "@/engine/player";
 import type { Player } from "@/engine/types";
 import { PARKS, parkById, type Park } from "@/game/park/parks";
 import { parkRegulars, regularOutfit } from "@/game/park/regulars";
+import { parkRepNeeded, unlockedParks } from "@/game/park/unlocks";
 import { crewById, recordGame, simUntilYou } from "@/game/park/line";
 import {
   type Cast,
@@ -22,6 +23,7 @@ import {
 } from "@/game/park/session";
 import { parkName, useLegends } from "@/state/legends";
 import { useMatchStore } from "@/state/matchStore";
+import { useStreetRep } from "@/state/streetRep";
 import { type ParkMode, type ParkSetup, useParkStore } from "@/state/parkStore";
 import { audio } from "@/audio/engine";
 import { Button, Panel, Segmented, Toggle } from "@/ui/kit";
@@ -79,7 +81,9 @@ export function ParkMenu() {
     return () => clearInterval(h);
   }, []);
 
-  const park = parkById(setup.parkId);
+  const open = unlockedParks(useStreetRep());
+  // a park picked before parks were earned falls back to one that's open
+  const park = parkById(open.includes(setup.parkId) ? setup.parkId : open[0]);
   const regulars = useMemo(() => parkRegulars(park), [park]);
   const base = useMemo(() => pickCast(setup, regulars, seed), [setup, regulars, seed]);
   const cast: Cast = useMemo(() => {
@@ -181,16 +185,17 @@ export function ParkMenu() {
             <li key={p.id}>
               <button
                 aria-pressed={p.id === park.id}
+                disabled={!open.includes(p.id)}
                 onClick={() => {
                   set({ parkId: p.id, you: null });
                   setOverrides({});
                 }}
-                className={`flex h-full w-full flex-col gap-2 rounded-[var(--radius-chip)] p-3 text-left ring-1 ${p.id === park.id ? "bg-amber/10 ring-amber" : "bg-deck-2 ring-line hover:ring-amber"}`}
+                className={`flex h-full w-full flex-col gap-2 rounded-[var(--radius-chip)] p-3 text-left ring-1 disabled:opacity-50 ${p.id === park.id ? "bg-amber/10 ring-amber" : "bg-deck-2 ring-line hover:ring-amber"}`}
               >
                 <CourtSwatch park={p} />
                 <span className="font-display text-lg font-black leading-tight">{parkName(p.id, legends)}</span>
                 <span className="text-xs text-steel">
-                  {p.city}, {p.state} · {p.vibe}
+                  {p.city}, {p.state} · {open.includes(p.id) ? p.vibe : `Locked: earn ${parkRepNeeded(p.id)} street reputation in Road to Legend`}
                 </span>
               </button>
             </li>

@@ -16,7 +16,7 @@ export type LegendRank = (typeof RANKS)[number];
 /** Points needed for each rank that points alone can reach. */
 export const RANK_POINTS: Partial<Record<LegendRank, number>> = { "State Star": 30, "National Name": 90, "All-Star": 300, Superstar: 600, Icon: 1000 };
 /** Career points an Icon must retire with to be named a Legend. Very few careers get here. */
-export const LEGEND_BAR = 2000;
+export const LEGEND_BAR = 2400;
 /** Points a top pro adds in a season, for the estimate shown to Icons. */
 const ICON_SEASON_PACE = 130;
 const ICON_RETIRE_AGE = 37;

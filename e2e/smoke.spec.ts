@@ -673,6 +673,191 @@ test("park options: fouls can be turned off, and your career players can be pick
   expect(errors).toEqual([]);
 });
 
+test("standalone parks: two are open, and street reputation from a career opens the rest", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto("park/");
+  await expect(page.getByRole("button", { name: /Copper Flats Courts/ })).toBeEnabled();
+  await expect(page.getByRole("button", { name: /Maple Street Park/ })).toBeEnabled();
+  await expect(page.getByRole("button", { name: /Boardwalk Courts/ })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /Ironside Cage/ })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /Rooftop on Ninth/ })).toBeDisabled();
+  await page.evaluate(() => localStorage.setItem("bl-street-rep", "60"));
+  await page.reload();
+  await expect(page.getByRole("button", { name: /Boardwalk Courts/ })).toBeEnabled();
+  await expect(page.getByRole("button", { name: /Ironside Cage/ })).toBeEnabled();
+  await expect(page.getByRole("button", { name: /Rooftop on Ninth/ })).toBeDisabled();
+  expect(errors).toEqual([]);
+});
+
+test.describe("on a touch-only phone", () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 800 } });
+
+  test("menus work, a game waits for a controller, and connecting one starts it @gpu", async ({ page }) => {
+    await lowGraphics(page);
+    await page.addInitScript(() => {
+      const w = window as unknown as { __pad: boolean };
+      w.__pad = false;
+      navigator.getGamepads = () => (w.__pad ? ([{ index: 0, connected: true, buttons: [], axes: [0, 0, 0, 0], id: "Test pad" }] as unknown as Gamepad[]) : []);
+    });
+    await page.goto("play/");
+    await page.getByRole("button", { name: "Play game" }).click();
+    await page.waitForURL("**/game/");
+    const gate = page.getByRole("alertdialog", { name: "Controller needed" });
+    await expect(gate).toContainText("does not support touch controls");
+    await expect(page.locator("canvas")).toHaveCount(0);
+    await page.getByRole("button", { name: "Go back" }).click();
+    await page.waitForURL("**/play/");
+    await page.getByRole("button", { name: "Play game" }).click();
+    await expect(gate).toBeVisible();
+    await page.evaluate(() => {
+      (window as unknown as { __pad: boolean }).__pad = true;
+    });
+    await expect(gate).toBeHidden({ timeout: 5_000 });
+    await expect(page.getByText("Loading the arena")).toBeHidden({ timeout: 60_000 });
+  });
+
+  test("a real keyboard gets you in too", async ({ page }) => {
+    await page.goto("play/");
+    await page.getByRole("button", { name: "Play game" }).click();
+    const gate = page.getByRole("alertdialog", { name: "Controller needed" });
+    await expect(gate).toBeVisible();
+    await page.keyboard.press("Enter");
+    await expect(gate).toBeHidden();
+  });
+});
+
+test("the changelog links across to the other version of the game", async ({ page }) => {
+  await page.goto("changelog/");
+  const link = page.getByRole("link", { name: BASE === "/beta" ? "Play the main version by clicking here." : "Play the beta version by clicking here." });
+  await expect(link).toHaveAttribute("href", BASE === "/beta" ? "https://legends.carterscoding.com/" : "https://legends.carterscoding.com/beta/");
+});
+
+/** Jumps a new career to a pro season already in progress. */
+const PRO_SAVE = (extra: string) => `
+  const base = d.college.seasons.at(-1);
+  d.stage = "pro"; d.player.age = 27; d.player.teamId = "pro-bos"; d.date = "2040-06-28";
+  d.player.ratings.three = 92; d.player.ratings.dunk = 60;
+  d.pro = { preDraft: { year: 2039, agent: "family", workouts: [1, 2, 3], interviews: [0, 0, 0], stockDelta: 0, combine: { scores: [], bonus: 0, verticalIn: 36, laneSec: 11, threesMade: 12 } }, draft: { year: 2039, picks: [], trades: [], teamId: "pro-bos", seen: true }, status: "standard", confidence: 0, teamFirst: 0, earnings: 1000000, endorsements: [], seasons: [{ year: 2039, teamId: "pro-bos", status: "standard", role: "starter", trust: 70, chemistry: 60, roster: base.roster, games: [], stats: { ...base.stats, gp: 82, gs: 82, pts: 2000, ast: 400, dreb: 300 }, playoffStats: { ...base.stats }, awards: [], series: [], finish: "Lost in the East Semifinals", wrapped: true }] };
+  ${extra}`;
+
+test("the pros, on screen: free agency, a season, a trade request and All-Star weekend @gpu", async ({ page }) => {
+  test.setTimeout(200_000);
+  const errors = watchErrors(page);
+  await lowGraphics(page);
+  await graduate(page, "Vet");
+  await page.getByRole("button", { name: "Move in on campus" }).click();
+  await expect(page.getByText("Coach trust")).toBeVisible();
+  // an expired contract: offers, a negotiation, then signing
+  await patchCareer(
+    page,
+    "Vet",
+    PRO_SAVE(`d.player.contract = { salary: 5000000, years: 0 };
+      d.pro.offers = [{ teamId: "pro-bos", salary: 9000000, years: 2, role: "starter", promise: false }, { teamId: "pro-mia", salary: 8000000, years: 3, role: "starter", promise: true }];`),
+  );
+  await expect(page.getByRole("heading", { name: "Free agency" })).toBeVisible();
+  await page.getByRole("list", { name: "Contract offers" }).getByRole("button", { name: "Ask for 8% more" }).first().click();
+  await expect(page.getByText(/agreed to the raise|walked away/).first()).toBeVisible();
+  await page.getByRole("list", { name: "Contract offers" }).getByRole("button", { name: "Sign" }).last().click();
+  await expect(page.getByRole("list", { name: "Summer focus" })).toBeVisible();
+  await page.getByRole("list", { name: "Summer focus" }).getByRole("button", { name: "Shooting" }).click();
+  await expect(page.getByText("Team chemistry")).toBeVisible();
+  // a trade request is on the record
+  await page.getByRole("button", { name: "Request a trade" }).click();
+  await expect(page.getByText(/You've asked for a trade/)).toBeVisible();
+  // All-Star weekend: the contest in 3D, then the game
+  await patchCareer(
+    page,
+    "Vet",
+    `const s = d.pro.seasons.at(-1);
+     d.date = (s.year + 1) + "-02-10"; s.allStar = { decided: true, selected: true, threeInvited: true };
+     for (const g of s.games) if (g.homeId === s.teamId || g.awayId === s.teamId) g.result = g.result ?? { home: 100, away: 90, played: false, overtimes: 0, dnp: true };
+     s.games.push({ id: "allstar-" + s.year, date: (s.year + 1) + "-02-15", level: "pro", homeId: "pro-allstar-east", awayId: "pro-allstar-west", kind: "allstar", neutral: true, label: "All-Star Game" });`,
+  );
+  await page.getByRole("button", { name: "Play the contest" }).click();
+  await page.waitForURL("**/game/");
+  await expect(page.getByText("Loading the arena")).toBeHidden({ timeout: 60_000 });
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Quit game" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Quit" }).click();
+  await page.waitForURL(/career\/hub\/\?id=/);
+  await page.getByRole("button", { name: "Sim the contest" }).click();
+  await expect(page.getByText(/3-Point Contest: \d+ points/)).toBeVisible();
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.waitForURL("**/game/");
+  await expect(page.getByText("Loading the arena")).toBeHidden({ timeout: 90_000 });
+  const bench = page.getByRole("button", { name: "Watch from the bench" });
+  await expect(page.locator(".led").nth(1).or(bench).first()).toBeVisible({ timeout: 60_000 });
+  if (await bench.isVisible()) await bench.click();
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Sim to end" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Sim to end" }).click();
+  await page.getByRole("button", { name: "Continue" }).click({ timeout: 120_000 });
+  await page.waitForURL(/career\/hub\/\?id=/);
+  await expect(page.getByText(/All-Star/).first()).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("the development league and a two-way deal, on screen", async ({ page }) => {
+  const errors = watchErrors(page);
+  await creator(page, "Fringe");
+  await page
+    .getByRole("radio", { name: "The pros" })
+    .or(page.getByRole("button", { name: "The pros", exact: true }))
+    .first()
+    .click();
+  await page.getByRole("button", { name: "Start career" }).click();
+  await page.waitForURL(/career\/hub\/\?id=/);
+  await patchCareer(
+    page,
+    "Fringe",
+    `d.pro.preDraft.agent = "family"; d.pro.preDraft.combine = { scores: [], bonus: 0, verticalIn: 30, laneSec: 11, threesMade: 10 }; d.pro.preDraft.workouts = [{}, {}, {}]; d.pro.preDraft.interviews = [0, 0, 0]; d.pro.draft = { year: 2026, picks: [], trades: [], teamId: null, seen: true }; d.pro.undraftedOffers = ["pro-bos"];`,
+  );
+  await expect(page.getByRole("heading", { name: "Nobody called your name" })).toBeVisible();
+  await page.getByRole("button", { name: "Sign", exact: true }).click();
+  await page.getByRole("list", { name: "Summer focus" }).getByRole("button", { name: "Shooting" }).click();
+  await expect(page.getByText(/development team/).first()).toBeVisible();
+  await page.getByRole("button", { name: "Sim game", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Sim game", exact: true })).toBeEnabled({ timeout: 60_000 });
+  expect(errors).toEqual([]);
+});
+
+test("the main menu plays the trailer, with no arena name @gpu", async ({ page }) => {
+  const errors = watchErrors(page);
+  await lowGraphics(page);
+  await page.goto("./");
+  await expect(page.getByText(/Tonight at/)).toHaveCount(0);
+  await expect(page.locator("[data-trailer-shot]")).toHaveAttribute("data-trailer-shot", "break", { timeout: 30_000 });
+  await expect(page.locator("canvas").first()).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("the graphics preset you pick survives a reload", async ({ page }) => {
+  await page.goto("settings/");
+  const preset = async () => page.evaluate(() => JSON.parse(localStorage.getItem("bl-settings")!).state.graphics.preset);
+  await page
+    .getByRole("button", { name: "Graphics" })
+    .or(page.getByRole("tab", { name: "Graphics" }))
+    .first()
+    .click();
+  await page
+    .getByRole("radio", { name: "Medium" })
+    .or(page.getByRole("button", { name: "Medium", exact: true }))
+    .first()
+    .click();
+  await expect.poll(preset).toBe("medium");
+  await page.reload();
+  await page.waitForTimeout(800);
+  expect(await preset()).toBe("medium");
+  await page
+    .getByRole("radio", { name: "Low" })
+    .or(page.getByRole("button", { name: "Low", exact: true }))
+    .first()
+    .click();
+  await page.goto("./");
+  await page.waitForTimeout(800);
+  expect(await preset()).toBe("low");
+});
+
 test("the beta warning shows only in the beta build", async ({ page }) => {
   await page.goto("./");
   await expect(page.getByRole("complementary", { name: "Beta warning" })).toHaveCount(BASE === "/beta" ? 1 : 0);
@@ -858,11 +1043,11 @@ test("play in the park: the setup remembers your choices, and a 1-on-1 game star
   const errors = watchErrors(page);
   await lowGraphics(page);
   await page.goto("park/");
-  await page.getByRole("button", { name: /Ironside Cage/ }).click();
+  await page.getByRole("button", { name: /Maple Street Park/ }).click();
   await page.getByRole("radio", { name: "1v1" }).click();
   await page.getByRole("radio", { name: "2s and 3s" }).click();
   await page.reload();
-  await expect(page.getByRole("button", { name: /Ironside Cage/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: /Maple Street Park/ })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("radio", { name: "1v1" })).toHaveAttribute("aria-checked", "true");
   await expect(page.getByText("The other side")).toBeVisible();
   await page.getByRole("button", { name: "Play", exact: true }).click();
