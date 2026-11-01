@@ -27,6 +27,8 @@ export interface ParkSession {
   outfits: Record<string, { shirt: string; shorts: string }>;
   /** Team games: everyone on a side wears that side's shirt color. */
   sideShirts?: [string, string];
+  /** Off: nobody calls fouls, so the game plays straight through. */
+  callFouls?: boolean;
   /** 3-point contest: rivals whose rounds are simulated. */
   rivals?: Player[];
 }

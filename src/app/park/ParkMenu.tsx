@@ -20,7 +20,7 @@ import {
   startLine,
   YOU_CREW,
 } from "@/game/park/session";
-import { loadLegends, parkName } from "@/state/legends";
+import { parkName, useLegends } from "@/state/legends";
 import { useMatchStore } from "@/state/matchStore";
 import { type ParkMode, type ParkSetup, useParkStore } from "@/state/parkStore";
 import { audio } from "@/audio/engine";
@@ -65,9 +65,19 @@ export function ParkMenu() {
   const [seed, setSeed] = useState(1);
   const [overrides, setOverrides] = useState<Record<string, Player>>({});
   const [picking, setPicking] = useState<string | null>(null);
-  const [legends] = useState(() => (typeof window === "undefined" ? [] : loadLegends()));
+  const [pads, setPads] = useState<number[]>([]);
+  const [padSides, setPadSides] = useState<Record<number, "yours" | "theirs" | "cpu">>({});
+  const legends = useLegends();
 
   useEffect(() => load(), [load]);
+
+  // gamepads come and go
+  useEffect(() => {
+    const scan = () => setPads([...(navigator.getGamepads?.() ?? [])].filter((p): p is Gamepad => !!p && p.connected).map((p) => p.index));
+    scan();
+    const h = setInterval(scan, 1500);
+    return () => clearInterval(h);
+  }, []);
 
   const park = parkById(setup.parkId);
   const regulars = useMemo(() => parkRegulars(park), [park]);
@@ -114,10 +124,17 @@ export function ParkMenu() {
       const { line: l, players } = startLine(setup, cast);
       const session = { parkId: park.id, rules: rulesFor(setup), line: l, players, recorded: 0 };
       setLine(session);
-      go(lineGame(park.id, session.rules, l, players, controllerId(), seedNow));
+      go(lineGame(park.id, session.rules, l, players, controllerId(), seedNow, setup.callFouls));
       return;
     }
-    go(buildPark(setup, cast, controllerId(), seedNow).pending);
+    const built = buildPark(setup, cast, controllerId(), seedNow).pending;
+    // other controllers join the side you put them on (team games only)
+    const extra = (side: "yours" | "theirs") => (team ? pads.filter((p) => padSides[p] === side).map((p) => `pad${p}`) : []);
+    go({
+      ...built,
+      home: { ...built.home, controllers: [...built.home.controllers, ...extra("yours").filter((d) => !built.home.controllers.includes(d))] },
+      away: { ...built.away, controllers: [...built.away.controllers, ...extra("theirs").filter((d) => !built.home.controllers.includes(d))] },
+    });
   };
 
   if (line) return <LineView key={line.recorded} />;
@@ -238,12 +255,38 @@ export function ParkMenu() {
               <>
                 <Toggle label="Win by 2" checked={setup.winBy2} onChange={(winBy2) => set({ winBy2 })} />
                 <Toggle
+                  label="Call your own fouls"
+                  hint="Off: no fouls, so the game plays straight through."
+                  checked={setup.callFouls}
+                  onChange={(callFouls) => set({ callFouls })}
+                />
+                <Toggle
                   label="Make it, take it"
                   hint="The team that scores keeps the ball. Off: losers' ball after every basket."
                   checked={setup.makeItTakeIt}
                   onChange={(makeItTakeIt) => set({ makeItTakeIt })}
                 />
               </>
+            )}
+            {team && pads.filter((p) => `pad${p}` !== controllerId()).length > 0 && (
+              <div className="flex flex-col gap-2">
+                {pads
+                  .filter((p) => `pad${p}` !== controllerId())
+                  .map((p) => (
+                    <Segmented<"yours" | "theirs" | "cpu">
+                      key={p}
+                      showLabel
+                      label={`Controller ${p + 1}`}
+                      value={padSides[p] ?? "cpu"}
+                      onChange={(v) => setPadSides((o) => ({ ...o, [p]: v }))}
+                      options={[
+                        { value: "yours", label: "Your side" },
+                        { value: "cpu", label: "CPU" },
+                        { value: "theirs", label: "Other side" },
+                      ]}
+                    />
+                  ))}
+              </div>
             )}
             {setup.mode === "line" && (
               <Segmented<number>

@@ -5,7 +5,7 @@ export const metadata: Metadata = { title: "Privacy Policy", description: "What 
 
 export default function Privacy() {
   return (
-    <ProsePage title="Privacy Policy" updated="October 28, 2026">
+    <ProsePage title="Privacy Policy" updated="November 1, 2026">
       <p>Basketball Legends is built to work without collecting personal information. There are no accounts, ads, analytics, tracking pixels or cookies.</p>
       <H2>What stays on your device</H2>
       <ul className="list-disc pl-6">
@@ -22,7 +22,12 @@ export default function Privacy() {
         </li>
         <li>
           <b>Careers</b> are saved in your browser&apos;s IndexedDB storage after everything you do. Exporting a career downloads a .blcareer file to your
-          device; nothing is uploaded.
+          device; nothing is uploaded. Everything in a career, including its messages, texts and social feed, is written by the game and stays in your browser.
+          The game never reads your real phone, contacts or social accounts.
+        </li>
+        <li>
+          <b>Your Legends</b> (the name, look and ratings of any career that earned the Legend title) are saved in local storage so they can appear in Quick
+          Play, Play in the Park and a new career.
         </li>
         <li>
           <b>Play in the Park choices</b> (the park, game and rules you last picked, and who you play as) are saved in local storage so the setup is ready next
@@ -32,7 +37,7 @@ export default function Privacy() {
           <b>Saved games and roster files</b> you create are stored in your browser and never uploaded.
         </li>
         <li>
-          <b>An offline copy of the game</b> (pages, code, the 3D players, arenas and parks, and images; about 21 MB) is kept in your browser&apos;s cache by a
+          <b>An offline copy of the game</b> (pages, code, the 3D players, arenas and parks, and images; about 23 MB) is kept in your browser&apos;s cache by a
           service worker so the game loads and plays without an internet connection. It contains only the game&apos;s own files, nothing about you.
         </li>
         <li>

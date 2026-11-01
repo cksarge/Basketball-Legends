@@ -16,6 +16,8 @@ import { Button, Panel } from "@/ui/kit";
 import { toast } from "@/ui/Toaster";
 import {
   campAndStartAction,
+  contestPending,
+  simContestAction,
   careerPending,
   clearSuspended,
   finishProYear,
@@ -25,6 +27,7 @@ import {
   signBrandAction,
   signContractAction,
   simProGames,
+  simToNextEvent,
   sitOutAction,
   suspendedFor,
   tradeRequestAction,
@@ -32,6 +35,7 @@ import {
 } from "./actions";
 
 import { RivalTag } from "./PhoneTab";
+import { TryoutDrills } from "./TryoutDrills";
 
 /** What's next once you're a pro: training camp, your next game, an injury, the end of the year or free agency. */
 export function ProSeasonUp({ career, ctx }: { career: Career; ctx: HsContext }) {
@@ -41,6 +45,8 @@ export function ProSeasonUp({ career, ctx }: { career: Career; ctx: HsContext })
   const [progress, setProgress] = useState<SimProgress | null>(null);
   const [busy, setBusy] = useState(false);
   const cancel = useRef(false);
+  const [drilling, setDrilling] = useState(false);
+  const [drill, setDrill] = useState<number | null>(null);
   const ev = nextProEvent(career);
   const s = currentPro(career);
   const run = async (fn: () => Promise<unknown>) => {
@@ -76,16 +82,40 @@ export function ProSeasonUp({ career, ctx }: { career: Career; ctx: HsContext })
 
   if (ev.kind === "training") {
     const offers = career.pro?.endorsementOffers ?? [];
+    if (drilling)
+      return (
+        <TryoutDrills
+          ratings={career.player.ratings}
+          title="Practice drills"
+          intro="A session with your trainer. Do well and this summer's work goes further."
+          labels={["Shooting", "Footwork", "Conditioning"]}
+          skip="Skip the session"
+          onDone={(bonus) => {
+            setDrilling(false);
+            setDrill(bonus);
+          }}
+          onSkip={() => setDrilling(false)}
+        />
+      );
     return (
       <>
         <Panel title="Training camp">
           <p className="mb-1 text-sm text-steel">{formatDate(ev.date)}</p>
           {s?.finish && <p className="mb-1">Last season: {s.finish}.</p>}
           <p className="mb-3 text-steel">Pick what you work on this summer. It starts the new season.</p>
+          {drill === null ? (
+            <Button variant="ghost" className="mb-3" onClick={() => setDrilling(true)}>
+              Run practice drills first
+            </Button>
+          ) : (
+            <p className="mb-3 text-sm text-amber">
+              {drill >= 2 ? "Great session: this summer's work goes further." : "A solid session, nothing extra this time."}
+            </p>
+          )}
           <ul aria-label="Summer focus" className="flex flex-wrap gap-2">
             {TRAINING.map((t) => (
               <li key={t.id}>
-                <Button variant="secondary" disabled={busy} onClick={() => run(() => campAndStartAction(t.id, ctx))}>
+                <Button variant="secondary" disabled={busy} onClick={() => run(() => campAndStartAction(t.id, ctx, drill ?? 0))}>
                   {t.label}
                 </Button>
               </li>
@@ -219,6 +249,34 @@ export function ProSeasonUp({ career, ctx }: { career: Career; ctx: HsContext })
   return (
     <Panel>
       <RivalTag career={career} game={g} />
+      {allStar && s.allStar?.threeInvited && s.allStar.threeScore === undefined && (
+        <div className="mb-3 rounded-[var(--radius-chip)] bg-amber/10 p-3 ring-1 ring-amber/50">
+          <p className="mb-2 font-semibold">You&apos;re in the 3-Point Contest.</p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              disabled={busy}
+              onClick={() =>
+                run(async () => {
+                  audio.unlock();
+                  setPending(contestPending(career, primaryDevice(device)));
+                  router.push("/game/");
+                })
+              }
+            >
+              Play the contest
+            </Button>
+            <Button variant="secondary" disabled={busy} onClick={() => run(() => simContestAction())}>
+              Sim the contest
+            </Button>
+          </div>
+        </div>
+      )}
+      {allStar && s.allStar?.threeScore !== undefined && (
+        <p className="mb-2 text-sm text-amber">
+          3-Point Contest: {s.allStar.threeScore} points{s.allStar.threeWon ? ", and you won it!" : "."}
+        </p>
+      )}
+      {allStar && s.allStar?.dunkWon && <p className="mb-2 text-sm text-amber">You won the Dunk Contest!</p>}
       <p className="text-sm text-steel">
         {formatDate(g.date)}
         {g.label ? ` · ${g.label}` : ""}
@@ -256,6 +314,18 @@ export function ProSeasonUp({ career, ctx }: { career: Career; ctx: HsContext })
             Play
           </Button>
         )}
+        <Button
+          variant="secondary"
+          disabled={busy}
+          onClick={() =>
+            run(async () => {
+              cancel.current = false;
+              await simToNextEvent(ctx, setProgress, () => cancel.current);
+            })
+          }
+        >
+          Sim to next event
+        </Button>
         <Button variant="secondary" disabled={busy} onClick={() => sim(1)}>
           Sim game
         </Button>

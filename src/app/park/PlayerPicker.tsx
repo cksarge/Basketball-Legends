@@ -5,6 +5,7 @@ import { generateRoster, heightStr, playerOvr } from "@/engine/player";
 import type { LeagueId, Player, Team } from "@/engine/types";
 import { LEAGUES, loadLeague } from "@/data/leagues";
 import type { Regular } from "@/game/park/regulars";
+import { listCareers, loadCareer } from "@/career/storage";
 import { loadLegends } from "@/state/legends";
 import { Button, Segmented, Select } from "@/ui/kit";
 
@@ -23,7 +24,22 @@ export function PlayerPicker({
   onClose: () => void;
 }) {
   const [legends] = useState(() => loadLegends());
-  const [tab, setTab] = useState<"regulars" | "league" | "legends">("regulars");
+  const [tab, setTab] = useState<"regulars" | "league" | "careers" | "legends">("regulars");
+  const [careers, setCareers] = useState<Player[]>([]);
+
+  // your created players, from every career in this browser
+  useEffect(() => {
+    let live = true;
+    listCareers()
+      .then((rows) => Promise.all(rows.map((r) => loadCareer(r.id))))
+      .then((list) => {
+        if (live) setCareers(list.filter((c) => !!c).map((c) => ({ ...c!.player, contract: undefined, teamId: null })));
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, []);
   const [league, setLeague] = useState<LeagueId>("pro");
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamId, setTeamId] = useState("");
@@ -93,6 +109,7 @@ export function PlayerPicker({
           options={[
             { value: "regulars", label: "Park regulars" },
             { value: "league", label: "League players" },
+            ...(careers.length ? [{ value: "careers" as const, label: "Your players" }] : []),
             ...(legends.length ? [{ value: "legends" as const, label: "Your Legends" }] : []),
           ]}
         />
@@ -119,7 +136,9 @@ export function PlayerPicker({
             ? regulars.map((r) => row(r.player, `“${r.nickname}” · ${r.rep}`))
             : tab === "legends"
               ? legends.map((l) => row(l.player, "Basketball Legend"))
-              : roster.map((p) => row(p))}
+              : tab === "careers"
+                ? careers.map((p) => row(p, "Your career"))
+                : roster.map((p) => row(p))}
         </ul>
       </div>
     </div>

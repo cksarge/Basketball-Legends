@@ -23,6 +23,7 @@ import {
   applyProGame,
   canRequestTrade,
   conferenceTable,
+  contestField,
   contractOffers,
   currentPro,
   endorsementOffers,
@@ -33,6 +34,7 @@ import {
   nextProEvent,
   proMatchSetup,
   proRole,
+  recordThreeContest,
   requestTrade,
   seasonImpact,
   signContract,
@@ -643,5 +645,60 @@ describe("retirement and the Legend verdict", () => {
     expect(legendStatus(withSeasons([])).rank).toBe("Pro");
     const scored = legendEvents(withSeasons(Array.from({ length: 5 }, () => [])));
     expect(scored.some((e) => e.text === "10,000 career points")).toBe(true);
+  });
+});
+
+describe("All-Star weekend events", () => {
+  const star = () => {
+    const c = trainingCamp(rookie(45), "shooting", ctx);
+    return { ...c, player: { ...c.player, ratings: { ...c.player.ratings, three: 90, dunk: 95, vertical: 95 } } };
+  };
+
+  it("invites shooters to the contest, and a contest you skip is simulated", () => {
+    const s = currentPro(playSeason(star(), 34))!;
+    expect(s.allStar?.threeInvited).toBe(true);
+    expect(s.allStar?.threeScore).toBeGreaterThanOrEqual(0);
+  });
+
+  it("records a contest you played, once", () => {
+    const d = playSeason(star(), 34);
+    const s = currentPro(d)!;
+    const open = { ...d, pro: { ...d.pro!, seasons: [{ ...s, allStar: { ...s.allStar!, threeScore: undefined, threeWon: undefined } }] } };
+    const done = recordThreeContest(open, 28, true);
+    expect(currentPro(done)!.allStar).toMatchObject({ threeScore: 28, threeWon: true });
+    expect(recordThreeContest(done, 1, false)).toBe(done);
+    expect(contestField(open).length).toBe(7);
+  });
+});
+
+describe("practice drills", () => {
+  it("a sharp session makes the summer's work go further", () => {
+    const c = rookie(10);
+    const plain = trainingCamp(c, "shooting", ctx, 0);
+    const sharp = trainingCamp(c, "shooting", ctx, 3);
+    expect(sharp.player.ratings.three).toBeGreaterThan(plain.player.ratings.three);
+  });
+});
+
+describe("a two-way contract", () => {
+  it("splits your year: development games plus some games with the big club", () => {
+    const c = trainingCamp(rookie(0, "twoWay"), "shooting", ctx);
+    const s = currentPro(c)!;
+    const all = userProGames(s);
+    expect(s.twoWayGames!.length).toBeGreaterThan(8);
+    expect(all.length).toBe(30 + s.twoWayGames!.length);
+    const g = all.find((x) => s.twoWayGames!.includes(x.id))!;
+    const setup = proMatchSetup(c, g, ctx);
+    const mine = setup.home.team.id === s.teamId ? setup.home : setup.away;
+    expect(mine.roster.some((p) => s.leagueRoster!.some((q) => q.id === p.id))).toBe(true);
+    expect(mine.roster.some((p) => s.roster.some((q) => q.id === p.id))).toBe(false);
+  });
+
+  it("plays out without getting stuck, and a development game stays in the development league", () => {
+    const d = playSeason(trainingCamp(rookie(0, "twoWay"), "shooting", ctx), 6);
+    const s = currentPro(d)!;
+    expect(s.stats.gp).toBeGreaterThan(30);
+    expect(s.wrapped).toBe(true);
+    for (const r of s.standings!) expect(r.w + r.l).toBe(82);
   });
 });

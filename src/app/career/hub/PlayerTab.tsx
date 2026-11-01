@@ -34,6 +34,12 @@ export function PlayerTab({ career }: { career: Career }) {
             <dd>{p.hometown}</dd>
             <dt className="text-steel">Potential</dt>
             <dd>{p.potential}</dd>
+            {p.badges.length > 0 && (
+              <>
+                <dt className="text-steel">Badges</dt>
+                <dd className="text-amber">{p.badges.join(", ")}</dd>
+              </>
+            )}
           </dl>
         </Panel>
       </div>

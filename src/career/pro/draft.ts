@@ -351,6 +351,7 @@ export type DraftEvent = "agent" | "combine" | "workouts" | "interview" | "draft
 export function draftStep(c: Career): DraftEvent {
   const p = c.pro!;
   const pre = p.preDraft;
+  if (p.skipDraft) return "drafted";
   if (!pre.agent) return "agent";
   if (!pre.combine) return "combine";
   if (pre.workouts.length < WORKOUTS_ALLOWED) return "workouts";

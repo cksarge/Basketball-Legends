@@ -7,6 +7,7 @@ import { gameScore } from "@/game/sim/stats";
 import { STORY_RATE } from "./rates";
 import { currentCollege } from "../college/season";
 import { currentSeason, type HsContext } from "../hs/season";
+import { rankFor } from "../legend";
 import { currentPro } from "../pro/season";
 import { HALL_OF_LEGENDS } from "../pro/retire";
 import type { Career, CareerLogEntry, IsoDate, PhoneText, ScheduledGame, SocialPost, StoryChoice, StoryEffect, StoryEvent, StoryState } from "../types";
@@ -203,7 +204,10 @@ function readLog(st: Story, e: CareerLogEntry) {
   const { s, c, rng } = st;
   const t = e.text;
   if (/^Made the /.test(t)) st.text(MOM, e.date, TEXTS.madeTeam[0]);
-  else if (/^Earned a run at /.test(t)) {
+  else if (/^Committed to /.test(t)) {
+    st.queue(SCRIPTED.commit, e.date, "press", { team: t.replace("Committed to ", "").replace(/ \(.*$/, "") });
+    st.post(e.date, "{text}", { text: `${c.player.firstName} ${c.player.lastName} ${t.charAt(0).toLowerCase()}${t.slice(1)}` });
+  } else if (/^Earned a run at /.test(t)) {
     st.text(s.mentor, e.date, TEXTS.parkUnlock[0], { text: t.replace("Earned a run at ", "").replace(/\.$/, "") });
     st.post(e.date, rng.pick(POSTS.park), { text: t.replace("Earned a run at ", "").replace(/\.$/, "") });
   } else if (/^Beat .* at the park/.test(t))
@@ -306,7 +310,9 @@ export function storyTick(c: Career, ctx: HsContext): Career {
   const st = new Story(c, base, ctx, new Rng(`${c.seed}:tick:${base.ticks}`));
   const s = st.s;
   if (!c.story) {
-    st.text(s.mentor, c.date, TEXTS.welcome[0]);
+    if (c.stage !== "hs") moveRival(st, c.stage === "college" ? "college" : "pro");
+    if (c.legacy) s.mentor = c.legacy.name;
+    st.text(s.mentor, c.date, c.legacy ? TEXTS.legacy[0] : TEXTS.welcome[0]);
     st.text(s.mentor, c.date, TEXTS.rivalIntro[0]);
   }
   for (const e of c.log.slice(base.logSeen)) readLog(st, e);
@@ -403,3 +409,19 @@ export function personality(c: Career) {
 
 /** Is this game against your rival? */
 export const isRivalGame = (c: Career, g: ScheduledGame) => !!c.story && (g.homeId === c.story.rival.teamId || g.awayId === c.story.rival.teamId);
+
+/** Your rival's own road: a career that runs alongside yours and keeps its own Legend score. */
+export function rivalLegacy(c: Career) {
+  const s = c.story;
+  if (!s) return { points: 0, rank: "Local Hero" as const };
+  const now = +c.date.slice(0, 4);
+  const talent = new Rng(`${c.seed}:rival-talent`).range(0.5, 1.5);
+  let points = 0;
+  for (let y = c.startYear; y < now; y++) {
+    const year = new Rng(`${c.seed}:rival-year:${y}`);
+    const age = 14 + (y - c.startYear);
+    const base = age <= 17 ? 8 : age <= 20 ? 20 : age <= 33 ? 60 + (age > 24 && age < 31 ? 50 : 0) : age <= 37 ? 20 : 0;
+    points += Math.round(base * talent * year.range(0.5, 1.5));
+  }
+  return { points, rank: rankFor(points, c.stage === "retired" || c.stage === "pro" ? "pro" : c.stage) };
+}

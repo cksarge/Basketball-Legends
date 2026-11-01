@@ -163,6 +163,17 @@ export const MEDIA_DAY: Record<"hs" | "college" | "pro", EventTemplate> = {
 };
 
 export const SCRIPTED: Record<string, EventTemplate> = {
+  commit: {
+    id: "sc-commit",
+    title: "Commitment ceremony",
+    from: "School gym",
+    body: "Your family, your coach and the local news are all here. Three hats on the table. You reach for the {team} hat. Anything you want to say?",
+    choices: [
+      answer("I'm coming to win a national title.", "The gym went crazy.", { confident: 0.2, fans: 5, media: 4 }),
+      answer("Thank you to my family and my coaches.", "Your mom held it together for almost ten seconds.", { confident: -0.1, star: -0.1, fans: 3, coach: 3 }),
+      answer("Put the hat on and smile.", "The photo ran on the front page.", { media: 2 }),
+    ],
+  },
   draft: {
     id: "sc-draft",
     title: "Draft night press conference",
@@ -475,6 +486,7 @@ export const TEXTS = {
   rivalIntro: ["Word is a kid named {rival} at {rivalTeam} thinks they're better than you. Thought you should know."],
   champion: ["You did it. I've got chills. Call me when the party's over."],
   badGame: ["Short memory. Next one."],
+  legacy: ["I've waited for this. I know what the name on your back carries. Forget all of it and just hoop. I'm in your corner, always."],
   parkUnlock: ["They're talking about you at {text} now. Go see if you can run with them."],
 } as const;
 

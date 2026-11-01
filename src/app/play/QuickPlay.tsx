@@ -5,6 +5,7 @@ import type { LeagueId, Player, Team, TeamTactics } from "@/engine/types";
 import { overall } from "@/engine/player";
 import { LEAGUES, loadAllLeagues, type LeagueData, rosterFor, tierLabel } from "@/data/leagues";
 import { useMatchStore, type PendingMatch } from "@/state/matchStore";
+import { useLegends } from "@/state/legends";
 import { useSettings } from "@/state/settings";
 import { DIFFICULTY_LEVELS, type Difficulty } from "@/game/sim/state";
 import { DEFAULT_TACTICS, Match } from "@/game/sim/match";
@@ -56,6 +57,9 @@ export function QuickPlay() {
   const [tactics, setTactics] = useState<Record<Side, TeamTactics>>({ away: { ...DEFAULT_TACTICS }, home: { ...DEFAULT_TACTICS } });
   const [simResult, setSimResult] = useState<Match | null>(null);
   const [simming, setSimming] = useState<number | null>(null);
+  const legends = useLegends();
+  const [legendId, setLegendId] = useState("");
+  const [legendSide, setLegendSide] = useState<Side>("home");
 
   useEffect(() => {
     loadAllLeagues().then((d) => {
@@ -87,6 +91,12 @@ export function QuickPlay() {
 
   const devices = useMemo(() => ["keyboard", ...pads.map((i) => `pad${i}`)], [pads]);
 
+  /** Your Legend takes the last spot on the roster of the side you put them on. */
+  const withLegend = (side: Side, roster: Player[]) => {
+    const l = legends.find((x) => x.careerId === legendId);
+    return l && legendSide === side ? [...roster.slice(0, -1), { ...l.player, jersey: l.player.jersey }] : roster;
+  };
+
   const buildPending = (matchup: Record<Side, Team | null> = teams): PendingMatch | null => {
     const { home, away } = matchup;
     if (!home || !away) return null;
@@ -102,12 +112,12 @@ export function QuickPlay() {
       arena,
       home: {
         team: home,
-        roster: rosterFor(home),
+        roster: withLegend("home", rosterFor(home)),
         uniform: uniforms.home,
         tactics: tactics.home,
         controllers: practice ? ["keyboard", ...pads.map((i) => `pad${i}`)].slice(0, 1) : ctrl("home"),
       },
-      away: { team: away, roster: rosterFor(away), uniform: awayUniform, tactics: tactics.away, controllers: practice ? [] : ctrl("away") },
+      away: { team: away, roster: withLegend("away", rosterFor(away)), uniform: awayUniform, tactics: tactics.away, controllers: practice ? [] : ctrl("away") },
       quarterMinutes: quarter,
       returnTo: practice ? "/" : "/play/",
       seed: Math.floor(Math.random() * 1e6),
@@ -234,6 +244,29 @@ export function QuickPlay() {
           onUniform={(u) => setUniforms((s) => ({ ...s, home: u }))}
         />
       </div>
+
+      {!practice && legends.length > 0 && (
+        <Panel title="Your Legends" className="mt-5">
+          <Select
+            label="Add a Legend"
+            value={legendId}
+            options={[{ value: "", label: "Nobody" }, ...legends.map((l) => ({ value: l.careerId, label: `${l.player.firstName} ${l.player.lastName}` }))]}
+            onChange={setLegendId}
+          />
+          {legendId && (
+            <Segmented
+              showLabel
+              label="Plays for"
+              value={legendSide}
+              options={[
+                { value: "home" as const, label: teams.home?.abbrev ?? "Home" },
+                { value: "away" as const, label: teams.away?.abbrev ?? "Away" },
+              ]}
+              onChange={setLegendSide}
+            />
+          )}
+        </Panel>
+      )}
 
       {!practice && (
         <Panel title="Controllers" className="mt-5">

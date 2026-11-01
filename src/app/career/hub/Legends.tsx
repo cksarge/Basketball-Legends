@@ -2,7 +2,9 @@
 import { useMemo, useState } from "react";
 import type { Career } from "@/career/types";
 import { formatDate } from "@/career/format";
-import { PILLARS, legendStatus } from "@/career/legend";
+import { PILLARS, legendStatus, type Pillar } from "@/career/legend";
+import { rivalLegacy } from "@/career/story/engine";
+import { careerGoals } from "@/career/timeline";
 import { HALL_OF_LEGENDS, HALL_STATS, allTimeRank, careerTotals, nextToPass, type HallKey } from "@/career/pro/retire";
 import { money } from "@/career/pro/season";
 import type { HsContext } from "@/career/hs/season";
@@ -82,6 +84,9 @@ export function LegendsTab({ career, ctx }: { career: Career; ctx: HsContext }) 
   const [key, setKey] = useState<HallKey>("pts");
   const totals = useMemo(() => careerTotals(career), [career]);
   const st = useMemo(() => legendStatus(career), [career]);
+  const [filter, setFilter] = useState<Pillar | "all">("all");
+  const shown = filter === "all" ? st.events : st.events.filter((e) => e.pillar === filter);
+  const rival = useMemo(() => rivalLegacy(career), [career]);
   const you = { name: `${career.player.firstName} ${career.player.lastName}`, era: "You", ...totals };
   const list = [...HALL_OF_LEGENDS, you].sort((a, b) => b[key] - a[key]);
   const next = nextToPass(totals, key);
@@ -116,16 +121,29 @@ export function LegendsTab({ career, ctx }: { career: Career; ctx: HsContext }) 
             <p className="text-sm text-steel">
               {career.story.rival.pos} · {rivalTeam(career, ctx)} · You&apos;re {career.story.rival.wins}-{career.story.rival.losses} head to head
             </p>
+            <p className="mt-1 text-sm">
+              {rival.rank}, {rival.points.toLocaleString("en-US")} Legend points{" "}
+              <span className="text-steel">({rival.points > st.points ? "ahead of you" : "behind you"})</span>
+            </p>
             <p className="mt-2 text-sm text-steel">Your mentor: {career.story.mentor}</p>
           </Panel>
         )}
-        <Panel title="Your legacy">
+        <Goals career={career} />
+        <Panel title="Your scrapbook">
           <p className="mb-3 text-sm text-steel">
             {st.points.toLocaleString("en-US")} Legend points: {PILLARS.map((p) => `${st.pillars[p.id]} ${p.label}`).join(", ")}.
           </p>
-          {st.events.length === 0 && <p className="text-steel">Nothing yet. Go make some history.</p>}
+          <div className="mb-3">
+            <Segmented
+              label="Show"
+              value={filter}
+              options={[{ value: "all" as const, label: "Everything" }, ...PILLARS.map((p) => ({ value: p.id, label: p.label }))]}
+              onChange={setFilter}
+            />
+          </div>
+          {shown.length === 0 && <p className="text-steel">Nothing yet. Go make some history.</p>}
           <ul className="flex max-h-[32rem] flex-col gap-1 overflow-y-auto pr-1 text-sm">
-            {[...st.events].reverse().map((e, i) => (
+            {[...shown].reverse().map((e, i) => (
               <li key={`${e.date}-${e.text}-${i}`} className="flex justify-between gap-3 border-t border-line/60 py-1">
                 <span>
                   {e.text} <span className="text-xs text-steel">{formatDate(e.date)}</span>
@@ -137,6 +155,38 @@ export function LegendsTab({ career, ctx }: { career: Career; ctx: HsContext }) 
         </Panel>
       </div>
     </div>
+  );
+}
+
+function Goals({ career }: { career: Career }) {
+  const groups = useMemo(() => careerGoals(career), [career]);
+  return (
+    <Panel title="Goals and milestones">
+      <div className="grid gap-4 sm:grid-cols-2">
+        {groups.map((g) => (
+          <div key={g.stage}>
+            <p className="mb-1 font-semibold">
+              {g.stage}{" "}
+              <span className="text-sm font-normal text-steel">
+                {g.goals.filter((x) => x.done).length} of {g.goals.length}
+              </span>
+            </p>
+            <ul className="flex flex-col gap-1 text-sm">
+              {g.goals.map((x) => (
+                <li key={x.label} className={x.done ? "text-amber" : "text-steel"}>
+                  <span aria-hidden>{x.done ? "✓ " : "○ "}</span>
+                  <span className="sr-only">{x.done ? "Done: " : "Not yet: "}</span>
+                  {x.label}
+                  {!x.done && x.progress && x.progress.value > 0
+                    ? ` (${x.progress.value.toLocaleString("en-US")} of ${x.progress.of.toLocaleString("en-US")})`
+                    : ""}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </Panel>
   );
 }
 

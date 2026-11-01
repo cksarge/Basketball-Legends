@@ -39,6 +39,7 @@ import {
   returnAction,
   signNilAction,
   simCollegeGames,
+  simToNextEvent,
   suspendedFor,
   transferAction,
   undeclareAction,
@@ -149,6 +150,18 @@ export function CollegeNextUp({ career, ctx }: { career: Career; ctx: HsContext 
               Play
             </Button>
           )}
+          <Button
+            variant="secondary"
+            disabled={busy}
+            onClick={() =>
+              run(async () => {
+                cancel.current = false;
+                await simToNextEvent(ctx, setProgress, () => cancel.current);
+              })
+            }
+          >
+            Sim to next event
+          </Button>
           <Button variant="secondary" disabled={busy} onClick={() => sim(1)}>
             Sim game
           </Button>

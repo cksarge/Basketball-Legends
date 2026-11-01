@@ -3,7 +3,41 @@ import { addLine, emptyLine } from "@/game/sim/stats";
 import type { Career, HsLevel } from "@/career/types";
 import { classLabel, GRADE_LABEL, LEVEL_SHORT } from "@/career/format";
 import { averages, type HsContext } from "@/career/hs/season";
-import { Panel } from "@/ui/kit";
+import { useState } from "react";
+import { seasonRows, gameLog } from "@/career/timeline";
+import { LineChart } from "./Charts";
+import { Panel, Segmented } from "@/ui/kit";
+
+type Metric = "ppg" | "rpg" | "apg" | "mpg" | "ovr" | "game";
+const METRICS: { value: Metric; label: string; unit: string }[] = [
+  { value: "ppg", label: "Points", unit: "points per game" },
+  { value: "rpg", label: "Rebounds", unit: "rebounds per game" },
+  { value: "apg", label: "Assists", unit: "assists per game" },
+  { value: "mpg", label: "Minutes", unit: "minutes per game" },
+  { value: "ovr", label: "Overall", unit: "overall" },
+  { value: "game", label: "This season", unit: "points" },
+];
+
+/** Stat history: one measure at a time, season by season, or game by game this year. */
+function StatCharts({ career }: { career: Career }) {
+  const [metric, setMetric] = useState<Metric>("ppg");
+  const m = METRICS.find((x) => x.value === metric)!;
+  const rows = seasonRows(career);
+  const points =
+    metric === "game"
+      ? gameLog(career).map((g) => ({ label: String(g.n), value: g.pts, detail: `Game ${g.n}: ${g.reb} reb, ${g.ast} ast` }))
+      : metric === "ovr"
+        ? (career.history ?? []).map((h) => ({ label: `${String(h.year).slice(2)}`, value: h.ovr, detail: `${h.year}-${String(h.year + 1).slice(2)}` }))
+        : rows.map((r) => ({ label: r.label, value: r[metric], detail: `${r.label} · ${r.stage}, ${r.gp} games` }));
+  return (
+    <Panel title="Stat history">
+      <div className="mb-3">
+        <Segmented label="Stat" value={metric} options={METRICS.map(({ value, label }) => ({ value, label }))} onChange={setMetric} />
+      </div>
+      <LineChart title={`${m.label}: ${m.unit}`} points={points} unit={m.unit} />
+    </Panel>
+  );
+}
 
 const pct = (v: number) => (v ? `${(v * 100).toFixed(1)}` : "-");
 
@@ -55,6 +89,7 @@ export function StatsTab({ career, ctx }: { career: Career; ctx: HsContext }) {
   );
   return (
     <div className="flex flex-col gap-5">
+      <StatCharts career={career} />
       <Panel title="Season averages">
         {rows.length === 0 ? (
           <p className="text-steel">No games yet.</p>

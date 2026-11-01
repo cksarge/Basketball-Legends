@@ -3,6 +3,9 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { loadLeague } from "@/data/leagues";
+import { hsContext } from "@/career/hs/season";
+import { START_OPTIONS, applyStart, type StartAt } from "@/career/start";
+import { loadLegends } from "@/state/legends";
 import { ARCHETYPES, FACIAL_HAIR, HAIR_COLORS, HAIR_STYLES, SKIN_TONES, archetypesFor, heightStr, overall, randomAppearance } from "@/engine/player";
 import { Rng } from "@/engine/rng";
 import {
@@ -19,6 +22,8 @@ import {
 import {
   CREATOR_MAX_PER_RATING,
   CREATOR_POINTS,
+  MAX_PLAY_STYLES,
+  PLAY_STYLES,
   DEFAULT_SETTINGS,
   FRESHMAN_AGE,
   HEIGHT_RANGE,
@@ -107,13 +112,43 @@ export function CareerCreator() {
   const [settings, setSettings] = useState<CareerSettings>(DEFAULT_SETTINGS);
   const [academics, setAcademics] = useState(0.6);
   const [starting, setStarting] = useState(false);
+  const [playStyles, setPlayStyles] = useState<string[]>([]);
+  const [startAt, setStartAt] = useState<StartAt>("hs");
+  const [colleges, setColleges] = useState<Team[]>([]);
+  const [conferences, setConferences] = useState<{ id: string; name: string; short?: string }[]>([]);
+  const [pros, setPros] = useState<Team[]>([]);
+  const [collegeId, setCollegeId] = useState("");
+  const [walkOn, setWalkOn] = useState(false);
+  const [throughDraft, setThroughDraft] = useState(true);
+  const [proTeamId, setProTeamId] = useState("");
+  const [legacy, setLegacy] = useState<{ careerId: string; name: string } | null>(null);
 
   useEffect(() => {
     loadLeague("hs").then((d) => setSchools(d.teams));
+    loadLeague("college").then((d) => {
+      const sorted = [...d.teams].sort((x, y) => x.name.localeCompare(y.name));
+      setColleges(sorted);
+      setConferences(d.conferences);
+      setCollegeId(sorted.find((t) => t.state === "AZ" && t.tier === "D1")?.id ?? sorted[0].id);
+    });
+    loadLeague("pro").then((d) => {
+      const sorted = [...d.teams].sort((x, y) => x.name.localeCompare(y.name));
+      setPros(sorted);
+      setProTeamId(sorted.find((t) => t.id === "pro-phx")?.id ?? sorted[0].id);
+    });
     const s = Math.floor(Math.random() * 2147483646) + 1;
     /* eslint-disable react-hooks/set-state-in-effect */
     setSeed(s);
     setAppearance(randomAppearance(new Rng(s)));
+    // a Legend's child carries the name and the looks
+    const parent = loadLegends().find((l) => l.careerId === new URLSearchParams(window.location.search).get("legacy"));
+    if (parent) {
+      const p = parent.player;
+      setLegacy({ careerId: parent.careerId, name: `${p.firstName} ${p.lastName}` });
+      setLastName(p.lastName);
+      setHometown(p.hometown);
+      setAppearance((a) => ({ ...a, skinTone: p.appearance.skinTone, hairColor: p.appearance.hairColor }));
+    }
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
@@ -176,7 +211,7 @@ export function CareerCreator() {
     if (!school || !canStart) return;
     setStarting(true);
     try {
-      const c = createCareer(
+      const created = createCareer(
         {
           firstName,
           lastName,
@@ -190,9 +225,17 @@ export function CareerCreator() {
           allocation: alloc,
           settings,
           academics,
+          playStyles,
+          ...(legacy ? { legacy } : {}),
           startYear: new Date().getFullYear(),
         },
         seed,
+      );
+      const c = applyStart(
+        created,
+        startAt,
+        { collegeId, walkOn, proTeamId: throughDraft ? null : proTeamId },
+        hsContext(schools ?? [], colleges, conferences, pros),
       );
       await setCareer(c);
       router.push(`/career/hub/?id=${encodeURIComponent(c.id)}`);
@@ -233,6 +276,15 @@ export function CareerCreator() {
                 onChange={setSchoolId}
               />
               <Toggle label="Show every school in Arizona" checked={anySchool} onChange={setAnySchool} />
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  if (!local.length) return;
+                  setSchoolId(local[Math.floor(Math.random() * local.length)].id);
+                }}
+              >
+                Assign me a school
+              </Button>
               {school && <SchoolCard team={school} />}
               <div className="flex items-center justify-between gap-6 py-2.5">
                 <label htmlFor="jersey">Jersey number</label>
@@ -371,6 +423,29 @@ export function CareerCreator() {
           )}
 
           {step === "Skills" && (
+            <Panel title="Play style badges">
+              <p className="mb-3 text-steel">Pick up to {MAX_PLAY_STYLES}. Each one lifts two skills and how high they can grow, for your whole career.</p>
+              <ul className="grid gap-2 sm:grid-cols-2">
+                {PLAY_STYLES.map((b) => {
+                  const on = playStyles.includes(b.id);
+                  return (
+                    <li key={b.id}>
+                      <button
+                        aria-pressed={on}
+                        disabled={!on && playStyles.length >= MAX_PLAY_STYLES}
+                        onClick={() => setPlayStyles((l) => (on ? l.filter((x) => x !== b.id) : [...l, b.id]))}
+                        className={`w-full rounded-[var(--radius-chip)] p-3 text-left ring-1 disabled:opacity-40 ${on ? "bg-amber/15 ring-amber" : "bg-deck-2 ring-line hover:ring-amber"}`}
+                      >
+                        <span className="block font-semibold">{b.name}</span>
+                        <span className="block text-sm text-steel">{b.blurb}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </Panel>
+          )}
+          {step === "Skills" && (
             <Panel title="Starting skills">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                 <p className="text-steel">
@@ -423,6 +498,43 @@ export function CareerCreator() {
             </Panel>
           )}
 
+          {step === "Start" && (
+            <Panel title="Where do you start?">
+              {legacy && <p className="mb-3 font-semibold text-amber">The child of Basketball Legend {legacy.name}. Everyone will be watching.</p>}
+              <Segmented
+                showLabel
+                label="Start in"
+                value={startAt}
+                options={START_OPTIONS.map(({ value, label }) => ({ value, label }))}
+                onChange={setStartAt}
+              />
+              <p className="mt-2 text-sm text-steel">{START_OPTIONS.find((o) => o.value === startAt)?.blurb}</p>
+              {startAt === "college" && (
+                <>
+                  <Select
+                    label="College"
+                    value={collegeId}
+                    options={colleges.map((t) => ({ value: t.id, label: `${t.name} ${t.nickname} (${t.tier})` }))}
+                    onChange={setCollegeId}
+                  />
+                  <Toggle label="Walk on (no scholarship, earn your spot)" checked={walkOn} onChange={setWalkOn} />
+                </>
+              )}
+              {startAt === "pro" && (
+                <>
+                  <Toggle label="Go through the draft" checked={throughDraft} onChange={setThroughDraft} />
+                  {!throughDraft && (
+                    <Select
+                      label="Your team"
+                      value={proTeamId}
+                      options={pros.map((t) => ({ value: t.id, label: `${t.name} ${t.nickname}` }))}
+                      onChange={setProTeamId}
+                    />
+                  )}
+                </>
+              )}
+            </Panel>
+          )}
           {step === "Start" && (
             <Panel title="Career settings">
               <Select

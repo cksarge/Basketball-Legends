@@ -87,6 +87,39 @@ export function startingRatings(pos: Position, archetype: Archetype, caps: Ratin
   return r;
 }
 
+/** Play style badges: pick up to two in the creator. Each lifts its skills now and for the rest of your career. */
+export const PLAY_STYLES: { id: string; name: string; blurb: string; keys: RatingKey[] }[] = [
+  { id: "sharpshooter", name: "Sharpshooter", blurb: "Three-pointers and the mid-range", keys: ["three", "midRange"] },
+  { id: "slasher", name: "Slasher", blurb: "Layups and getting to the rim", keys: ["layup", "accel"] },
+  { id: "playmaker", name: "Playmaker", blurb: "Passing and court vision", keys: ["passAccuracy", "passVision"] },
+  { id: "lockdown", name: "Lockdown", blurb: "On-ball defense and steals", keys: ["perimeterD", "steal"] },
+  { id: "rimProtector", name: "Rim Protector", blurb: "Blocks and interior defense", keys: ["block", "interiorD"] },
+  { id: "glassCleaner", name: "Glass Cleaner", blurb: "Rebounds on both ends", keys: ["offReb", "defReb"] },
+];
+export const MAX_PLAY_STYLES = 2;
+const STYLE_BOOST = 3;
+const LEGACY_BOOST = 2;
+
+/** Applies play style badges, and a Legend's child's head start, to ratings and caps. */
+export function applyBonuses(ratings: Ratings, caps: Ratings, styles: string[], legacy: boolean) {
+  const r = { ...ratings };
+  const cap = { ...caps };
+  const names: string[] = [];
+  for (const s of PLAY_STYLES.filter((x) => styles.includes(x.id)).slice(0, MAX_PLAY_STYLES)) {
+    names.push(s.name);
+    for (const k of s.keys) {
+      cap[k] = Math.min(99, cap[k] + STYLE_BOOST);
+      r[k] = Math.min(cap[k], r[k] + STYLE_BOOST);
+    }
+  }
+  if (legacy)
+    for (const k of ALL_KEYS) {
+      cap[k] = Math.min(99, cap[k] + LEGACY_BOOST);
+      r[k] = Math.min(cap[k], r[k] + LEGACY_BOOST);
+    }
+  return { ratings: r, caps: cap, names };
+}
+
 /** Points to spend in the creator, and the most any one rating can take. */
 export const CREATOR_POINTS = 45;
 export const CREATOR_MAX_PER_RATING = 10;
@@ -139,9 +172,9 @@ export function createCareer(input: CreatorInput, seed = Date.now() % 2147483647
   const rng = new Rng(seed);
   const body = clampBody(input.pos, input.body);
   const archetype = validArchetype(input.pos, input.archetype) ? input.archetype : archetypesFor(input.pos)[0];
-  const caps = computeCaps(input.pos, archetype, body);
-  const base = startingRatings(input.pos, archetype, caps, new Rng(`${seed}:start`));
-  const ratings = applyAllocation(base, caps, input.allocation);
+  const baseCaps = computeCaps(input.pos, archetype, body);
+  const base = startingRatings(input.pos, archetype, baseCaps, new Rng(`${seed}:start`));
+  const { ratings, caps, names } = applyBonuses(applyAllocation(base, baseCaps, input.allocation), baseCaps, input.playStyles ?? [], !!input.legacy);
   const age = FRESHMAN_AGE;
   const player: CareerPlayer = {
     id: `user-${seed.toString(36)}`,
@@ -160,7 +193,7 @@ export function createCareer(input: CreatorInput, seed = Date.now() % 2147483647
     teamId: input.schoolId,
     classYear: "FR",
     appearance: input.appearance,
-    badges: [],
+    badges: names,
     traits: { workEthic: 0.7, ego: 0.4, loyalty: 0.6, consistency: 0.7 },
     isUser: true,
     body,
@@ -184,6 +217,7 @@ export function createCareer(input: CreatorInput, seed = Date.now() % 2147483647
     player,
     settings: { ...DEFAULT_SETTINGS, ...input.settings },
     hs: { schoolId: input.schoolId, seasons: [] },
+    ...(input.legacy ? { legacy: input.legacy } : {}),
     inbox: [
       {
         id: "welcome",

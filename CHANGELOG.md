@@ -4,7 +4,7 @@ Every release of Basketball Legends is listed here, newest first. Each version's
 
 ## v0.3.0 (in beta)
 
-In testing at legends.carterscoding.com/beta/. These notes grow as Phase 2 lands.
+In testing at legends.carterscoding.com/beta/. Career mode is here: one player, from a freshman tryout to the Hall of Fame and a shot at becoming a Basketball Legend.
 
 ### Road to Legend
 
@@ -14,6 +14,21 @@ Career mode has a new name and one ultimate goal: become a Basketball Legend.
 - **Four ways to earn it:** Greatness (honors), Winning (titles and tournament runs), Moments (big games you played yourself, never simulated ones) and Impact (community work and the classroom). Careers already under way get credit for what they've done.
 - **Legend is very hard:** the title is only decided at retirement, and only for Icons. Once you're an Icon, the game shows your chance of becoming a Legend.
 
+### Create your player
+
+- **Start where you want:** high school (the full road), college at the program of your choice, or the pros, through the draft or straight onto a team. Starting later means less time to build a legacy.
+- **Play style badges:** pick up to two, like Sharpshooter or Lockdown. Each lifts two skills and how high they can grow.
+- **Assign me a school:** let the game pick from your hometown's schools.
+- **A Legend's kid:** a Legend can pass it on. Start their child's career with the family name, a head start, and your Legend as your mentor.
+
+### Your career hub
+
+- **Calendar:** a month view of your games, results and the dates that matter, next to the schedule list.
+- **Stat history:** charts of your points, rebounds, assists, minutes and overall by season, and your scoring game by game.
+- **Goals and milestones:** what to chase at every stage, checked off from what you've done.
+- **Sim to next event:** sims until something needs you, at every stage.
+- **Your scrapbook:** everything that has built your legacy, filtered by Greatness, Winning, Moments or Impact.
+
 ### Your story
 
 - **Press conferences and interviews:** media day every season, postgame interviews after big nights and tough losses, plus the draft, trades, the trade deadline and championships. Answer, or walk past the microphones.
@@ -21,7 +36,8 @@ Career mode has a new name and one ultimate goal: become a Basketball Legend.
 - **It matters:** coaches and teammates affect your trust, minutes and chemistry, fans bring bigger endorsements, and the media moves your draft stock.
 - **Your phone:** a new Phone tab with texts from your family and a mentor from the Hall of Legends, who has followed you since freshman year.
 - **Social feed:** fans and reporters react to your big nights, awards, trades and injuries.
-- **A rival:** a player from a nearby school follows you to college and the pros. Rival games are flagged, your head-to-head record is tracked, and the Legends tab keeps score.
+- **A rival:** a player from a nearby school follows you to college and the pros with a Legend score of their own. Rival games are flagged, and the Legends tab tracks your head-to-head record.
+- **Commitment ceremony:** hats on the table in front of the school when you commit.
 - **Decisions:** dozens of high school, college and pro events, from parties and booster offers to locker room fights and a foundation back home.
 - **Impact:** community choices now earn Impact points on the Road to Legend, including in the pros.
 - **Story setting:** the how-often setting from the creator now works.
@@ -33,7 +49,7 @@ Career mode has a new name and one ultimate goal: become a Basketball Legend.
 - **Drop-ins:** known pros sometimes show up for a run. Beat one in a game you play and it counts as a Legend Moment.
 - **Call-outs:** your rival calls you out some summers for one-on-one to 11. Winning counts on your head-to-head, and ducking it costs you.
 - **Regulars:** the same faces are there every time, and the Park tab keeps your record against them.
-- **Legend rewards:** a Basketball Legend's name goes on the hometown courts, and they can be picked as a player in standalone Play in the Park. Retired players can keep playing runs.
+- **Legend rewards:** a Basketball Legend's name goes on the hometown courts. At their peak ratings, they can join any team in Quick Play and be picked in standalone Play in the Park. Retired players can keep playing runs.
 
 ### College
 
@@ -49,7 +65,7 @@ Career mode has a new name and one ultimate goal: become a Basketball Legend.
 
 - **Declaring starts the road to the draft:** pick from three agents (bigger contracts, better endorsements or a smaller fee), then go through the combine, three team workouts and GM interviews. Each step moves your draft stock, and your interview answers shape your personality.
 - **The combine:** shooting, agility and vertical drills with real measurements.
-- **Draft night:** two rounds and 60 picks on a live ticker, with trades during the draft, a lottery at the top and the odd player traded right after being picked. Skip to your pick or watch it all.
+- **Draft night:** a live broadcast from the arena, with the team on the clock, a running board and your player on the big screen when your name is called. Two rounds, 60 picks, a lottery at the top and trades as they happen. Skip to your pick or watch it all.
 - **Rookie deals:** a salary scale through the first round and small two-year deals in the second.
 - **Undrafted:** fringe prospects get two-way offers, and anyone can join a development team.
 
@@ -58,15 +74,15 @@ Career mode has a new name and one ultimate goal: become a Basketball Legend.
 - **Full 82-game seasons:** every game in the league is simulated, with a real schedule mix of division, conference and interconference games, live standings and your own games through the real game engine.
 - **Coach, role and chemistry:** your overall and coach trust set your role (starter, sixth man, rotation or end of the bench) and your real minutes. Team chemistry moves with wins and losses and adds to your team's strength.
 - **Playoffs:** a six-team play-in, then four best-of-seven rounds through the Finals.
-- **All-Star weekend:** the best players are voted in for a playable East vs West game, and top shooters enter the 3-point contest.
+- **All-Star weekend:** the best players are voted in for a playable East vs West game. Top shooters enter a 3-point contest you can play, and the best leapers go for the dunk contest.
 - **Honors:** MVP, All-League teams, Defensive Player of the Year, Rookie of the Year, Sixth Man, Most Improved, Finals MVP and more.
 - **Contracts:** when your deal ends you hit free agency with offers from your team and others. Ask for more and they may agree or walk away. Teams can promise a role, and a broken promise makes a trade yours for the asking.
 - **Trades:** ask for one before the deadline, at a cost with your coach and teammates.
 - **Injuries:** injuries from games keep you out while your team plays on.
-- **Training and aging:** pick a focus at training camp every summer. After 30 you lose a step, and the legs go first.
+- **Training and aging:** pick a focus at training camp every summer, with optional practice drills that make the work go further. After 30 you lose a step, and the legs go first.
 - **Badges:** great seasons earn badges like Deadeye and Walking Bucket that lift a rating for good.
 - **Endorsements:** fame brings brand deals, and a well-connected agent gets you more.
-- **Development league:** undrafted players play a 30-game season and can earn a call-up.
+- **Development league and two-way deals:** undrafted players play a 30-game season and can earn a call-up. Two-way players split the year, with games on the league roster too.
 
 ### The end of the road
 
@@ -76,6 +92,12 @@ Career mode has a new name and one ultimate goal: become a Basketball Legend.
 - **Hall of Legends:** a new Legends tab ranks you against the all-time greats in six records, and lists everything that has built your legacy.
 - **Retirement:** retire from age 30 on, or when the offers stop. Your jersey is retired where you earned it, the Hall of Fame votes, you give a speech shaped by who you thank first, and the final verdict comes in.
 - **Basketball Legend:** the title goes only to an Icon who retires with 2,000 Legend points.
+
+### Play in the Park
+
+- **Call your own fouls** is now a choice: turn it off and the game plays straight through.
+- **Local players:** extra controllers can join either side in team games.
+- **Your players:** pick any of your career players, along with regulars and league players.
 
 ### Menu and How to Play
 
@@ -88,7 +110,7 @@ Career mode has a new name and one ultimate goal: become a Basketball Legend.
 
 - **Main menu in the beta:** the beta warning and the Resume game panel no longer overlap. They stack in one column, and the panel scrolls in short windows.
 
-### Career mode
+### High school and recruiting
 
 - **Create a player:** first and last name, Arizona hometown (114 cities) and high school, any of the 283 schools through open enrollment, and jersey number.
 - **Position and archetype:** the archetype sets your starting ratings and how high each skill can grow.

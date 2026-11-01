@@ -53,14 +53,17 @@ import { answerInterview, chooseAgent, enterPreDraft, finishDraft, joinDevLeague
 import {
   advancePro,
   applyProGame,
+  contestField,
   currentPro,
   finishProSeason,
   negotiate,
   nextProEvent,
   proMatchSetup,
+  recordThreeContest,
   requestTrade,
   signContract,
   signEndorsement,
+  threePointContest,
   trainingCamp,
   userProGames,
 } from "@/career/pro/season";
@@ -68,6 +71,9 @@ import { retire } from "@/career/pro/retire";
 import { readThread, replyText, resolveEvent, skipEvent, storyTick } from "@/career/story/engine";
 import { declineCallout, finishRun, simRun, startRun } from "@/career/park";
 import { saveLegend } from "@/state/legends";
+import { trackHistory } from "@/career/timeline";
+import { buildPark } from "@/game/park/session";
+import { DEFAULT_SETUP } from "@/state/parkStore";
 import { useCareer } from "@/state/careerStore";
 import { useMatchStore, type MatchResult, type PendingMatch } from "@/state/matchStore";
 import { clearSuspended, findCareerSave, pruneCareerSaves } from "@/state/suspended";
@@ -95,7 +101,7 @@ const cur = () => useCareer.getState().career!;
 let storyContext: HsContext | null = null;
 const update = (fn: (c: Career) => Career) =>
   useCareer.getState().update((x) => {
-    const next = fn(x);
+    const next = trackHistory(fn(x));
     return storyContext ? storyTick(next, storyContext) : next;
   });
 
@@ -110,6 +116,12 @@ export async function ensureSeason(ctx: HsContext) {
 export async function applyFinishedMatch(ctx: HsContext) {
   const res: MatchResult | null = useMatchStore.getState().lastResult;
   const c = cur();
+  if (res?.careerRun === `contest:${c.id}`) {
+    useMatchStore.getState().setResult(null);
+    const score = Number(res.park?.lines.find((l) => l.you)?.value ?? 0);
+    await update((x) => recordThreeContest(x, score, !!res.park?.youWon));
+    return true;
+  }
   if (res?.careerRun === c.id && c.street?.active) {
     useMatchStore.getState().setResult(null);
     const won = !!res.park?.youWon;
@@ -211,6 +223,28 @@ export interface SimProgress {
   total: number;
   label: string;
   fraction: number;
+}
+
+/** Stops a sim for the things worth stopping for: a decision waiting, or the playoffs starting. */
+function worthStopping(pendingBefore: number) {
+  const c = cur();
+  if ((c.story?.pending.length ?? 0) > pendingBefore) return true;
+  const ev = c.stage === "pro" ? nextProEvent(c) : c.stage === "college" ? nextCollegeEvent(c) : nextEvent(c);
+  if (ev.kind !== "game") return true;
+  return ev.game.kind === "playoff" || ev.game.kind === "allstar";
+}
+
+/** Sims one game at a time until something happens that needs you. */
+export async function simToNextEvent(ctx: HsContext, onProgress: (p: SimProgress | null) => void, cancelled: () => boolean) {
+  for (let i = 0; i < 200 && !cancelled(); i++) {
+    const before = cur().story?.pending.length ?? 0;
+    const c = cur();
+    if (c.stage === "pro") await simProGames(ctx, 1, onProgress);
+    else if (c.stage === "college") await simCollegeGames(ctx, 1, onProgress);
+    else await simUserGames(ctx, 1, onProgress);
+    if (worthStopping(before)) break;
+  }
+  onProgress(null);
 }
 
 /**
@@ -380,7 +414,8 @@ export async function retireAction(speech: string, ctx: HsContext) {
   await update((x) => retire(x, speech, ctx));
   const c = cur();
   // a Legend lives on outside Road to Legend
-  if (c.retirement?.legend) saveLegend({ careerId: c.id, player: { ...c.player, contract: undefined, teamId: null } });
+  if (c.retirement?.legend)
+    saveLegend({ careerId: c.id, player: { ...c.player, ratings: c.peak?.ratings ?? c.player.ratings, age: 28, contract: undefined, teamId: null } });
 }
 
 /** Sets up a pickup run and heads to the park. */
@@ -403,7 +438,20 @@ export async function answerAction(eventId: string, choice: number) {
 export const skipStoryAction = (eventId: string) => update((x) => skipEvent(x, eventId));
 export const readThreadAction = (who: string) => update((x) => readThread(x, who));
 export const replyAction = (who: string, text: string) => update((x) => replyText(x, who, text));
-export const campAndStartAction = (focus: string, ctx: HsContext) => update((x) => trainingCamp(x, focus, ctx));
+export const campAndStartAction = (focus: string, ctx: HsContext, drill = 0) => update((x) => trainingCamp(x, focus, ctx, drill));
+
+/** The All-Star 3-point contest, played on the park's contest court. */
+export function contestPending(c: Career, controller: string): PendingMatch {
+  const setup = { ...DEFAULT_SETUP, parkId: "rooftop-ninth", mode: "three" as const, rivals: 7, you: c.player };
+  const built = buildPark(setup, { you: c.player, mates: [], opps: contestField(c), crews: [] }, controller, Math.floor(Math.random() * 1e6)).pending;
+  return { ...built, returnTo: `/career/hub/?id=${encodeURIComponent(c.id)}`, careerRun: `contest:${c.id}`, occasion: "3-Point Contest" };
+}
+export const simContestAction = () =>
+  update((x) => {
+    const s = currentPro(x)!;
+    const r = threePointContest(x, s);
+    return recordThreeContest(x, r.threeScore, r.threeWon);
+  });
 export const signContractAction = (teamId: string, ctx: HsContext) => update((x) => signContract(x, teamId, ctx));
 export const tradeRequestAction = () => update((x) => requestTrade(x));
 export const signBrandAction = (brand: string) => update((x) => signEndorsement(x, brand));

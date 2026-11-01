@@ -64,7 +64,10 @@ export const inDevLeague = (s: ProSeason) => s.status !== "standard";
 
 /** Your open games in order: development league games if you're there, otherwise the league schedule. */
 export function userProGames(s: ProSeason): ScheduledGame[] {
-  return inDevLeague(s) ? (s.devGames ?? []) : s.games.filter((g) => isMine(s, g)).sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  const byDate = (a: ScheduledGame, b: ScheduledGame) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+  if (!inDevLeague(s)) return s.games.filter((g) => isMine(s, g)).sort(byDate);
+  const league = s.twoWayGames ? s.games.filter((g) => s.twoWayGames!.includes(g.id)) : [];
+  return [...(s.devGames ?? []), ...league].sort(byDate);
 }
 const openGames = (s: ProSeason) => userProGames(s).filter((g) => !g.result);
 
@@ -124,6 +127,7 @@ function newSeason(c: Career, year: number, ctx: HsContext): Career {
     roster,
     games,
     ...(dev ? { devGames: generateDevSchedule(ctx.pros!, t.id, year, `${c.seed}`) } : {}),
+    ...(status === "twoWay" ? twoWayPlan(games, t, year) : {}),
     stats: { ...emptyLine(), gp: 0, gs: 0 },
     playoffStats: { ...emptyLine(), gp: 0, gs: 0 },
     awards: [],
@@ -148,6 +152,12 @@ function newSeason(c: Career, year: number, ctx: HsContext): Career {
     },
     { seasons: [...c.pro!.seasons, season], offers: undefined },
   );
+}
+
+/** A two-way contract: mostly the development league, with a spot on the league roster for about one game in six. */
+function twoWayPlan(games: ScheduledGame[], t: Team, year: number) {
+  const own = games.filter((g) => g.homeId === t.id || g.awayId === t.id);
+  return { leagueRoster: generateRoster(t, year), twoWayGames: own.filter((_, i) => i % 6 === 2).map((g) => g.id) };
 }
 
 export const TRAINING: { id: string; label: string; keys: RatingKey[] }[] = [
@@ -176,7 +186,7 @@ export function agePlayer(c: Career, rng: Rng): Career {
 }
 
 /** Training camp: your summer's work, then the season starts. */
-export function trainingCamp(c: Career, focusId: string, ctx: HsContext): Career {
+export function trainingCamp(c: Career, focusId: string, ctx: HsContext, drillBonus = 0): Career {
   const focus = TRAINING.find((f) => f.id === focusId);
   const prev = currentPro(c);
   const year = prev ? prev.year + 1 : c.pro!.preDraft.year;
@@ -185,7 +195,8 @@ export function trainingCamp(c: Career, focusId: string, ctx: HsContext): Career
   let next = develop(c, proCalendar(year).camp);
   next = agePlayer(next, rng);
   const ratings = { ...next.player.ratings };
-  const gain = next.player.age >= 33 ? 1 : 2;
+  // a sharp session with your trainer adds to the summer's work
+  const gain = (next.player.age >= 33 ? 1 : 2) + (drillBonus >= 2 ? 1 : 0);
   for (const k of focus.keys) ratings[k] = Math.min(next.player.caps[k], ratings[k] + gain + (rng.chance(0.5) ? 1 : 0));
   next = { ...next, player: { ...next.player, ratings } };
   return withPro(newSeason(next, year, ctx), { trainedFor: year });
@@ -409,11 +420,35 @@ function allStarWeekend(c: Career, s: ProSeason, ctx: HsContext): ProSeason {
     neutral: true,
     label: "All-Star Game",
   };
-  const contest = c.player.ratings.three >= 74 ? threePointContest(c, s) : {};
-  return { ...s, allStar: { decided: true, selected: true, ...contest }, games: [...s.games, game] };
+  const rng = new Rng(`${c.seed}:dunk:${s.year}`);
+  const dunkWon = c.player.ratings.dunk >= 80 && (c.player.ratings.dunk + c.player.ratings.vertical) / 2 + rng.normal(0, 6) >= 90;
+  return {
+    ...s,
+    allStar: { decided: true, selected: true, threeInvited: c.player.ratings.three >= 74, ...(dunkWon ? { dunkWon } : {}) },
+    games: [...s.games, game],
+  };
 }
 
-function threePointContest(c: Career, s: ProSeason) {
+/** The rest of the 3-point field: the league's best shooters. */
+export function contestField(c: Career): Player[] {
+  const s = currentPro(c)!;
+  return Array.from({ length: 7 }, (_, i) => ({
+    ...c.player,
+    id: `field-${i}`,
+    firstName: "League",
+    lastName: `Shooter ${i + 1}`,
+    ratings: { ...c.player.ratings, three: 85 + (i % 8) },
+  })).map((p, i) => ({ ...p, jersey: i + 1, age: 26 + (s.year % 3) }));
+}
+
+/** Records your 3-point contest, played or simulated. */
+export function recordThreeContest(c: Career, score: number, won: boolean): Career {
+  const s = currentPro(c);
+  if (!s?.allStar?.threeInvited || s.allStar.threeScore !== undefined) return c;
+  return withSeason(c, { ...s, allStar: { ...s.allStar, threeScore: score, threeWon: won } });
+}
+
+export function threePointContest(c: Career, s: ProSeason) {
   const score = (shots: { made: boolean; money: boolean }[]) => shots.reduce((t, x) => t + (x.made ? (x.money ? 2 : 1) : 0), 0);
   const mine = score(simulateContestRound(c.player, `${c.seed}:${s.year}`));
   const best = Math.max(
@@ -445,7 +480,7 @@ export function advancePro(c: Career, date: IsoDate, ctx: HsContext): Career {
     const sim = (g: ScheduledGame): ScheduledGame => {
       if (g.result || g.date > until) return g;
       const mine = isMine(now, g) && g.kind !== "allstar";
-      if (mine && !inDevLeague(now)) {
+      if ((mine && !inDevLeague(now)) || now.twoWayGames?.includes(g.id)) {
         if (left <= 0) return g;
         left--;
         return { ...g, result: { ...simPro(str.get(g.homeId)!, str.get(g.awayId)!, rng), dnp: true } };
@@ -476,15 +511,17 @@ export function proMatchSetup(c: Career, game: ScheduledGame, ctx: HsContext): M
   if (game.kind === "allstar") return allStarSetup(c, game, ctx);
   const t = team(ctx, s.teamId);
   const opp = team(ctx, game.homeId === s.teamId ? game.awayId : game.homeId);
-  const mine = withUser(s.roster, c.player);
+  // a two-way player's league games are with the big club
+  const upTop = !!s.twoWayGames?.includes(game.id);
+  const mine = withUser(upTop ? s.leagueRoster! : s.roster, c.player);
   let starters = pickStarters(mine);
   if (s.role === "starter" && !starters.includes(c.player.id)) {
     const out = mine.filter((p) => starters.includes(p.id)).sort((a, b) => playerOvr(a) - playerOvr(b))[0];
     starters = starters.map((id) => (id === out.id ? c.player.id : id));
   }
-  if (s.role !== "starter") starters = pickStarters(s.roster);
-  const rotation = { [c.player.id]: ROLE_MINUTES[s.role] };
-  const theirs = inDevLeague(s) ? devRoster(opp, s.year) : generateRoster(opp, s.year);
+  if (s.role !== "starter" || upTop) starters = pickStarters(upTop ? s.leagueRoster! : s.roster);
+  const rotation = { [c.player.id]: upTop ? ROLE_MINUTES.bench + 6 : ROLE_MINUTES[s.role] };
+  const theirs = inDevLeague(s) && !upTop ? devRoster(opp, s.year) : generateRoster(opp, s.year);
   const us = { team: t, roster: mine, starters, rotation };
   const them = { team: opp, roster: theirs, starters: pickStarters(theirs) };
   return {
@@ -530,7 +567,8 @@ function allStarSetup(c: Career, game: ScheduledGame, ctx: HsContext): MatchSetu
 /** Records one of your games: stats, XP, trust, chemistry, injuries, role changes, call-ups and promises. */
 export function applyProGame(c: Career, gameId: string, o: UserGameOutcome, ctx: HsContext): Career {
   const s = currentPro(c)!;
-  const inDev = inDevLeague(s);
+  const upTop = !!s.twoWayGames?.includes(gameId);
+  const inDev = inDevLeague(s) && !upTop;
   const list = inDev ? (s.devGames ?? []) : s.games;
   const game = list.find((g) => g.id === gameId);
   if (!game || game.result) return c;
@@ -552,7 +590,9 @@ export function applyProGame(c: Career, gameId: string, o: UserGameOutcome, ctx:
     const homeSide = game.homeId.endsWith(conferenceShort(ctx, s.teamId).toLowerCase());
     const won = homeSide === o.homeScore > o.awayScore;
     const mvp = won && gs >= 18;
-    const next = withSeason({ ...c, date: game.date }, { ...s, games: updated, allStar: { ...s.allStar!, mvp } });
+    // a contest you didn't get to is simulated
+    const contest = s.allStar?.threeInvited && s.allStar.threeScore === undefined ? threePointContest(c, s) : {};
+    const next = withSeason({ ...c, date: game.date }, { ...s, games: updated, allStar: { ...s.allStar!, ...contest, mvp } });
     return {
       ...next,
       log: [...next.log, log(game.date, mvp ? "All-Star Game MVP!" : `${dnp ? 0 : line.pts} points in the All-Star Game.`, mvp ? "award" : "game")],
@@ -603,7 +643,7 @@ export function applyProGame(c: Career, gameId: string, o: UserGameOutcome, ctx:
   }
   next = checkPromise(next, game.date);
   next = checkTrade(next, game.date, ctx);
-  return inDev ? checkCallUp(next, game.date, ctx) : next;
+  return inDevLeague(s) ? checkCallUp(next, game.date, ctx) : next;
 }
 
 /** A promised role that isn't there after 20 games is a broken promise: your coach owes you, and a trade is yours for the asking. */
@@ -640,6 +680,8 @@ function checkCallUp(c: Career, date: IsoDate, ctx: HsContext): Career {
   const next = withSeason(c, {
     ...s,
     status: "standard",
+    leagueRoster: undefined,
+    twoWayGames: undefined,
     roster,
     trust,
     role: proRole(playerOvr(c.player), roster, trust),
@@ -726,6 +768,7 @@ export function proAwards(c: Career, ctx: HsContext): string[] {
   if (s.allStar?.selected) out.push("All-Star");
   if (s.allStar?.mvp) out.push("All-Star Game MVP");
   if (s.allStar?.threeWon) out.push("Three-Point Contest champion");
+  if (s.allStar?.dunkWon) out.push("Dunk Contest champion");
   const champ = s.series.find((x) => x.id === "finals")?.winner === s.teamId;
   if (champ && s.stats.gp > 0) out.push("League champion");
   if (!a || a.gp < 40 || inDevLeague(s)) {

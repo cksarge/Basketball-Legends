@@ -8,7 +8,7 @@ import { currentSeason } from "@/career/hs/season";
 import { currentCollege } from "@/career/college/season";
 import { ROLE_NAME, currentPro } from "@/career/pro/season";
 import { useCareer } from "@/state/careerStore";
-import { PageShell, Panel } from "@/ui/kit";
+import { PageShell, Panel, Segmented } from "@/ui/kit";
 import { applyFinishedMatch, ensureSeason, pruneFinishedSaves, useHsContext } from "./actions";
 import { HomeTab } from "./HomeTab";
 import { ScheduleTab } from "./ScheduleTab";
@@ -22,6 +22,7 @@ import { ProSchedule, ProTeam } from "./ProTabs";
 import { LegendsTab } from "./Legends";
 import { PhoneTab } from "./PhoneTab";
 import { ParkTab } from "./ParkTab";
+import { CalendarView } from "./CalendarView";
 
 export const HUB_TABS = ["Home", "Schedule", "Stats", "Team", "Recruiting", "Player", "Phone", "Park", "Legends", "Settings"] as const;
 const COLLEGE_ROLE = { starter: "Starter", rotation: "Rotation", bench: "Bench" };
@@ -33,6 +34,7 @@ export function CareerHub() {
   const { career, team, status, error, open } = useCareer();
   const ctx = useHsContext();
   const [tab, setTab] = useState<HubTab>("Home");
+  const [view, setView] = useState<"list" | "calendar">("list");
   const prepared = useRef<string | null>(null);
 
   useEffect(() => {
@@ -139,8 +141,28 @@ export function CareerHub() {
         ))}
       </nav>
       {tab === "Home" && <HomeTab career={career} ctx={ctx} />}
-      {tab === "Schedule" &&
-        (pro ? <ProSchedule career={career} ctx={ctx} /> : col ? <CollegeSchedule career={career} ctx={ctx} /> : <ScheduleTab career={career} ctx={ctx} />)}
+      {tab === "Schedule" && (
+        <div className="flex flex-col gap-4">
+          <Segmented
+            label="Schedule view"
+            value={view}
+            options={[
+              { value: "list" as const, label: "List" },
+              { value: "calendar" as const, label: "Calendar" },
+            ]}
+            onChange={setView}
+          />
+          {view === "calendar" ? (
+            <CalendarView career={career} ctx={ctx} />
+          ) : pro ? (
+            <ProSchedule career={career} ctx={ctx} />
+          ) : col ? (
+            <CollegeSchedule career={career} ctx={ctx} />
+          ) : (
+            <ScheduleTab career={career} ctx={ctx} />
+          )}
+        </div>
+      )}
       {tab === "Stats" && <StatsTab career={career} ctx={ctx} />}
       {tab === "Team" &&
         (pro ? <ProTeam career={career} ctx={ctx} /> : col ? <CollegeTeam career={career} ctx={ctx} /> : <TeamTab career={career} ctx={ctx} />)}

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CareerSummary } from "@/career/types";
 import { deleteCareer, exportCareer, importCareer, listCareers, loadCareer } from "@/career/storage";
+import { useLegends } from "@/state/legends";
 import { pruneCareerSaves } from "@/state/suspended";
 import { careerTeam } from "@/state/careerStore";
 import { Button, PageShell, Panel } from "@/ui/kit";
@@ -43,6 +44,8 @@ export function CareerSelect() {
     }
   };
 
+  const legends = useLegends();
+
   const onDelete = async (id: string) => {
     await deleteCareer(id);
     pruneCareerSaves(id, () => false);
@@ -75,6 +78,22 @@ export function CareerSelect() {
           e.target.value = "";
         }}
       />
+      {legends.length > 0 && (
+        <Panel title="Your Legends" className="mb-4">
+          <ul className="flex flex-col gap-2">
+            {legends.map((l) => (
+              <li key={l.careerId} className="flex flex-wrap items-center justify-between gap-3">
+                <span className="font-semibold text-amber">
+                  {l.player.firstName} {l.player.lastName}
+                </span>
+                <Button variant="secondary" onClick={() => router.push(`/career/new/?legacy=${encodeURIComponent(l.careerId)}`)}>
+                  Start their kid&apos;s career
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
       {careers === null ? (
         <p className="text-steel" role="status">
           Loading your careers…

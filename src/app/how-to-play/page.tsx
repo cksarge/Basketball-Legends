@@ -138,6 +138,33 @@ export default function HowToPlay() {
         Every career chases one thing: becoming a Basketball Legend. Very few get there. Play each game in 3D, controlling only your player, or sim from your
         career hub.
       </p>
+      <H3>Creating your player</H3>
+      <ul className="list-disc pl-6">
+        <li>
+          <b>Where you start:</b> high school, college or the pros. Starting later is quicker, but leaves less time to build a legacy.
+        </li>
+        <li>
+          <b>Play style badges:</b> pick up to two. Each lifts two skills and how high they can grow.
+        </li>
+        <li>
+          <b>School:</b> pick one or let the game assign one from your hometown.
+        </li>
+      </ul>
+      <H3>Your career hub</H3>
+      <ul className="list-disc pl-6">
+        <li>
+          <b>Next up:</b> play your next game, sim it, or use Sim to next event to run until something needs you.
+        </li>
+        <li>
+          <b>Schedule:</b> a list or a month-by-month calendar.
+        </li>
+        <li>
+          <b>Stats:</b> season averages, honors and charts of your career.
+        </li>
+        <li>
+          <b>Legends:</b> the Hall of Legends, your rival, goals and milestones, and your scrapbook.
+        </li>
+      </ul>
       <H3>The Legend rank</H3>
       <ul className="list-disc pl-6">
         <li>
@@ -208,6 +235,15 @@ export default function HowToPlay() {
         <li>
           <b>Trades:</b> ask for one before the deadline, but your coach and teammates will notice.
         </li>
+        <li>
+          <b>All-Star weekend:</b> if you&apos;re voted in, play the All-Star Game. Top shooters can also play the 3-point contest.
+        </li>
+        <li>
+          <b>Practice drills:</b> run them before training camp. A sharp session makes the summer&apos;s work go further.
+        </li>
+        <li>
+          <b>Two-way deals:</b> mostly development league games, with some games on the league roster.
+        </li>
       </ul>
       <H3>Your story</H3>
       <ul className="list-disc pl-6">
@@ -241,6 +277,12 @@ export default function HowToPlay() {
       </ul>
       <H3>Retirement</H3>
       <p>From age 30 you can hang it up. Jerseys are retired where you earned it, the Hall of Fame votes, you give your speech, and the verdict comes in.</p>
+      <H3>Legend rewards</H3>
+      <ul className="list-disc pl-6">
+        <li>A Legend&apos;s name goes on the hometown courts in Play in the Park.</li>
+        <li>Play as your Legend at their peak in Quick Play and the park.</li>
+        <li>Start a new career as your Legend&apos;s kid, from the Road to Legend screen.</li>
+      </ul>
       <H2>Saving and resuming</H2>
       <ul className="list-disc pl-6">
         <li>
@@ -308,6 +350,9 @@ export default function HowToPlay() {
       </p>
       <ul className="list-disc pl-6">
         <li>
+          <b>Players:</b> pick regulars, league players or your own career players. Extra controllers can join either side in team games.
+        </li>
+        <li>
           <b>Scoring:</b> 1s and 2s (1 inside the arc, 2 beyond it) or 2s and 3s.
         </li>
         <li>
@@ -319,7 +364,8 @@ export default function HowToPlay() {
           A basket that wasn&apos;t taken back doesn&apos;t count and the other side gets the ball.
         </li>
         <li>
-          <b>Call your own fouls:</b> no free throws. The player who was fouled checks it back up; on a charge the defense gets the ball. Nobody fouls out.
+          <b>Call your own fouls:</b> no free throws. The player who was fouled checks it back up; on a charge the defense gets the ball. Nobody fouls out. Turn
+          it off to play straight through with no fouls.
         </li>
         <li>
           <b>Full court:</b> after a basket the other team inbounds from under the basket (the scoring team, with make it, take it). One-on-one, you just step

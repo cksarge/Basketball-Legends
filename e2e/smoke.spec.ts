@@ -389,6 +389,8 @@ test("the road to the draft: agent, combine, workouts, interviews and draft nigh
       .click();
   }
   await page.getByRole("button", { name: "Head to the draft" }).click();
+  await expect(page.getByRole("region", { name: "Draft night" })).toBeVisible();
+  await expect(page.getByText("ON THE CLOCK")).toBeVisible();
   await page.getByRole("button", { name: /Skip to/ }).click();
   await page.getByRole("button", { name: /Continue|Leave the draft/ }).click();
   await expect(page.getByText(/Drafted|Went undrafted/).first()).toBeVisible();
@@ -458,6 +460,216 @@ test("retirement: an Icon sees their odds, then the Legend verdict and the Hall 
   await expect.poll(stage).toBe("retired");
   await page.reload();
   await expect(page.getByText("Basketball Legend", { exact: true })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+/** Fills in the creator up to its last step. */
+async function creator(page: Page, first: string) {
+  await page.goto("career/new/");
+  await page.getByLabel("First name").fill(first);
+  await page.getByLabel("Last name").fill("Tester");
+  await page.getByRole("button", { name: "Assign me a school" }).click();
+  await page.getByRole("button", { name: "2. Position" }).click();
+  await page.getByRole("radio", { name: "PG" }).click();
+  await page.getByRole("button", { name: "5. Skills" }).click();
+  await page.getByRole("button", { name: /Sharpshooter/ }).click();
+  await page.getByRole("button", { name: /Lockdown/ }).click();
+  await expect(page.getByRole("button", { name: /Slasher/ })).toBeDisabled();
+  await page.getByRole("button", { name: "Auto-fill" }).click();
+  await page.getByRole("button", { name: "6. Start" }).click();
+}
+
+test("start in college from the creator, at the program you pick", async ({ page }) => {
+  const errors = watchErrors(page);
+  await creator(page, "Coll");
+  await page
+    .getByRole("radio", { name: "College" })
+    .or(page.getByRole("button", { name: "College", exact: true }))
+    .first()
+    .click();
+  await page.getByRole("button", { name: "Start career" }).click();
+  await page.waitForURL(/career\/hub\/\?id=/);
+  await expect(page.getByText("Coach trust")).toBeVisible();
+  await expect(page.getByText("Freshman ·").first()).toBeVisible();
+  await page.getByRole("tab", { name: "Player" }).click();
+  await expect(page.getByText("Sharpshooter").first()).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("start in the pros: through the draft, or straight onto a team", async ({ page }) => {
+  const errors = watchErrors(page);
+  await creator(page, "Draftee");
+  await page
+    .getByRole("radio", { name: "The pros" })
+    .or(page.getByRole("button", { name: "The pros", exact: true }))
+    .first()
+    .click();
+  await page.getByRole("button", { name: "Start career" }).click();
+  await page.waitForURL(/career\/hub\/\?id=/);
+  await expect(page.getByRole("heading", { name: "Choose your agent" })).toBeVisible();
+  await creator(page, "Vet");
+  await page
+    .getByRole("radio", { name: "The pros" })
+    .or(page.getByRole("button", { name: "The pros", exact: true }))
+    .first()
+    .click();
+  await page.getByLabel("Go through the draft").click();
+  await page.getByRole("button", { name: "Start career" }).click();
+  await page.waitForURL(/career\/hub\/\?id=/);
+  await expect(page.getByRole("list", { name: "Summer focus" })).toBeVisible();
+  await page.getByRole("button", { name: "Run practice drills first" }).click();
+  await page.getByRole("button", { name: "Skip the session" }).click();
+  await page.getByRole("list", { name: "Summer focus" }).getByRole("button", { name: "Defense" }).click();
+  await expect(page.getByText("Team chemistry")).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("the hub: calendar, stat chart, goals, scrapbook and sim to next event @gpu", async ({ page }) => {
+  test.setTimeout(150_000);
+  const errors = watchErrors(page);
+  await lowGraphics(page);
+  await graduate(page, "Hubby");
+  await page.getByRole("button", { name: "Move in on campus" }).click();
+  await expect(page.getByText("Coach trust")).toBeVisible();
+  await page.getByRole("button", { name: "Sim game", exact: true }).click();
+  await expect(page.getByRole("list", { name: "Your answer" })).toBeVisible({ timeout: 60_000 });
+  await page.getByRole("button", { name: /Walk past|Let it go/ }).click();
+  await page.getByRole("button", { name: "Sim 5" }).click();
+  await expect(page.getByRole("button", { name: "Sim to next event" })).toBeEnabled({ timeout: 90_000 });
+  for (let i = 0; i < 4; i++) {
+    const skip = page.getByRole("button", { name: /Walk past|Let it go/ });
+    if (await skip.isVisible()) await skip.click();
+  }
+  await page.getByRole("button", { name: "Sim to next event" }).click();
+  await expect(
+    page
+      .getByText("Simulating")
+      .or(page.getByRole("list", { name: "Your answer" }))
+      .first(),
+  ).toBeVisible({ timeout: 30_000 });
+  await page
+    .getByRole("button", { name: "Stop after this game" })
+    .click({ timeout: 10_000 })
+    .catch(() => undefined);
+  await page.getByRole("tab", { name: "Schedule" }).click();
+  await page
+    .getByRole("radio", { name: "Calendar" })
+    .or(page.getByRole("button", { name: "Calendar", exact: true }))
+    .first()
+    .click();
+  await page.getByRole("button", { name: "Next month" }).click();
+  await page.getByRole("button", { name: "Previous month" }).click();
+  await expect(page.getByRole("grid")).toBeVisible();
+  await page.getByRole("tab", { name: "Stats" }).click();
+  await expect(page.getByRole("heading", { name: "Stat history" })).toBeVisible();
+  await page
+    .getByRole("radio", { name: "This season" })
+    .or(page.getByRole("button", { name: "This season", exact: true }))
+    .first()
+    .click();
+  await expect(page.getByRole("img", { name: /This season/ })).toBeVisible();
+  await page.getByRole("tab", { name: "Legends" }).click();
+  await expect(page.getByRole("heading", { name: "Goals and milestones" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your scrapbook" })).toBeVisible();
+  await expect(page.getByText(/Legend points \(/)).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("your rival's call-out, from the park tab to the head-to-head @gpu", async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors = watchErrors(page);
+  await lowGraphics(page);
+  // seeds vary, so try until one of them calls you out this summer
+  let open = false;
+  for (let i = 0; i < 12 && !open; i++) {
+    await creator(page, `Caller${i}`);
+    await page.getByRole("button", { name: "Start career" }).click();
+    await page.waitForURL(/career\/hub\/\?id=/);
+    await page.getByRole("tab", { name: "Park" }).click();
+    await page.getByRole("button", { name: "Sim a run at Copper Flats Courts" }).click();
+    await expect(page.getByText("2 runs left this off-season")).toBeVisible();
+    open = await page.getByRole("heading", { name: "You've been called out" }).isVisible();
+  }
+  expect(open).toBe(true);
+  await page.getByRole("button", { name: "Sim it" }).click();
+  await expect(page.getByRole("heading", { name: "You've been called out" })).toHaveCount(0);
+  await page.getByRole("tab", { name: "Legends" }).click();
+  await expect(page.getByText(/[01]-[01] head to head/)).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("a Legend lives on: Quick Play, the park picker and their kid's career @gpu", async ({ page }) => {
+  test.setTimeout(150_000);
+  const errors = watchErrors(page);
+  await lowGraphics(page);
+  await graduate(page, "Heir");
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        indexedDB.open("bl-career").onsuccess = (e) => {
+          const all = (e.target as IDBOpenDBRequest).result.transaction("careers").objectStore("careers").getAll();
+          all.onsuccess = () => {
+            const p = all.result[0].data.player;
+            localStorage.setItem(
+              "bl-legends",
+              JSON.stringify([{ careerId: "old", player: { ...p, id: "legend-old", firstName: "Grand", lastName: "Master", age: 28 } }]),
+            );
+            resolve();
+          };
+        };
+      }),
+  );
+  // the park picker
+  await page.goto("park/");
+  await expect(page.getByText("Grand Master Courts")).toBeVisible();
+  await page
+    .getByRole("button", { name: /Change/ })
+    .first()
+    .click();
+  await page
+    .getByRole("radio", { name: "Your Legends" })
+    .or(page.getByRole("button", { name: "Your Legends" }))
+    .first()
+    .click();
+  await expect(page.getByRole("dialog").getByRole("button", { name: /Grand Master/ })).toBeVisible();
+  await page.keyboard.press("Escape");
+  // Quick Play
+  await page.goto("play/");
+  await page.getByLabel("Add a Legend").selectOption({ label: "Grand Master" });
+  await page.getByRole("button", { name: "Play game" }).click();
+  await page.waitForURL("**/game/");
+  await expect(page.getByText("Loading the arena")).toBeHidden({ timeout: 60_000 });
+  // their kid
+  await page.goto("career/");
+  await page.getByRole("button", { name: "Start their kid's career" }).click();
+  await expect(page.getByLabel("Last name")).toHaveValue("Master");
+  await page.getByLabel("First name").fill("Junior");
+  await page.getByRole("button", { name: "6. Start" }).click();
+  await expect(page.getByText(/child of Basketball Legend Grand Master/)).toBeVisible();
+  await page.getByRole("button", { name: "Start career" }).click();
+  await page.waitForURL(/career\/hub\/\?id=/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Junior Master");
+  expect(errors).toEqual([]);
+});
+
+test("park options: fouls can be turned off, and your career players can be picked", async ({ page }) => {
+  const errors = watchErrors(page);
+  await creator(page, "Picker");
+  await page.getByRole("button", { name: "Start career" }).click();
+  await page.waitForURL(/career\/hub\/\?id=/);
+  await page.goto("park/");
+  await expect(page.getByLabel("Call your own fouls")).toBeChecked();
+  await page.getByLabel("Call your own fouls").click();
+  await page
+    .getByRole("button", { name: /Change/ })
+    .first()
+    .click();
+  await page
+    .getByRole("radio", { name: "Your players" })
+    .or(page.getByRole("button", { name: "Your players" }))
+    .first()
+    .click();
+  await expect(page.getByRole("button", { name: /Picker Tester/ })).toBeVisible();
   expect(errors).toEqual([]);
 });
 

@@ -95,7 +95,7 @@ export function buildPark(s: ParkSetup, cast: Cast, controller: string, seed: nu
   const park = parkById(s.parkId);
   const regulars = parkRegulars(park);
   const all = [cast.you, ...cast.mates, ...cast.opps];
-  const session: ParkSession = { parkId: park.id, mode: s.mode, outfits: outfitsFor(all) };
+  const session: ParkSession = { parkId: park.id, mode: s.mode, outfits: outfitsFor(all), callFouls: s.callFouls };
   const b = base(s, session, seed);
   const you = crewTeam("you", "Your squad", SIDE_COLORS[0]);
   const them = crewTeam("them", crewName(cast.opps, regulars, false), SIDE_COLORS[1]);
@@ -162,12 +162,20 @@ export function crewStrength(line: LineState, players: Record<string, Player>, i
 }
 
 /** The next line game, with you on it (call `simUntilYou` first). */
-export function lineGame(parkId: string, rules: ParkRules, line: LineState, players: Record<string, Player>, controller: string, seed: number): PendingMatch {
+export function lineGame(
+  parkId: string,
+  rules: ParkRules,
+  line: LineState,
+  players: Record<string, Player>,
+  controller: string,
+  seed: number,
+  callFouls = true,
+): PendingMatch {
   const [h, a] = nextMatchup(line);
   const mine = h === line.you ? h : a;
   const theirs = mine === h ? a : h;
   const roster = (id: string) => crewById(line, id).playerIds.map((pid) => players[pid]);
-  const session: ParkSession = { parkId, mode: "line", rules, outfits: outfitsFor(Object.values(players)), sideShirts: [...SIDE_COLORS] };
+  const session: ParkSession = { parkId, mode: "line", rules, outfits: outfitsFor(Object.values(players)), sideShirts: [...SIDE_COLORS], callFouls };
   return {
     mode: "park",
     league: "pro",

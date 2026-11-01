@@ -60,10 +60,20 @@ function Figure({ player, team, action }: { player: Player; team: Team; action: 
   );
 }
 
-export default function PlayerPreview({ player, team, action = "idle" }: { player: Player; team: Team; action?: "idle" | "dribble" }) {
+export default function PlayerPreview({
+  player,
+  team,
+  action = "idle",
+  transparent = false,
+}: {
+  player: Player;
+  team: Team;
+  action?: "idle" | "dribble";
+  transparent?: boolean;
+}) {
   return (
     <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 1.25, 4.4], fov: 32 }} aria-label={`3D preview of ${player.firstName} ${player.lastName}`}>
-      <color attach="background" args={["#0d1b2e"]} />
+      {!transparent && <color attach="background" args={["#0d1b2e"]} />}
       <hemisphereLight args={["#dfe9ff", "#1a2a40", 0.9]} />
       <directionalLight position={[2.5, 5, 3.5]} intensity={2.2} castShadow shadow-mapSize={[1024, 1024]} />
       <directionalLight position={[-3, 2.5, -2]} intensity={0.8} color={team.colors.primary} />

@@ -1,5 +1,6 @@
 "use client";
 // Your Legends: careers that earned the title live on outside Road to Legend, in local storage.
+import { useSyncExternalStore } from "react";
 import type { Player } from "@/engine/types";
 import { parkById } from "@/game/park/parks";
 
@@ -20,6 +21,26 @@ export function loadLegends(): LegendEntry[] {
     return [];
   }
 }
+
+let cached: { raw: string; list: LegendEntry[] } = { raw: "", list: [] };
+const EMPTY: LegendEntry[] = [];
+const snapshot = () => {
+  let raw = "";
+  try {
+    raw = localStorage.getItem(KEY) ?? "";
+  } catch {
+    /* blocked storage: no Legends to show */
+  }
+  if (raw !== cached.raw) cached = { raw, list: loadLegends() };
+  return cached.list;
+};
+const subscribe = (fn: () => void) => {
+  window.addEventListener("storage", fn);
+  return () => window.removeEventListener("storage", fn);
+};
+
+/** Your Legends, read after the page loads so prerendered pages match (empty while prerendering). */
+export const useLegends = () => useSyncExternalStore(subscribe, snapshot, () => EMPTY);
 
 export function saveLegend(entry: LegendEntry) {
   try {

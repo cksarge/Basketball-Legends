@@ -53,6 +53,7 @@ const AWARDS: [RegExp, Pillar, number][] = [
   [/^All-Star Game MVP/, "moments", 5],
   [/^All-Star$/, "greatness", 15],
   [/^Three-Point Contest champion/, "moments", 3],
+  [/^Dunk Contest champion/, "moments", 3],
   [/^Development League All-Star/, "greatness", 2],
   // college (checked first: these names are more specific)
   [/^National Player of the Year/, "greatness", 40],

@@ -1,4 +1,5 @@
 "use client";
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import type { Career, DraftPick } from "@/career/types";
 import { AGENTS, INTERVIEWS, WORKOUTS_ALLOWED, currentStock, draftStep, ordinal, workoutTeams } from "@/career/pro/draft";
@@ -11,6 +12,9 @@ import { toast } from "@/ui/Toaster";
 import { agentAction, combineAction, devLeagueAction, draftAction, finishDraftAction, interviewAction, twoWayAction, workoutAction } from "./actions";
 import { TryoutDrills } from "./TryoutDrills";
 import { ProSeasonUp } from "./ProSeason";
+
+const MenuBackdrop = dynamic(() => import("@/game3d/MenuBackdrop"), { ssr: false });
+const PlayerPreview = dynamic(() => import("@/game3d/PlayerPreview"), { ssr: false });
 
 export function ProNextUp({ career, ctx }: { career: Career; ctx: HsContext }) {
   const [busy, setBusy] = useState(false);
@@ -206,7 +210,7 @@ export function ProNextUp({ career, ctx }: { career: Career; ctx: HsContext }) {
   return <ProSeasonUp career={career} ctx={ctx} />;
 }
 
-/** The draft, one pick at a time: the clock runs on its own, or skip ahead to your pick. */
+/** Draft night as a broadcast: the arena behind it, whoever's on the clock, a running ticker, and your name on the big screen. */
 function DraftTicker({ career, ctx }: { career: Career; ctx: HsContext }) {
   const d = career.pro!.draft!;
   const [shown, setShown] = useState(0);
@@ -219,64 +223,95 @@ function DraftTicker({ career, ctx }: { career: Career; ctx: HsContext }) {
     const h = setInterval(() => setShown((n) => Math.min(n + 1, stopAt)), 650);
     return () => clearInterval(h);
   }, [reachedYou, stopAt]);
-  const name = (id: string) => ctx.proById!.get(id)?.name ?? "";
+  const team = (id: string) => ctx.proById!.get(id)!;
+  const name = (id: string) => team(id)?.name ?? "";
   const latest = d.picks.slice(0, shown).reverse();
   const you = mineAt >= 0 && reachedYou ? d.picks[mineAt] : null;
   const onClock: DraftPick | undefined = d.picks[shown];
+  const shownTeam = team(you?.teamId ?? onClock?.teamId ?? d.picks[d.picks.length - 1].teamId);
   // draft-night trades show up as the picks they affect go by
   const tradeCount = Math.min(d.trades.length, Math.floor((shown / d.picks.length) * (d.trades.length + 1)));
+  const final = d.tradedTo ? team(d.tradedTo) : shownTeam;
   return (
-    <Panel title="Draft night">
-      {you ? (
-        <div className="mb-4 rounded-[var(--radius-chip)] bg-amber/10 p-4 ring-1 ring-amber">
-          <p className="font-display text-3xl font-black text-amber">
-            {ordinal(you.pick)} overall: {name(you.teamId)}
-          </p>
-          <p className="text-steel">
-            With the {ordinal(you.pick)} pick, {name(you.teamId)} select {you.name}.
-            {d.tradedTo ? ` Minutes later, your rights are traded to ${name(d.tradedTo)}!` : ""}
-          </p>
-        </div>
-      ) : (
-        onClock && (
-          <p className="mb-3 font-semibold">
-            On the clock: {name(onClock.teamId)} (pick {onClock.pick}){onClock.via ? ` via ${name(onClock.via)}` : ""}
-          </p>
-        )
-      )}
-      <div className="mb-3 flex flex-wrap gap-2">
-        {!done && !reachedYou && (
-          <Button variant="secondary" onClick={() => setShown(stopAt)}>
-            {mineAt >= 0 ? "Skip to my pick" : "Skip to the end"}
-          </Button>
-        )}
-        {!done && reachedYou && (
-          <Button variant="secondary" onClick={() => setShown(d.picks.length)}>
-            See the rest of the draft
-          </Button>
-        )}
-        {(reachedYou || done) && <Button onClick={() => finishDraftAction(ctx)}>{mineAt >= 0 ? "Continue" : "Leave the draft"}</Button>}
+    <section aria-label="Draft night" className="fixed inset-0 z-30 flex flex-col overflow-hidden bg-navy">
+      <div className="absolute inset-0" aria-hidden>
+        <MenuBackdrop team={shownTeam} kind="pro" />
       </div>
-      {tradeCount > 0 && (
-        <ul className="mb-3 flex flex-col gap-1 text-sm text-amber">
-          {d.trades.slice(0, tradeCount).map((t) => (
-            <li key={t}>Trade: {t}</li>
-          ))}
-        </ul>
-      )}
-      <ol className="flex max-h-80 flex-col gap-1 overflow-y-auto pr-1 text-sm" aria-label="Picks so far">
-        {latest.map((p) => (
-          <li key={p.pick} className={`flex flex-wrap justify-between gap-x-3 border-t border-line/60 py-1 ${p.isUser ? "font-semibold text-amber" : ""}`}>
-            <span>
-              {p.pick}. {name(p.teamId)}
-              {p.via ? ` (via ${name(p.via)})` : ""}
-            </span>
-            <span className={p.isUser ? "" : "text-steel"}>
-              {p.name}, {p.pos}
-            </span>
-          </li>
-        ))}
-      </ol>
-    </Panel>
+      <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/60 to-navy/30" aria-hidden />
+      <header className="relative flex items-center justify-between gap-3 p-5">
+        <p className="font-display text-3xl font-black">Draft night {d.year}</p>
+        <p className="rounded bg-bad px-2 py-0.5 text-sm font-bold text-white">LIVE</p>
+      </header>
+      <div className="relative flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 lg:flex-row">
+        <div className="flex min-w-0 flex-1 flex-col justify-end gap-3 pb-4">
+          {you ? (
+            <>
+              <div className="mx-auto h-64 w-64 sm:h-80 sm:w-80">
+                <PlayerPreview player={career.player} team={final} transparent />
+              </div>
+              <div className="rounded-[var(--radius-panel)] bg-navy/85 p-4 ring-2 ring-amber">
+                <p className="font-display text-4xl font-black text-amber">
+                  {ordinal(you.pick)} overall: {name(you.teamId)}
+                </p>
+                <p className="text-net/90">
+                  With the {ordinal(you.pick)} pick, {name(you.teamId)} select {you.name}.
+                  {d.tradedTo ? ` Minutes later, your rights are traded to ${name(d.tradedTo)}!` : ""}
+                </p>
+              </div>
+            </>
+          ) : (
+            onClock && (
+              <div className="flex items-center gap-4 rounded-[var(--radius-panel)] bg-navy/85 p-4 ring-1 ring-line">
+                <TeamLogo team={team(onClock.teamId)} size={64} />
+                <div>
+                  <p className="text-sm font-semibold text-amber">ON THE CLOCK</p>
+                  <p className="font-display text-3xl font-black leading-tight">{name(onClock.teamId)}</p>
+                  <p className="text-sm text-steel">
+                    Round {onClock.round}, pick {onClock.pick}
+                    {onClock.via ? ` (via ${name(onClock.via)})` : ""}
+                  </p>
+                </div>
+              </div>
+            )
+          )}
+          <div className="flex flex-wrap gap-2">
+            {!done && !reachedYou && (
+              <Button variant="secondary" onClick={() => setShown(stopAt)}>
+                {mineAt >= 0 ? "Skip to my pick" : "Skip to the end"}
+              </Button>
+            )}
+            {!done && reachedYou && (
+              <Button variant="secondary" onClick={() => setShown(d.picks.length)}>
+                See the rest of the draft
+              </Button>
+            )}
+            {(reachedYou || done) && <Button onClick={() => finishDraftAction(ctx)}>{mineAt >= 0 ? "Continue" : "Leave the draft"}</Button>}
+          </div>
+        </div>
+        <aside className="flex min-h-48 w-full flex-none flex-col rounded-[var(--radius-panel)] bg-navy/85 p-4 ring-1 ring-line lg:mb-4 lg:w-96">
+          <p className="mb-2 font-display text-xl font-black">The board</p>
+          <ol className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pr-1 text-sm" aria-label="Picks so far">
+            {latest.map((p) => (
+              <li key={p.pick} className={`flex flex-wrap justify-between gap-x-3 border-t border-line/60 py-1 ${p.isUser ? "font-semibold text-amber" : ""}`}>
+                <span>
+                  {p.pick}. {name(p.teamId)}
+                  {p.via ? ` (via ${name(p.via)})` : ""}
+                </span>
+                <span className={p.isUser ? "" : "text-steel"}>
+                  {p.name}, {p.pos}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </aside>
+      </div>
+      <footer className="relative border-t border-amber bg-navy px-5 py-2 text-sm" aria-live="polite">
+        {tradeCount > 0 ? (
+          <span className="text-amber">TRADE: {d.trades[tradeCount - 1]}</span>
+        ) : (
+          <span className="text-steel">Trades and picks as they happen.</span>
+        )}
+      </footer>
+    </section>
   );
 }

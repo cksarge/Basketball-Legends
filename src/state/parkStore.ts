@@ -16,6 +16,8 @@ export interface ParkSetup {
   target: number;
   winBy2: boolean;
   makeItTakeIt: boolean;
+  /** Call your own fouls (off: no fouls at all). */
+  callFouls: boolean;
   /** Next game up: crews waiting besides yours. */
   crews: number;
   /** 21: players including you. */
@@ -36,6 +38,7 @@ export const DEFAULT_SETUP: ParkSetup = {
   target: 15,
   winBy2: true,
   makeItTakeIt: false,
+  callFouls: true,
   crews: 3,
   players21: 4,
   horseOpponents: 2,

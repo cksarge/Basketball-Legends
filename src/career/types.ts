@@ -366,7 +366,10 @@ export interface ProSeason {
   injury?: { name: string; left: number };
   promise?: { role: ProRole; broken?: boolean };
   tradeRequested?: boolean;
-  allStar?: { decided: boolean; selected: boolean; threeScore?: number; threeWon?: boolean; mvp?: boolean };
+  allStar?: { decided: boolean; selected: boolean; threeInvited?: boolean; threeScore?: number; threeWon?: boolean; dunkWon?: boolean; mvp?: boolean };
+  /** Two-way players: your league roster, and the league games you're called up for. */
+  leagueRoster?: Player[];
+  twoWayGames?: string[];
   /** How the season ended ("Lost in the East Semifinals"). */
   finish?: string;
   standings?: { teamId: string; w: number; l: number }[];
@@ -381,6 +384,8 @@ export interface ProCareer {
   status?: "standard" | "twoWay" | "dev";
   /** Two-way offers if you went undrafted. */
   undraftedOffers?: string[];
+  /** Started on a team, without going through the draft. */
+  skipDraft?: boolean;
   /** Personality from interviews: -1..1. */
   confidence: number;
   teamFirst: number;
@@ -561,6 +566,12 @@ export interface Career {
   retirement?: Retirement;
   story?: StoryState;
   street?: StreetState;
+  /** Your overall at each year, for the rating chart. */
+  history?: { year: number; ovr: number }[];
+  /** Your best ever: what a Legend plays like after retiring. */
+  peak?: { ovr: number; ratings: Ratings };
+  /** The Legend you're the child of. */
+  legacy?: { careerId: string; name: string };
   inbox: InboxMessage[];
   log: CareerLogEntry[];
 }
@@ -596,6 +607,10 @@ export interface CreatorInput {
   allocation: Partial<Record<RatingKey, number>>;
   /** Classroom aptitude 0..1 (struggling 0.3, average 0.6, honor roll 0.85). */
   academics?: number;
+  /** Play style badges picked in the creator. */
+  playStyles?: string[];
+  /** Starting as a Legend's child. */
+  legacy?: { careerId: string; name: string };
   settings: CareerSettings;
   startYear: number;
 }

@@ -83,7 +83,7 @@ function buildMatch(p: PendingMatch, quarterMinutes: number, g: ReturnType<typeo
     shotMeter: g.shotMeter && !tapShots,
     fatigue: g.fatigue,
     injuries: g.injuries,
-    fouls: g.fouls,
+    fouls: p.park?.callFouls === false ? false : g.fouls,
     seed: p.seed,
     boundaryAssist: g.boundaryAssist,
     lockPlayerId: p.lockPlayerId,
