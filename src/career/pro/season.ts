@@ -40,6 +40,9 @@ export const DEV_TALENT_GAP = 13;
 export const PROMISE_GAMES = 20;
 export const MAX_SALARY = 55_000_000;
 export const MIN_SALARY = 1_200_000;
+export const MAX_AGE = 41;
+/** The overall a development player needs before league teams offer real contracts. */
+export const DEV_CALL_UP_OVR = 68;
 
 const msg = (date: IsoDate, from: string, subject: string, body: string): InboxMessage => ({
   id: `m-${date}-${Math.random().toString(36).slice(2, 8)}`,
@@ -707,6 +710,13 @@ const finishText = (s: ProSeason) => {
   return last.id === "finals" ? "Won the championship" : `Won the ${last.label}`;
 };
 
+/** The best of the rest of the league each year: awards go to whoever beats them, so a great year can still come up short. */
+export const FIELD = { mvp: [60, 6], first: [50, 4], second: [44, 3], third: [40, 3], scoring: [37, 3] } as const;
+export function beatsField(seed: number, year: number, award: keyof typeof FIELD, value: number) {
+  const [mean, sd] = FIELD[award];
+  return value > new Rng(`${seed}:${year}:field:${award}`).normal(mean, sd);
+}
+
 /** Honors for your year, from production and team success. Finalists need a good team, and rookies have their own award. */
 export function proAwards(c: Career, ctx: HsContext): string[] {
   const s = currentPro(c)!;
@@ -726,13 +736,14 @@ export function proAwards(c: Career, ctx: HsContext): string[] {
   const seed = table.findIndex((r) => r.teamId === s.teamId) + 1;
   const stocks = a.spg + a.bpg;
   const defense = stocks + (c.player.ratings.perimeterD + c.player.ratings.interiorD) / 200;
-  if (impact >= 50 && seed <= 3) out.push("Most Valuable Player");
-  if (impact >= 45) out.push("All-League First Team");
-  else if (impact >= 41) out.push("All-League Second Team");
-  else if (impact >= 37) out.push("All-League Third Team");
+  const beats = (award: keyof typeof FIELD) => beatsField(c.seed, s.year, award, award === "scoring" ? a.ppg : impact);
+  if (beats("mvp") && seed <= 3) out.push("Most Valuable Player");
+  if (beats("first")) out.push("All-League First Team");
+  else if (beats("second")) out.push("All-League Second Team");
+  else if (beats("third")) out.push("All-League Third Team");
   if (defense >= 4.4) out.push("Defensive Player of the Year");
   if (defense >= 3.8) out.push("All-Defensive Team");
-  if (a.ppg >= 33) out.push("Scoring champion");
+  if (beats("scoring")) out.push("Scoring champion");
   const seasons = c.pro!.seasons.filter((x) => x.stats.gp >= 20);
   const rookie = seasons.length === 1;
   if (rookie && impact >= 20) out.push("Rookie of the Year");
@@ -837,11 +848,15 @@ export function marketValue(c: Career) {
 /** Free agency: your own team and a few others bid, shaped by your agent, your age and the role each one can give you. */
 export function contractOffers(c: Career, ctx: HsContext): ContractOffer[] {
   const s = currentPro(c)!;
+  // nobody signs a 41-year-old, or a veteran the league has passed by
+  if (c.player.age >= MAX_AGE || (c.player.age >= 34 && playerOvr(c.player) < 66)) return [];
   const year = s.year + 1;
   const rng = new Rng(`${c.seed}:fa:${year}`);
   const value = marketValue(c) * (1 + agentById(c.pro!.preDraft.agent).contractBoost);
   const others = rng.shuffle(ctx.pros!.filter((t) => t.id !== s.teamId)).slice(0, c.player.age >= 36 ? 2 : 4);
   const ovr = playerOvr(c.player);
+  // the league still has to want you: below its last roster spots, your deal is another year in the development league
+  if (inDevLeague(s) && ovr < DEV_CALL_UP_OVR) return [{ teamId: s.teamId, salary: 45_000, years: 1, role: "starter", promise: false, dev: true }];
   const offer = (t: Team, mult: number): ContractOffer => {
     const role = proRole(ovr, generateRoster(t, year), 55);
     const maxYears = c.player.age >= 34 ? 1 : c.player.age >= 31 ? 2 : 4;
@@ -876,7 +891,7 @@ export function signContract(c: Career, teamId: string, ctx: HsContext): Career 
   const s = currentPro(c)!;
   const t = team(ctx, teamId);
   const date = iso(s.year + 1, 7, 1);
-  const keep = withPro(c, { offers: o.promise ? [o] : undefined, status: "standard" });
+  const keep = withPro(c, { offers: o.promise ? [o] : undefined, status: o.dev ? c.pro!.status : "standard" });
   return {
     ...keep,
     date: date > c.date ? date : c.date,

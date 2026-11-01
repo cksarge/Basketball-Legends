@@ -16,9 +16,9 @@ export type LegendRank = (typeof RANKS)[number];
 /** Points needed for each rank that points alone can reach. */
 export const RANK_POINTS: Partial<Record<LegendRank, number>> = { "State Star": 30, "National Name": 90, "All-Star": 300, Superstar: 600, Icon: 1000 };
 /** Career points an Icon must retire with to be named a Legend. Very few careers get here. */
-export const LEGEND_BAR = 1500;
+export const LEGEND_BAR = 2000;
 /** Points a top pro adds in a season, for the estimate shown to Icons. */
-const ICON_SEASON_PACE = 75;
+const ICON_SEASON_PACE = 130;
 const ICON_RETIRE_AGE = 37;
 
 export interface LegendEvent {
@@ -28,7 +28,32 @@ export interface LegendEvent {
   text: string;
 }
 
+/** Career scoring milestones and what they add. */
+const SCORING_MARKS: [number, number][] = [
+  [10_000, 10],
+  [20_000, 25],
+  [30_000, 50],
+  [40_000, 100],
+];
+
 const AWARDS: [RegExp, Pillar, number][] = [
+  // pros
+  [/^Most Valuable Player/, "greatness", 120],
+  [/^League champion/, "winning", 100],
+  [/^Finals MVP/, "moments", 100],
+  [/^All-League First Team/, "greatness", 50],
+  [/^All-League Second Team/, "greatness", 30],
+  [/^All-League Third Team/, "greatness", 20],
+  [/^Defensive Player of the Year/, "greatness", 40],
+  [/^All-Defensive Team/, "greatness", 10],
+  [/^Scoring champion/, "greatness", 25],
+  [/^Rookie of the Year/, "greatness", 20],
+  [/^Sixth Man of the Year/, "greatness", 10],
+  [/^Most Improved Player/, "greatness", 5],
+  [/^All-Star Game MVP/, "moments", 5],
+  [/^All-Star$/, "greatness", 15],
+  [/^Three-Point Contest champion/, "moments", 3],
+  [/^Development League All-Star/, "greatness", 2],
   // college (checked first: these names are more specific)
   [/^National Player of the Year/, "greatness", 40],
   [/^(D2|D3) Player of the Year/, "greatness", 15],
@@ -72,9 +97,12 @@ function gameMoments(games: ScheduledGame[], teamId: string): LegendEvent[] {
     const line = r?.userLine;
     if (!r || !r.played || !line) continue;
     const won = (g.homeId === teamId) === r.home > r.away;
-    if (line.pts >= 40) out.push({ date: g.date, pillar: "moments", points: 5, text: `${line.pts} points in a game` });
+    if (line.pts >= 60) out.push({ date: g.date, pillar: "moments", points: 20, text: `${line.pts} points in a game` });
+    else if (line.pts >= 50) out.push({ date: g.date, pillar: "moments", points: 10, text: `${line.pts} points in a game` });
+    else if (line.pts >= 40) out.push({ date: g.date, pillar: "moments", points: 5, text: `${line.pts} points in a game` });
     else if (line.pts >= 30) out.push({ date: g.date, pillar: "moments", points: 2, text: `${line.pts} points in a game` });
-    if (g.kind === "playoff" && won) out.push({ date: g.date, pillar: "moments", points: 3, text: `Won ${g.label ?? "a playoff game"}` });
+    if (g.kind === "playoff" && won)
+      out.push({ date: g.date, pillar: "moments", points: g.label?.startsWith("The Finals") ? 8 : 3, text: `Won ${g.label ?? "a playoff game"}` });
   }
   return out;
 }
@@ -111,6 +139,19 @@ export function legendEvents(c: Career): LegendEvent[] {
       if (d.kind === "community" && d.status === "signed")
         out.push({ date: `${s.year}-10-01`, pillar: "impact", points: 3, text: `${d.brand} with local kids` });
   }
+  let scored = 0;
+  for (const s of c.pro?.seasons ?? []) {
+    const end = `${s.year + 1}-06-20`;
+    for (const a of s.awards) {
+      const e = awardEvent(a, end);
+      if (e) out.push(e);
+    }
+    out.push(...gameMoments(s.games, s.teamId));
+    const before = scored;
+    scored += s.stats.pts;
+    for (const [mark, points] of SCORING_MARKS)
+      if (before < mark && scored >= mark) out.push({ date: end, pillar: "greatness", points, text: `${mark.toLocaleString("en-US")} career points` });
+  }
   return out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 }
 
@@ -124,14 +165,13 @@ export function legendPoints(events: LegendEvent[]) {
  * The rank for a point total. Pro ranks need a pro career, and points alone never make a Legend:
  * that title is only decided at retirement, for a player who is already an Icon.
  */
-export function rankFor(points: number, stage: CareerStage, legend = false): LegendRank {
+export function rankFor(points: number, stage: CareerStage, legend = false, allStar = false): LegendRank {
   const pro = stage === "pro" || stage === "retired";
   if (pro && legend && points >= LEGEND_BAR) return "Legend";
   if (pro) {
     if (points >= RANK_POINTS.Icon!) return "Icon";
     if (points >= RANK_POINTS.Superstar!) return "Superstar";
-    if (points >= RANK_POINTS["All-Star"]!) return "All-Star";
-    return "Pro";
+    return points >= RANK_POINTS["All-Star"]! || allStar ? "All-Star" : "Pro";
   }
   if (points >= RANK_POINTS["National Name"]!) return "National Name";
   return points >= RANK_POINTS["State Star"]! ? "State Star" : "Local Hero";
@@ -167,7 +207,8 @@ export function legendStatus(c: Career): LegendStatus {
   const events = legendEvents(c);
   const { total, pillars } = legendPoints(events);
   const retired = c.stage === "retired";
-  const rank = rankFor(total, c.stage, retired && isLegend(total));
+  const allStar = (c.pro?.seasons ?? []).some((s) => s.awards.includes("All-Star"));
+  const rank = rankFor(total, c.stage, retired && isLegend(total), allStar);
   const after = RANKS[RANKS.indexOf(rank) + 1];
   const target = after ? RANK_POINTS[after] : undefined;
   const next = after && target !== undefined && total < target ? { rank: after, points: target } : null;

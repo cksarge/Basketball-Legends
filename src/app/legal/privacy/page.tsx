@@ -16,9 +16,9 @@ export default function Privacy() {
           <b>The current match setup</b> is kept in session storage so a page reload doesn&apos;t lose it. It clears when you close the tab.
         </li>
         <li>
-          <b>Saved games</b> are kept in local storage: an autosave every few seconds (so you can resume after closing the tab) and up to three save slots for each
-          group of modes (Quick Play and the park, and Road to Legend), chosen from the pause menu. A save is deleted when its game ends, when you quit a game that isn&apos;t in a slot, or when you delete it from the main
-          menu. Deleting a career also deletes its saved games.
+          <b>Saved games</b> are kept in local storage: an autosave every few seconds (so you can resume after closing the tab) and up to three save slots for
+          each group of modes (Quick Play and the park, and Road to Legend), chosen from the pause menu. A save is deleted when its game ends, when you quit a
+          game that isn&apos;t in a slot, or when you delete it from the main menu. Deleting a career also deletes its saved games.
         </li>
         <li>
           <b>Careers</b> are saved in your browser&apos;s IndexedDB storage after everything you do. Exporting a career downloads a .blcareer file to your

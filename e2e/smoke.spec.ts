@@ -337,9 +337,85 @@ test("the road to the draft: agent, combine, workouts, interviews and draft nigh
   expect(errors).toEqual([]);
 });
 
+test("retirement: an Icon sees their odds, then the Legend verdict and the Hall of Legends @gpu", async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors = watchErrors(page);
+  await lowGraphics(page);
+  await graduate(page, "Final");
+  await page.getByRole("button", { name: "Move in on campus" }).click();
+  await expect(page.getByText("Coach trust")).toBeVisible();
+  await patchCareer(
+    page,
+    "Final",
+    `const base = d.college.seasons.at(-1);
+     const season = (i) => ({ year: 2040 + i, teamId: "pro-bos", status: "standard", role: "starter", trust: 80, chemistry: 60, roster: base.roster, games: [], stats: { ...base.stats, gp: 82, gs: 82, pts: 2500, ast: 500, dreb: 400 }, playoffStats: { ...base.stats }, awards: ["Most Valuable Player", "All-League First Team", "League champion", "All-Star"], series: [], finish: "Won the championship", wrapped: true });
+     d.stage = "pro"; d.player.age = 34; d.player.teamId = "pro-bos"; d.player.contract = { salary: 30000000, years: 2 }; d.date = "2055-06-28";
+     d.pro = { preDraft: { year: 2040, agent: "family", workouts: [1, 2, 3], interviews: [0, 0, 0], stockDelta: 0, combine: { scores: [], bonus: 0, verticalIn: 36, laneSec: 11, threesMade: 12 } }, draft: { year: 2040, picks: [], trades: [], teamId: "pro-bos", seen: true }, status: "standard", confidence: 0, teamFirst: 0, earnings: 400000000, seasons: Array.from({ length: 14 }, (_, i) => season(i)), endorsements: [] };`,
+  );
+  await expect(page.getByText("Icon", { exact: true })).toBeVisible();
+  await expect(page.getByText(/% chance will be a Legend at retirement/)).toBeVisible();
+  await page.getByRole("tab", { name: "Legends" }).click();
+  await expect(page.getByRole("heading", { name: "Hall of Legends" })).toBeVisible();
+  await expect(page.getByText("Marcus Delacroix")).toBeVisible();
+  await page.getByRole("tab", { name: "Home" }).click();
+  await page.getByRole("button", { name: "Retire from basketball" }).click();
+  await page.getByRole("list", { name: "Who you thank first" }).getByRole("button", { name: "My family" }).click();
+  await expect(page.getByText("Basketball Legend", { exact: true })).toBeVisible();
+  await expect(page.getByText("Elected to the Hall of Fame.").first()).toBeVisible();
+  await expect(page.getByText(/retired number/).first()).toBeVisible();
+  // the verdict survives a reload once the save has landed
+  const stage = () =>
+    page.evaluate(
+      () =>
+        new Promise<string>((resolve) => {
+          indexedDB.open("bl-career").onsuccess = (e) => {
+            const all = (e.target as IDBOpenDBRequest).result.transaction("careers").objectStore("careers").getAll();
+            all.onsuccess = () => resolve(all.result.find((r) => r.data.player.firstName === "Final").data.stage);
+          };
+        }),
+    );
+  await expect.poll(stage).toBe("retired");
+  await page.reload();
+  await expect(page.getByText("Basketball Legend", { exact: true })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test("the beta warning shows only in the beta build", async ({ page }) => {
   await page.goto("./");
   await expect(page.getByRole("complementary", { name: "Beta warning" })).toHaveCount(BASE === "/beta" ? 1 : 0);
+});
+
+test("the beta warning never overlaps the menu panel, with every save slot full", async ({ page }) => {
+  test.skip(BASE !== "/beta", "the warning only shows in the beta build");
+  await page.addInitScript(() => {
+    const save = (mode: string) =>
+      JSON.stringify({
+        v: 1,
+        savedAt: 1,
+        match: "x",
+        pending: { mode },
+        summary: { home: "Boston", away: "Phoenix", homeScore: 16, awayScore: 20, period: "Q2", clock: "6:00" },
+      });
+    localStorage.setItem("bl-suspended", save("quick"));
+    for (const n of [1, 2, 3]) {
+      localStorage.setItem(`bl-save-${n}`, save("quick"));
+      localStorage.setItem(`bl-career-save-${n}`, save("career"));
+    }
+  });
+  for (const [width, height] of [
+    [1024, 640],
+    [1280, 760],
+    [1440, 900],
+    [1920, 1080],
+  ]) {
+    await page.setViewportSize({ width, height });
+    await page.goto("./");
+    await page.getByRole("button", { name: "Resume game" }).click();
+    const card = await page.getByRole("complementary", { name: "Beta warning" }).boundingBox();
+    const panel = await page.locator("aside[aria-live]").boundingBox();
+    expect(card && panel && card.y + card.height <= panel.y).toBe(true);
+    expect(panel!.y + panel!.height).toBeLessThanOrEqual(height);
+  }
 });
 
 test("unknown pages show the 404", async ({ page }) => {

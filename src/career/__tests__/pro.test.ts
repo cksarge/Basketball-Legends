@@ -13,11 +13,13 @@ import { outcomeFromMatch, runMatchSync } from "../hs/play";
 import { GAMES_PER_TEAM, generateDevSchedule, generateProSchedule, matchups } from "../pro/schedule";
 import {
   BADGES,
+  MAX_AGE,
   MAX_SALARY,
   PRO_STRENGTH_BIAS,
   ROLE_MINUTES,
   advancePro,
   agePlayer,
+  beatsField,
   applyProGame,
   canRequestTrade,
   conferenceTable,
@@ -39,6 +41,8 @@ import {
   tradeTo,
   userProGames,
 } from "../pro/season";
+import { LEGEND_BAR, RANK_POINTS, legendEvents, legendStatus } from "../legend";
+import { allTimeRank, careerTotals, nextToPass, retire } from "../pro/retire";
 import type { Career, ProCareer } from "../types";
 
 const teams = pro.teams as unknown as Team[];
@@ -413,6 +417,28 @@ describe("contracts and free agency", () => {
   });
 });
 
+describe("the league's best", () => {
+  const rate = (award: "mvp" | "first", impact: number) => {
+    const years = Array.from({ length: 200 }, (_, i) => 2031 + i);
+    return years.filter((y) => beatsField(777, y, award, impact)).length / years.length;
+  };
+
+  it("keeps the MVP hard to win even for the very best, and out of reach for merely great years", () => {
+    expect(rate("mvp", 58)).toBeGreaterThan(0.2);
+    expect(rate("mvp", 58)).toBeLessThan(0.55);
+    expect(rate("mvp", 42)).toBeLessThan(0.02);
+  });
+
+  it("is the same every time for a given save and year", () => {
+    expect(beatsField(1, 2040, "first", 50)).toBe(beatsField(1, 2040, "first", 50));
+  });
+
+  it("a dominant career's typical honors stop short of Legend without big moments of your own", () => {
+    const prime = 12 * 50 + 4 * 120 + 3 * 100 + 2 * 100 + 15 * 15 + 85 + 100;
+    expect(prime).toBeLessThan(LEGEND_BAR);
+  });
+});
+
 describe("endorsements, badges and aging", () => {
   it("brands only call once you've made a name, and signing pays every year", () => {
     expect(endorsementOffers(rookie(0), 2031)).toEqual([]);
@@ -461,6 +487,51 @@ describe("the development league", () => {
   });
 });
 
+describe("a whole career", () => {
+  it("runs from rookie year to retirement without getting stuck, with the body wearing down", () => {
+    let c = trainingCamp(rookie(38), "shooting", ctx);
+    const peak = playerOvr(c.player);
+    const seen = new Set<string>();
+    for (let year = 0; year < 22 && c.stage !== "retired"; year++) {
+      c = playSeason(c, 22);
+      let ev = nextProEvent(c);
+      seen.add(ev.kind);
+      if (ev.kind === "freeAgency") {
+        const offers = c.pro!.offers ?? [];
+        if (!offers.length) break;
+        c = signContract(c, offers[0].teamId, ctx);
+        ev = nextProEvent(c);
+      }
+      expect(ev.kind).toBe("training");
+      c = trainingCamp(c, "defense", ctx);
+    }
+    if (!currentPro(c)!.wrapped) c = playSeason(c, 22);
+    expect(c.player.age).toBeGreaterThanOrEqual(36);
+    expect(playerOvr(c.player)).toBeLessThan(peak + 12);
+    expect(seen.has("freeAgency")).toBe(true);
+    const done = retire(c, "family", ctx);
+    expect(done.stage).toBe("retired");
+    expect(done.retirement!.totals.games).toBeGreaterThan(1000);
+    expect(done.pro!.earnings).toBeGreaterThan(50_000_000);
+  });
+
+  it("keeps development players in the development league until they're good enough", () => {
+    const c = trainingCamp(rookie(0, "dev"), "shooting", ctx);
+    const short = { ...c, player: { ...c.player, contract: { salary: 45_000, years: 1 } } };
+    const low = {
+      ...short,
+      player: { ...short.player, ratings: Object.fromEntries(Object.keys(short.player.ratings).map((k) => [k, 40])) as unknown as typeof short.player.ratings },
+    };
+    const d = playSeason(low, 6);
+    const offers = d.pro!.offers!;
+    expect(offers.length).toBe(1);
+    expect(offers[0].dev).toBe(true);
+    const signed = signContract(d, offers[0].teamId, ctx);
+    expect(signed.pro!.status).toBe("dev");
+    expect(currentPro(trainingCamp(signed, "shooting", ctx))!.status).toBe("dev");
+  });
+});
+
 describe("real engine", () => {
   it("plays a pro game of four quarters with your role's minutes", () => {
     let c = trainingCamp(rookie(30), "shooting", ctx);
@@ -475,5 +546,102 @@ describe("real engine", () => {
     const after = applyProGame(c, ev.game.id, o, ctx);
     expect(currentPro(after)!.stats.gp + (s.stats.gp === 0 ? 0 : 0)).toBeLessThanOrEqual(1);
     expect(seasonImpact(currentPro(after)!)).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe("retirement and the Legend verdict", () => {
+  const withSeasons = (awards: string[][], stage: Career["stage"] = "pro"): Career => {
+    const c = rookie(30);
+    const pts = 2500;
+    const seasons = awards.map((a, i) => ({
+      year: 2031 + i,
+      teamId: teams[0].id,
+      status: "standard",
+      role: "starter",
+      trust: 70,
+      chemistry: 60,
+      roster: [],
+      games: [],
+      stats: { ...emptyLine(), gp: 82, gs: 82, pts, oreb: 100, dreb: 400, ast: 500 },
+      playoffStats: { ...emptyLine(), gp: 0, gs: 0 },
+      awards: a,
+      series: [],
+      wrapped: true,
+    }));
+    return { ...c, stage, player: { ...c.player, age: 36 }, pro: { ...c.pro!, seasons: seasons as unknown as ProCareer["seasons"] } };
+  };
+  const big = ["Most Valuable Player", "All-League First Team", "League champion", "Finals MVP", "All-Star"];
+  const good = ["All-League Second Team", "All-Star"];
+
+  it("names an Icon past the bar a Legend, only at retirement", () => {
+    const c = withSeasons(Array.from({ length: 16 }, () => big));
+    expect(legendStatus(c).rank).toBe("Icon");
+    expect(legendStatus(c).chance).toBeGreaterThan(0);
+    const r = retire(c, "family", ctx);
+    expect(r.stage).toBe("retired");
+    expect(r.retirement!.legend).toBe(true);
+    expect(r.retirement!.rank).toBe("Legend");
+    expect(legendStatus(r).rank).toBe("Legend");
+    expect(legendStatus(r).chance).toBeNull();
+    expect(r.log.some((e) => e.text.includes("Basketball Legend"))).toBe(true);
+  });
+
+  it("an Icon short of the bar stays an Icon", () => {
+    const seasons = Array.from({ length: 3 }, () => big);
+    const c = withSeasons(seasons);
+    expect(legendStatus(c).rank).toBe("Icon");
+    expect(legendStatus(c).points).toBeLessThan(LEGEND_BAR);
+    const r = retire(c, "family", ctx);
+    expect(r.retirement!.legend).toBe(false);
+    expect(r.retirement!.rank).toBe("Icon");
+  });
+
+  it("a very good career is not close to Legend", () => {
+    const c = withSeasons(Array.from({ length: 14 }, () => good));
+    const r = retire(c, "teammates", ctx);
+    expect(r.retirement!.legend).toBe(false);
+    expect(r.retirement!.points).toBeLessThan(RANK_POINTS.Icon!);
+  });
+
+  it("the Hall of Fame takes careers of real weight, and hangs numbers where you earned them", () => {
+    const r = retire(withSeasons(Array.from({ length: 10 }, () => big)), "family", ctx);
+    expect(r.retirement!.hallOfFame).toBe(true);
+    expect(r.retirement!.jerseys).toContain(teams[0].name);
+    const short = retire(withSeasons([["All-Star"]]), "family", ctx);
+    expect(short.retirement!.hallOfFame).toBe(false);
+    expect(short.retirement!.jerseys).toEqual([]);
+  });
+
+  it("adds up totals and compares them with the greats", () => {
+    const c = withSeasons(Array.from({ length: 15 }, () => big));
+    const t = careerTotals(c);
+    expect(t.pts).toBe(37500);
+    expect(t.rings).toBe(15);
+    expect(allTimeRank(t, "pts")).toBe(2);
+    expect(allTimeRank(t, "rings")).toBe(1);
+    expect(nextToPass(t, "pts")).toMatchObject({ name: "Marcus Delacroix", gap: 710 });
+    expect(nextToPass(t, "rings")).toBeNull();
+  });
+
+  it("writes a speech from your choice, and you can only retire once, between seasons", () => {
+    const c = withSeasons([big]);
+    const r = retire(c, "kids", ctx);
+    expect(r.retirement!.speech).toContain("cracked court");
+    expect(retire(r, "family", ctx)).toBe(r);
+    const mid = trainingCamp(rookie(30), "shooting", ctx);
+    expect(retire(mid, "family", ctx)).toBe(mid);
+  });
+
+  it("stops offering contracts when it's over", () => {
+    const c = withSeasons([big]);
+    expect(contractOffers({ ...c, player: { ...c.player, age: MAX_AGE } }, ctx)).toEqual([]);
+  });
+
+  it("gives Legend points for pro honors, and the rank follows", () => {
+    expect(legendStatus(withSeasons([["All-Star"]])).rank).toBe("All-Star");
+    expect(legendStatus(withSeasons([big])).pillars.winning).toBe(100);
+    expect(legendStatus(withSeasons([])).rank).toBe("Pro");
+    const scored = legendEvents(withSeasons(Array.from({ length: 5 }, () => [])));
+    expect(scored.some((e) => e.text === "10,000 career points")).toBe(true);
   });
 });

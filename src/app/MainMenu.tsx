@@ -236,7 +236,7 @@ export function MainMenu() {
           {team && <TeamLogo team={team} size={44} />}
           <p className="font-display text-xl font-bold text-steel">Tonight at {team?.arena.name ?? "the arena"}</p>
         </header>
-        {IS_BETA && <BetaWarning />}
+        {IS_BETA && <BetaWarning className="mt-4 lg:hidden" />}
         <div className="flex flex-1 flex-col justify-center gap-10 lg:min-h-0 lg:flex-row lg:items-center lg:justify-between">
           <nav
             aria-label="Main menu"
@@ -307,57 +307,64 @@ export function MainMenu() {
               ))}
             </ul>
           </nav>
-          <aside className="w-full max-w-sm rounded-[var(--radius-panel)] bg-navy/80 p-6 ring-1 ring-line backdrop-blur lg:mr-8" aria-live="polite">
-            <p className="font-display text-3xl font-black">{item.label}</p>
-            <p className="mt-2 text-steel">{item.blurb}</p>
-            <ul className="mt-4 flex flex-col gap-2 text-sm">
-              {item.detail.map((d) => (
-                <li key={d} className="flex gap-2">
-                  <span className="mt-1.5 h-1.5 w-1.5 flex-none rounded-full bg-amber" />
-                  {d}
-                </li>
-              ))}
-            </ul>
-            {item.id === "resume" && (
-              <ul className="scrollbar-thin mt-3 flex max-h-[50vh] flex-col gap-2 overflow-y-auto p-0.5">
-                {rows.map(({ slot, group, game }) =>
-                  !game ? (
-                    <li key={`${group}-${slot}`} className="rounded-[var(--radius-chip)] px-3 py-2 ring-1 ring-line/60">
-                      <span className="block text-xs font-semibold text-steel">{slotLabel(slot, group)}</span>
-                      <span className="block text-sm text-steel">
-                        Empty. Choose Save game in the pause menu to keep a {group === "career" ? "career " : ""}game here.
-                      </span>
-                    </li>
-                  ) : (
-                    <li key={`${group}-${slot}`} className="flex items-stretch gap-1">
-                      <button
-                        data-save-row
-                        onClick={() => resumeSave(slot, game)}
-                        onFocus={() => setFocused("resume")}
-                        className="flex-1 rounded-[var(--radius-chip)] bg-deck-2 px-3 py-2 text-left ring-1 ring-line hover:ring-amber focus-visible:ring-amber"
-                      >
-                        <span className="block text-xs font-semibold text-amber">{slotLabel(slot, group)}</span>
-                        <span className="block font-semibold leading-tight">
-                          {game.summary.away} {game.summary.awayScore}, {game.summary.home} {game.summary.homeScore}
-                        </span>
-                        <span className="block text-xs text-steel">
-                          {game.summary.mode ?? modeLabel(game.pending)} · {whereText(game)} · {savedWhen(game)}
-                        </span>
-                      </button>
-                      <button
-                        onClick={() => discard(slot, group)}
-                        onFocus={() => setFocused("resume")}
-                        aria-label={`Delete ${slot === "auto" ? "the autosave" : slotLabel(slot, group).toLowerCase()}`}
-                        className="rounded-[var(--radius-chip)] px-2 text-steel hover:text-bad"
-                      >
-                        ✕
-                      </button>
-                    </li>
-                  ),
-                )}
+          {/* the right column stacks the beta card and the info panel, and the panel scrolls when they don't fit */}
+          <div className="flex w-full max-w-md flex-col gap-4 lg:mr-8 lg:max-h-full lg:min-h-0">
+            {IS_BETA && <BetaWarning className="hidden flex-none lg:block" />}
+            <aside
+              className="scrollbar-thin rounded-[var(--radius-panel)] bg-navy/80 p-6 ring-1 ring-line backdrop-blur lg:min-h-0 lg:overflow-y-auto"
+              aria-live="polite"
+            >
+              <p className="font-display text-3xl font-black">{item.label}</p>
+              <p className="mt-2 text-steel">{item.blurb}</p>
+              <ul className="mt-4 flex flex-col gap-2 text-sm">
+                {item.detail.map((d) => (
+                  <li key={d} className="flex gap-2">
+                    <span className="mt-1.5 h-1.5 w-1.5 flex-none rounded-full bg-amber" />
+                    {d}
+                  </li>
+                ))}
               </ul>
-            )}
-          </aside>
+              {item.id === "resume" && (
+                <ul className="mt-3 flex flex-col gap-2 p-0.5">
+                  {rows.map(({ slot, group, game }) =>
+                    !game ? (
+                      <li key={`${group}-${slot}`} className="rounded-[var(--radius-chip)] px-3 py-2 ring-1 ring-line/60">
+                        <span className="block text-xs font-semibold text-steel">{slotLabel(slot, group)}</span>
+                        <span className="block text-sm text-steel">
+                          Empty. Choose Save game in the pause menu to keep a {group === "career" ? "career " : ""}game here.
+                        </span>
+                      </li>
+                    ) : (
+                      <li key={`${group}-${slot}`} className="flex items-stretch gap-1">
+                        <button
+                          data-save-row
+                          onClick={() => resumeSave(slot, game)}
+                          onFocus={() => setFocused("resume")}
+                          className="flex-1 rounded-[var(--radius-chip)] bg-deck-2 px-3 py-2 text-left ring-1 ring-line hover:ring-amber focus-visible:ring-amber"
+                        >
+                          <span className="block text-xs font-semibold text-amber">{slotLabel(slot, group)}</span>
+                          <span className="block font-semibold leading-tight">
+                            {game.summary.away} {game.summary.awayScore}, {game.summary.home} {game.summary.homeScore}
+                          </span>
+                          <span className="block text-xs text-steel">
+                            {game.summary.mode ?? modeLabel(game.pending)} · {whereText(game)} · {savedWhen(game)}
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => discard(slot, group)}
+                          onFocus={() => setFocused("resume")}
+                          aria-label={`Delete ${slot === "auto" ? "the autosave" : slotLabel(slot, group).toLowerCase()}`}
+                          className="rounded-[var(--radius-chip)] px-2 text-steel hover:text-bad"
+                        >
+                          ✕
+                        </button>
+                      </li>
+                    ),
+                  )}
+                </ul>
+              )}
+            </aside>
+          </div>
         </div>
         <footer className="flex flex-wrap items-center justify-between gap-4 text-sm text-steel">
           <div className="flex items-center gap-4">
@@ -396,12 +403,9 @@ export function MainMenu() {
 }
 
 /** Shown only in the beta build (/beta/), which shares this browser's saves and settings with the live game. */
-function BetaWarning() {
+function BetaWarning({ className }: { className: string }) {
   return (
-    <aside
-      aria-label="Beta warning"
-      className="mt-4 w-full rounded-[var(--radius-panel)] bg-navy/85 p-4 ring-2 ring-amber backdrop-blur lg:absolute lg:right-12 lg:top-6 lg:mt-0 lg:max-w-md"
-    >
+    <aside aria-label="Beta warning" className={`w-full rounded-[var(--radius-panel)] bg-navy/85 p-4 ring-2 ring-amber backdrop-blur ${className}`}>
       <p className="font-display text-2xl font-black text-amber">You&apos;re playing the beta</p>
       <p className="mt-1 text-sm text-net/90">
         Version {process.env.APP_VERSION} is an untested preview of the next update. It shares saves and settings with the main game in this browser, so a bug

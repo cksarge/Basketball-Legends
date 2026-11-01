@@ -6,6 +6,7 @@ import type { Career } from "@/career/types";
 import { formatDate } from "@/career/format";
 import type { HsContext } from "@/career/hs/season";
 import { ROLE_MINUTES, ROLE_NAME, TRAINING, canRequestTrade, currentPro, inDevLeague, money, nextProEvent, userProGames } from "@/career/pro/season";
+import { SPEECH_CHOICES } from "@/career/pro/retire";
 import { useMatchStore } from "@/state/matchStore";
 import { pruneCareerSaves } from "@/state/suspended";
 import { useInputDevice } from "@/ui/MenuNavigator";
@@ -19,6 +20,7 @@ import {
   clearSuspended,
   finishProYear,
   negotiateAction,
+  retireAction,
   primaryDevice,
   signBrandAction,
   signContractAction,
@@ -88,6 +90,7 @@ export function ProSeasonUp({ career, ctx }: { career: Career; ctx: HsContext })
             ))}
           </ul>
         </Panel>
+        {career.player.age >= 30 && <RetirePanel ctx={ctx} />}
         {offers.length > 0 && (
           <Panel title="Endorsement offers">
             <ul className="flex flex-col gap-2">
@@ -115,7 +118,11 @@ export function ProSeasonUp({ career, ctx }: { career: Career; ctx: HsContext })
     const offers = career.pro?.offers ?? [];
     return (
       <Panel title="Free agency">
-        <p className="mb-3 text-steel">Your contract is up. Ask for more and they might say yes, or they might walk away.</p>
+        <p className="mb-3 text-steel">
+          {offers.length
+            ? "Your contract is up. Ask for more and they might say yes, or they might walk away."
+            : "Your contract is up, and the phone isn't ringing."}
+        </p>
         <ul aria-label="Contract offers" className="flex flex-col gap-2">
           {offers.map((o) => {
             const t = ctx.proById!.get(o.teamId)!;
@@ -130,12 +137,14 @@ export function ProSeasonUp({ career, ctx }: { career: Career; ctx: HsContext })
                   <span className="block text-sm text-steel">
                     {o.pulled
                       ? "They walked away."
-                      : `${o.years} year${o.years > 1 ? "s" : ""} at ${money(o.salary)} · ${ROLE_NAME[o.role]}${o.promise ? " (promised)" : ""}`}
+                      : o.dev
+                        ? "Another year with the development team. Earn the call-up."
+                        : `${o.years} year${o.years > 1 ? "s" : ""} at ${money(o.salary)} · ${ROLE_NAME[o.role]}${o.promise ? " (promised)" : ""}`}
                   </span>
                 </span>
                 {!o.pulled && (
                   <>
-                    {!o.raised && (
+                    {!o.raised && !o.dev && (
                       <Button
                         variant="ghost"
                         disabled={busy}
@@ -157,6 +166,11 @@ export function ProSeasonUp({ career, ctx }: { career: Career; ctx: HsContext })
             );
           })}
         </ul>
+        {(career.player.age >= 30 || !offers.length) && (
+          <div className="mt-4">
+            <RetirePanel ctx={ctx} bare />
+          </div>
+        )}
       </Panel>
     );
   }
@@ -255,6 +269,33 @@ export function ProSeasonUp({ career, ctx }: { career: Career; ctx: HsContext })
       </div>
     </Panel>
   );
+}
+
+/** Calling it a career: the chance to walk away, and who you thank first. */
+function RetirePanel({ ctx, bare }: { ctx: HsContext; bare?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const body = !open ? (
+    <button className="text-sm text-steel underline" onClick={() => setOpen(true)}>
+      Retire from basketball
+    </button>
+  ) : (
+    <>
+      <p className="mb-2 font-semibold">This ends your career. At your farewell, who do you thank first?</p>
+      <ul aria-label="Who you thank first" className="flex flex-wrap gap-2">
+        {SPEECH_CHOICES.map((o) => (
+          <li key={o.id}>
+            <Button variant="secondary" onClick={() => retireAction(o.id, ctx)}>
+              {o.label}
+            </Button>
+          </li>
+        ))}
+      </ul>
+      <button className="mt-2 text-sm text-steel underline" onClick={() => setOpen(false)}>
+        Not yet
+      </button>
+    </>
+  );
+  return bare ? body : <Panel title="Hanging it up?">{body}</Panel>;
 }
 
 /** Your role, the coach, the locker room and your money. */

@@ -64,6 +64,7 @@ import {
   trainingCamp,
   userProGames,
 } from "@/career/pro/season";
+import { retire } from "@/career/pro/retire";
 import { useCareer } from "@/state/careerStore";
 import { useMatchStore, type MatchResult, type PendingMatch } from "@/state/matchStore";
 import { clearSuspended, findCareerSave, pruneCareerSaves } from "@/state/suspended";
@@ -359,6 +360,7 @@ export async function finishProYear(ctx: HsContext) {
   await update((x) => finishProSeason(x, ctx));
 }
 
+export const retireAction = (speech: string, ctx: HsContext) => update((x) => retire(x, speech, ctx));
 export const campAndStartAction = (focus: string, ctx: HsContext) => update((x) => trainingCamp(x, focus, ctx));
 export const signContractAction = (teamId: string, ctx: HsContext) => update((x) => signContract(x, teamId, ctx));
 export const tradeRequestAction = () => update((x) => requestTrade(x));
@@ -495,7 +497,7 @@ export function pruneFinishedSaves(c: Career) {
   const s = currentSeason(c);
   const pro = currentPro(c);
   const games =
-    c.stage === "pro"
+    c.stage === "pro" || c.stage === "retired"
       ? [...(pro?.games ?? []), ...(pro?.devGames ?? [])]
       : c.stage === "college"
         ? (currentCollege(c)?.games ?? [])

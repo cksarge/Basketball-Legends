@@ -12,7 +12,7 @@ Career mode has a new name and one ultimate goal: become a Basketball Legend.
 
 - **Legend ranks:** Local Hero, State Star, National Name, Pro, All-Star, Superstar, Icon and Legend. The Road to Legend card in the career hub shows your rank, your points, what's next and your latest milestones.
 - **Four ways to earn it:** Greatness (honors), Winning (titles and tournament runs), Moments (big games you played yourself, never simulated ones) and Impact (community work and the classroom). Careers already under way get credit for what they've done.
-- **Legend is very hard:** the title is only decided at retirement, and only for Icons. Once you're an Icon, the game shows your chance of becoming a Legend. The pro ranks open with the pro career in a later beta.
+- **Legend is very hard:** the title is only decided at retirement, and only for Icons. Once you're an Icon, the game shows your chance of becoming a Legend.
 
 ### College
 
@@ -22,7 +22,7 @@ Career mode has a new name and one ultimate goal: become a Basketball Legend.
 - **The postseason:** conference tournament winners earn automatic bids to a 68-team National Tournament with an opening round, and a 32-team National Invitational takes the next best in Division I. Divisions II and III have 64-team tournaments.
 - **Honors:** All-Conference, Freshman of the Year, conference Player of the Year, All-American, National Player of the Year and Most Outstanding Player.
 - **NIL:** local, community and national deals every season. Community deals pay less but count toward your legacy, and big national deals cost a little coach trust.
-- **After each season:** come back, enter the transfer portal or declare for the draft with your projected draft stock. Withdrawing from the portal costs some trust. You get four years of eligibility and one redshirt. 
+- **After each season:** come back, enter the transfer portal or declare for the draft with your projected draft stock. Withdrawing from the portal costs some trust. You get four years of eligibility and one redshirt.
 
 ### The draft
 
@@ -46,6 +46,19 @@ Career mode has a new name and one ultimate goal: become a Basketball Legend.
 - **Badges:** great seasons earn badges like Deadeye and Walking Bucket that lift a rating for good.
 - **Endorsements:** fame brings brand deals, and a well-connected agent gets you more.
 - **Development league:** undrafted players play a 30-game season and can earn a call-up.
+
+### The end of the road
+
+- **Legend ranks in the pros:** All-Star, Superstar and Icon are now reachable, and pro honors, playoff wins, scoring milestones and big games you play yourself all count.
+- **Your odds:** once you're an Icon, the Road to Legend card shows your chance of becoming a Legend at retirement.
+- **League's best:** awards now go to whoever beats that year's best rivals, so a great year can still come up short and an MVP is never automatic.
+- **Hall of Legends:** a new Legends tab ranks you against the all-time greats in six records, and lists everything that has built your legacy.
+- **Retirement:** retire from age 30 on, or when the offers stop. Your jersey is retired where you earned it, the Hall of Fame votes, you give a speech shaped by who you thank first, and the final verdict comes in.
+- **Basketball Legend:** the title goes only to an Icon who retires with 2,000 Legend points.
+
+### Fixes
+
+- **Main menu in the beta:** the beta warning and the Resume game panel no longer overlap. They stack in one column, and the panel scrolls in short windows.
 
 ### Career mode
 

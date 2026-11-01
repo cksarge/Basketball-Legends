@@ -341,6 +341,8 @@ export interface ContractOffer {
   pulled?: boolean;
   /** Already raised once in negotiation. */
   raised?: boolean;
+  /** Another year with the development team, not a league contract. */
+  dev?: boolean;
 }
 
 export interface ProSeason {
@@ -392,6 +394,31 @@ export interface ProCareer {
   endorsementOffers?: Endorsement[];
 }
 
+export interface CareerTotals {
+  games: number;
+  pts: number;
+  reb: number;
+  ast: number;
+  rings: number;
+  mvps: number;
+  allStars: number;
+}
+
+/** The end of a career: the ceremonies and the verdict. */
+export interface Retirement {
+  date: IsoDate;
+  age: number;
+  totals: CareerTotals;
+  points: number;
+  /** Your final rank; "Legend" only for an Icon past the bar. */
+  rank: string;
+  legend: boolean;
+  hallOfFame: boolean;
+  /** Schools and teams that hang your number. */
+  jerseys: string[];
+  speech: string;
+}
+
 export interface InboxMessage {
   id: string;
   date: IsoDate;
@@ -424,6 +451,7 @@ export interface Career {
   recruiting?: Recruiting;
   college?: CollegeCareer;
   pro?: ProCareer;
+  retirement?: Retirement;
   inbox: InboxMessage[];
   log: CareerLogEntry[];
 }

@@ -19,8 +19,9 @@ import { SettingsTab } from "./SettingsTab";
 import { RecruitingTab } from "./RecruitingTab";
 import { CollegeSchedule, CollegeTeam } from "./CollegeTabs";
 import { ProSchedule, ProTeam } from "./ProTabs";
+import { LegendsTab } from "./Legends";
 
-export const HUB_TABS = ["Home", "Schedule", "Stats", "Team", "Recruiting", "Player", "Settings"] as const;
+export const HUB_TABS = ["Home", "Schedule", "Stats", "Team", "Recruiting", "Player", "Legends", "Settings"] as const;
 const COLLEGE_ROLE = { starter: "Starter", rotation: "Rotation", bench: "Bench" };
 export type HubTab = (typeof HUB_TABS)[number];
 
@@ -85,7 +86,7 @@ export function CareerHub() {
   const p = career.player;
   const s = currentSeason(career);
   const col = career.stage === "college" ? currentCollege(career) : undefined;
-  const pro = career.stage === "pro" ? currentPro(career) : undefined;
+  const pro = career.stage === "pro" || career.stage === "retired" ? currentPro(career) : undefined;
   const unread = career.inbox.filter((m) => !m.read).length;
   return (
     <PageShell title={`${p.firstName} ${p.lastName}`} back="/career/" backLabel="Careers" wide>
@@ -96,7 +97,13 @@ export function CareerHub() {
         {team && (
           <span>
             {team.name} {team.nickname}
-            {pro ? ` · ${ROLE_NAME[pro.role]}` : col ? ` · ${COLLEGE_ROLE[col.role]}` : career.stage === "hs" && s?.tryout && ` · ${LEVEL_SHORT[s.level]}`}
+            {career.stage === "retired"
+              ? ""
+              : pro
+                ? ` · ${ROLE_NAME[pro.role]}`
+                : col
+                  ? ` · ${COLLEGE_ROLE[col.role]}`
+                  : career.stage === "hs" && s?.tryout && ` · ${LEVEL_SHORT[s.level]}`}
           </span>
         )}
         <span>
@@ -135,6 +142,7 @@ export function CareerHub() {
         (pro ? <ProTeam career={career} ctx={ctx} /> : col ? <CollegeTeam career={career} ctx={ctx} /> : <TeamTab career={career} ctx={ctx} />)}
       {tab === "Recruiting" && career.stage === "hs" && <RecruitingTab career={career} ctx={ctx} />}
       {tab === "Player" && <PlayerTab career={career} />}
+      {tab === "Legends" && <LegendsTab career={career} />}
       {tab === "Settings" && <SettingsTab career={career} />}
     </PageShell>
   );
