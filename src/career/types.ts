@@ -394,6 +394,88 @@ export interface ProCareer {
   endorsementOffers?: Endorsement[];
 }
 
+/** What one answer or decision does to you. */
+export interface StoryEffect {
+  /** Humble (-) to confident (+). */
+  confident?: number;
+  /** Team-first (-) to star (+). */
+  star?: number;
+  fans?: number;
+  media?: number;
+  teammates?: number;
+  coach?: number;
+  /** Legend points for Impact. */
+  impact?: number;
+  impactText?: string;
+}
+
+export interface StoryChoice extends StoryEffect {
+  text: string;
+  reply: string;
+}
+
+/** Something waiting on your answer: a press conference, or a decision. */
+export interface StoryEvent {
+  id: string;
+  date: IsoDate;
+  kind: "press" | "choice";
+  title: string;
+  from?: string;
+  body: string;
+  choices: StoryChoice[];
+}
+
+export interface PhoneText {
+  date: IsoDate;
+  mine?: boolean;
+  text: string;
+}
+
+export interface SocialPost {
+  date: IsoDate;
+  author: string;
+  handle: string;
+  text: string;
+  likes: number;
+}
+
+export interface Rival {
+  name: string;
+  pos: string;
+  teamId: string;
+  /** Your games against them. */
+  wins: number;
+  losses: number;
+}
+
+export interface StoryState {
+  /** Humble (-1) to confident (1). */
+  confident: number;
+  /** Team-first (-1) to star (1). */
+  star: number;
+  /** Your standing, 0..100. */
+  fans: number;
+  media: number;
+  teammates: number;
+  coach: number;
+  mentor: string;
+  rival: Rival;
+  pending: StoryEvent[];
+  threads: Record<string, PhoneText[]>;
+  /** Threads with texts you haven't opened. */
+  unread: string[];
+  feed: SocialPost[];
+  impact: { date: IsoDate; text: string; points: number }[];
+  /** How far the story has read the career log and your games. */
+  logSeen: number;
+  gamesSeen: number;
+  /** Seasons that have had a media day. */
+  mediaDays: string[];
+  /** Every event that has been used, so scripted ones happen once and random ones don't repeat too soon. */
+  used: string[];
+  ticks: number;
+}
+
 export interface CareerTotals {
   games: number;
   pts: number;
@@ -452,6 +534,7 @@ export interface Career {
   college?: CollegeCareer;
   pro?: ProCareer;
   retirement?: Retirement;
+  story?: StoryState;
   inbox: InboxMessage[];
   log: CareerLogEntry[];
 }

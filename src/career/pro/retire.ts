@@ -94,10 +94,11 @@ function writeSpeech(c: Career, choice: string, legend: boolean) {
   const rng = new Rng(`${c.seed}:speech`);
   const school = c.hs.seasons.at(-1) ? "high school" : "the park";
   const open =
-    (c.pro?.confidence ?? 0) > 0.2
+    (c.story?.confident ?? 0) + (c.pro?.confidence ?? 0) > 0.2
       ? "I always told you I'd be standing here."
       : rng.pick(["I never thought I'd be standing here.", "I don't really know how to do this."]);
-  const close = legend ? "They say legends never really leave. I'll see you at the park." : "I gave this game everything I had. Thank you.";
+  const mentor = c.story?.mentor ? ` And to ${c.story.mentor}: you were right about me.` : "";
+  const close = `${legend ? "They say legends never really leave. I'll see you at the park." : "I gave this game everything I had. Thank you."}${mentor}`;
   return `${open} I started as a kid from ${c.player.hometown} who just wanted to make the team in ${school}. ${line.text} ${close}`;
 }
 

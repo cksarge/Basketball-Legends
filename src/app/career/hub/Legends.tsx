@@ -5,6 +5,7 @@ import { formatDate } from "@/career/format";
 import { PILLARS, legendStatus } from "@/career/legend";
 import { HALL_OF_LEGENDS, HALL_STATS, allTimeRank, careerTotals, nextToPass, type HallKey } from "@/career/pro/retire";
 import { money } from "@/career/pro/season";
+import type { HsContext } from "@/career/hs/season";
 import { Panel, Segmented } from "@/ui/kit";
 
 /** The end of the road: the verdict, the ceremonies and your speech. */
@@ -77,7 +78,7 @@ export function RetiredHome({ career }: { career: Career }) {
 }
 
 /** The Hall of Legends: the all-time greats, where you'd stand among them, and everything that built your legacy. */
-export function LegendsTab({ career }: { career: Career }) {
+export function LegendsTab({ career, ctx }: { career: Career; ctx: HsContext }) {
   const [key, setKey] = useState<HallKey>("pts");
   const totals = useMemo(() => careerTotals(career), [career]);
   const st = useMemo(() => legendStatus(career), [career]);
@@ -108,22 +109,38 @@ export function LegendsTab({ career }: { career: Career }) {
           ))}
         </ol>
       </Panel>
-      <Panel title="Your legacy">
-        <p className="mb-3 text-sm text-steel">
-          {st.points.toLocaleString("en-US")} Legend points: {PILLARS.map((p) => `${st.pillars[p.id]} ${p.label}`).join(", ")}.
-        </p>
-        {st.events.length === 0 && <p className="text-steel">Nothing yet. Go make some history.</p>}
-        <ul className="flex max-h-[32rem] flex-col gap-1 overflow-y-auto pr-1 text-sm">
-          {[...st.events].reverse().map((e, i) => (
-            <li key={`${e.date}-${e.text}-${i}`} className="flex justify-between gap-3 border-t border-line/60 py-1">
-              <span>
-                {e.text} <span className="text-xs text-steel">{formatDate(e.date)}</span>
-              </span>
-              <span className="flex-none text-amber">+{e.points}</span>
-            </li>
-          ))}
-        </ul>
-      </Panel>
+      <div className="flex flex-col gap-5">
+        {career.story && (
+          <Panel title="Your rival">
+            <p className="font-semibold">{career.story.rival.name}</p>
+            <p className="text-sm text-steel">
+              {career.story.rival.pos} · {rivalTeam(career, ctx)} · You&apos;re {career.story.rival.wins}-{career.story.rival.losses} head to head
+            </p>
+            <p className="mt-2 text-sm text-steel">Your mentor: {career.story.mentor}</p>
+          </Panel>
+        )}
+        <Panel title="Your legacy">
+          <p className="mb-3 text-sm text-steel">
+            {st.points.toLocaleString("en-US")} Legend points: {PILLARS.map((p) => `${st.pillars[p.id]} ${p.label}`).join(", ")}.
+          </p>
+          {st.events.length === 0 && <p className="text-steel">Nothing yet. Go make some history.</p>}
+          <ul className="flex max-h-[32rem] flex-col gap-1 overflow-y-auto pr-1 text-sm">
+            {[...st.events].reverse().map((e, i) => (
+              <li key={`${e.date}-${e.text}-${i}`} className="flex justify-between gap-3 border-t border-line/60 py-1">
+                <span>
+                  {e.text} <span className="text-xs text-steel">{formatDate(e.date)}</span>
+                </span>
+                <span className="flex-none text-amber">+{e.points}</span>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      </div>
     </div>
   );
 }
+
+const rivalTeam = (c: Career, ctx: HsContext) => {
+  const id = c.story?.rival.teamId ?? "";
+  return (ctx.byId.get(id) ?? ctx.collegeById?.get(id) ?? ctx.proById?.get(id))?.name ?? "";
+};

@@ -25,7 +25,7 @@ import type {
   ScheduledGame,
 } from "../types";
 import { agentById } from "./draft";
-import { DEV_GAMES, generateDevSchedule, generateProSchedule } from "./schedule";
+import { generateDevSchedule, generateProSchedule } from "./schedule";
 
 /** Points added to each side's simulated score (pro games are longer and faster than the high school games behind the model). */
 export const PRO_SCORE_LIFT = 46;
@@ -387,7 +387,8 @@ export function fame(c: Career) {
   const seasons = c.pro?.seasons ?? [];
   const honors = seasons.flatMap((s) => s.awards).length;
   const last = seasons.filter((s) => s.stats.gp > 0).at(-1);
-  return clamp(honors * 4 + (last ? seasonImpact(last) * 1.1 : 0), 0, 100);
+  const crowd = c.story ? (c.story.fans - 50) * 0.2 : 0;
+  return clamp(honors * 4 + (last ? seasonImpact(last) * 1.1 : 0) + crowd, 0, 100);
 }
 
 /** All-Star voting just before the break, and the 3-point contest for the best shooters. */

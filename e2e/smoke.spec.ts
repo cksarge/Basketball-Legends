@@ -283,6 +283,39 @@ test("a graduate moves on campus: college hub, a played game, sims, NIL and the 
   expect(errors).toEqual([]);
 });
 
+test("the story: a press conference, the phone, the social feed and your reputation @gpu", async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors = watchErrors(page);
+  await lowGraphics(page);
+  await graduate(page, "Story");
+  await page.getByRole("button", { name: "Move in on campus" }).click();
+  await expect(page.getByText("Coach trust")).toBeVisible();
+  // a preseason interview waits at the top of the hub
+  await page.getByRole("button", { name: "Sim game", exact: true }).click();
+  await expect(page.getByRole("list", { name: "Your answer" })).toBeVisible({ timeout: 60_000 });
+  await page.getByRole("list", { name: "Your answer" }).getByRole("button").first().click();
+  await expect(page.getByRole("status").filter({ hasText: /\w/ }).first()).toBeVisible();
+  await page.getByRole("tab", { name: /Phone/ }).click();
+  await page.getByRole("list", { name: "Conversations" }).getByRole("button").first().click();
+  await expect(
+    page
+      .getByRole("list", { name: /Texts with/ })
+      .getByRole("listitem")
+      .first(),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Thanks." }).click();
+  await expect(page.getByRole("list", { name: /Texts with/ }).getByText("Thanks.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your reputation" })).toBeVisible();
+  await page
+    .getByRole("radio", { name: "Social" })
+    .or(page.getByRole("button", { name: "Social" }))
+    .first()
+    .click();
+  await page.getByRole("tab", { name: "Legends" }).click();
+  await expect(page.getByRole("heading", { name: "Your rival" })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test("the road to the draft: agent, combine, workouts, interviews and draft night @gpu", async ({ page }) => {
   test.setTimeout(120_000);
   const errors = watchErrors(page);
@@ -356,7 +389,7 @@ test("retirement: an Icon sees their odds, then the Legend verdict and the Hall 
   await expect(page.getByText(/% chance will be a Legend at retirement/)).toBeVisible();
   await page.getByRole("tab", { name: "Legends" }).click();
   await expect(page.getByRole("heading", { name: "Hall of Legends" })).toBeVisible();
-  await expect(page.getByText("Marcus Delacroix")).toBeVisible();
+  await expect(page.getByText("Marcus Delacroix").first()).toBeVisible();
   await page.getByRole("tab", { name: "Home" }).click();
   await page.getByRole("button", { name: "Retire from basketball" }).click();
   await page.getByRole("list", { name: "Who you thank first" }).getByRole("button", { name: "My family" }).click();

@@ -186,7 +186,9 @@ export function answerInterview(c: Career, answer: number): Career {
 /** Your draft stock with everything from the pre-draft process folded in. */
 export function currentStock(c: Career) {
   const base = c.college?.declared?.stock ?? draftStock(c);
-  const score = base.score + (c.pro?.preDraft.stockDelta ?? 0);
+  // how the media talks about you moves teams a little
+  const press = c.story ? (c.story.media - 50) * 0.02 : 0;
+  const score = base.score + (c.pro?.preDraft.stockDelta ?? 0) + press;
   const pick = Math.max(1, Math.round(1 + (85 - score) * 5));
   const label =
     pick <= 5 ? "Top-five pick" : pick <= 14 ? "Lottery pick" : pick <= 30 ? "First-round pick" : pick <= 60 ? "Second-round pick" : "Likely undrafted";

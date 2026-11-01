@@ -46,6 +46,8 @@ import {
   type SimProgress,
 } from "./actions";
 
+import { RivalTag } from "./PhoneTab";
+
 const money = (n: number) => `$${n.toLocaleString("en-US")}`;
 const ROLE_TEXT = { starter: "Starter", rotation: "Rotation player", bench: "End of the bench" };
 
@@ -115,6 +117,7 @@ export function CollegeNextUp({ career, ctx }: { career: Career; ctx: HsContext 
     };
     return (
       <Panel>
+        <RivalTag career={career} game={g} />
         <p className="text-sm text-steel">
           {formatDate(g.date)} · {g.label ?? (g.kind === "region" ? "Conference game" : "Non-conference")}
         </p>

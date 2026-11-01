@@ -65,6 +65,7 @@ import {
   userProGames,
 } from "@/career/pro/season";
 import { retire } from "@/career/pro/retire";
+import { readThread, replyText, resolveEvent, skipEvent, storyTick } from "@/career/story/engine";
 import { useCareer } from "@/state/careerStore";
 import { useMatchStore, type MatchResult, type PendingMatch } from "@/state/matchStore";
 import { clearSuspended, findCareerSave, pruneCareerSaves } from "@/state/suspended";
@@ -79,15 +80,22 @@ export function primaryDevice(device: string): string {
 export function useHsContext(): HsContext | null {
   const [ctx, setCtx] = useState<HsContext | null>(null);
   useEffect(() => {
-    Promise.all([loadLeague("hs"), loadLeague("college"), loadLeague("pro")]).then(([h, col, pro]) =>
-      setCtx(hsContext(h.teams, col.teams, col.conferences, pro.teams)),
-    );
+    Promise.all([loadLeague("hs"), loadLeague("college"), loadLeague("pro")]).then(([h, col, pro]) => {
+      storyContext = hsContext(h.teams, col.teams, col.conferences, pro.teams);
+      setCtx(storyContext);
+    });
   }, []);
   return ctx;
 }
 
 const cur = () => useCareer.getState().career!;
-const update = (fn: (c: Career) => Career) => useCareer.getState().update(fn);
+/** The league context, kept for the story, which reads every change to the career. */
+let storyContext: HsContext | null = null;
+const update = (fn: (c: Career) => Career) =>
+  useCareer.getState().update((x) => {
+    const next = fn(x);
+    return storyContext ? storyTick(next, storyContext) : next;
+  });
 
 /** Starts the school year if the career is waiting on one (new careers and every August). */
 export async function ensureSeason(ctx: HsContext) {
@@ -361,6 +369,15 @@ export async function finishProYear(ctx: HsContext) {
 }
 
 export const retireAction = (speech: string, ctx: HsContext) => update((x) => retire(x, speech, ctx));
+/** Answers a story event and says how it went. */
+export async function answerAction(eventId: string, choice: number) {
+  const { career, reply } = resolveEvent(cur(), eventId, choice);
+  await update(() => career);
+  return reply;
+}
+export const skipStoryAction = (eventId: string) => update((x) => skipEvent(x, eventId));
+export const readThreadAction = (who: string) => update((x) => readThread(x, who));
+export const replyAction = (who: string, text: string) => update((x) => replyText(x, who, text));
 export const campAndStartAction = (focus: string, ctx: HsContext) => update((x) => trainingCamp(x, focus, ctx));
 export const signContractAction = (teamId: string, ctx: HsContext) => update((x) => signContract(x, teamId, ctx));
 export const tradeRequestAction = () => update((x) => requestTrade(x));

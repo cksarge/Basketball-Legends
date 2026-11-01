@@ -14,6 +14,18 @@ Career mode has a new name and one ultimate goal: become a Basketball Legend.
 - **Four ways to earn it:** Greatness (honors), Winning (titles and tournament runs), Moments (big games you played yourself, never simulated ones) and Impact (community work and the classroom). Careers already under way get credit for what they've done.
 - **Legend is very hard:** the title is only decided at retirement, and only for Icons. Once you're an Icon, the game shows your chance of becoming a Legend.
 
+### Your story
+
+- **Press conferences and interviews:** media day every season, postgame interviews after big nights and tough losses, plus the draft, trades, the trade deadline and championships. Answer, or walk past the microphones.
+- **Personality and reputation:** every answer moves you between Humble and Confident, and between Team-first and Star, and changes how fans, the media, teammates and coaches see you.
+- **It matters:** coaches and teammates affect your trust, minutes and chemistry, fans bring bigger endorsements, and the media moves your draft stock.
+- **Your phone:** a new Phone tab with texts from your family and a mentor from the Hall of Legends, who has followed you since freshman year.
+- **Social feed:** fans and reporters react to your big nights, awards, trades and injuries.
+- **A rival:** a player from a nearby school follows you to college and the pros. Rival games are flagged, your head-to-head record is tracked, and the Legends tab keeps score.
+- **Decisions:** dozens of high school, college and pro events, from parties and booster offers to locker room fights and a foundation back home.
+- **Impact:** community choices now earn Impact points on the Road to Legend, including in the pros.
+- **Story setting:** the how-often setting from the creator now works.
+
 ### College
 
 - **Move in on campus:** high school graduates start college at the program they picked, on scholarship or as a walk-on.

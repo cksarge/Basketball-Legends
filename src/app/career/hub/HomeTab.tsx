@@ -41,6 +41,7 @@ import { CollegeNextUp, CollegePanels, CollegeRecent } from "./CollegeHome";
 import { LegendPanel } from "./LegendPanel";
 import { ProNextUp } from "./ProHome";
 import { ProPanels } from "./ProSeason";
+import { RivalTag, StoryCards } from "./PhoneTab";
 import { RetiredHome } from "./Legends";
 
 export function HomeTab({ career, ctx }: { career: Career; ctx: HsContext }) {
@@ -49,6 +50,7 @@ export function HomeTab({ career, ctx }: { career: Career; ctx: HsContext }) {
   return (
     <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
       <div className="flex flex-col gap-5">
+        <StoryCards career={career} />
         {career.stage === "retired" ? (
           <RetiredHome career={career} />
         ) : career.stage === "pro" ? (
@@ -347,6 +349,7 @@ function NextUp({ career, ctx }: { career: Career; ctx: HsContext }) {
     };
     return (
       <Panel>
+        <RivalTag career={career} game={g} />
         <p className="text-sm text-steel">
           {formatDate(g.date)} · {g.label} · {s.summer?.club?.name}
           {s.summer?.club?.elite ? " (elite circuit)" : ""}

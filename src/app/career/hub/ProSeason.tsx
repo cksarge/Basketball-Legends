@@ -31,6 +31,8 @@ import {
   type SimProgress,
 } from "./actions";
 
+import { RivalTag } from "./PhoneTab";
+
 /** What's next once you're a pro: training camp, your next game, an injury, the end of the year or free agency. */
 export function ProSeasonUp({ career, ctx }: { career: Career; ctx: HsContext }) {
   const router = useRouter();
@@ -216,6 +218,7 @@ export function ProSeasonUp({ career, ctx }: { career: Career; ctx: HsContext })
     });
   return (
     <Panel>
+      <RivalTag career={career} game={g} />
       <p className="text-sm text-steel">
         {formatDate(g.date)}
         {g.label ? ` · ${g.label}` : ""}

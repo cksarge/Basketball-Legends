@@ -209,6 +209,24 @@ export default function HowToPlay() {
           <b>Trades:</b> ask for one before the deadline, but your coach and teammates will notice.
         </li>
       </ul>
+      <H3>Your story</H3>
+      <ul className="list-disc pl-6">
+        <li>
+          <b>Press and decisions:</b> answers appear at the top of your hub. They shape your personality and how fans, media, teammates and coaches see you.
+        </li>
+        <li>
+          <b>Why it matters:</b> coaches and teammates affect your minutes and chemistry, fans bring endorsements, and the media moves your draft stock.
+        </li>
+        <li>
+          <b>Phone tab:</b> texts from family and your mentor, your social feed and your reputation.
+        </li>
+        <li>
+          <b>Your rival:</b> rival games are flagged, and the Legends tab keeps your head-to-head record.
+        </li>
+        <li>
+          <b>How often:</b> change how many story moments you get in Settings.
+        </li>
+      </ul>
       <H3>Retirement</H3>
       <p>From age 30 you can hang it up. Jerseys are retired where you earned it, the Hall of Fame votes, you give your speech, and the verdict comes in.</p>
       <H2>Saving and resuming</H2>
