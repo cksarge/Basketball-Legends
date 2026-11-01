@@ -5,6 +5,7 @@ import { generateRoster, heightStr, playerOvr } from "@/engine/player";
 import type { LeagueId, Player, Team } from "@/engine/types";
 import { LEAGUES, loadLeague } from "@/data/leagues";
 import type { Regular } from "@/game/park/regulars";
+import { loadLegends } from "@/state/legends";
 import { Button, Segmented, Select } from "@/ui/kit";
 
 export function PlayerPicker({
@@ -21,7 +22,8 @@ export function PlayerPicker({
   onPick: (p: Player) => void;
   onClose: () => void;
 }) {
-  const [tab, setTab] = useState<"regulars" | "league">("regulars");
+  const [legends] = useState(() => loadLegends());
+  const [tab, setTab] = useState<"regulars" | "league" | "legends">("regulars");
   const [league, setLeague] = useState<LeagueId>("pro");
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamId, setTeamId] = useState("");
@@ -91,6 +93,7 @@ export function PlayerPicker({
           options={[
             { value: "regulars", label: "Park regulars" },
             { value: "league", label: "League players" },
+            ...(legends.length ? [{ value: "legends" as const, label: "Your Legends" }] : []),
           ]}
         />
         {tab === "league" && (
@@ -112,7 +115,11 @@ export function PlayerPicker({
           </div>
         )}
         <ul className="scrollbar-thin mt-3 flex flex-1 flex-col gap-1.5 overflow-y-auto pr-1">
-          {tab === "regulars" ? regulars.map((r) => row(r.player, `“${r.nickname}” · ${r.rep}`)) : roster.map((p) => row(p))}
+          {tab === "regulars"
+            ? regulars.map((r) => row(r.player, `“${r.nickname}” · ${r.rep}`))
+            : tab === "legends"
+              ? legends.map((l) => row(l.player, "Basketball Legend"))
+              : roster.map((p) => row(p))}
         </ul>
       </div>
     </div>

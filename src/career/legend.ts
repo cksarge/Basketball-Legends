@@ -139,6 +139,7 @@ export function legendEvents(c: Career): LegendEvent[] {
       if (d.kind === "community" && d.status === "signed")
         out.push({ date: `${s.year}-10-01`, pillar: "impact", points: 3, text: `${d.brand} with local kids` });
   }
+  for (const e of c.street?.moments ?? []) out.push({ date: e.date, pillar: e.pillar, points: e.points, text: e.text });
   for (const e of c.story?.impact ?? []) out.push({ date: e.date, pillar: "impact", points: e.points, text: e.text });
   let scored = 0;
   for (const s of c.pro?.seasons ?? []) {

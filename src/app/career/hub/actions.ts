@@ -66,6 +66,8 @@ import {
 } from "@/career/pro/season";
 import { retire } from "@/career/pro/retire";
 import { readThread, replyText, resolveEvent, skipEvent, storyTick } from "@/career/story/engine";
+import { declineCallout, finishRun, simRun, startRun } from "@/career/park";
+import { saveLegend } from "@/state/legends";
 import { useCareer } from "@/state/careerStore";
 import { useMatchStore, type MatchResult, type PendingMatch } from "@/state/matchStore";
 import { clearSuspended, findCareerSave, pruneCareerSaves } from "@/state/suspended";
@@ -108,6 +110,12 @@ export async function ensureSeason(ctx: HsContext) {
 export async function applyFinishedMatch(ctx: HsContext) {
   const res: MatchResult | null = useMatchStore.getState().lastResult;
   const c = cur();
+  if (res?.careerRun === c.id && c.street?.active) {
+    useMatchStore.getState().setResult(null);
+    const won = !!res.park?.youWon;
+    await update((x) => finishRun(x, won, !res.simulated));
+    return true;
+  }
   if (!res?.career || res.career.careerId !== c.id) return false;
   if (c.stage === "pro") {
     const s = currentPro(c);
@@ -368,7 +376,24 @@ export async function finishProYear(ctx: HsContext) {
   await update((x) => finishProSeason(x, ctx));
 }
 
-export const retireAction = (speech: string, ctx: HsContext) => update((x) => retire(x, speech, ctx));
+export async function retireAction(speech: string, ctx: HsContext) {
+  await update((x) => retire(x, speech, ctx));
+  const c = cur();
+  // a Legend lives on outside Road to Legend
+  if (c.retirement?.legend) saveLegend({ careerId: c.id, player: { ...c.player, contract: undefined, teamId: null } });
+}
+
+/** Sets up a pickup run and heads to the park. */
+export async function startRunAction(parkId: string, teamSize: number, kind: "pickup" | "callout", ctx: HsContext, controller: string) {
+  const r = startRun(cur(), parkId, teamSize, kind, ctx, controller);
+  if (!r) return false;
+  await update(() => r.career);
+  useMatchStore.getState().setPending(r.pending);
+  return true;
+}
+export const simRunAction = (parkId: string, teamSize: number, kind: "pickup" | "callout", ctx: HsContext) =>
+  update((x) => simRun(x, parkId, teamSize, kind, ctx));
+export const declineCalloutAction = () => update((x) => declineCallout(x));
 /** Answers a story event and says how it went. */
 export async function answerAction(eventId: string, choice: number) {
   const { career, reply } = resolveEvent(cur(), eventId, choice);

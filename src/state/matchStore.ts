@@ -69,6 +69,8 @@ export interface PendingMatch {
   tutorial?: boolean;
   /** Career game this match belongs to. */
   career?: CareerGameRef;
+  /** A career's pickup run at the park. */
+  careerRun?: string;
   /** Overrides the difficulty from Settings (careers have their own). */
   difficulty?: Difficulty;
   /** Career: what to do when the locked player goes to the bench. */
@@ -91,6 +93,7 @@ export interface MatchResult {
   simulated: boolean;
   injuries: InjuryRecord[];
   career?: CareerGameRef;
+  careerRun?: string;
   /** Park games: who won (for the next-game-up line) and the results shown on the park screen. */
   park?: { youWon: boolean; title: string; lines: { name: string; value: string; you?: boolean }[] };
 }

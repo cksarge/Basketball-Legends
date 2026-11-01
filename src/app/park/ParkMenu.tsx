@@ -20,6 +20,7 @@ import {
   startLine,
   YOU_CREW,
 } from "@/game/park/session";
+import { loadLegends, parkName } from "@/state/legends";
 import { useMatchStore } from "@/state/matchStore";
 import { type ParkMode, type ParkSetup, useParkStore } from "@/state/parkStore";
 import { audio } from "@/audio/engine";
@@ -64,6 +65,7 @@ export function ParkMenu() {
   const [seed, setSeed] = useState(1);
   const [overrides, setOverrides] = useState<Record<string, Player>>({});
   const [picking, setPicking] = useState<string | null>(null);
+  const [legends] = useState(() => (typeof window === "undefined" ? [] : loadLegends()));
 
   useEffect(() => load(), [load]);
 
@@ -169,7 +171,7 @@ export function ParkMenu() {
                 className={`flex h-full w-full flex-col gap-2 rounded-[var(--radius-chip)] p-3 text-left ring-1 ${p.id === park.id ? "bg-amber/10 ring-amber" : "bg-deck-2 ring-line hover:ring-amber"}`}
               >
                 <CourtSwatch park={p} />
-                <span className="font-display text-lg font-black leading-tight">{p.name}</span>
+                <span className="font-display text-lg font-black leading-tight">{parkName(p.id, legends)}</span>
                 <span className="text-xs text-steel">
                   {p.city}, {p.state} · {p.vibe}
                 </span>

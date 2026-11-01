@@ -316,6 +316,54 @@ test("the story: a press conference, the phone, the social feed and your reputat
   expect(errors).toEqual([]);
 });
 
+test("the park in a career: a run earns reputation, and a Legend plays on in the park @gpu", async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors = watchErrors(page);
+  await lowGraphics(page);
+  await page.goto("career/new/");
+  await page.getByLabel("First name").fill("Street");
+  await page.getByLabel("Last name").fill("Baller");
+  await page.getByRole("button", { name: "2. Position" }).click();
+  await page.getByRole("radio", { name: "PG" }).click();
+  await page.getByRole("button", { name: "5. Skills" }).click();
+  await page.getByRole("button", { name: "Auto-fill" }).click();
+  await page.getByRole("button", { name: "6. Start" }).click();
+  await page.getByRole("button", { name: "Start career" }).click();
+  await page.waitForURL(/career\/hub\/\?id=/);
+  await page.getByRole("tab", { name: "Park" }).click();
+  await expect(page.getByRole("heading", { name: "Your name at the parks" })).toBeVisible();
+  await expect(page.getByText("3 runs left this off-season")).toBeVisible();
+  // the tough parks start closed
+  await expect(page.getByRole("button", { name: "Run at Copper Flats Courts", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Run at Rooftop/ })).toHaveCount(0);
+  await page.getByRole("button", { name: "Sim a run at Copper Flats Courts" }).click();
+  await expect(page.getByText("2 runs left this off-season")).toBeVisible();
+  // a real run in 3D comes back to the hub
+  await page.getByRole("button", { name: "Run at Copper Flats Courts", exact: true }).click();
+  await page.waitForURL("**/game/");
+  await expect(page.getByText("Loading the arena")).toBeHidden({ timeout: 60_000 });
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Sim to end" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Sim to end" }).click();
+  await page
+    .getByRole("button", { name: /Continue|Back|Done/ })
+    .first()
+    .click({ timeout: 120_000 });
+  await page.waitForURL(/career\/hub\/\?id=/);
+  await page.getByRole("tab", { name: "Park" }).click();
+  await expect(page.getByText("1 run left this off-season")).toBeVisible({ timeout: 30_000 });
+  // a Legend's name goes on the hometown courts
+  await page.evaluate(() =>
+    localStorage.setItem(
+      "bl-legends",
+      JSON.stringify([{ careerId: "x", player: { id: "legend-x", firstName: "Old", lastName: "Great", pos: "PG", heightIn: 75, age: 38, ratings: {} } }]),
+    ),
+  );
+  await page.goto("park/");
+  await expect(page.getByText("Old Great Courts")).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test("the road to the draft: agent, combine, workouts, interviews and draft night @gpu", async ({ page }) => {
   test.setTimeout(120_000);
   const errors = watchErrors(page);

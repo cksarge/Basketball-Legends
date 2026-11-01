@@ -43,6 +43,7 @@ import { ProNextUp } from "./ProHome";
 import { ProPanels } from "./ProSeason";
 import { RivalTag, StoryCards } from "./PhoneTab";
 import { RetiredHome } from "./Legends";
+import { ParkNudge } from "./ParkTab";
 
 export function HomeTab({ career, ctx }: { career: Career; ctx: HsContext }) {
   const update = useCareer((s) => s.update);
@@ -51,6 +52,7 @@ export function HomeTab({ career, ctx }: { career: Career; ctx: HsContext }) {
     <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
       <div className="flex flex-col gap-5">
         <StoryCards career={career} />
+        <ParkNudge career={career} />
         {career.stage === "retired" ? (
           <RetiredHome career={career} />
         ) : career.stage === "pro" ? (

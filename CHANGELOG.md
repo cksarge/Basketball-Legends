@@ -26,6 +26,15 @@ Career mode has a new name and one ultimate goal: become a Basketball Legend.
 - **Impact:** community choices now earn Impact points on the Road to Legend, including in the pros.
 - **Story setting:** the how-often setting from the creator now works.
 
+### The park in your career
+
+- **Park tab:** three pickup runs every off-season, starting the summer before freshman year. Play them in 3D, or sim them for half the reputation.
+- **Street reputation:** runs earn reputation and XP, and tougher parks pay more. Your name opens new cities, from Phoenix and your neighborhood court to the Boardwalk, the Cage and the rooftop.
+- **Drop-ins:** known pros sometimes show up for a run. Beat one in a game you play and it counts as a Legend Moment.
+- **Call-outs:** your rival calls you out some summers for one-on-one to 11. Winning counts on your head-to-head, and ducking it costs you.
+- **Regulars:** the same faces are there every time, and the Park tab keeps your record against them.
+- **Legend rewards:** a Basketball Legend's name goes on the hometown courts, and they can be picked as a player in standalone Play in the Park. Retired players can keep playing runs.
+
 ### College
 
 - **Move in on campus:** high school graduates start college at the program they picked, on scholarship or as a walk-on.

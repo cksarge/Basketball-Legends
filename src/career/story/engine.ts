@@ -4,6 +4,7 @@ import { generatePlayer } from "@/engine/player";
 import { Rng, clamp } from "@/engine/rng";
 import type { Team } from "@/engine/types";
 import { gameScore } from "@/game/sim/stats";
+import { STORY_RATE } from "./rates";
 import { currentCollege } from "../college/season";
 import { currentSeason, type HsContext } from "../hs/season";
 import { currentPro } from "../pro/season";
@@ -23,8 +24,7 @@ import {
   type EventTemplate,
 } from "./content";
 
-/** How often optional story beats fire at each setting. */
-export const STORY_RATE = { low: 0.35, normal: 0.7, high: 1 } as const;
+export { STORY_RATE };
 export const MAX_PENDING = 3;
 const MAX_FEED = 120;
 const MAX_THREAD = 40;
@@ -203,6 +203,11 @@ function readLog(st: Story, e: CareerLogEntry) {
   const { s, c, rng } = st;
   const t = e.text;
   if (/^Made the /.test(t)) st.text(MOM, e.date, TEXTS.madeTeam[0]);
+  else if (/^Earned a run at /.test(t)) {
+    st.text(s.mentor, e.date, TEXTS.parkUnlock[0], { text: t.replace("Earned a run at ", "").replace(/\.$/, "") });
+    st.post(e.date, rng.pick(POSTS.park), { text: t.replace("Earned a run at ", "").replace(/\.$/, "") });
+  } else if (/^Beat .* at the park/.test(t))
+    st.post(e.date, "{text}", { text: `Word from the park: ${c.player.lastName} ${t.charAt(0).toLowerCase()}${t.slice(1)}` });
   else if (/^Called up to /.test(t)) st.text(s.mentor, e.date, TEXTS.calledUp[0]);
   else if (/^Enrolled at /.test(t)) {
     st.text(s.mentor, e.date, TEXTS.enrolled[0]);

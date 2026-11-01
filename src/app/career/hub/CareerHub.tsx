@@ -21,8 +21,9 @@ import { CollegeSchedule, CollegeTeam } from "./CollegeTabs";
 import { ProSchedule, ProTeam } from "./ProTabs";
 import { LegendsTab } from "./Legends";
 import { PhoneTab } from "./PhoneTab";
+import { ParkTab } from "./ParkTab";
 
-export const HUB_TABS = ["Home", "Schedule", "Stats", "Team", "Recruiting", "Player", "Phone", "Legends", "Settings"] as const;
+export const HUB_TABS = ["Home", "Schedule", "Stats", "Team", "Recruiting", "Player", "Phone", "Park", "Legends", "Settings"] as const;
 const COLLEGE_ROLE = { starter: "Starter", rotation: "Rotation", bench: "Bench" };
 export type HubTab = (typeof HUB_TABS)[number];
 
@@ -146,6 +147,7 @@ export function CareerHub() {
       {tab === "Recruiting" && career.stage === "hs" && <RecruitingTab career={career} ctx={ctx} />}
       {tab === "Player" && <PlayerTab career={career} />}
       {tab === "Phone" && <PhoneTab career={career} />}
+      {tab === "Park" && <ParkTab career={career} ctx={ctx} />}
       {tab === "Legends" && <LegendsTab career={career} ctx={ctx} />}
       {tab === "Settings" && <SettingsTab career={career} />}
     </PageShell>

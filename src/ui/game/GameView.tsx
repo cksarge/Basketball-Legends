@@ -244,6 +244,7 @@ export function GameView({ pending }: { pending: PendingMatch }) {
         simulated,
         injuries: s.injuries,
         career: pending.career,
+        careerRun: pending.careerRun,
         park: pending.park ? parkOutcome(match, pending.park, contestRivals(pending)) : undefined,
       });
       setScreen("final");

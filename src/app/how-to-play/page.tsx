@@ -227,6 +227,18 @@ export default function HowToPlay() {
           <b>How often:</b> change how many story moments you get in Settings.
         </li>
       </ul>
+      <H3>The park</H3>
+      <ul className="list-disc pl-6">
+        <li>
+          <b>Runs:</b> the Park tab gives you three pickup runs every off-season. They earn street reputation and XP.
+        </li>
+        <li>
+          <b>New parks:</b> reputation opens tougher parks, which pay more.
+        </li>
+        <li>
+          <b>Surprises:</b> known pros sometimes drop in, and your rival may call you out to one-on-one.
+        </li>
+      </ul>
       <H3>Retirement</H3>
       <p>From age 30 you can hang it up. Jerseys are retired where you earned it, the Hall of Fame votes, you give your speech, and the verdict comes in.</p>
       <H2>Saving and resuming</H2>

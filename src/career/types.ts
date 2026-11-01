@@ -476,6 +476,31 @@ export interface StoryState {
   ticks: number;
 }
 
+/** A pickup game in progress: what to record when you get back. */
+export interface ActiveRun {
+  parkId: string;
+  kind: "pickup" | "callout";
+  oppIds: string[];
+  /** A known league player who showed up. */
+  dropIn?: string;
+}
+
+/** Your name at the parks: reputation, pickup runs and the regulars you've played. */
+export interface StreetState {
+  rep: number;
+  wins: number;
+  losses: number;
+  /** The off-season the runs below belong to. */
+  window: string;
+  used: number;
+  /** Your record against each regular, by player id. */
+  regulars: Record<string, { w: number; l: number }>;
+  /** Off-seasons where your rival's call-out has been answered. */
+  callouts: string[];
+  active?: ActiveRun;
+  moments: { date: IsoDate; text: string; points: number; pillar: "moments" | "impact" }[];
+}
+
 export interface CareerTotals {
   games: number;
   pts: number;
@@ -535,6 +560,7 @@ export interface Career {
   pro?: ProCareer;
   retirement?: Retirement;
   story?: StoryState;
+  street?: StreetState;
   inbox: InboxMessage[];
   log: CareerLogEntry[];
 }

@@ -475,6 +475,7 @@ export const TEXTS = {
   rivalIntro: ["Word is a kid named {rival} at {rivalTeam} thinks they're better than you. Thought you should know."],
   champion: ["You did it. I've got chills. Call me when the party's over."],
   badGame: ["Short memory. Next one."],
+  parkUnlock: ["They're talking about you at {text} now. Go see if you can run with them."],
 } as const;
 
 export const POSTS = {
@@ -488,6 +489,7 @@ export const POSTS = {
   fanBad: ["Tough night for {team}.", "Bench {name}? Hear me out.", "We'll be fine. Right? Right?"],
   award: ["Congrats to {name}: {award}.", "{award}. {name} keeps stacking them up."],
   move: ["{text}"],
+  park: ["{name} just pulled up to {text}. Bring your own ball.", "The regulars at {text} heard about {name}. They want a run."],
   rival: ["{rival} vs {name} never disappoints.", "Best rivalry in basketball? {name} and {rival}."],
   rivalNews: ["{rival} went off last night. Is {rival} better than {name}? Discuss.", "Scouts are buzzing about {rival}. {name} might have competition."],
 };
