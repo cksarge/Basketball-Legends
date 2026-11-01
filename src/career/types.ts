@@ -1,6 +1,6 @@
 // Career mode save format. Pure data (JSON-serializable) so it can live in IndexedDB,
 // be exported as a .blcareer file, and be used by the engine in tests and workers.
-import type { Player, Position, Archetype, Appearance, RatingKey, Ratings, TeamLevel } from "@/engine/types";
+import type { ClassYear, Player, Position, Archetype, Appearance, RatingKey, Ratings, TeamLevel } from "@/engine/types";
 import type { StatLine } from "@/game/sim/stats";
 import type { Difficulty } from "@/game/sim/state";
 
@@ -197,6 +197,76 @@ export interface Bracket {
   champion?: string;
 }
 
+/** How the coach uses you: decided by your overall and how much the coach trusts you. */
+export type CollegeRole = "starter" | "rotation" | "bench";
+
+export interface NilDeal {
+  id: string;
+  brand: string;
+  kind: "local" | "national" | "community";
+  /** Paid once when you sign. */
+  amount: number;
+  status: "open" | "signed" | "declined";
+}
+
+export interface DraftStock {
+  /** 1 is the top pick; above 60 means you'd likely go undrafted. */
+  pick: number;
+  label: string;
+  score: number;
+}
+
+export interface PortalOffer {
+  teamId: string;
+  role: string;
+  nil: number;
+}
+
+export interface CollegeSeason {
+  /** Fall year of the season (2030 for 2030-31). */
+  year: number;
+  classYear: ClassYear;
+  teamId: string;
+  tier: string;
+  walkOn: boolean;
+  /** Sits the season out: you practice and develop without using a year of eligibility. */
+  redshirt?: boolean;
+  /** How much the coach trusts you (0..100). Performance moves it; it sets your role and minutes. */
+  trust: number;
+  role: CollegeRole;
+  /** Your teammates, without your player (added at runtime). */
+  roster: Player[];
+  /** Every game in your division while the season runs; trimmed to yours and the postseason when it ends. */
+  games: ScheduledGame[];
+  stats: StatLine & { gp: number; gs: number };
+  awards: string[];
+  nil: NilDeal[];
+  /** Conference tournaments, then the national tournament and the invitational. */
+  brackets?: Bracket[];
+  /** How your season ended ("Lost in the Regional Final"). */
+  finish?: string;
+  conferenceTable?: { teamId: string; w: number; l: number; rw: number; rl: number }[];
+  /** Your team's final rank in the division. */
+  teamRank?: number;
+  stock?: DraftStock;
+  wrapped?: boolean;
+  /** What you decided after the season. */
+  decision?: "return" | "portal" | "declare";
+  portalOffers?: PortalOffer[];
+}
+
+export interface CollegeCareer {
+  seasons: CollegeSeason[];
+  /** NIL money earned so far. */
+  earnings: number;
+  /** Where you're playing next, after a transfer. */
+  transferTo?: string;
+  /** Went to the portal and came back: the coach starts next season trusting you a little less. */
+  withdrewPortal?: boolean;
+  /** Declared for the draft. */
+  declared?: { date: IsoDate; stock: DraftStock };
+}
+
 export interface InboxMessage {
   id: string;
   date: IsoDate;
@@ -227,6 +297,7 @@ export interface Career {
   hs: { schoolId: string; seasons: HsSeason[] };
   /** College recruiting, from the summer after sophomore year until you sign. */
   recruiting?: Recruiting;
+  college?: CollegeCareer;
   inbox: InboxMessage[];
   log: CareerLogEntry[];
 }

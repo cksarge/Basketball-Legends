@@ -22,10 +22,10 @@ const keyFor = (slot: SaveSlot, group: SaveGroup) => (slot === "auto" ? "bl-susp
 
 export const saveGroupOf = (p: Pick<PendingMatch, "mode">): SaveGroup => (p.mode === "career" || p.mode === "franchise" ? p.mode : "play");
 
-/** The name of a save in the lists ("Autosave", "Slot 2", "Career slot 2"). */
+/** The name of a save in the lists ("Autosave", "Slot 2", "Legend slot 2"). */
 export function slotLabel(slot: SaveSlot, group: SaveGroup) {
   if (slot === "auto") return "Autosave";
-  return group === "play" ? `Slot ${slot}` : `${group === "career" ? "Career" : "Franchise"} slot ${slot}`;
+  return group === "play" ? `Slot ${slot}` : `${group === "career" ? "Legend" : "Franchise"} slot ${slot}`;
 }
 
 export interface SuspendedGame {
@@ -46,7 +46,7 @@ function periodText(m: Match) {
 /** What kind of game this is, for the save lists ("Quick Play", "Play in the Park · Ironside Cage"). */
 export function modeLabel(p: PendingMatch) {
   if (p.park) return `Play in the Park · ${parkById(p.park.parkId).name}`;
-  return p.mode === "career" ? "Career" : p.mode === "franchise" ? "Franchise" : "Quick Play";
+  return p.mode === "career" ? "Road to Legend" : p.mode === "franchise" ? "Franchise" : "Quick Play";
 }
 
 /** A one-line description of where a saved game stands. */

@@ -118,7 +118,7 @@ export default function HowToPlay() {
         Press Esc (or Menu) to pause. From the pause menu you can see the box score and play-by-play, make substitutions, call a timeout, change the camera,
         simulate the rest of the game or restart. T calls a timeout when your team has the ball, and Y cycles through the cameras.
       </p>
-      <H2>Career mode</H2>
+      <H2>Road to Legend</H2>
       <p>
         Create a player, pick an Arizona hometown and high school, and start the summer before freshman year. In November, tryouts place you on the
         freshman/sophomore team, JV or varsity, depending on which teams your school fields, your ratings and how you do in three quick drills. Play well and
@@ -128,15 +128,20 @@ export default function HowToPlay() {
         Keep your grades up: finals are a short timed exam, and a fall GPA under 2.0 sits you for the rest of the season. Summers bring a camp of your choice
         and AAU showcase games, which raise your exposure with college coaches and your recruiting ranking. From June 15 after sophomore year, college programs
         start recruiting you: the Recruiting tab shows every program&apos;s interest, the offers and the role each coach pitches, and lets you take up to five
-        official visits, commit and decommit. Division I needs a 2.3 core GPA. Before you graduate, sign with an offer or walk on somewhere.
+        official visits, commit and decommit. Division I needs a 2.3 core GPA. Before you graduate, sign with an offer or walk on somewhere. In college your
+        coach&apos;s trust decides your role and minutes: beat what the coach expects and both grow. Play through non-conference games, conference play, your
+        conference tournament and, if your team earns it, the National Tournament or the National Invitational. NIL deals pay you, the transfer portal opens
+        after every season, and you can redshirt once. After each season decide whether to come back, transfer or declare for the draft. Every career chases one
+        thing: honors, titles, big moments you played yourself and your impact on the community earn Legend points that raise your rank from Local Hero up to
+        Icon. Only an Icon can become a Legend, the title is decided at retirement, and very few careers get there.
       </p>
       <H2>Saving and resuming</H2>
       <p>
         Games save themselves every few seconds, so if you close the tab you can pick up where you left off from Resume game on the main menu. To keep games
-        side by side, choose Save game from the pause menu and pick a slot. Quick Play and the park share three slots (say, a Quick Play game in slot 1 and a park game in slot
-        2), and Career has three of its own; a game in a slot keeps saving itself there as you play. Resume game on the main menu lists the autosave and every
-        slot, with the score and where each game stands, to resume or delete, and your career hub picks up a saved career game from any of them. Resumed games start paused so you can get ready. Finishing a game clears its save; quitting a game that isn&apos;t in a
-        slot discards it.
+        side by side, choose Save game from the pause menu and pick a slot. Quick Play and the park share three slots (say, a Quick Play game in slot 1 and a
+        park game in slot 2), and Road to Legend has three of its own; a game in a slot keeps saving itself there as you play. Resume game on the main menu
+        lists the autosave and every slot, with the score and where each game stands, to resume or delete, and your career hub picks up a saved career game from
+        any of them. Resumed games start paused so you can get ready. Finishing a game clears its save; quitting a game that isn&apos;t in a slot discards it.
       </p>
       <H2>Replays and highlights</H2>
       <p>

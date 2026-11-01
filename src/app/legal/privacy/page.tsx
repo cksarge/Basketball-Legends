@@ -17,7 +17,7 @@ export default function Privacy() {
         </li>
         <li>
           <b>Saved games</b> are kept in local storage: an autosave every few seconds (so you can resume after closing the tab) and up to three save slots for each
-          group of modes (Quick Play and the park, and Career), chosen from the pause menu. A save is deleted when its game ends, when you quit a game that isn&apos;t in a slot, or when you delete it from the main
+          group of modes (Quick Play and the park, and Road to Legend), chosen from the pause menu. A save is deleted when its game ends, when you quit a game that isn&apos;t in a slot, or when you delete it from the main
           menu. Deleting a career also deletes its saved games.
         </li>
         <li>

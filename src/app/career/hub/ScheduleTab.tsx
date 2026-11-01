@@ -114,7 +114,7 @@ export function ScheduleTab({ career, ctx }: { career: Career; ctx: HsContext })
   );
 }
 
-function BoxTable({
+export function BoxTable({
   box,
   people,
   userId,

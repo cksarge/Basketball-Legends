@@ -21,10 +21,12 @@ import {
   campAction,
   careerPending,
   clearSuspended,
+  enterCollegeAction,
   finalsAction,
   finishCurrentSeason,
   graduateAction,
   nextYearAction,
+  primaryDevice,
   runTryout,
   showcaseAction,
   simShowcase,
@@ -35,12 +37,8 @@ import {
 import { FinalsQuiz } from "./FinalsQuiz";
 import { TryoutDrills } from "./TryoutDrills";
 import { CollegeChoice } from "./RecruitingTab";
-
-function primaryDevice(device: string): string {
-  if (device === "keyboard" || typeof navigator === "undefined") return "keyboard";
-  const pad = [...(navigator.getGamepads?.() ?? [])].find((p): p is Gamepad => !!p && p.connected);
-  return pad ? `pad${pad.index}` : "keyboard";
-}
+import { CollegeNextUp, CollegePanels, CollegeRecent } from "./CollegeHome";
+import { LegendPanel } from "./LegendPanel";
 
 export function HomeTab({ career, ctx }: { career: Career; ctx: HsContext }) {
   const update = useCareer((s) => s.update);
@@ -48,11 +46,22 @@ export function HomeTab({ career, ctx }: { career: Career; ctx: HsContext }) {
   return (
     <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
       <div className="flex flex-col gap-5">
-        <NextUp career={career} ctx={ctx} />
-        <SeasonGlance career={career} ctx={ctx} />
-        <SchoolPanel career={career} />
+        {career.stage === "college" ? (
+          <>
+            <CollegeNextUp career={career} ctx={ctx} />
+            <CollegeRecent career={career} ctx={ctx} />
+            <CollegePanels career={career} ctx={ctx} />
+          </>
+        ) : (
+          <>
+            <NextUp career={career} ctx={ctx} />
+            <SeasonGlance career={career} ctx={ctx} />
+            <SchoolPanel career={career} />
+          </>
+        )}
       </div>
       <div className="flex flex-col gap-5">
+        <LegendPanel career={career} />
         <Panel title={`Messages${unread ? ` (${unread} new)` : ""}`}>
           {unread > 1 && (
             <button className="mb-2 text-sm text-steel underline" onClick={() => update((c) => ({ ...c, inbox: c.inbox.map((m) => ({ ...m, read: true })) }))}>
@@ -371,10 +380,12 @@ function NextUp({ career, ctx }: { career: Career; ctx: HsContext }) {
           {rankingText(s?.ranking)}.
         </p>
         {done ? (
-          <p className="text-steel">
-            {college ? `Next stop: ${college.name}${career.recruiting?.college?.walkOn ? " as a walk-on" : ""}. ` : ""}College seasons and the pros arrive in an
-            upcoming beta update. Your career is saved and will pick up right here.
-          </p>
+          <>
+            <p className="mb-4 text-steel">{college ? `Next stop: ${college.name}${career.recruiting?.college?.walkOn ? " as a walk-on" : ""}.` : ""}</p>
+            <Button disabled={busy} onClick={() => run(() => enterCollegeAction(ctx))}>
+              Move in on campus
+            </Button>
+          </>
         ) : (
           <>
             <CollegeChoice career={career} ctx={ctx} />

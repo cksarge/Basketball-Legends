@@ -1,7 +1,7 @@
 "use client";
 import { addLine, emptyLine } from "@/game/sim/stats";
 import type { Career, HsLevel } from "@/career/types";
-import { GRADE_LABEL, LEVEL_SHORT } from "@/career/format";
+import { classLabel, GRADE_LABEL, LEVEL_SHORT } from "@/career/format";
 import { averages, type HsContext } from "@/career/hs/season";
 import { Panel } from "@/ui/kit";
 
@@ -24,7 +24,21 @@ export function StatsTab({ career, ctx }: { career: Career; ctx: HsContext }) {
       if (lvl === "varsity") total = { ...addLine(total, t), gp: total.gp + t.gp, gs: total.gs + t.gs };
     }
   const career_ = averages(total);
-  const awards = career.hs.seasons.flatMap((s) => s.awards.map((a) => `${s.year}-${String(s.year + 1).slice(2)}: ${a}`));
+  const colleges = career.college?.seasons ?? [];
+  let colTotal = { ...emptyLine(), gp: 0, gs: 0 };
+  for (const s of colleges) {
+    const a = averages(s.stats);
+    if (a)
+      rows.push({
+        key: `col-${s.year}`,
+        label: `${s.year}-${String(s.year + 1).slice(2)} · ${classLabel(s.classYear)}`,
+        team: ctx.collegeById?.get(s.teamId)?.abbrev ?? "",
+        a,
+      });
+    colTotal = { ...addLine(colTotal, s.stats), gp: colTotal.gp + s.stats.gp, gs: colTotal.gs + s.stats.gs };
+  }
+  const college_ = averages(colTotal);
+  const awards = [...career.hs.seasons, ...colleges].flatMap((s) => s.awards.map((a) => `${s.year}-${String(s.year + 1).slice(2)}: ${a}`));
   return (
     <div className="flex flex-col gap-5">
       <Panel title="Season averages">
@@ -59,22 +73,30 @@ export function StatsTab({ career, ctx }: { career: Career; ctx: HsContext }) {
                     <td className="px-2 text-right">{pct(a.ftPct)}</td>
                   </tr>
                 ))}
-                {career_ && (
-                  <tr className="border-t-2 border-line font-semibold">
-                    <td className="px-2 py-1.5" colSpan={2}>
-                      Varsity career
-                    </td>
-                    <td className="px-2 text-right">{career_.gp}</td>
-                    <td className="px-2 text-right">{career_.mpg.toFixed(1)}</td>
-                    <td className="px-2 text-right">{career_.ppg.toFixed(1)}</td>
-                    <td className="px-2 text-right">{career_.rpg.toFixed(1)}</td>
-                    <td className="px-2 text-right">{career_.apg.toFixed(1)}</td>
-                    <td className="px-2 text-right">{career_.spg.toFixed(1)}</td>
-                    <td className="px-2 text-right">{career_.bpg.toFixed(1)}</td>
-                    <td className="px-2 text-right">{pct(career_.fgPct)}</td>
-                    <td className="px-2 text-right">{pct(career_.tpPct)}</td>
-                    <td className="px-2 text-right">{pct(career_.ftPct)}</td>
-                  </tr>
+                {(
+                  [
+                    ["Varsity career", career_],
+                    ["College career", college_],
+                  ] as const
+                ).map(
+                  ([name, a]) =>
+                    a && (
+                      <tr key={name} className="border-t-2 border-line font-semibold">
+                        <td className="px-2 py-1.5" colSpan={2}>
+                          {name}
+                        </td>
+                        <td className="px-2 text-right">{a.gp}</td>
+                        <td className="px-2 text-right">{a.mpg.toFixed(1)}</td>
+                        <td className="px-2 text-right">{a.ppg.toFixed(1)}</td>
+                        <td className="px-2 text-right">{a.rpg.toFixed(1)}</td>
+                        <td className="px-2 text-right">{a.apg.toFixed(1)}</td>
+                        <td className="px-2 text-right">{a.spg.toFixed(1)}</td>
+                        <td className="px-2 text-right">{a.bpg.toFixed(1)}</td>
+                        <td className="px-2 text-right">{pct(a.fgPct)}</td>
+                        <td className="px-2 text-right">{pct(a.tpPct)}</td>
+                        <td className="px-2 text-right">{pct(a.ftPct)}</td>
+                      </tr>
+                    ),
                 )}
               </tbody>
             </table>

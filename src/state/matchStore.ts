@@ -39,6 +39,8 @@ export interface SideSetup {
   /** Controller devices assigned to this side ("keyboard", "pad0", ...). */
   controllers: string[];
   starters?: string[];
+  /** Target minutes that replace the default rotation for these players (a college coach's plan for you). */
+  rotation?: Record<string, number>;
 }
 
 export interface PendingMatch {

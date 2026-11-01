@@ -58,7 +58,7 @@ describe("save groups", () => {
   it("names slots for the save lists", () => {
     expect(slotLabel("auto", "play")).toBe("Autosave");
     expect(slotLabel(2, "play")).toBe("Slot 2");
-    expect(slotLabel(2, "career")).toBe("Career slot 2");
+    expect(slotLabel(2, "career")).toBe("Legend slot 2");
   });
 });
 

@@ -282,7 +282,7 @@ function runPlayoffs(s: HsSeason, ctx: HsContext, c: Career, until: IsoDate, rng
   return { ...s, games, playoffs };
 }
 
-function withXp(c: Career, xp: number, date: IsoDate): Career {
+export function withXp(c: Career, xp: number, date: IsoDate): Career {
   if (xp <= 0) return c;
   const total = c.player.xp + xp;
   const points = Math.floor(total / XP_PER_POINT);
@@ -328,7 +328,7 @@ export function userMatchSetup(c: Career, game: ScheduledGame, ctx: HsContext): 
   };
 }
 
-function hashGame(id: string) {
+export function hashGame(id: string) {
   let h = 0;
   for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) | 0;
   return h;

@@ -53,7 +53,7 @@ export function CareerSelect() {
 
   return (
     <PageShell
-      title="Career"
+      title="Road to Legend"
       actions={
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => fileRef.current?.click()}>

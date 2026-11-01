@@ -64,13 +64,14 @@ const ITEMS: Item[] = [
   },
   {
     id: "career",
-    label: "Career",
+    label: "Road to Legend",
     href: "/career/",
-    blurb: "One player, from freshman year to the Hall of Fame.",
+    blurb: "Your career, from freshman year to basketball immortality. Few ever become Legends.",
     detail: [
       "Build your player and pick your Arizona high school",
       "Tryouts, call-ups and a run at the state title",
-      "Recruiting, college, the draft and the pros are coming in this beta",
+      "Recruiting, college and a run at the national title",
+      "The draft and the pros are coming in this beta",
     ],
   },
   {

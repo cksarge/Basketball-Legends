@@ -60,8 +60,24 @@ function buildMatch(p: PendingMatch, quarterMinutes: number, g: ReturnType<typeo
   const humansAway = away.controllers.map(() => h++);
   const setup: MatchSetup = {
     league: p.league,
-    home: { team: home.team, roster: home.roster, tactics: home.tactics, human: humansHome.length > 0, humans: humansHome, starters: home.starters },
-    away: { team: away.team, roster: away.roster, tactics: away.tactics, human: humansAway.length > 0, humans: humansAway, starters: away.starters },
+    home: {
+      team: home.team,
+      roster: home.roster,
+      tactics: home.tactics,
+      human: humansHome.length > 0,
+      humans: humansHome,
+      starters: home.starters,
+      rotation: home.rotation,
+    },
+    away: {
+      team: away.team,
+      roster: away.roster,
+      tactics: away.tactics,
+      human: humansAway.length > 0,
+      humans: humansAway,
+      starters: away.starters,
+      rotation: away.rotation,
+    },
     quarterMinutes,
     difficulty: p.difficulty ?? g.difficulty,
     shotMeter: g.shotMeter && !tapShots,

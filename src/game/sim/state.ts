@@ -226,6 +226,8 @@ export interface TeamGameState {
   minutes: Record<string, number>;
   /** Coach-set rotation: target minutes per player id. */
   rotation: Record<string, number>;
+  /** Minutes a coach has planned for specific players; they check in when they fall behind. */
+  planned?: Record<string, number>;
   playCall: string | null;
 }
 

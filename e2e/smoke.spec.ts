@@ -61,7 +61,7 @@ const PAGES: [string, RegExp][] = [
   ["legal/terms/", /Terms of Service/],
   ["legal/privacy/", /Privacy Policy/],
   ["changelog/", /Changelog/],
-  ["career/", /Career/],
+  ["career/", /Road to Legend/],
   ["career/new/", /Create a player/],
   ["park/", /Play in the Park/],
 ];
@@ -123,7 +123,7 @@ test("create a career, then find it on the career screen after a reload", async 
   expect(errors).toEqual([]);
 });
 
-test("a career game saved to a Career slot resumes from the hub, and simming it clears the save @gpu", async ({ page }) => {
+test("a career game saved to a Legend slot resumes from the hub, and simming it clears the save @gpu", async ({ page }) => {
   test.setTimeout(240_000);
   await lowGraphics(page);
   await page.goto("career/new/");
@@ -157,7 +157,7 @@ test("a career game saved to a Career slot resumes from the hub, and simming it 
   expect(await slot()).toEqual([true, false]);
   await page.goto("./");
   await page.getByRole("button", { name: "Resume game" }).click();
-  await expect(page.getByRole("button", { name: /Career slot 1.*Career/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Legend slot 1.*Road to Legend/ })).toBeVisible();
   // the hub resumes it from the slot
   await page.goto(hub);
   await page.getByRole("button", { name: /Resume game \(/ }).click();
@@ -171,6 +171,88 @@ test("a career game saved to a Career slot resumes from the hub, and simming it 
   // simming that game from the hub means the save can't resume anymore
   await page.getByRole("button", { name: "Sim game", exact: true }).click();
   await expect.poll(slot, { timeout: 60_000 }).toEqual([false, false]);
+});
+
+test("a graduate moves on campus: college hub, a played game, sims, NIL and the Road to Legend card @gpu", async ({ page }) => {
+  test.setTimeout(240_000);
+  const errors = watchErrors(page);
+  await lowGraphics(page);
+  await page.goto("career/new/");
+  await page.getByLabel("First name").fill("Campus");
+  await page.getByLabel("Last name").fill("Star");
+  await page.getByRole("button", { name: "2. Position" }).click();
+  await page.getByRole("radio", { name: "PG" }).click();
+  await page.getByRole("button", { name: "5. Skills" }).click();
+  await page.getByRole("button", { name: "Auto-fill" }).click();
+  await page.getByRole("button", { name: "6. Start" }).click();
+  await page.getByRole("button", { name: "Start career" }).click();
+  await page.waitForURL(/career\/hub\/\?id=/);
+  await expect(page.getByText("Road to Legend").first()).toBeVisible();
+  await expect(page.getByText("Local Hero", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Go to tryouts" }).click();
+  await page.getByRole("button", { name: /Skip the drills/ }).click();
+  await page.getByRole("button", { name: "On to the season" }).click();
+  // jump the save to a graduated senior headed to a college
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve, reject) => {
+        const open = indexedDB.open("bl-career");
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const store = open.result.transaction("careers", "readwrite").objectStore("careers");
+          const all = store.getAll();
+          all.onsuccess = () => {
+            const row = all.result.find((r) => r.data.player.firstName === "Campus");
+            const d = row.data;
+            const s = d.hs.seasons.at(-1);
+            Object.assign(s, {
+              grade: 12,
+              games: [],
+              wrapped: true,
+              grades: { fall: 3, spring: 3 },
+              ranking: { date: d.date, stars: 4, national: 80, state: 2, score: 66, exposure: 2 },
+            });
+            d.date = `${s.year + 1}-05-28`;
+            d.recruiting = { offers: [], visitsUsed: 0, visitsAllowed: 5, college: { teamId: "col-albany", walkOn: false, date: `${s.year + 1}-05-01` } };
+            d.log.push({ date: d.date, text: "Graduated from high school.", kind: "milestone" });
+            store.put(row).onsuccess = () => resolve();
+          };
+        };
+      }),
+  );
+  await page.reload();
+  await page.getByRole("button", { name: "Move in on campus" }).click();
+  await expect(page.getByRole("button", { name: "Sim game", exact: true })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Recruiting" })).toHaveCount(0);
+  await expect(page.getByText("Coach trust")).toBeVisible();
+  // NIL
+  await page.getByRole("button", { name: "Sign" }).first().click();
+  await expect(page.getByText(/Earned so far: \$[1-9]/)).toBeVisible();
+  // a real college game loads in 3D
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.waitForURL("**/game/");
+  await expect(page.getByText("Loading the arena")).toBeHidden({ timeout: 60_000 });
+  const bench = page.getByRole("button", { name: "Watch from the bench" });
+  await expect(page.locator(".led").nth(1).or(bench).first()).toBeVisible({ timeout: 60_000 });
+  if (await bench.isVisible()) await bench.click();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: "Save game" })).toBeVisible();
+  // finishing it records the result on the hub
+  await page.getByRole("button", { name: "Sim to end" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Sim to end" }).click();
+  await page.getByRole("button", { name: "Continue" }).click({ timeout: 120_000 });
+  await page.waitForURL(/career\/hub\/\?id=/);
+  await expect(page.getByText("Recent games")).toBeVisible({ timeout: 30_000 });
+  // sims run through the real engine and feed every tab
+  await page.getByRole("button", { name: "Sim game", exact: true }).click();
+  await expect(page.locator("li", { hasText: " pts, " }).nth(1)).toBeVisible({ timeout: 60_000 });
+  await page.getByRole("tab", { name: "Schedule" }).click();
+  await expect(page.getByText(/^[WL]$/).first()).toBeVisible();
+  await page.getByRole("tab", { name: "Team" }).click();
+  await expect(page.getByRole("cell", { name: "Campus Star" })).toBeVisible();
+  await page.getByRole("tab", { name: "Stats" }).click();
+  await expect(page.getByText("College career")).toBeVisible();
+  expect(errors).toEqual([]);
 });
 
 test("the beta warning shows only in the beta build", async ({ page }) => {
@@ -236,7 +318,7 @@ test("save slots: a quick game and a park game saved side by side, then resumed 
   await page.getByRole("button", { name: "Resume game" }).click();
   await expect(page.getByRole("button", { name: /Slot 1.*Quick Play/ })).toBeFocused();
   await expect(page.getByText("Slot 2", { exact: true })).toBeVisible();
-  await expect(page.getByText("Career slot 1", { exact: true })).toBeVisible();
+  await expect(page.getByText("Legend slot 1", { exact: true })).toBeVisible();
   // a park game goes in slot 2 without touching slot 1
   await page.goto("park/");
   await page.getByRole("radio", { name: "1v1" }).click();

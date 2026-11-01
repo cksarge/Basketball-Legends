@@ -3,8 +3,9 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { playerOvr } from "@/engine/player";
-import { formatDate, GRADE_LABEL, LEVEL_SHORT, stageLabel } from "@/career/format";
+import { classLabel, formatDate, GRADE_LABEL, LEVEL_SHORT, stageLabel } from "@/career/format";
 import { currentSeason } from "@/career/hs/season";
+import { currentCollege } from "@/career/college/season";
 import { useCareer } from "@/state/careerStore";
 import { PageShell, Panel } from "@/ui/kit";
 import { applyFinishedMatch, ensureSeason, pruneFinishedSaves, useHsContext } from "./actions";
@@ -15,8 +16,10 @@ import { TeamTab } from "./TeamTab";
 import { PlayerTab } from "./PlayerTab";
 import { SettingsTab } from "./SettingsTab";
 import { RecruitingTab } from "./RecruitingTab";
+import { CollegeSchedule, CollegeTeam } from "./CollegeTabs";
 
 export const HUB_TABS = ["Home", "Schedule", "Stats", "Team", "Recruiting", "Player", "Settings"] as const;
+const COLLEGE_ROLE = { starter: "Starter", rotation: "Rotation", bench: "Bench" };
 export type HubTab = (typeof HUB_TABS)[number];
 
 export function CareerHub() {
@@ -48,7 +51,7 @@ export function CareerHub() {
 
   if (!id || status === "missing") {
     return (
-      <PageShell title="Career" back="/career/" backLabel="Careers">
+      <PageShell title="Road to Legend" back="/career/" backLabel="Careers">
         <Panel>
           <p className="mb-4">That career isn&apos;t saved in this browser.</p>
           <Link href="/career/" className="text-amber underline">
@@ -60,7 +63,7 @@ export function CareerHub() {
   }
   if (status === "error") {
     return (
-      <PageShell title="Career" back="/career/" backLabel="Careers">
+      <PageShell title="Road to Legend" back="/career/" backLabel="Careers">
         <Panel>
           <p className="text-bad">Couldn&apos;t open this career: {error}</p>
         </Panel>
@@ -69,7 +72,7 @@ export function CareerHub() {
   }
   if (!career || career.id !== id || !ctx) {
     return (
-      <PageShell title="Career" back="/career/" backLabel="Careers">
+      <PageShell title="Road to Legend" back="/career/" backLabel="Careers">
         <p className="text-steel" role="status">
           Loading your career…
         </p>
@@ -79,6 +82,7 @@ export function CareerHub() {
 
   const p = career.player;
   const s = currentSeason(career);
+  const col = career.stage === "college" ? currentCollege(career) : undefined;
   const unread = career.inbox.filter((m) => !m.read).length;
   return (
     <PageShell title={`${p.firstName} ${p.lastName}`} back="/career/" backLabel="Careers" wide>
@@ -89,11 +93,11 @@ export function CareerHub() {
         {team && (
           <span>
             {team.name} {team.nickname}
-            {s?.tryout && ` · ${LEVEL_SHORT[s.level]}`}
+            {col ? ` · ${COLLEGE_ROLE[col.role]}` : s?.tryout && ` · ${LEVEL_SHORT[s.level]}`}
           </span>
         )}
         <span>
-          {s ? GRADE_LABEL[s.grade] : stageLabel(career.stage)} · {formatDate(career.date)}
+          {col ? classLabel(col.classYear) : s ? GRADE_LABEL[s.grade] : stageLabel(career.stage)} · {formatDate(career.date)}
         </span>
         <span className="ml-auto flex items-baseline gap-4">
           {p.skillPoints > 0 && (
@@ -107,7 +111,7 @@ export function CareerHub() {
         </span>
       </div>
       <nav aria-label="Career sections" role="tablist" className="mb-5 flex flex-wrap gap-1">
-        {HUB_TABS.map((t) => (
+        {HUB_TABS.filter((t) => t !== "Recruiting" || career.stage === "hs").map((t) => (
           <button
             key={t}
             role="tab"
@@ -121,10 +125,10 @@ export function CareerHub() {
         ))}
       </nav>
       {tab === "Home" && <HomeTab career={career} ctx={ctx} />}
-      {tab === "Schedule" && <ScheduleTab career={career} ctx={ctx} />}
+      {tab === "Schedule" && (col ? <CollegeSchedule career={career} ctx={ctx} /> : <ScheduleTab career={career} ctx={ctx} />)}
       {tab === "Stats" && <StatsTab career={career} ctx={ctx} />}
-      {tab === "Team" && <TeamTab career={career} ctx={ctx} />}
-      {tab === "Recruiting" && <RecruitingTab career={career} ctx={ctx} />}
+      {tab === "Team" && (col ? <CollegeTeam career={career} ctx={ctx} /> : <TeamTab career={career} ctx={ctx} />)}
+      {tab === "Recruiting" && career.stage === "hs" && <RecruitingTab career={career} ctx={ctx} />}
       {tab === "Player" && <PlayerTab career={career} />}
       {tab === "Settings" && <SettingsTab career={career} />}
     </PageShell>

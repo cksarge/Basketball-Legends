@@ -72,6 +72,39 @@ export function hsCalendar(year: number): HsCalendar {
   };
 }
 
+/** Key dates of a college season: conference play from January, conference tournaments, then the national tournaments. */
+export interface CollegeCalendar {
+  year: number;
+  firstGame: IsoDate;
+  conferenceStart: IsoDate;
+  lastRegular: IsoDate;
+  conferenceTournament: IsoDate[];
+  selection: IsoDate;
+  /** Opening round, 64, 32, regional semifinal, regional final, national semifinal, championship. */
+  national: IsoDate[];
+  invitational: IsoDate[];
+  seasonEnd: IsoDate;
+}
+
+export function collegeCalendar(year: number): CollegeCalendar {
+  const firstGame = onOrAfter(iso(year, 11, 4), 1); // first Monday on or after November 4
+  const conferenceStart = onOrAfter(iso(year + 1, 1, 2), 2);
+  const selection = onOrAfter(iso(year + 1, 3, 12), 0); // Sunday
+  const lastRegular = addDays(selection, -8); // the Saturday before tournament week
+  const national = [2, 4, 6, 11, 13, 19, 21].map((d) => addDays(selection, d));
+  return {
+    year,
+    firstGame,
+    conferenceStart,
+    lastRegular,
+    conferenceTournament: [3, 4, 5, 6].map((d) => addDays(lastRegular, d)),
+    selection,
+    national,
+    invitational: [3, 5, 10, 17, 19].map((d) => addDays(selection, d)),
+    seasonEnd: addDays(selection, 23),
+  };
+}
+
 /** The school year a date belongs to (fall year): Aug 1 starts a new one. */
 export function schoolYearOf(d: IsoDate) {
   const y = +d.slice(0, 4);

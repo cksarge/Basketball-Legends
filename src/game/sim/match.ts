@@ -56,10 +56,21 @@ export function releaseGrade(quality: number, greenW: number): ReleaseGrade {
   return q < greenW ? "green" : q < 0.22 ? "good" : quality < 0 ? "early" : "late";
 }
 
+interface SetupSide {
+  team: Team;
+  roster: Player[];
+  tactics?: Partial<TeamTactics>;
+  human?: boolean;
+  starters?: string[];
+  humans?: number[];
+  /** Target minutes that replace the default rotation for these players. */
+  rotation?: Record<string, number>;
+}
+
 export interface MatchSetup {
   league: LeagueId;
-  home: { team: Team; roster: Player[]; tactics?: Partial<TeamTactics>; human?: boolean; starters?: string[]; humans?: number[] };
-  away: { team: Team; roster: Player[]; tactics?: Partial<TeamTactics>; human?: boolean; starters?: string[]; humans?: number[] };
+  home: SetupSide;
+  away: SetupSide;
   /** Career mode: the human always controls this player (no auto-switching). */
   lockPlayerId?: string;
   quarterMinutes?: number;
@@ -192,7 +203,8 @@ export class Match {
         attackSide: side,
         humanControlled: !!s.human,
         minutes: {},
-        rotation: defaultRotation(s.roster, starters, cfg),
+        rotation: { ...defaultRotation(s.roster, starters, cfg), ...s.rotation },
+        planned: s.rotation,
         playCall: null,
       };
     };
@@ -2853,7 +2865,13 @@ export class Match {
       const byFit = (a: Player, b: Player) => posFit(b, p) * overall(b.ratings, b.pos) - posFit(a, p) * overall(a.ratings, a.pos);
       const open = bench.filter((b) => !t.onCourt.includes(b.id));
       const cands = open.filter((b) => staminaOf(b) > 0.8).sort(byFit);
-      const sub = cands[0] ?? (forced ? open.sort(byFit)[0] : undefined);
+      // a coach's plan comes first: someone behind on planned minutes checks in at a position that fits
+      const done = (s.period - 1 + 1 - s.clock / (periodLen * 60)) / s.cfg.rules.periods;
+      const owed = cands.find((b) => {
+        const plan = t.planned?.[b.id];
+        return plan !== undefined && (t.minutes[b.id] ?? 0) / 60 < plan * scale * done && posFit(b, p) >= 0.95;
+      });
+      const sub = owed ?? cands[0] ?? (forced ? open.sort(byFit)[0] : undefined);
       if (!sub) continue;
       t.onCourt[slot] = sub.id;
       const ag = s.agents.find((a) => a.player.id === pid);

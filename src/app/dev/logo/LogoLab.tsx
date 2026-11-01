@@ -517,7 +517,7 @@ export function LogoLab() {
           <Backdrop className="px-8 py-10">
             {chosen.render("lg")}
             <ul className="mt-6 flex flex-col">
-              {["Play now", "Quick Play", "Play in the Park", "Career", "Settings"].map((l, i) => (
+              {["Play now", "Quick Play", "Play in the Park", "Road to Legend", "Settings"].map((l, i) => (
                 <li
                   key={l}
                   className={`py-1 font-display text-[clamp(1.6rem,4vw,2.6rem)] font-extrabold leading-tight ${i === 0 ? "text-amber" : "text-net/80"}`}

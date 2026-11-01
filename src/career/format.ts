@@ -16,4 +16,6 @@ export function stageLabel(s: CareerStage) {
 export const LEVEL_LABEL: Record<HsLevel, string> = { frso: "Freshman/Sophomore", jv: "Junior Varsity", varsity: "Varsity" };
 export const LEVEL_SHORT: Record<HsLevel, string> = { frso: "FR/SO", jv: "JV", varsity: "Varsity" };
 
+export const classLabel = (c: string) => ({ FR: "Freshman", SO: "Sophomore", JR: "Junior", SR: "Senior" })[c] ?? c;
+
 export const GRADE_LABEL: Record<number, string> = { 9: "Freshman", 10: "Sophomore", 11: "Junior", 12: "Senior" };

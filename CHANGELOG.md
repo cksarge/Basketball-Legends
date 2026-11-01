@@ -6,6 +6,24 @@ Every release of Basketball Legends is listed here, newest first. Each version's
 
 In testing at legends.carterscoding.com/beta/. These notes grow as Phase 2 lands.
 
+### Road to Legend
+
+Career mode has a new name and one ultimate goal: become a Basketball Legend.
+
+- **Legend ranks:** Local Hero, State Star, National Name, Pro, All-Star, Superstar, Icon and Legend. The Road to Legend card in the career hub shows your rank, your points, what's next and your latest milestones.
+- **Four ways to earn it:** Greatness (honors), Winning (titles and tournament runs), Moments (big games you played yourself, never simulated ones) and Impact (community work and the classroom). Careers already under way get credit for what they've done.
+- **Legend is very hard:** the title is only decided at retirement, and only for Icons. Once you're an Icon, the game shows your chance of becoming a Legend. The pro ranks open with the pro career in a later beta.
+
+### College
+
+- **Move in on campus:** high school graduates start college at the program they picked, on scholarship or as a walk-on.
+- **Coach trust and minutes:** your overall and your coach's trust set your role (starter, rotation or end of the bench), and the coach's lineup and minutes follow it in real games. Beat what the coach expects and your role grows. Struggle and it shrinks. Walk-ons start with less trust and can earn a scholarship.
+- **Real seasons in all three divisions:** every game in your division is simulated, with non-conference games, conference play, conference tournaments and national rankings. Your own games run through the real game engine in two halves.
+- **The postseason:** conference tournament winners earn automatic bids to a 68-team National Tournament with an opening round, and a 32-team National Invitational takes the next best in Division I. Divisions II and III have 64-team tournaments.
+- **Honors:** All-Conference, Freshman of the Year, conference Player of the Year, All-American, National Player of the Year and Most Outstanding Player.
+- **NIL:** local, community and national deals every season. Community deals pay less but count toward your legacy, and big national deals cost a little coach trust.
+- **After each season:** come back, enter the transfer portal or declare for the draft with your projected draft stock. Withdrawing from the portal costs some trust. You get four years of eligibility and one redshirt. Draft night comes in a later beta.
+
 ### Career mode
 
 - **Create a player:** first and last name, Arizona hometown (114 cities) and high school, any of the 283 schools through open enrollment, and jersey number.
@@ -33,7 +51,7 @@ In testing at legends.carterscoding.com/beta/. These notes grow as Phase 2 lands
   - **College recruiting:** from June 15 after sophomore year, programs across D1, D2 and D3 start following you. Interest depends on your recruiting score compared with the level each program usually signs (blue bloods land top-40 prospects, mid-majors three-stars, small colleges unranked players), with a home-state edge for Arizona schools. Division I needs a 2.3 core GPA: let your grades slip and D1 offers are pulled, then come back when your grades recover. Up to 30 offers, each with the coaches' pitch for your freshman role and an NIL estimate.
   - **Recruiting tab:** every program on your board with its interest in you and yours in it, filters for offers and your shortlist, five official visits (sit down with the coach, hang out with the players, tour the facilities or meet an academic advisor, each with its own story and effect), commit and decommit, and letters of intent signed on the early (November) or late (April) signing day. A signed letter is binding.
   - **Reclassify:** four- and five-star juniors with a 3.0 GPA can graduate a year early and skip senior year.
-  - **Graduation:** pick your college first, signing with an offer or walking on at a program that would take you. College seasons and the pros come in a later beta.
+  - **Graduation:** pick your college first, signing with an offer or walking on at a program that would take you.
   - **Balance:** skill points cost more XP (60 instead of 40), so a great player finishes high school as a top recruit without being better than most college players.
 - **Career save slots:** Career now has three save slots of its own, separate from the three shared by Quick Play and the park, so a career game can sit next to other games without overwriting them. Choose Save game in the pause menu, and the career hub resumes the game from any slot or the autosave. Resume game on the main menu lists the Career slots too. A saved career game is cleared once you sim it or delete that career.
 - **Real high school levels:** each Arizona school now knows which boys basketball teams it fields (varsity, JV, JV 2, freshman/sophomore), from the AIA's official AZPreps365 team pages. 205 of the 283 schools run a freshman/sophomore team.

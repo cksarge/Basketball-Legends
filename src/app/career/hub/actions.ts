@@ -28,10 +28,37 @@ import {
   type HsContext,
 } from "@/career/hs/season";
 import { outcomeFromMatch } from "@/career/hs/play";
+import {
+  advanceCollege,
+  applyCollegeGame,
+  collegeMatchSetup,
+  currentCollege,
+  declareForDraft,
+  declineNil,
+  enterCollege,
+  enterPortal,
+  finishCollegeSeason,
+  nextCollegeEvent,
+  returnToSchool,
+  setRedshirt,
+  signNil,
+  startNextCollegeYear,
+  transferTo,
+  undeclare,
+  userCollegeGames,
+  withdrawFromPortal,
+} from "@/career/college/season";
 import { chooseCollege, commit, decommit, officialVisit, reclassify, toggleFavorite, type VisitFocus } from "@/career/recruiting";
 import { useCareer } from "@/state/careerStore";
 import { useMatchStore, type MatchResult, type PendingMatch } from "@/state/matchStore";
 import { clearSuspended, findCareerSave, pruneCareerSaves } from "@/state/suspended";
+
+/** The controller for your player: the first connected gamepad unless you're on the keyboard. */
+export function primaryDevice(device: string): string {
+  if (device === "keyboard" || typeof navigator === "undefined") return "keyboard";
+  const pad = [...(navigator.getGamepads?.() ?? [])].find((p): p is Gamepad => !!p && p.connected);
+  return pad ? `pad${pad.index}` : "keyboard";
+}
 
 export function useHsContext(): HsContext | null {
   const [ctx, setCtx] = useState<HsContext | null>(null);
@@ -56,6 +83,21 @@ export async function applyFinishedMatch(ctx: HsContext) {
   const res: MatchResult | null = useMatchStore.getState().lastResult;
   const c = cur();
   if (!res?.career || res.career.careerId !== c.id) return false;
+  if (c.stage === "college") {
+    const game = currentCollege(c)?.games.find((g) => g.id === res.career!.gameId);
+    useMatchStore.getState().setResult(null);
+    if (!game || game.result) return false;
+    const outcome = {
+      homeScore: res.homeScore,
+      awayScore: res.awayScore,
+      overtimes: Math.max(0, res.periods - 2),
+      box: res.box,
+      played: !res.simulated,
+      playerOfGame: res.playerOfGame,
+    };
+    await update((x) => advanceCollege(applyCollegeGame(x, game.id, outcome, ctx), game.date, ctx));
+    return true;
+  }
   const s = currentSeason(c);
   useMatchStore.getState().setResult(null);
   // a summer showcase game
@@ -199,8 +241,90 @@ export async function simShowcase(ctx: HsContext, onProgress: (p: SimProgress | 
   onProgress(null);
 }
 
+/** Simulates your next college games through the real game engine. */
+export async function simCollegeGames(ctx: HsContext, count: number, onProgress: (p: SimProgress | null) => void, cancelled: () => boolean = () => false) {
+  const left = userCollegeGames(currentCollege(cur())!).filter((g) => !g.result).length;
+  const planned = Math.min(count, Math.max(1, left));
+  for (let i = 0; i < count; i++) {
+    if (cancelled()) break;
+    const ev = nextCollegeEvent(cur());
+    if (ev.kind !== "game") break;
+    await update((x) => advanceCollege(x, ev.date, ctx));
+    const s = currentCollege(cur())!;
+    const game = s.games.find((g) => g.id === ev.game.id)!;
+    const opp = ctx.collegeById?.get(game.homeId === s.teamId ? game.awayId : game.homeId);
+    const label = `${game.label ?? ""}${game.label ? " · " : ""}vs ${opp?.name ?? "opponent"}`;
+    onProgress({ index: i + 1, total: planned, label, fraction: 0 });
+    const match = new Match({ ...collegeMatchSetup(cur(), game, ctx), fast: true });
+    await simulateToEnd(match, (f) => onProgress({ index: i + 1, total: planned, label, fraction: f }));
+    const outcome = outcomeFromMatch(match, false);
+    await update((x) => advanceCollege(applyCollegeGame(x, game.id, outcome, ctx), game.date, ctx));
+  }
+  onProgress(null);
+}
+
+/** Simulates the rest of the division through the end of the season and wraps it up. */
+export async function finishCollegeYear(ctx: HsContext) {
+  const ev = nextCollegeEvent(cur());
+  if (ev.kind !== "seasonEnd") return;
+  await update((x) => advanceCollege(x, ev.date, ctx));
+  if (nextCollegeEvent(cur()).kind === "game") return; // a postseason game of yours turned up
+  await update((x) => finishCollegeSeason(x, ctx));
+}
+
+export const enterCollegeAction = (ctx: HsContext) => update((x) => enterCollege(x, ctx));
+export const returnAction = () => update((x) => returnToSchool(x));
+export const portalAction = (ctx: HsContext) => update((x) => enterPortal(x, ctx));
+export const transferAction = (teamId: string, ctx: HsContext) => update((x) => transferTo(x, teamId, ctx));
+export const withdrawAction = () => update((x) => withdrawFromPortal(x));
+export const declareAction = () => update((x) => declareForDraft(x));
+export const undeclareAction = () => update((x) => undeclare(x));
+export const nextCollegeYearAction = (ctx: HsContext) => update((x) => startNextCollegeYear(x, ctx));
+export const redshirtAction = (on: boolean) => update((x) => setRedshirt(x, on));
+export const signNilAction = (id: string) => update((x) => signNil(x, id));
+export const declineNilAction = (id: string) => update((x) => declineNil(x, id));
+
+/** The 3D match for one of your college games: two halves, each as long as two of your career's quarters. */
+function collegePending(c: Career, game: ScheduledGame, ctx: HsContext, controller: string): PendingMatch {
+  const setup = collegeMatchSetup(c, game, ctx);
+  const homeIsUs = game.homeId === currentCollege(c)!.teamId;
+  const { home, away } = setup;
+  const awayUniform = uniformColors(home.team, "home").base.toLowerCase() === uniformColors(away.team, "away").base.toLowerCase() ? "alt" : "away";
+  return {
+    mode: "career",
+    league: "college",
+    arena: "college",
+    home: {
+      team: home.team,
+      roster: home.roster,
+      starters: home.starters,
+      rotation: home.rotation,
+      uniform: "home",
+      controllers: homeIsUs ? [controller] : [],
+    },
+    away: {
+      team: away.team,
+      roster: away.roster,
+      starters: away.starters,
+      rotation: away.rotation,
+      uniform: awayUniform,
+      controllers: homeIsUs ? [] : [controller],
+    },
+    quarterMinutes: c.settings.quarterMinutes * 2,
+    lockPlayerId: c.player.id,
+    returnTo: `/career/hub/?id=${encodeURIComponent(c.id)}`,
+    seed: setup.seed ?? 1,
+    occasion: game.label ?? (game.kind === "region" ? "Conference game" : undefined),
+    career: { careerId: c.id, gameId: game.id },
+    difficulty: c.settings.difficulty,
+    bench: c.settings.bench,
+    resume: false,
+  };
+}
+
 /** The 3D match for one of your games (season or summer showcase). */
 export function careerPending(c: Career, game: ScheduledGame, ctx: HsContext, controller: string): PendingMatch {
+  if (c.stage === "college") return collegePending(c, game, ctx, controller);
   const isShowcase = game.id.startsWith("aau-");
   const setup = isShowcase ? { ...showcaseSetup(c, game), level: "varsity" as const } : userMatchSetup(c, game, ctx);
   const s = currentSeason(c)!;
@@ -233,7 +357,8 @@ export const suspendedFor = findCareerSave;
 /** Clears saves of games that have since been simmed or have passed: only the current season's open games can resume. */
 export function pruneFinishedSaves(c: Career) {
   const s = currentSeason(c);
-  const open = [...(s?.games ?? []), ...(s?.summer?.showcase ?? [])].filter((g) => !g.result).map((g) => g.id);
+  const games = c.stage === "college" ? (currentCollege(c)?.games ?? []) : [...(s?.games ?? []), ...(s?.summer?.showcase ?? [])];
+  const open = games.filter((g) => !g.result).map((g) => g.id);
   pruneCareerSaves(c.id, (gameId) => open.includes(gameId));
 }
 
