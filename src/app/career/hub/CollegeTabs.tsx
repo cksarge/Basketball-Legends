@@ -2,7 +2,7 @@
 import { Fragment, useState } from "react";
 import { heightStr, playerOvr } from "@/engine/player";
 import type { Player } from "@/engine/types";
-import type { Bracket, Career, CollegeSeason, ScheduledGame } from "@/career/types";
+import type { Bracket, Career, ScheduledGame } from "@/career/types";
 import { formatDate } from "@/career/format";
 import { conferenceName, currentCollege, userCollegeGames } from "@/career/college/season";
 import { NATIONAL_ID } from "@/career/college/postseason";
@@ -13,19 +13,37 @@ import { TeamLogo } from "@/ui/TeamLogo";
 import { Panel, Segmented } from "@/ui/kit";
 import { BoxTable } from "./ScheduleTab";
 
-const seasonName = (s: CollegeSeason) => `${s.year}-${String(s.year + 1).slice(2)}`;
+const seasonName = (s: { year: number }) => `${s.year}-${String(s.year + 1).slice(2)}`;
 
-export function CollegeSchedule({ career, ctx }: { career: Career; ctx: HsContext }) {
-  const seasons = career.college?.seasons ?? [];
+interface ScheduleSeason {
+  year: number;
+  teamId: string;
+  roster: Player[];
+  games: ScheduledGame[];
+}
+
+/** A season's games for college or the pros. */
+export function SeasonSchedule({
+  career,
+  seasons,
+  gamesOf,
+  teamName,
+}: {
+  career: Career;
+  seasons: ScheduleSeason[];
+  gamesOf: (s: never) => ScheduledGame[];
+  teamName: (id: string) => string | undefined;
+}) {
   const [year, setYear] = useState(seasons.at(-1)?.year ?? 0);
   const [open, setOpen] = useState<string | null>(null);
   const s = seasons.find((x) => x.year === year) ?? seasons.at(-1);
   if (!s) return <Panel>No schedule yet.</Panel>;
-  const games = userCollegeGames(s);
+  const games = gamesOf(s as never);
   const people = new Map<string, Player>(s.roster.map((p) => [p.id, p]));
   people.set(career.player.id, career.player);
-  const w = games.filter((g) => g.result && (g.homeId === s.teamId) === g.result.home > g.result.away).length;
-  const l = games.filter((g) => g.result).length - w;
+  const decided = games.filter((g) => g.result && g.kind !== "allstar");
+  const w = decided.filter((g) => (g.homeId === s.teamId) === g.result!.home > g.result!.away).length;
+  const l = decided.length - w;
   return (
     <Panel>
       <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -48,7 +66,7 @@ export function CollegeSchedule({ career, ctx }: { career: Career; ctx: HsContex
         <tbody>
           {games.map((g) => {
             const home = g.homeId === s.teamId;
-            const opp = ctx.collegeById?.get(home ? g.awayId : g.homeId);
+            const opp = teamName(home ? g.awayId : g.homeId) ?? (g.kind === "allstar" ? "All-Stars" : "");
             const r = g.result;
             const won = r && (home ? r.home > r.away : r.away > r.home);
             const line = r?.userLine;
@@ -62,7 +80,7 @@ export function CollegeSchedule({ career, ctx }: { career: Career; ctx: HsContex
                 >
                   <td className="py-2 pr-3 text-steel">{formatDate(g.date).replace(/, \d{4}$/, "")}</td>
                   <td className="pr-3">
-                    {g.neutral || home ? "vs" : "at"} {opp?.name}
+                    {g.neutral || home ? "vs" : "at"} {opp}
                     {g.label && <span className="ml-2 text-xs text-amber">{g.label}</span>}
                     {!g.label && g.kind === "region" && <span className="ml-2 text-xs text-steel">Conference</span>}
                   </td>
@@ -94,6 +112,17 @@ export function CollegeSchedule({ career, ctx }: { career: Career; ctx: HsContex
         </tbody>
       </table>
     </Panel>
+  );
+}
+
+export function CollegeSchedule({ career, ctx }: { career: Career; ctx: HsContext }) {
+  return (
+    <SeasonSchedule
+      career={career}
+      seasons={career.college?.seasons ?? []}
+      gamesOf={userCollegeGames as (s: never) => ScheduledGame[]}
+      teamName={(id) => ctx.collegeById?.get(id)?.name}
+    />
   );
 }
 

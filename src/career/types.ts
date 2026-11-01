@@ -49,7 +49,7 @@ export interface CareerPlayer extends Player {
   academics: number;
 }
 
-export type GameKind = "nonregion" | "region" | "tournament" | "playoff" | "scrimmage";
+export type GameKind = "nonregion" | "region" | "tournament" | "playoff" | "scrimmage" | "allstar";
 
 export interface ScheduledGame {
   id: string;
@@ -307,6 +307,71 @@ export interface DraftNight {
   seen?: boolean;
 }
 
+export type ProRole = "starter" | "sixth" | "rotation" | "bench";
+
+/** A playoff series: best of 7, or a single play-in game. */
+export interface ProSeries {
+  id: string;
+  conf: "East" | "West" | "Finals";
+  /** 0 = play-in, 1-3 = conference rounds, 4 = the Finals. */
+  round: number;
+  label: string;
+  high: string;
+  low: string;
+  bestOf: number;
+  start: IsoDate;
+  games: string[];
+  winner?: string;
+}
+
+export interface Endorsement {
+  brand: string;
+  perYear: number;
+  years: number;
+}
+
+export interface ContractOffer {
+  teamId: string;
+  salary: number;
+  years: number;
+  role: ProRole;
+  /** The team promises this role; breaking it frees you to ask out. */
+  promise: boolean;
+  /** You pushed for more and they walked away. */
+  pulled?: boolean;
+  /** Already raised once in negotiation. */
+  raised?: boolean;
+}
+
+export interface ProSeason {
+  year: number;
+  teamId: string;
+  status: "standard" | "twoWay" | "dev";
+  role: ProRole;
+  /** How much the coach trusts you (0..100). */
+  trust: number;
+  /** How well the team gets along (0..100); adds to the team's strength. */
+  chemistry: number;
+  roster: Player[];
+  /** Every league game while the season runs; trimmed to yours and the playoffs when it ends. */
+  games: ScheduledGame[];
+  /** Your development league games, if you're there. */
+  devGames?: ScheduledGame[];
+  stats: StatLine & { gp: number; gs: number };
+  playoffStats: StatLine & { gp: number; gs: number };
+  awards: string[];
+  series: ProSeries[];
+  injury?: { name: string; left: number };
+  promise?: { role: ProRole; broken?: boolean };
+  tradeRequested?: boolean;
+  allStar?: { decided: boolean; selected: boolean; threeScore?: number; threeWon?: boolean; mvp?: boolean };
+  /** How the season ended ("Lost in the East Semifinals"). */
+  finish?: string;
+  standings?: { teamId: string; w: number; l: number }[];
+  seed?: number;
+  wrapped?: boolean;
+}
+
 export interface ProCareer {
   preDraft: PreDraft;
   draft?: DraftNight;
@@ -319,6 +384,12 @@ export interface ProCareer {
   teamFirst: number;
   /** After the agent's cut. */
   earnings: number;
+  seasons: ProSeason[];
+  /** The year your last training camp was for. */
+  trainedFor?: number;
+  offers?: ContractOffer[];
+  endorsements: Endorsement[];
+  endorsementOffers?: Endorsement[];
 }
 
 export interface InboxMessage {

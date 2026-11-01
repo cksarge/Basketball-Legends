@@ -38,7 +38,21 @@ export function StatsTab({ career, ctx }: { career: Career; ctx: HsContext }) {
     colTotal = { ...addLine(colTotal, s.stats), gp: colTotal.gp + s.stats.gp, gs: colTotal.gs + s.stats.gs };
   }
   const college_ = averages(colTotal);
-  const awards = [...career.hs.seasons, ...colleges].flatMap((s) => s.awards.map((a) => `${s.year}-${String(s.year + 1).slice(2)}: ${a}`));
+  const proSeasons = (career.pro?.seasons ?? []).filter((s) => s.stats.gp > 0);
+  let proTotal = { ...emptyLine(), gp: 0, gs: 0 };
+  for (const s of proSeasons) {
+    rows.push({
+      key: `pro-${s.year}`,
+      label: `${s.year}-${String(s.year + 1).slice(2)}${s.status === "standard" ? "" : " · Development"}`,
+      team: ctx.proById?.get(s.teamId)?.abbrev ?? "",
+      a: averages(s.stats)!,
+    });
+    proTotal = { ...addLine(proTotal, s.stats), gp: proTotal.gp + s.stats.gp, gs: proTotal.gs + s.stats.gs };
+  }
+  const pro_ = averages(proTotal);
+  const awards = [...career.hs.seasons, ...colleges, ...(career.pro?.seasons ?? [])].flatMap((s) =>
+    s.awards.map((a) => `${s.year}-${String(s.year + 1).slice(2)}: ${a}`),
+  );
   return (
     <div className="flex flex-col gap-5">
       <Panel title="Season averages">
@@ -77,6 +91,7 @@ export function StatsTab({ career, ctx }: { career: Career; ctx: HsContext }) {
                   [
                     ["Varsity career", career_],
                     ["College career", college_],
+                    ["Pro career", pro_],
                   ] as const
                 ).map(
                   ([name, a]) =>

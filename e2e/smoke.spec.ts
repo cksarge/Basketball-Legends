@@ -311,6 +311,29 @@ test("the road to the draft: agent, combine, workouts, interviews and draft nigh
   await page.getByRole("button", { name: /Skip to/ }).click();
   await page.getByRole("button", { name: /Continue|Leave the draft/ }).click();
   await expect(page.getByText(/Drafted|Went undrafted/).first()).toBeVisible();
+  // a rookie season: training camp, a real game, then every tab
+  await page.getByRole("list", { name: "Summer focus" }).getByRole("button", { name: "Shooting" }).click();
+  await expect(page.getByText("Team chemistry")).toBeVisible();
+  await page.getByRole("button", { name: "Sim game", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Sim game", exact: true })).toBeEnabled({ timeout: 60_000 });
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.waitForURL("**/game/");
+  await expect(page.getByText("Loading the arena")).toBeHidden({ timeout: 60_000 });
+  const bench = page.getByRole("button", { name: "Watch from the bench" });
+  await expect(page.locator(".led").nth(1).or(bench).first()).toBeVisible({ timeout: 60_000 });
+  if (await bench.isVisible()) await bench.click();
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Sim to end" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Sim to end" }).click();
+  await page.getByRole("button", { name: "Continue" }).click({ timeout: 120_000 });
+  await page.waitForURL(/career\/hub\/\?id=/);
+  await page.getByRole("tab", { name: "Schedule" }).click();
+  await expect(page.getByText(/^[WL]$/).nth(1)).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("tab", { name: "Team" }).click();
+  await expect(page.getByRole("cell", { name: "Draft Star" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Standings" })).toBeVisible();
+  await page.getByRole("tab", { name: "Stats" }).click();
+  await expect(page.getByText("Pro career")).toBeVisible();
   expect(errors).toEqual([]);
 });
 

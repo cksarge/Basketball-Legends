@@ -132,9 +132,10 @@ export default function HowToPlay() {
         coach&apos;s trust decides your role and minutes: beat what the coach expects and both grow. Play through non-conference games, conference play, your
         conference tournament and, if your team earns it, the National Tournament or the National Invitational. NIL deals pay you, the transfer portal opens
         after every season, and you can redshirt once. After each season decide whether to come back, transfer or declare for the draft. Declaring starts the
-        road to the draft: choose an agent, then the combine, team workouts and GM interviews all move your stock before two rounds of draft night. Every career
-        chases one thing: honors, titles, big moments you played yourself and your impact on the community earn Legend points that raise your rank from Local
-        Hero up to Icon. Only an Icon can become a Legend, the title is decided at retirement, and very few careers get there.
+        road to the draft: choose an agent, then the combine, team workouts and GM interviews all move your stock before two rounds of draft night. As a pro,
+        pick a training focus every summer, earn your minutes, make the playoffs, sign contracts in free agency and ask for a trade if you need a change. Every
+        career chases one thing: honors, titles, big moments you played yourself and your impact on the community earn Legend points that raise your rank from
+        Local Hero up to Icon. Only an Icon can become a Legend, the title is decided at retirement, and very few careers get there.
       </p>
       <H2>Saving and resuming</H2>
       <p>

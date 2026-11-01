@@ -50,6 +50,20 @@ import {
 } from "@/career/college/season";
 import { chooseCollege, commit, decommit, officialVisit, reclassify, toggleFavorite, type VisitFocus } from "@/career/recruiting";
 import { answerInterview, chooseAgent, enterPreDraft, finishDraft, joinDevLeague, runCombine, runDraft, signTwoWay, workOut } from "@/career/pro/draft";
+import {
+  advancePro,
+  applyProGame,
+  currentPro,
+  finishProSeason,
+  negotiate,
+  nextProEvent,
+  proMatchSetup,
+  requestTrade,
+  signContract,
+  signEndorsement,
+  trainingCamp,
+  userProGames,
+} from "@/career/pro/season";
 import { useCareer } from "@/state/careerStore";
 import { useMatchStore, type MatchResult, type PendingMatch } from "@/state/matchStore";
 import { clearSuspended, findCareerSave, pruneCareerSaves } from "@/state/suspended";
@@ -86,6 +100,24 @@ export async function applyFinishedMatch(ctx: HsContext) {
   const res: MatchResult | null = useMatchStore.getState().lastResult;
   const c = cur();
   if (!res?.career || res.career.careerId !== c.id) return false;
+  if (c.stage === "pro") {
+    const s = currentPro(c);
+    const id = res.career.gameId;
+    const game = [...(s?.games ?? []), ...(s?.devGames ?? [])].find((g) => g.id === id);
+    useMatchStore.getState().setResult(null);
+    if (!game || game.result) return false;
+    const outcome = {
+      homeScore: res.homeScore,
+      awayScore: res.awayScore,
+      overtimes: Math.max(0, res.periods - 4),
+      box: res.box,
+      played: !res.simulated,
+      playerOfGame: res.playerOfGame,
+      injuries: res.injuries,
+    };
+    await update((x) => advancePro(applyProGame(x, game.id, outcome, ctx), game.date, ctx));
+    return true;
+  }
   if (c.stage === "college") {
     const game = currentCollege(c)?.games.find((g) => g.id === res.career!.gameId);
     useMatchStore.getState().setResult(null);
@@ -287,6 +319,95 @@ export const redshirtAction = (on: boolean) => update((x) => setRedshirt(x, on))
 export const signNilAction = (id: string) => update((x) => signNil(x, id));
 export const declineNilAction = (id: string) => update((x) => declineNil(x, id));
 
+/** Simulates your next pro games through the real game engine. */
+export async function simProGames(ctx: HsContext, count: number, onProgress: (p: SimProgress | null) => void, cancelled: () => boolean = () => false) {
+  const planned = Math.min(count, Math.max(1, userProGames(currentPro(cur())!).filter((g) => !g.result).length));
+  for (let i = 0; i < count; i++) {
+    if (cancelled()) break;
+    const ev = nextProEvent(cur());
+    if (ev.kind !== "game") break;
+    await update((x) => advancePro(x, ev.date, ctx));
+    // All-Star weekend can land in front of the game you were heading to
+    const now = nextProEvent(cur());
+    if (now.kind !== "game") continue;
+    const game = now.game;
+    const s = currentPro(cur())!;
+    const opp = ctx.proById?.get(game.homeId === s.teamId ? game.awayId : game.homeId);
+    const label = `${game.label ?? ""}${game.label ? " · " : ""}vs ${opp?.name ?? "the other conference"}`;
+    onProgress({ index: i + 1, total: planned, label, fraction: 0 });
+    const match = new Match({ ...proMatchSetup(cur(), game, ctx), fast: true });
+    await simulateToEnd(match, (f) => onProgress({ index: i + 1, total: planned, label, fraction: f }));
+    const outcome = outcomeFromMatch(match, false);
+    await update((x) => advancePro(applyProGame(x, game.id, outcome, ctx), game.date, ctx));
+  }
+  onProgress(null);
+}
+
+/** Moves past the games you're missing. */
+export const sitOutAction = (ctx: HsContext) =>
+  update((x) => {
+    const ev = nextProEvent(x);
+    return ev.kind === "injured" ? advancePro(x, ev.date, ctx) : x;
+  });
+
+/** Plays out the rest of the league to the end of the year and wraps it up. */
+export async function finishProYear(ctx: HsContext) {
+  const ev = nextProEvent(cur());
+  if (ev.kind !== "seasonEnd") return;
+  await update((x) => advancePro(x, ev.date, ctx));
+  if (nextProEvent(cur()).kind !== "seasonEnd") return; // a playoff game of yours turned up
+  await update((x) => finishProSeason(x, ctx));
+}
+
+export const campAndStartAction = (focus: string, ctx: HsContext) => update((x) => trainingCamp(x, focus, ctx));
+export const signContractAction = (teamId: string, ctx: HsContext) => update((x) => signContract(x, teamId, ctx));
+export const tradeRequestAction = () => update((x) => requestTrade(x));
+export const signBrandAction = (brand: string) => update((x) => signEndorsement(x, brand));
+/** Asks for more money and says how it went. */
+export async function negotiateAction(teamId: string, raise: number) {
+  const { career, accepted } = negotiate(cur(), teamId, raise);
+  await update(() => career);
+  return accepted;
+}
+
+/** The 3D match for one of your pro games. */
+function proPending(c: Career, game: ScheduledGame, ctx: HsContext, controller: string): PendingMatch {
+  const setup = proMatchSetup(c, game, ctx);
+  const { home, away } = setup;
+  const homeIsUs = home.roster.some((p) => p.id === c.player.id);
+  const awayUniform = uniformColors(home.team, "home").base.toLowerCase() === uniformColors(away.team, "away").base.toLowerCase() ? "alt" : "away";
+  return {
+    mode: "career",
+    league: "pro",
+    arena: "pro",
+    home: {
+      team: home.team,
+      roster: home.roster,
+      starters: home.starters,
+      rotation: home.rotation,
+      uniform: "home",
+      controllers: homeIsUs ? [controller] : [],
+    },
+    away: {
+      team: away.team,
+      roster: away.roster,
+      starters: away.starters,
+      rotation: away.rotation,
+      uniform: awayUniform,
+      controllers: homeIsUs ? [] : [controller],
+    },
+    quarterMinutes: c.settings.quarterMinutes,
+    lockPlayerId: c.player.id,
+    returnTo: `/career/hub/?id=${encodeURIComponent(c.id)}`,
+    seed: setup.seed ?? 1,
+    occasion: game.label,
+    career: { careerId: c.id, gameId: game.id },
+    difficulty: c.settings.difficulty,
+    bench: c.settings.bench,
+    resume: false,
+  };
+}
+
 const pros = (ctx: HsContext) => ctx.pros ?? [];
 export const preDraftAction = () => update((x) => enterPreDraft(x));
 export const agentAction = (id: AgentId) => update((x) => chooseAgent(x, id));
@@ -338,6 +459,7 @@ function collegePending(c: Career, game: ScheduledGame, ctx: HsContext, controll
 
 /** The 3D match for one of your games (season or summer showcase). */
 export function careerPending(c: Career, game: ScheduledGame, ctx: HsContext, controller: string): PendingMatch {
+  if (c.stage === "pro") return proPending(c, game, ctx, controller);
   if (c.stage === "college") return collegePending(c, game, ctx, controller);
   const isShowcase = game.id.startsWith("aau-");
   const setup = isShowcase ? { ...showcaseSetup(c, game), level: "varsity" as const } : userMatchSetup(c, game, ctx);
@@ -371,7 +493,13 @@ export const suspendedFor = findCareerSave;
 /** Clears saves of games that have since been simmed or have passed: only the current season's open games can resume. */
 export function pruneFinishedSaves(c: Career) {
   const s = currentSeason(c);
-  const games = c.stage === "college" ? (currentCollege(c)?.games ?? []) : [...(s?.games ?? []), ...(s?.summer?.showcase ?? [])];
+  const pro = currentPro(c);
+  const games =
+    c.stage === "pro"
+      ? [...(pro?.games ?? []), ...(pro?.devGames ?? [])]
+      : c.stage === "college"
+        ? (currentCollege(c)?.games ?? [])
+        : [...(s?.games ?? []), ...(s?.summer?.showcase ?? [])];
   const open = games.filter((g) => !g.result).map((g) => g.id);
   pruneCareerSaves(c.id, (gameId) => open.includes(gameId));
 }

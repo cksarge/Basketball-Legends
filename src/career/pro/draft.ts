@@ -94,7 +94,14 @@ export function enterPreDraft(c: Career): Career {
   if (c.pro || !c.college?.declared) return c;
   const s = currentCollege(c)!;
   const year = s.year + 1;
-  const pro: ProCareer = { preDraft: { year, workouts: [], interviews: [], stockDelta: 0 }, confidence: 0, teamFirst: 0, earnings: 0 };
+  const pro: ProCareer = {
+    preDraft: { year, workouts: [], interviews: [], stockDelta: 0 },
+    confidence: 0,
+    teamFirst: 0,
+    earnings: 0,
+    seasons: [],
+    endorsements: [],
+  };
   const date = `${year}-04-25`;
   return {
     ...c,

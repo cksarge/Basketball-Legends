@@ -6,6 +6,7 @@ import { playerOvr } from "@/engine/player";
 import { classLabel, formatDate, GRADE_LABEL, LEVEL_SHORT, stageLabel } from "@/career/format";
 import { currentSeason } from "@/career/hs/season";
 import { currentCollege } from "@/career/college/season";
+import { ROLE_NAME, currentPro } from "@/career/pro/season";
 import { useCareer } from "@/state/careerStore";
 import { PageShell, Panel } from "@/ui/kit";
 import { applyFinishedMatch, ensureSeason, pruneFinishedSaves, useHsContext } from "./actions";
@@ -17,6 +18,7 @@ import { PlayerTab } from "./PlayerTab";
 import { SettingsTab } from "./SettingsTab";
 import { RecruitingTab } from "./RecruitingTab";
 import { CollegeSchedule, CollegeTeam } from "./CollegeTabs";
+import { ProSchedule, ProTeam } from "./ProTabs";
 
 export const HUB_TABS = ["Home", "Schedule", "Stats", "Team", "Recruiting", "Player", "Settings"] as const;
 const COLLEGE_ROLE = { starter: "Starter", rotation: "Rotation", bench: "Bench" };
@@ -83,6 +85,7 @@ export function CareerHub() {
   const p = career.player;
   const s = currentSeason(career);
   const col = career.stage === "college" ? currentCollege(career) : undefined;
+  const pro = career.stage === "pro" ? currentPro(career) : undefined;
   const unread = career.inbox.filter((m) => !m.read).length;
   return (
     <PageShell title={`${p.firstName} ${p.lastName}`} back="/career/" backLabel="Careers" wide>
@@ -93,7 +96,7 @@ export function CareerHub() {
         {team && (
           <span>
             {team.name} {team.nickname}
-            {col ? ` · ${COLLEGE_ROLE[col.role]}` : career.stage === "hs" && s?.tryout && ` · ${LEVEL_SHORT[s.level]}`}
+            {pro ? ` · ${ROLE_NAME[pro.role]}` : col ? ` · ${COLLEGE_ROLE[col.role]}` : career.stage === "hs" && s?.tryout && ` · ${LEVEL_SHORT[s.level]}`}
           </span>
         )}
         <span>
@@ -125,9 +128,11 @@ export function CareerHub() {
         ))}
       </nav>
       {tab === "Home" && <HomeTab career={career} ctx={ctx} />}
-      {tab === "Schedule" && (col ? <CollegeSchedule career={career} ctx={ctx} /> : <ScheduleTab career={career} ctx={ctx} />)}
+      {tab === "Schedule" &&
+        (pro ? <ProSchedule career={career} ctx={ctx} /> : col ? <CollegeSchedule career={career} ctx={ctx} /> : <ScheduleTab career={career} ctx={ctx} />)}
       {tab === "Stats" && <StatsTab career={career} ctx={ctx} />}
-      {tab === "Team" && (col ? <CollegeTeam career={career} ctx={ctx} /> : <TeamTab career={career} ctx={ctx} />)}
+      {tab === "Team" &&
+        (pro ? <ProTeam career={career} ctx={ctx} /> : col ? <CollegeTeam career={career} ctx={ctx} /> : <TeamTab career={career} ctx={ctx} />)}
       {tab === "Recruiting" && career.stage === "hs" && <RecruitingTab career={career} ctx={ctx} />}
       {tab === "Player" && <PlayerTab career={career} />}
       {tab === "Settings" && <SettingsTab career={career} />}

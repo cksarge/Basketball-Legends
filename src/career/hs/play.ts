@@ -19,6 +19,7 @@ export function outcomeFromMatch(m: Match, played: boolean): UserGameOutcome {
     box: s.box,
     played,
     playerOfGame: best?.id ?? null,
+    injuries: s.injuries,
   };
 }
 

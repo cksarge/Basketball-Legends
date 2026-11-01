@@ -359,6 +359,8 @@ export interface UserGameOutcome {
   box: BoxScore;
   played: boolean;
   playerOfGame: string | null;
+  /** Injuries from the game (players' ids, what happened, games to miss). */
+  injuries?: { playerId: string; name: string; gamesOut: number }[];
 }
 
 /** Records one of your games: result, your line and season totals, XP, a possible call-up or demotion, and the log. */

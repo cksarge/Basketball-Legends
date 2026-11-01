@@ -32,6 +32,21 @@ Career mode has a new name and one ultimate goal: become a Basketball Legend.
 - **Rookie deals:** a salary scale through the first round and small two-year deals in the second.
 - **Undrafted:** fringe prospects get two-way offers, and anyone can join a development team.
 
+### The pros
+
+- **Full 82-game seasons:** every game in the league is simulated, with a real schedule mix of division, conference and interconference games, live standings and your own games through the real game engine.
+- **Coach, role and chemistry:** your overall and coach trust set your role (starter, sixth man, rotation or end of the bench) and your real minutes. Team chemistry moves with wins and losses and adds to your team's strength.
+- **Playoffs:** a six-team play-in, then four best-of-seven rounds through the Finals.
+- **All-Star weekend:** the best players are voted in for a playable East vs West game, and top shooters enter the 3-point contest.
+- **Honors:** MVP, All-League teams, Defensive Player of the Year, Rookie of the Year, Sixth Man, Most Improved, Finals MVP and more.
+- **Contracts:** when your deal ends you hit free agency with offers from your team and others. Ask for more and they may agree or walk away. Teams can promise a role, and a broken promise makes a trade yours for the asking.
+- **Trades:** ask for one before the deadline, at a cost with your coach and teammates.
+- **Injuries:** injuries from games keep you out while your team plays on.
+- **Training and aging:** pick a focus at training camp every summer. After 30 you lose a step, and the legs go first.
+- **Badges:** great seasons earn badges like Deadeye and Walking Bucket that lift a rating for good.
+- **Endorsements:** fame brings brand deals, and a well-connected agent gets you more.
+- **Development league:** undrafted players play a 30-game season and can earn a call-up.
+
 ### Career mode
 
 - **Create a player:** first and last name, Arizona hometown (114 cities) and high school, any of the 283 schools through open enrollment, and jersey number.

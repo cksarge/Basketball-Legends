@@ -10,8 +10,7 @@ import { Button, Panel } from "@/ui/kit";
 import { toast } from "@/ui/Toaster";
 import { agentAction, combineAction, devLeagueAction, draftAction, finishDraftAction, interviewAction, twoWayAction, workoutAction } from "./actions";
 import { TryoutDrills } from "./TryoutDrills";
-
-const money = (n: number) => `$${n.toLocaleString("en-US")}`;
+import { ProSeasonUp } from "./ProSeason";
 
 export function ProNextUp({ career, ctx }: { career: Career; ctx: HsContext }) {
   const [busy, setBusy] = useState(false);
@@ -204,18 +203,7 @@ export function ProNextUp({ career, ctx }: { career: Career; ctx: HsContext }) {
     );
   }
 
-  const team = career.player.teamId ? ctx.proById!.get(career.player.teamId) : undefined;
-  const contract = career.player.contract;
-  return (
-    <Panel title={team ? `Welcome to ${team.name}` : "You're a pro"}>
-      {contract && (
-        <p className="mb-2 font-semibold text-amber">
-          {contract.years}-year deal at {money(contract.salary)} a season
-        </p>
-      )}
-      <p className="text-steel">Your rookie season arrives in an upcoming beta update. Your career is saved and will pick up right here.</p>
-    </Panel>
-  );
+  return <ProSeasonUp career={career} ctx={ctx} />;
 }
 
 /** The draft, one pick at a time: the clock runs on its own, or skip ahead to your pick. */

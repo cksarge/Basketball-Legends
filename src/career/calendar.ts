@@ -113,6 +113,18 @@ export const draftCalendar = (year: number) => ({
   draft: onOrAfter(iso(year, 6, 22), 4),
 });
 
+/** Key dates of a pro season, by the year it starts. */
+export const proCalendar = (year: number) => ({
+  camp: iso(year, 9, 28),
+  opening: iso(year, 10, 22),
+  allStar: onOrAfter(iso(year + 1, 2, 14), 0),
+  tradeDeadline: onOrAfter(iso(year + 1, 2, 3), 4),
+  lastGame: iso(year + 1, 4, 12),
+  playIn: iso(year + 1, 4, 15),
+  playoffs: iso(year + 1, 4, 19),
+  seasonEnd: iso(year + 1, 6, 28),
+});
+
 /** The school year a date belongs to (fall year): Aug 1 starts a new one. */
 export function schoolYearOf(d: IsoDate) {
   const y = +d.slice(0, 4);
