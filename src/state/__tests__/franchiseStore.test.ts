@@ -8,7 +8,7 @@ import { useFranchise } from "../franchiseStore";
 
 const teams = (JSON.parse(readFileSync("src/data/generated/pro.json", "utf8")) as { teams: Team[] }).teams;
 const start = async () => {
-  const f = await createFranchiseSave(createFranchise({ league: "pro", team: teams[0], teams: teams.slice(0, 2), seed: "s", now: 5 }), teams[0]);
+  const f = await createFranchiseSave(createFranchise({ league: "pro", team: teams[0], teams, seed: "s", now: 5 }), teams[0]);
   await useFranchise.getState().open(f.id);
   return f;
 };

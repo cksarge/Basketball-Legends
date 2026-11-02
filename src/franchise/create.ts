@@ -1,7 +1,7 @@
 // Builds a new franchise: a full league of generated rosters, ready for its first season.
-import { proCalendar } from "@/career/calendar";
 import { generateRoster } from "@/engine/player";
 import type { LeagueId, Player, Team } from "@/engine/types";
+import { leagueModule } from "./leagues";
 import { FRANCHISE_VERSION, type Franchise, type FranchiseSettings } from "./types";
 
 export const DEFAULT_FRANCHISE_SETTINGS: FranchiseSettings = { quarterMinutes: 6, difficulty: "pro", closeGameMargin: 8 };
@@ -42,11 +42,11 @@ export function createFranchise(o: {
     updatedAt: now,
     league: o.league,
     teamId: o.team.id,
-    date: proCalendar(year).camp,
+    date: leagueModule(o.league).calendar(year).opening,
     phase: "regular",
     settings: { ...DEFAULT_FRANCHISE_SETTINGS, ...o.settings },
     players,
     rosters,
-    season: { year, games: [], series: [], stats: {}, playoffStats: {}, awards: [] },
+    season: { year, games: leagueModule(o.league).schedule(o.teams, year, o.seed), series: [], stats: {}, playoffStats: {}, awards: [] },
   };
 }

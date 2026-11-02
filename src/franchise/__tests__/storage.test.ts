@@ -21,7 +21,7 @@ import { FRANCHISE_VERSION } from "../types";
 const teams = (JSON.parse(readFileSync("src/data/generated/pro.json", "utf8")) as { teams: Team[] }).teams;
 const team = teams[0];
 let n = 0;
-const make = () => createFranchise({ league: "pro", team, teams: teams.slice(0, 2), seed: `s${n++}`, now: 1000 + n });
+const make = () => createFranchise({ league: "pro", team, teams, seed: `s${n++}`, now: 1000 + n });
 
 let db: FranchiseDb;
 beforeEach(() => {
