@@ -11,6 +11,7 @@ import { useFranchise } from "@/state/franchiseStore";
 import { Button, PageShell, Panel } from "@/ui/kit";
 import { toast } from "@/ui/Toaster";
 import { pruneSaves, useLeagueTeams, useRosterMove } from "./actions";
+import { ClubTab } from "./ClubTab";
 import { CoachingTab } from "./CoachingTab";
 import { DraftTab } from "./DraftTab";
 import { FreeAgentsTab } from "./FreeAgentsTab";
@@ -23,7 +24,7 @@ import { ScheduleTab } from "./ScheduleTab";
 import { StandingsTab } from "./StandingsTab";
 import { TradesTab } from "./TradesTab";
 
-const TABS = ["Home", "Offseason", "Schedule", "Roster", "Coaching", "Trades", "Free agents", "Draft", "Standings", "Leaders", "Playoffs"] as const;
+const TABS = ["Home", "Offseason", "Schedule", "Roster", "Coaching", "Trades", "Free agents", "Draft", "Club", "Standings", "Leaders", "Playoffs"] as const;
 type Tab = (typeof TABS)[number];
 
 export function FranchiseHub() {
@@ -145,6 +146,7 @@ export function FranchiseHub() {
       {tab === "Coaching" && <CoachingTab f={franchise} />}
       {tab === "Trades" && <TradesTab f={franchise} teams={teams} />}
       {tab === "Free agents" && <FreeAgentsTab f={franchise} />}
+      {tab === "Club" && <ClubTab f={franchise} team={team} />}
       {tab === "Draft" && <DraftTab f={franchise} teams={teams} />}
       {tab === "Standings" && <StandingsTab f={franchise} teams={teams} />}
       {tab === "Leaders" && <LeadersTab f={franchise} teams={teams} />}

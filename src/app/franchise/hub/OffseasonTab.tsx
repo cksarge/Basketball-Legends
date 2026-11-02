@@ -14,6 +14,7 @@ import { standardCount } from "@/franchise/pro/rosterMoves";
 import { ContractsPanel } from "./ContractsPanel";
 import { DraftTab } from "./DraftTab";
 import { FreeAgentsTab } from "./FreeAgentsTab";
+import { JobPanel } from "./JobPanel";
 import { ProgressPanel } from "./ProgressPanel";
 
 const STEP_NAME: Record<OffseasonStep, string> = {
@@ -94,6 +95,7 @@ export function OffseasonTab({ f, teams }: { f: Franchise; teams: Team[] }) {
           </li>
         ))}
       </ol>
+      {step === "review" && <JobPanel f={f} teams={teams} />}
       {step === "review" && <SeasonReview f={f} teams={teams} />}
       {step === "progress" && <ProgressPanel f={f} />}
       {step === "lottery" && <LotteryPanel f={f} teams={teams} />}

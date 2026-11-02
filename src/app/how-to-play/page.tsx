@@ -194,6 +194,13 @@ export default function HowToPlay() {
           players go on waivers, and their pay still counts against your cap.
         </li>
         <li>
+          <b>The club:</b> the Club tab sets your ticket price and budgets, and shows the books. Winning fills seats.
+        </li>
+        <li>
+          <b>Your owner:</b> each season has goals for winning, profit and development. Miss them for too long and you&apos;re fired, but your save goes on with
+          a new team.
+        </li>
+        <li>
           <b>Save slots:</b> Franchise has three of its own. Resume a saved game from the hub.
         </li>
         <li>

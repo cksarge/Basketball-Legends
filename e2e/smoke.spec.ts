@@ -262,6 +262,83 @@ test("make a franchise trade, undo it and make it again", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test("run the club: set prices and budgets, read the owner's review", async ({ page }) => {
+  test.setTimeout(240_000);
+  const errors = watchErrors(page);
+  await page.goto("franchise/new/");
+  await page.getByRole("button", { name: /Phoenix/ }).click();
+  await page.getByRole("button", { name: "Start franchise" }).click();
+  await page.waitForURL(/franchise\/hub\/\?id=/);
+  await page.getByRole("tab", { name: "Club" }).click();
+  await page.getByLabel("Ticket price").fill("150");
+  await page.getByLabel("Ticket price").blur();
+  await expect(page.getByText("Your owner wants")).toBeVisible();
+  await page.reload();
+  await page.getByRole("tab", { name: "Club" }).click();
+  await expect(page.getByLabel("Ticket price")).toHaveValue("150");
+  await page.getByRole("tab", { name: "Home" }).click();
+  await page.getByRole("button", { name: "Sim the season" }).click();
+  await expect(page.getByText(/won the championship/)).toBeVisible({ timeout: 180_000 });
+  await page.getByRole("button", { name: "Go to the offseason" }).click();
+  await expect(page.getByRole("heading", { name: "The owner's review" })).toBeVisible();
+  await page.getByRole("tab", { name: "Club" }).click();
+  await expect(page.getByText("Last season")).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("a fired coach takes a new job and the hub follows", async ({ page }) => {
+  test.setTimeout(240_000);
+  const errors = watchErrors(page);
+  await page.goto("franchise/new/");
+  await page.getByRole("button", { name: /Phoenix/ }).click();
+  await page.getByRole("button", { name: "Start franchise" }).click();
+  await page.waitForURL(/franchise\/hub\/\?id=/);
+  // an owner out of patience, with goals nobody can meet
+  await page.evaluate(
+    () =>
+      new Promise<void>((done, fail) => {
+        const open = indexedDB.open("bl-franchise");
+        open.onerror = fail;
+        open.onsuccess = () => {
+          const store = open.result.transaction("saves", "readwrite").objectStore("saves");
+          const all = store.getAll();
+          all.onsuccess = () => {
+            const row = all.result[0];
+            row.data.job.security = 1;
+            row.data.job.seasons = 3;
+            row.data.job.goals = [
+              { key: "winning", target: 82 },
+              { key: "profit", target: 1e12 },
+              { key: "development", target: 9999 },
+            ];
+            store.put(row).onsuccess = () => {
+              open.result.close();
+              done();
+            };
+          };
+        };
+      }),
+  );
+  await page.reload();
+  await page.getByRole("button", { name: "Sim the season" }).click();
+  await expect(page.getByText(/won the championship/)).toBeVisible({ timeout: 180_000 });
+  await page.getByRole("button", { name: "Go to the offseason" }).click();
+  await expect(page.getByRole("heading", { name: "You've been fired" })).toBeVisible();
+  const title = await page.getByRole("heading", { level: 1 }).innerText();
+  await expect(page.getByRole("button", { name: /^Continue to/ })).toBeDisabled();
+  await page
+    .getByRole("button", { name: /^Take the job/ })
+    .first()
+    .click();
+  await expect(page.getByRole("heading", { level: 1 })).not.toHaveText(title);
+  const next = await page.getByRole("heading", { level: 1 }).innerText();
+  await page.reload();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(next);
+  await page.goto("franchise/");
+  await expect(page.getByText(next).first()).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test("a franchise game saves to a Franchise slot, resumes from the hub and records its result @gpu", async ({ page }) => {
   test.setTimeout(240_000);
   await lowGraphics(page);

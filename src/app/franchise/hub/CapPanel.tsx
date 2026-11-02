@@ -32,7 +32,7 @@ export function CapPanel({ f }: { f: Franchise }) {
           <span className="tabular-nums">{moneyM(Math.max(0, usable - books.midLevelUsed))}</span>
         </li>
         <li className="flex justify-between">
-          <span className="text-steel">Tax bill</span>
+          <span className="text-steel">Tax bill at season&apos;s end</span>
           <span className="tabular-nums">{moneyM(tax)}</span>
         </li>
       </ul>

@@ -41,6 +41,14 @@ In testing at legends.carterscoding.com/beta/. These notes grow as Franchise mod
 - **Undo:** take back your last roster move until the next game is simulated.
 - **Roster moves:** waivers with claims, buyouts, three two-way players and three developmental players. You need 13 to 15 players on standard deals to play or sim.
 
+### Running the club
+
+- **Tickets and crowds:** set your ticket price and watch attendance answer, based on winning, fan interest and your arena.
+- **Budgets:** coaching, scouting and facilities budgets each do something real.
+- **The books:** revenue, payroll, staff salaries and the luxury tax all count, and the salary cap now follows league revenue.
+- **Your owner:** goals for winning, profit and development each season, with a review and a job security score.
+- **Getting fired:** your save continues. Pick from the teams willing to hire you, and your coaching record comes with you.
+
 ## v0.3.0 — November 1, 2026
 
 Road to Legend is here: one player, from a freshman tryout to the Hall of Fame and a shot at becoming a Basketball Legend.
