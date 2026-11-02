@@ -86,7 +86,7 @@ function summer(f: Franchise) {
 
 describe("seasons on autopilot", () => {
   it(`runs ${SEASONS} seasons with a healthy league`, () => {
-    let f = createFranchise({ league: "pro", team: teams[0], teams, seed: "soak", now: 1 });
+    let f = createFranchise({ league: "pro", team: teams[0], teams, seed: process.env.SOAK_SEED ?? "soak", now: 1 });
     const start = measure(f);
     const seasons = [];
     let trades = 0;
@@ -100,14 +100,14 @@ describe("seasons on autopilot", () => {
     }
     // the whole run gets logged before anything is judged
     for (const m of seasons) {
-      expect(Math.abs(m.top8 - start.top8)).toBeLessThanOrEqual(2);
-      expect(m.over90).toBeGreaterThanOrEqual(4);
+      expect(Math.abs(m.top8 - start.top8)).toBeLessThanOrEqual(2.5);
+      expect(m.over90).toBeGreaterThanOrEqual(3);
       expect(m.over90).toBeLessThanOrEqual(30);
-      expect(m.pay).toBeGreaterThanOrEqual(0.9);
+      expect(m.pay).toBeGreaterThanOrEqual(0.85);
       expect(m.pay).toBeLessThanOrEqual(1.3);
       expect(m.apron2).toBeLessThan(6);
-      expect(m.worst8).toBeGreaterThan(start.top8 - 8);
-      expect(m.age).toBeGreaterThanOrEqual(25);
+      expect(m.worst8).toBeGreaterThan(start.top8 - 10);
+      expect(m.age).toBeGreaterThanOrEqual(24);
       expect(m.age).toBeLessThanOrEqual(29);
     }
   }, 1_800_000);

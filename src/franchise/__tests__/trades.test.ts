@@ -4,9 +4,9 @@ import { addDays, proCalendar } from "@/career/calendar";
 import type { Team } from "@/engine/types";
 import { emptyLine } from "@/game/sim/stats";
 import { createFranchise } from "../create";
-import { payroll } from "../pro/cap";
+import { payroll, rightsLimit } from "../pro/cap";
 import { capRules } from "../pro/rules";
-import { applyTrade, tradeOpen, tradeProblems, type Trade } from "../pro/trades";
+import { applyTrade, signAndTradeOptions, tradeOpen, tradeProblems, type Trade } from "../pro/trades";
 import type { Franchise } from "../types";
 
 const teams = (JSON.parse(readFileSync("src/data/generated/pro.json", "utf8")) as { teams: Team[] }).teams;
@@ -153,6 +153,23 @@ describe("what makes a trade legal", () => {
     };
     const t: Trade = { teams: [A, B], assets: [{ kind: "player", id, from: A, to: B, signAndTrade: { salary: 2e6, years: 1 } }] };
     expect(tradeProblems(f, t).join()).toMatch(/sign-and-trade/);
+  });
+});
+
+describe("finding a sign-and-trade", () => {
+  it("lists a team's expired players during free agency, within what its rights allow", () => {
+    const f0 = make();
+    const id = f0.rosters[A][14];
+    const p = { ...f0.players[id], teamId: null, file: { service: 6, teamSeasons: 4, rightsTeamId: A, lastSalary: 5e6 } };
+    delete p.contract;
+    const f: Franchise = { ...f0, phase: "offseason", players: { ...f0.players, [id]: p }, freeAgents: [id] };
+    expect(signAndTradeOptions(f, A)).toEqual([]);
+    const open: Franchise = { ...f, freeAgency: { stage: "moratorium", round: 0, bids: [], signed: [], notices: [] } };
+    const [option] = signAndTradeOptions(open, A);
+    expect(option.id).toBe(id);
+    expect(option.salary).toBeLessThanOrEqual(rightsLimit(open, p, A));
+    expect(option.years).toBeGreaterThan(0);
+    expect(signAndTradeOptions(open, B)).toEqual([]);
   });
 });
 

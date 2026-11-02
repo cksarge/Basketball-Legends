@@ -22,7 +22,7 @@ export type NegotiationReply = { kind: "accept" } | { kind: "counter"; salary: n
 
 const PRODUCTION_SHARE = 0.15;
 /** Keeps new deals in step with a cap that rises while old deals stay flat. */
-const MARKET_SCALE = 1.08;
+const MARKET_SCALE = 1.14;
 const MIN_GAMES = 20;
 /** How far a great or bad fit moves his price. */
 const MOOD_SWING = 0.5;
@@ -34,7 +34,7 @@ export const TALK_TRIES = 3;
 const WINNING_GAMES = 10;
 
 const ageDiscount = (age: number) => (age >= 36 ? 0.45 : age >= 33 ? 0.7 : age >= 30 ? 0.9 : 1);
-const valueAt = (ovr: number) => (1.1e6 + (Math.max(0, ovr - 60) / 35) ** 2.4 * 52e6) * MARKET_SCALE;
+const valueAt = (ovr: number) => 1.1e6 + (Math.max(0, ovr - 60) / 35) ** 2.4 * 52e6 * MARKET_SCALE;
 
 /** The overall a season's numbers look like. */
 function producedOvr(f: Franchise, p: Player) {
@@ -110,7 +110,8 @@ export function askingPrice(f: Franchise, p: Player, teamId: string): { salary: 
 
 /** What an offer's worth to him in salary terms. */
 function offerWorth(p: Player, o: Offer) {
-  const options = (o.playerOption ? PLAYER_OPTION_VALUE : 1) * (o.teamOption ? TEAM_OPTION_COST : 1);
+  // an option covers a last year after the first, so a one-year deal can't have one
+  const options = o.years < 2 ? 1 : (o.playerOption ? PLAYER_OPTION_VALUE : 1) * (o.teamOption ? TEAM_OPTION_COST : 1);
   return o.salary * options * Math.max(0.5, 1 - Math.abs(o.years - wantedYears(p)) * YEAR_MISMATCH);
 }
 

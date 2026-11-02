@@ -5,7 +5,7 @@ import type { Player, Position } from "@/engine/types";
 import { moneyM } from "@/franchise/pro/cap";
 import { nextRound } from "@/franchise/pro/freeAgency";
 import { askingPrice, marketValue, mood } from "@/franchise/pro/market";
-import { claimWaiver, signDev, signTwoWay } from "@/franchise/pro/rosterMoves";
+import { claimWaiver, lowDealOpen, signDev, signTwoWay } from "@/franchise/pro/rosterMoves";
 import { shownOvr } from "@/franchise/pro/scouting";
 import type { Franchise } from "@/franchise/types";
 import { useFranchiseSim } from "@/state/franchiseSim";
@@ -51,7 +51,7 @@ export function FreeAgentsTab({ f }: { f: Franchise }) {
           <Button variant="secondary" className={small} disabled={running} onClick={() => setTalk(p)}>
             {bidding ? "Bid" : "Sign"}
           </Button>
-          {!bidding && (
+          {!bidding && lowDealOpen(f, p) && (
             <>
               <Button
                 variant="ghost"

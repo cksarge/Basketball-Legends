@@ -65,7 +65,7 @@ export function applyMove(f: Franchise, label: string, move: (f: Franchise) => F
 }
 
 export function undoMove(f: Franchise): Franchise {
-  if (!f.undo) return f;
+  if (!f.undo || f.live) return f;
   const players = { ...f.players };
   for (const [id, p] of Object.entries(f.undo.players)) {
     if (p) players[id] = p;

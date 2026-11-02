@@ -104,6 +104,11 @@ describe("negotiation", () => {
     expect(negotiate(base, p, offer(a.salary, a.years, { teamOption: true })).kind).toBe("counter");
   });
 
+  it("an option on a one-year deal is worth nothing", () => {
+    const one = offer(a.salary, 1);
+    expect(offerScore(base, p, { ...one, playerOption: true })).toBe(offerScore(base, p, one));
+  });
+
   it("older players won't take long deals, and young stars prefer them", () => {
     expect(ask(agent(80, 35)).years).toBe(1);
     expect(ask(agent(80, 31)).years).toBeLessThanOrEqual(3);

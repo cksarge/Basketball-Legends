@@ -1,12 +1,13 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { addDays } from "@/career/calendar";
-import type { Team } from "@/engine/types";
+import type { Player, Team } from "@/engine/types";
 import { emptyLine } from "@/game/sim/stats";
 import { simDay } from "../core/season";
 import { createFranchise } from "../create";
 import { franchisePending } from "../match";
 import { payroll } from "../pro/cap";
+import { rollContracts } from "../pro/contracts";
 import { marketValue } from "../pro/market";
 import {
   activeRoster,
@@ -15,6 +16,7 @@ import {
   callUp,
   claimWaiver,
   guaranteed,
+  lowDealOpen,
   processWaivers,
   releasePlayer,
   rosterProblem,
@@ -36,9 +38,15 @@ const set = (f: Franchise, id: string, salary: number, years: number, teamOption
 function withAgent(f: Franchise): { f: Franchise; id: string } {
   const other = teams[2].id;
   const id = f.rosters[other].at(-1)!;
-  const p = { ...f.players[id], teamId: null };
+  const p = cheap(f, id);
   delete p.contract;
   return { id, f: { ...f, players: { ...f.players, [id]: p }, rosters: { ...f.rosters, [other]: f.rosters[other].slice(0, -1) }, freeAgents: [id] } };
+}
+const fringe = (p: Player) => Object.fromEntries(Object.keys(p.ratings).map((k) => [k, 50])) as unknown as Player["ratings"];
+
+/** A young fringe player, the kind who takes a low deal. */
+function cheap(f: Franchise, id: string): Player {
+  return { ...f.players[id], teamId: null, contract: undefined, ratings: fringe(f.players[id]), file: { service: 1, teamSeasons: 0 } };
 }
 const later = (f: Franchise, days: number) => ({ ...f, date: addDays(f.date, days) });
 
@@ -165,7 +173,7 @@ describe("two-way and developmental deals", () => {
     f = {
       ...f,
       freeAgents: more,
-      players: { ...f.players, ...Object.fromEntries(more.map((x) => [x, { ...f.players[x], teamId: null, contract: undefined }])) },
+      players: { ...f.players, ...Object.fromEntries(more.map((x) => [x, cheap(f, x)])) },
     };
     f = signTwoWay(signTwoWay(f, me, more[0]), me, more[1]);
     expect(signTwoWay(f, me, more[2])).toBe(f);
@@ -212,12 +220,72 @@ describe("two-way and developmental deals", () => {
     f = {
       ...f,
       freeAgents: more,
-      players: { ...f.players, ...Object.fromEntries(more.map((x) => [x, { ...f.players[x], teamId: null, contract: undefined }])) },
+      players: { ...f.players, ...Object.fromEntries(more.map((x) => [x, cheap(f, x)])) },
     };
     for (const id of more) f = signTwoWay(f, me, id);
     const g = f.season.games.find((x) => x.homeId === me || x.awayId === me)!;
     const pending = franchisePending(f, g, teams, "keyboard");
     expect(pending.home.roster.length).toBeGreaterThanOrEqual(5);
+  });
+});
+
+describe("who takes a two-way or developmental deal", () => {
+  const star = () => {
+    const f = make();
+    const id = [...f.rosters[teams[6].id]].sort((a, b) => marketValue(f, f.players[b]) - marketValue(f, f.players[a]))[0];
+    const p = { ...f.players[id], teamId: null };
+    delete p.contract;
+    return {
+      id,
+      f: {
+        ...f,
+        players: { ...f.players, [id]: p },
+        rosters: { ...f.rosters, [teams[6].id]: f.rosters[teams[6].id].filter((x) => x !== id) },
+        freeAgents: [id],
+      } as Franchise,
+    };
+  };
+
+  it("a star won't sign one", () => {
+    const { f, id } = star();
+    expect(lowDealOpen(f, f.players[id])).toBe(false);
+    expect(signTwoWay(f, me, id)).toBe(f);
+    expect(signDev(f, me, id)).toBe(f);
+  });
+
+  it("a young end-of-bench player will", () => {
+    const { f, id } = star();
+    const cheap = {
+      ...f.players[id],
+      age: 22,
+      potential: 62,
+      file: { service: 1, teamSeasons: 0 },
+      ratings: fringe(f.players[id]),
+    };
+    expect(lowDealOpen(f, cheap)).toBe(true);
+  });
+
+  it("a veteran of many years won't", () => {
+    const { f, id } = star();
+    const cheap = {
+      ...f.players[id],
+      file: { service: 9, teamSeasons: 0 },
+      ratings: fringe(f.players[id]),
+    };
+    expect(lowDealOpen(f, cheap)).toBe(false);
+  });
+
+  it("a low deal signed before July 1 survives the turn of the year", () => {
+    const made = withAgent(make());
+    const summer: Franchise = { ...made.f, phase: "offseason", offseason: { step: "contracts", report: null } };
+    const p = {
+      ...summer.players[made.id],
+      file: { service: 1, teamSeasons: 0 },
+      ratings: fringe(summer.players[made.id]),
+    };
+    const f = signTwoWay({ ...summer, players: { ...summer.players, [made.id]: p } }, me, made.id);
+    expect(f.players[made.id].contract?.startsNext).toBe(true);
+    expect(rollContracts(f).players[made.id].teamId).toBe(me);
   });
 });
 

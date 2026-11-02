@@ -27,10 +27,16 @@ export const playerOptionChoice = (f: Franchise, p: Player) => p.contract!.salar
 
 export const expiring = (f: Franchise, teamId: string): Player[] => rosterOf(f, teamId).filter((p) => p.contract?.years === 1 && !p.contract.extension);
 
-export function extendContract(f: Franchise, id: string, salary: number, years: number): Franchise {
+export function extendContract(
+  f: Franchise,
+  id: string,
+  salary: number,
+  years: number,
+  options: { playerOption?: boolean; teamOption?: boolean } = {},
+): Franchise {
   const c = f.players[id].contract;
   if (c?.years !== 1) return f;
-  return withContract(f, id, { ...c, extension: { salary, years } });
+  return withContract(f, id, { ...c, extension: { salary, years, ...(years > 1 ? options : {}) } });
 }
 
 /** The call an AI front office makes on a team option. */
@@ -52,7 +58,10 @@ export function decideOptions(f: Franchise): Franchise {
 }
 
 function nextDeal(c: Contract): Contract | undefined {
-  if (c.extension) return { salary: c.extension.salary, years: c.extension.years };
+  if (c.extension) {
+    const { salary, years, playerOption, teamOption } = c.extension;
+    return { salary, years, ...(playerOption ? { playerOption } : {}), ...(teamOption ? { teamOptionYears: 1 } : {}) };
+  }
   const deal = { ...c, years: c.years - 1 };
   return deal.years > 0 ? deal : undefined;
 }
@@ -63,8 +72,16 @@ export function rollContracts(f: Franchise): Franchise {
   const rosters = { ...f.rosters };
   const devRosters = { ...f.devRosters };
   const freeAgents = [...f.freeAgents];
-  for (const p of Object.values(f.players)) {
+  // sorted, because a loaded save lists players in a different order than a running one
+  for (const id of Object.keys(f.players).sort()) {
+    const p = f.players[id];
     if (!p.teamId || !p.contract) continue;
+    if (p.contract.startsNext) {
+      const contract = { ...p.contract };
+      delete contract.startsNext;
+      players[id] = { ...p, contract };
+      continue;
+    }
     const teamId = p.teamId;
     const file = { ...p.file!, service: p.file!.service + 1, teamSeasons: p.file!.teamSeasons + 1 };
     const deal = nextDeal(p.contract);

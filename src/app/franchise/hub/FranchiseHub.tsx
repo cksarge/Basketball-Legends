@@ -10,7 +10,7 @@ import { stopFranchiseSim, useFranchiseSim } from "@/state/franchiseSim";
 import { useFranchise } from "@/state/franchiseStore";
 import { Button, PageShell, Panel } from "@/ui/kit";
 import { toast } from "@/ui/Toaster";
-import { pruneSaves, useLeagueTeams } from "./actions";
+import { pruneSaves, useLeagueTeams, useRosterMove } from "./actions";
 import { CoachingTab } from "./CoachingTab";
 import { DraftTab } from "./DraftTab";
 import { FreeAgentsTab } from "./FreeAgentsTab";
@@ -28,7 +28,8 @@ type Tab = (typeof TABS)[number];
 
 export function FranchiseHub() {
   const id = useSearchParams().get("id");
-  const { franchise, team, status, error, open, update } = useFranchise();
+  const { franchise, team, status, error, open } = useFranchise();
+  const move = useRosterMove();
 
   const teams = useLeagueTeams(franchise);
   const sim = useFranchiseSim();
@@ -119,7 +120,7 @@ export function FranchiseHub() {
       {franchise.undo && (
         <div className="mb-4 flex items-center gap-3 rounded-[var(--radius-chip)] bg-deck p-3 ring-1 ring-line" role="status">
           <span className="flex-1">{franchise.undo.label}</span>
-          <Button variant="secondary" disabled={sim.running} onClick={() => update(undoMove)}>
+          <Button variant="secondary" disabled={sim.running} onClick={() => move(null, undoMove)}>
             Undo
           </Button>
         </div>

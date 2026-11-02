@@ -6,9 +6,12 @@ import { applyMove, moveLock, prunePlan, undoMove } from "../core/moves";
 import { advanceOffseason } from "../core/offseason";
 import { simDay } from "../core/season";
 import { createFranchise } from "../create";
+import { simDraftToEnd, simToUserPick } from "../pro/draft";
+import { staffHandles } from "../pro/freeAgency";
 import { releasePlayer } from "../pro/rosterMoves";
 import { applyTrade, type Trade } from "../pro/trades";
 import type { Franchise } from "../types";
+import { finishedSeason } from "./draftHelpers";
 
 const teams = (JSON.parse(readFileSync("src/data/generated/pro.json", "utf8")) as { teams: Team[] }).teams;
 const make = () => createFranchise({ league: "pro", team: teams[0], teams, seed: "moves2", now: 1 });
@@ -90,6 +93,36 @@ describe("undo", () => {
     const moved = applyMove(f, "Trade", (x) => applyTrade(x, dealFor(x)));
     expect(moved.plan).not.toEqual(f.plan);
     expect(undoMove(moved).plan).toEqual(f.plan);
+  });
+});
+
+describe("undo can't reach past later changes", () => {
+  const atDraft = () => {
+    let f: Franchise = even({ ...finishedSeason(make(), teams), offseason: { step: "review", report: null } });
+    while (f.offseason?.step !== "draft") f = advanceOffseason(f, teams);
+    return f;
+  };
+
+  it("drafting ends undo, so a trade can't be reversed with the rookies already taken", () => {
+    const moved = applyMove(atDraft(), "Trade", (x) => applyTrade(x, { teams: [me, them], assets: dealFor(x).assets.slice(0, 2) }));
+    expect(moved.undo).toBeDefined();
+    expect(simDraftToEnd(moved).undo).toBeUndefined();
+    expect(simToUserPick(moved).undo).toBeUndefined();
+  });
+
+  it("letting the staff act ends undo", () => {
+    const f: Franchise = {
+      ...applyMove(make(), "One", (x) => releasePlayer(x, x.rosters[me][14])),
+      phase: "offseason",
+      offseason: { step: "camp", report: null },
+    };
+    expect(staffHandles(f).undo).toBeUndefined();
+  });
+
+  it("undo waits while a game is partway through", () => {
+    const f = applyMove(make(), "One", (x) => releasePlayer(x, x.rosters[me][14]));
+    const live = { ...f, live: { gameId: "x", partial: { home: 1, away: 1, box: {}, seconds: 0 } } };
+    expect(undoMove(live)).toBe(live);
   });
 });
 

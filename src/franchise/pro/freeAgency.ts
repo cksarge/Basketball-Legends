@@ -40,7 +40,13 @@ const byValue = (f: Franchise, ids: string[]) => [...ids].sort((a, b) => marketV
 const rosterMax = (f: Franchise) => (f.phase === "offseason" ? OFFSEASON_ROSTER_MAX : ROSTER_MAX);
 
 function dealOf(o: Offer): Contract {
-  return { salary: o.salary, years: o.years, ...(o.playerOption ? { playerOption: true } : {}), ...(o.teamOption ? { teamOptionYears: 1 } : {}) };
+  const options = o.years > 1;
+  return {
+    salary: o.salary,
+    years: o.years,
+    ...(options && o.playerOption ? { playerOption: true } : {}),
+    ...(options && o.teamOption ? { teamOptionYears: 1 } : {}),
+  };
 }
 
 /** Signs a free agent who's already been checked against the cap. */
@@ -199,7 +205,7 @@ export function aiResign(f: Franchise): Franchise {
   return next;
 }
 
-const worth = (p: Player) => playerOvr(p) + Math.max(0, p.potential - playerOvr(p)) * 0.15;
+const worth = (p: Player) => playerOvr(p) + Math.max(0, p.potential - playerOvr(p)) * 0.05;
 
 /** A team below its minimum with nobody left to sign finds someone from overseas. */
 function replacement(f: Franchise, teamId: string): Player {
@@ -245,8 +251,8 @@ export const aiFillRosters = (f: Franchise): Franchise => aiTeams(f).reduce(setR
 
 /** The user's staff makes the calls for this step. */
 export function staffHandles(f: Franchise): Franchise {
-  if (f.offseason?.step === "contracts") return pendingOptions(f, f.teamId).reduce((x, p) => decideOptionsFor(x, p.id), f);
-  if (f.offseason?.step === "camp") return setRoster(f, f.teamId);
+  if (f.offseason?.step === "contracts") return clearUndo(pendingOptions(f, f.teamId).reduce((x, p) => decideOptionsFor(x, p.id), f));
+  if (f.offseason?.step === "camp") return clearUndo(setRoster(f, f.teamId));
   return f;
 }
 

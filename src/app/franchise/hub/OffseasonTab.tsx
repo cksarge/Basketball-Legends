@@ -45,7 +45,7 @@ export function SeasonReview({ f, teams }: { f: Franchise; teams: Team[] }) {
         <ul className="flex flex-col gap-1">
           {["mvp", "dpoy", "sixth", "finalsMvp"].flatMap(pick).map((a) => (
             <li key={a.id}>
-              <span className="text-steel">{a.label}:</span> {fullName(f.players[a.playerId])}, {byId(a.teamId).name}
+              <span className="text-steel">{a.label}:</span> {fullName(f.players[a.playerId])}, {teams.find((t) => t.id === a.teamId)?.name ?? "Free agent"}
             </li>
           ))}
         </ul>

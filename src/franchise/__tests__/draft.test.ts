@@ -59,6 +59,11 @@ describe("the draft", () => {
     expect(new Set(f.rosters[r.teamId].map((id) => f.players[id].jersey)).size).toBe(f.rosters[r.teamId].length);
   });
 
+  it("a rookie's deal starts next season", () => {
+    const f = simDraftToEnd(ready());
+    expect(f.players[f.draft.results[0].playerId].contract?.startsNext).toBe(true);
+  });
+
   it("the user can't pick out of turn or take a player twice", () => {
     let f = ready();
     const first = f.draft.prospects[0].id;

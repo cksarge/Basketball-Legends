@@ -12,6 +12,9 @@ import { DEV_MAX, OFFSEASON_ROSTER_MAX, ROSTER_MAX, ROSTER_MIN, TWO_WAY_GAMES, T
 const WAIVER_DAYS = 2;
 const MOST_GIVEN_BACK = 0.4;
 const EARNED_ELSEWHERE = 0.5;
+const LOW_DEAL_SERVICE = 3;
+/** Multiples of the minimum. */
+const LOW_DEAL_VALUE = 2.5;
 
 const guaranteedYears = (c: Contract) => Math.max(1, c.years - (c.teamOptionYears ?? 0));
 export const guaranteed = (c: Contract) => c.salary * guaranteedYears(c);
@@ -138,9 +141,16 @@ export function joinTeam(f: Franchise, teamId: string, id: string, contract: Con
   };
 }
 
+/** Only young fringe players take these deals. */
+export const lowDealOpen = (f: Franchise, p: Player) =>
+  (p.file?.service ?? 0) <= LOW_DEAL_SERVICE && marketValue(f, p) <= capRules(f.cap).minSalary * LOW_DEAL_VALUE;
+
+/** Before July 1, a low deal is for next season. */
+const lowDealTiming = (f: Franchise) => (f.offseason && !f.freeAgency ? { startsNext: true } : {});
+
 export function signTwoWay(f: Franchise, teamId: string, id: string): Franchise {
-  if (!f.freeAgents.includes(id) || f.rosters[teamId].filter((x) => isTwoWay(f.players[x])).length >= TWO_WAY_MAX) return f;
-  const player = joinTeam(f, teamId, id, { salary: capRules(f.cap).twoWaySalary, years: 1, twoWay: true });
+  if (!f.freeAgents.includes(id) || !lowDealOpen(f, f.players[id]) || f.rosters[teamId].filter((x) => isTwoWay(f.players[x])).length >= TWO_WAY_MAX) return f;
+  const player = joinTeam(f, teamId, id, { salary: capRules(f.cap).twoWaySalary, years: 1, twoWay: true, ...lowDealTiming(f) });
   return {
     ...f,
     players: { ...f.players, [id]: player },
@@ -150,8 +160,8 @@ export function signTwoWay(f: Franchise, teamId: string, id: string): Franchise 
 }
 
 export function signDev(f: Franchise, teamId: string, id: string): Franchise {
-  if (!f.freeAgents.includes(id) || f.devRosters[teamId].length >= DEV_MAX) return f;
-  const player = joinTeam(f, teamId, id, { salary: capRules(f.cap).devSalary, years: 1, dev: true });
+  if (!f.freeAgents.includes(id) || !lowDealOpen(f, f.players[id]) || f.devRosters[teamId].length >= DEV_MAX) return f;
+  const player = joinTeam(f, teamId, id, { salary: capRules(f.cap).devSalary, years: 1, dev: true, ...lowDealTiming(f) });
   return {
     ...f,
     players: { ...f.players, [id]: player },
@@ -168,7 +178,10 @@ export function callUp(f: Franchise, id: string): Franchise {
   const onRoster = f.rosters[teamId].includes(id);
   return {
     ...f,
-    players: { ...f.players, [id]: { ...p, contract: { salary: capRules(f.cap).minSalary, years: 1 } } },
+    players: {
+      ...f.players,
+      [id]: { ...p, contract: { salary: capRules(f.cap).minSalary, years: 1, ...(p.contract.startsNext ? { startsNext: true } : {}) } },
+    },
     rosters: onRoster ? f.rosters : { ...f.rosters, [teamId]: [...f.rosters[teamId], id] },
     devRosters: { ...f.devRosters, [teamId]: f.devRosters[teamId].filter((x) => x !== id) },
   };

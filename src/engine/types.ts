@@ -194,7 +194,9 @@ export interface Contract {
   /** A developmental deal, outside the roster and the cap. */
   dev?: boolean;
   /** Takes over when this deal ends. */
-  extension?: { salary: number; years: number };
+  extension?: { salary: number; years: number; playerOption?: boolean; teamOption?: boolean };
+  /** Signed before July 1 for next season, so the coming July 1 doesn't count against it. */
+  startsNext?: boolean;
 }
 
 /** A pro's record in Franchise. */

@@ -3,6 +3,7 @@ import { proCalendar } from "@/career/calendar";
 import type { Franchise } from "../types";
 import { moneyM, payroll, rightsLimit } from "./cap";
 import { freeJersey } from "./draft";
+import { askingPrice } from "./market";
 import { joinTeam, standardCount } from "./rosterMoves";
 import { OFFSEASON_ROSTER_MAX, ROSTER_MAX, ROSTER_MIN, capRules } from "./rules";
 
@@ -81,6 +82,18 @@ export function tradeProblems(f: Franchise, t: Trade): string[] {
   const assets = t.assets.map((a) => assetProblem(f, t, a)).filter((x): x is string => !!x);
   if (assets.length) return assets;
   return t.teams.flatMap((id) => [salaryProblem(f, t, id), rosterProblem(f, t, id)]).filter((x): x is string => !!x);
+}
+
+/** A team's expired players it could sign and trade during free agency, at what they'd take within its rights. */
+export function signAndTradeOptions(f: Franchise, teamId: string) {
+  if (!f.freeAgency) return [];
+  return f.freeAgents
+    .map((id) => f.players[id])
+    .filter((p) => p.file?.rightsTeamId === teamId && rightsLimit(f, p, teamId) > 0)
+    .map((p) => {
+      const ask = askingPrice(f, p, teamId);
+      return { id: p.id, salary: Math.min(ask.salary, rightsLimit(f, p, teamId)), years: ask.years };
+    });
 }
 
 export function applyTrade(f: Franchise, t: Trade): Franchise {

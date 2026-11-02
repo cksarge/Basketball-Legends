@@ -13,7 +13,7 @@ const PEAK_AGE = 28;
 /** Past this, a player has shown what he is. */
 const LAST_GROWING_AGE = 27;
 const LAST_AGE = 41;
-const UNSIGNED_RETIRE = 3.5;
+const UNSIGNED_RETIRE = 2.5;
 /** Room to potential at which a player grows at the full rate for his age. */
 const FULL_ROOM = 6;
 
@@ -82,7 +82,8 @@ export function leagueProgress(f: Franchise): { franchise: Franchise; report: Pr
   const gone = new Set<string>();
   const lastTeams: ProgressReport["lastTeams"] = {};
   const changes: ProgressReport["changes"] = [];
-  for (const [id, p] of Object.entries(f.players)) {
+  for (const id of Object.keys(f.players).sort()) {
+    const p = f.players[id];
     const rng = new Rng(`${f.seed}:progress:${year}:${id}`);
     const grown = progressPlayer(p, rng, mine.has(id) ? bonus : 0);
     const next = { ...grown, file: { ...grown.file!, peak: Math.max(grown.file?.peak ?? 0, playerOvr(p), playerOvr(grown)) } };

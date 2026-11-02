@@ -8,6 +8,8 @@ import { createFranchise } from "../create";
 import { payroll, veteranRights } from "../pro/cap";
 import { expiring, extendContract, pendingOptions, playerOptionChoice, rollContracts, setTeamOption } from "../pro/contracts";
 import { marketValue } from "../pro/market";
+import { rookieDeal } from "../pro/draft";
+import { capRules } from "../pro/rules";
 import type { Franchise } from "../types";
 
 const teams = (JSON.parse(readFileSync("src/data/generated/pro.json", "utf8")) as { teams: Team[] }).teams;
@@ -116,5 +118,47 @@ describe("the new contract year", () => {
     const f = deal({ ...start, season: { ...start.season, stats: { [id]: { ...emptyLine(), gp: 50, gs: 50, pts: 800 } } } }, id, { salary: 9e6, years: 1 });
     expect(leaderRow(rollContracts(f), teams, id).team).toBe("");
     expect(playerOvr(rollContracts(f).players[id])).toBe(playerOvr(f.players[id]));
+  });
+});
+
+describe("deals signed before July 1", () => {
+  const start = make();
+  const id = start.rosters[me][0];
+  const fresh = deal({ ...start, players: { ...start.players, [id]: { ...start.players[id], file: { service: 0, teamSeasons: 0 } } } }, id, {
+    ...rookieDeal(1, capRules(start.cap)),
+    startsNext: true,
+  });
+
+  it("a rookie keeps his two guaranteed years through his first July 1", () => {
+    let f = rollContracts(fresh);
+    expect(f.players[id].contract).toMatchObject({ years: 4, teamOptionYears: 2 });
+    expect(f.players[id].file).toMatchObject({ service: 0, teamSeasons: 0 });
+    expect(pendingOptions(f, me).map((p) => p.id)).not.toContain(id);
+    f = rollContracts(f); // after his first season
+    expect(f.players[id].contract?.years).toBe(3);
+    expect(f.players[id].file?.service).toBe(1);
+    expect(pendingOptions(f, me).map((p) => p.id)).toContain(id);
+  });
+});
+
+describe("options on an extension", () => {
+  const start = make();
+  const id = start.rosters[me][0];
+
+  it("carries the options the player was promised", () => {
+    const f = extendContract(deal(start, id, { salary: 9e6, years: 1 }), id, 20e6, 3, { playerOption: true });
+    expect(rollContracts(f).players[id].contract).toMatchObject({ salary: 20e6, years: 3, playerOption: true });
+    const g = extendContract(deal(start, id, { salary: 9e6, years: 1 }), id, 20e6, 3, { teamOption: true });
+    expect(rollContracts(g).players[id].contract).toMatchObject({ teamOptionYears: 1 });
+  });
+});
+
+describe("replays", () => {
+  it("the contract year turns the same way whatever order the players load in", () => {
+    const f = make();
+    const ids = Object.keys(f.players);
+    const expiring = ids.slice(0, 60).reduce((x, id) => deal(x, id, { salary: 2e6, years: 1 }), f);
+    const reversed = { ...expiring, players: Object.fromEntries(Object.entries(expiring.players).reverse()) };
+    expect(rollContracts(reversed).freeAgents).toEqual(rollContracts(expiring).freeAgents);
   });
 });

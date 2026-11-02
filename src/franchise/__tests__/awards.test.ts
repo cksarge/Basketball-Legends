@@ -80,3 +80,19 @@ describe("seasonAwards", () => {
     expect(one("finalsMvp").teamId).toBe(season.season.championId);
   });
 });
+
+describe("awards and teamless players", () => {
+  it("a player released before the awards can't win one without a team", () => {
+    const f = createFranchise({ league: "pro", team: teams[0], teams, seed: "teamless", now: 1 });
+    const [gone, kept] = f.rosters[teams[1].id];
+    const big = { ...emptyLine(), gp: 80, gs: 80, pts: 2400, stl: 400, blk: 400 };
+    const fine = { ...emptyLine(), gp: 80, gs: 80, pts: 800 };
+    const next = {
+      ...f,
+      players: { ...f.players, [gone]: { ...f.players[gone], teamId: null } },
+      season: { ...f.season, stats: { [gone]: big, [kept]: fine } },
+    };
+    const scheduled = { ...next, season: { ...next.season, games: f.season.games } };
+    for (const a of seasonAwards(scheduled, teams)) expect(a.teamId).toBeTruthy();
+  });
+});

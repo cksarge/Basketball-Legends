@@ -58,8 +58,9 @@ export function seasonAwards(f: Franchise, teams: Team[]): Award[] {
     const s = table.get(teamId);
     return s && s.w + s.l ? s.w / (s.w + s.l) : 0.5;
   };
+  // someone let go before the awards has no team to win them for
   const eligible = Object.entries(f.season.stats)
-    .filter(([, l]) => l.gp >= need)
+    .filter(([id, l]) => l.gp >= need && f.players[id].teamId)
     .map(([id, l]) => ({ id, l, teamId: f.players[id].teamId! }));
   // winning counts: a big year on a bad team loses to one on a contender
   const value = [...eligible].sort((a, b) => impact(b.l) * (0.8 + winPct(b.teamId) * 0.4) - impact(a.l) * (0.8 + winPct(a.teamId) * 0.4));

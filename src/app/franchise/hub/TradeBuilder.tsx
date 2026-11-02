@@ -4,7 +4,7 @@ import type { Player, Team } from "@/engine/types";
 import { moneyM } from "@/franchise/pro/cap";
 import { shownOvr } from "@/franchise/pro/scouting";
 import { tradeReply } from "@/franchise/pro/tradeAi";
-import { applyTrade, tradeProblems, type Trade, type TradeAsset } from "@/franchise/pro/trades";
+import { applyTrade, signAndTradeOptions, tradeProblems, type Trade, type TradeAsset } from "@/franchise/pro/trades";
 import type { Franchise } from "@/franchise/types";
 import { useFranchiseSim } from "@/state/franchiseSim";
 import { Button, Panel } from "@/ui/kit";
@@ -64,6 +64,16 @@ function TeamColumn({
       <ul className="scrollbar-thin flex max-h-96 flex-col gap-1 overflow-y-auto text-sm">
         {players.map((p) => row(p.id, playerLine(p), { kind: "player", id: p.id, from: team.id, to }))}
         {picks.map((p) => row(p.id, pickName(p.id, teams), { kind: "pick", id: p.id, from: team.id, to }))}
+        {signAndTradeOptions(f, team.id).map((o) => {
+          const signAndTrade = { salary: o.salary, years: o.years };
+          return row(o.id, `Sign-and-trade: ${fullName(f.players[o.id])}, ${moneyM(o.salary)} × ${o.years}`, {
+            kind: "player",
+            id: o.id,
+            from: team.id,
+            to,
+            signAndTrade,
+          });
+        })}
       </ul>
     </fieldset>
   );
@@ -108,7 +118,8 @@ export function TradeBuilder({
     }
   };
   const totals = (id: string) => {
-    const sum = (list: TradeAsset[]) => list.reduce((n, a) => n + (a.kind === "player" ? (f.players[a.id].contract?.salary ?? 0) : 0), 0);
+    const sum = (list: TradeAsset[]) =>
+      list.reduce((n, a) => n + (a.kind !== "player" ? 0 : (a.signAndTrade?.salary ?? f.players[a.id].contract?.salary ?? 0)), 0);
     return `${moneyM(sum(deal.filter((a) => a.to === id)))} in, ${moneyM(sum(deal.filter((a) => a.from === id)))} out`;
   };
   return (

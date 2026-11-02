@@ -1,5 +1,6 @@
 // Running the draft: each pick in order, AI boards, rookie deals and the players nobody took.
 import type { Contract, Player } from "@/engine/types";
+import { clearUndo } from "../core/moves";
 import type { DraftPick, Franchise } from "../types";
 import { capRules, roundMoney, type CapRules } from "./rules";
 import { prospectRange, readProspect } from "./scouting";
@@ -72,11 +73,11 @@ function select(f: Franchise, pick: DraftPick, prospectId: string): Franchise {
     ...p,
     teamId,
     jersey: freeJersey(f, teamId, p.jersey),
-    contract: rookieDeal(number, capRules(f.cap)),
+    contract: { ...rookieDeal(number, capRules(f.cap)), startsNext: true },
     file: { service: 0, teamSeasons: 0, draft: { year: f.draft.year, pick: number, teamId }, range },
   };
   const next: Franchise = {
-    ...f,
+    ...clearUndo(f),
     players: { ...f.players, [p.id]: drafted },
     rosters: { ...f.rosters, [teamId]: [...f.rosters[teamId], p.id] },
     draft: { ...f.draft, results: [...f.draft.results, { pickId: pick.id, playerId: p.id, teamId }] },

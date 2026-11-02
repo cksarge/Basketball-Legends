@@ -49,7 +49,8 @@ export function NegotiateDialog({ f, player, kind, onClose }: { f: Franchise; pl
       if (offer.salary > limit) return setMessage(`Veteran rights let you pay him up to ${moneyM(limit)}.`);
       const reply = negotiate(f, player, offer);
       say(reply);
-      if (reply.kind === "accept") await move(`Re-signed ${fullName(player)}`, (x) => extendContract(x, player.id, offer.salary, offer.years));
+      if (reply.kind === "accept")
+        await move(`Re-signed ${fullName(player)}`, (x) => extendContract(x, player.id, offer.salary, offer.years, { playerOption, teamOption }));
       else await move(null, (x) => recordTalk(x, player.id));
       if (reply.kind === "accept") ref.current?.close();
       return;

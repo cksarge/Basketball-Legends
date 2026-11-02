@@ -37,7 +37,7 @@ In testing at legends.carterscoding.com/beta/. These notes grow as Franchise mod
 - **Contracts:** team and player options, extensions, and rookie deals with team options. Players negotiate based on money, role, winning and loyalty, and they walk away if you lowball them too often.
 - **Free agency:** a moratorium, then five bidding rounds where AI teams bid too. Anyone left stays on the market through the season as their asks fall.
 - **Trades:** a Trades tab with two- and three-team deals, players and picks, salary matching and a deadline. AI teams value age, potential, contracts and whether they're contending or rebuilding, and they'll tell you why a deal fails.
-- **Trade tools:** a finder that shows what you could send for a player, a trade block that draws offers, sign-and-trades, and calls about your pick on draft day. AI teams trade with each other too.
+- **Trade tools:** a finder that shows what you could send for a player, a trade block that draws offers, sign-and-trades during free agency, and calls about your pick on draft day. AI teams trade with each other too.
 - **Undo:** take back your last roster move until the next game is simulated.
 - **Roster moves:** waivers with claims, buyouts, three two-way players and three developmental players. You need 13 to 15 players on standard deals to play or sim.
 
