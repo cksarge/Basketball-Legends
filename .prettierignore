@@ -11,3 +11,4 @@ playwright-report/
 package-lock.json
 next-env.d.ts
 AGENTS.md
+.superpowers/

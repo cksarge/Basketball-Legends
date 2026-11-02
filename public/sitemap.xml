@@ -55,6 +55,18 @@
     <priority>0.4</priority>
   </url>
   <url>
+    <loc>https://legends.carterscoding.com/franchise/</loc>
+    <lastmod>2026-11-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://legends.carterscoding.com/franchise/new/</loc>
+    <lastmod>2026-11-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
     <loc>https://legends.carterscoding.com/legal/privacy/</loc>
     <lastmod>2026-11-02</lastmod>
     <changefreq>monthly</changefreq>

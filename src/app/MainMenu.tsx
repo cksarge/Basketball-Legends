@@ -33,6 +33,7 @@ interface Item {
   blurb: string;
   detail: string[];
   soon?: boolean;
+  beta?: boolean;
 }
 
 const ITEMS: Item[] = [
@@ -61,9 +62,10 @@ const ITEMS: Item[] = [
   {
     id: "franchise",
     label: "Franchise",
-    soon: true,
-    blurb: "Coach and run a program for as many seasons as you like.",
-    detail: ["Rotations, playbooks, trades, recruiting, the draft", "Play or sim every game", "Arrives in a later update"],
+    href: "/franchise/",
+    beta: true,
+    blurb: "Coach and run a team for as many seasons as you like.",
+    detail: ["Pick any pro team and take over", "Play or sim every game", "Trades, the draft and more arrive in later betas"],
   },
   {
     id: "multiplayer",
@@ -224,7 +226,7 @@ export function MainMenu() {
                       className={menuCls(focused === it.id)}
                     >
                       {it.label}
-                      {it.soon && <span className="ml-3 align-middle font-body text-sm font-semibold text-steel">Coming soon</span>}
+                      {it.beta && <span className="ml-3 align-middle font-body text-sm font-semibold text-steel">Beta</span>}
                     </Link>
                   )}
                 </li>

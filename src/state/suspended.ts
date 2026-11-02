@@ -139,6 +139,26 @@ export function pruneCareerSaves(careerId: string, playable: (gameId: string) =>
   }
 }
 
+/** The autosave and every Franchise slot, with whatever is in them. */
+const franchiseSaves = () =>
+  (["auto", ...SLOTS] as SaveSlot[]).map((slot) => ({ slot, game: loadSuspended(slot, "franchise") })).filter((x) => x.game?.pending.franchise);
+
+/** The newest save of one franchise game, wherever it is, ready to resume. */
+export function findFranchiseSave(franchiseId: string, gameId: string) {
+  const found = franchiseSaves()
+    .filter((x) => x.game!.pending.franchise!.franchiseId === franchiseId && x.game!.pending.franchise!.gameId === gameId)
+    .sort((a, b) => b.game!.savedAt - a.game!.savedAt)[0];
+  return found ? { pending: resumePending(found.slot, found.game!), summary: found.game!.summary } : null;
+}
+
+/** Drops a franchise's saved games that can no longer be played (simmed since, or the franchise was deleted). */
+export function pruneFranchiseSaves(franchiseId: string, keep: (gameId: string) => boolean) {
+  for (const { slot, game } of franchiseSaves()) {
+    const ref = game!.pending.franchise!;
+    if (ref.franchiseId === franchiseId && !keep(ref.gameId)) clearSuspended(slot, "franchise");
+  }
+}
+
 const EVENT = "bl-suspended-change";
 function notify() {
   if (typeof window !== "undefined") window.dispatchEvent(new Event(EVENT));

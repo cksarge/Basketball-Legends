@@ -1,7 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Match } from "@/game/sim/match";
 import type { PendingMatch } from "../matchStore";
-import { clearSuspended, findCareerSave, loadSuspended, pruneCareerSaves, resumePending, saveGroupOf, saveSuspended, slotLabel, SLOTS } from "../suspended";
+import {
+  clearSuspended,
+  findCareerSave,
+  findFranchiseSave,
+  pruneFranchiseSaves,
+  loadSuspended,
+  pruneCareerSaves,
+  resumePending,
+  saveGroupOf,
+  saveSuspended,
+  slotLabel,
+  SLOTS,
+} from "../suspended";
 
 const store = new Map<string, string>();
 vi.stubGlobal("localStorage", {
@@ -19,6 +31,7 @@ const fakeMatch = (score = 10) =>
 const quick = { mode: "quick" } as PendingMatch;
 const park = { mode: "park" } as PendingMatch;
 const career = (careerId: string, gameId: string) => ({ mode: "career", career: { careerId, gameId } }) as PendingMatch;
+const franchise = (franchiseId: string, gameId: string) => ({ mode: "franchise", franchise: { franchiseId, gameId } }) as PendingMatch;
 
 beforeEach(() => {
   store.clear();
@@ -67,6 +80,23 @@ describe("resuming", () => {
     saveSuspended(fakeMatch(), career("c", "g"), 3);
     const p = resumePending(3, loadSuspended(3, "career")!);
     expect(p).toMatchObject({ resume: true, resumeFrom: 3, saveSlot: 3 });
+  });
+
+  it("finds a franchise game in any Franchise slot, and only that game", () => {
+    saveSuspended(fakeMatch(4), franchise("f", "g1"), 2);
+    saveSuspended(fakeMatch(5), franchise("other", "g1"), 3);
+    expect(findFranchiseSave("f", "g1")?.summary.homeScore).toBe(4);
+    expect(findFranchiseSave("f", "g2")).toBeNull();
+  });
+
+  it("prunes only the franchise games that can't be played any more", () => {
+    saveSuspended(fakeMatch(1), franchise("f", "old"), 1);
+    saveSuspended(fakeMatch(2), franchise("f", "open"), 2);
+    saveSuspended(fakeMatch(3), franchise("other", "old"), 3);
+    pruneFranchiseSaves("f", (id) => id === "open");
+    expect(loadSuspended(1, "franchise")).toBeNull();
+    expect(loadSuspended(2, "franchise")).not.toBeNull();
+    expect(loadSuspended(3, "franchise")).not.toBeNull();
   });
 
   it("finds a career game in any Career slot, and only that game", () => {

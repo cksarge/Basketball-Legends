@@ -64,6 +64,8 @@ const PAGES: [string, RegExp][] = [
   ["career/", /Road to Legend/],
   ["career/new/", /Create a player/],
   ["park/", /Play in the Park/],
+  ["franchise/", /Franchise/],
+  ["franchise/new/", /New franchise/],
 ];
 
 for (const [path, heading] of PAGES) {
@@ -81,6 +83,24 @@ test("the main menu version links to the changelog", async ({ page }) => {
   await page.getByRole("link", { name: /^Version \d+\.\d+\.\d+/ }).click();
   await expect(page).toHaveURL(/\/changelog\/$/);
   await expect(page.getByRole("heading", { level: 2 }).first()).toHaveText(/^v\d+\.\d+\.\d+/);
+});
+
+test("create a franchise, reload the hub and find it on the franchise screen", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto("franchise/new/");
+  await page.getByLabel("Search teams").fill("Phoenix");
+  await page.getByRole("button", { name: /Phoenix/ }).click();
+  await page.getByRole("button", { name: "Start franchise" }).click();
+  await page.waitForURL(/franchise\/hub\/\?id=/);
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Phoenix");
+  await page.reload();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Phoenix");
+  await page.goto("franchise/");
+  await expect(page.getByText("Phoenix", { exact: false }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: "Continue" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Export" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Delete" })).toBeVisible();
+  expect(errors).toEqual([]);
 });
 
 test("create a career, then find it on the career screen after a reload", async ({ page }) => {

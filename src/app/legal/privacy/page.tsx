@@ -26,6 +26,10 @@ export default function Privacy() {
           The game never reads your real phone, contacts or social accounts.
         </li>
         <li>
+          <b>Franchises</b> are saved in your browser&apos;s IndexedDB storage after everything you do. Exporting a franchise downloads a .blfranchise file to
+          your device; nothing is uploaded.
+        </li>
+        <li>
           <b>Your Legends</b> (the name, look and ratings of any career that earned the Legend title) are saved in local storage so they can appear in Quick
           Play, Play in the Park and a new career.
         </li>

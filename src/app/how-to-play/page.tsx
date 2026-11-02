@@ -137,6 +137,12 @@ export default function HowToPlay() {
           <b>Camera:</b> Y cycles through the cameras.
         </li>
       </ul>
+      <H2>Franchise</H2>
+      <p>
+        Franchise mode is in beta. Pick a pro team and start a franchise from the main menu. It saves in your browser after everything you do, and Export backs
+        it up to a file. More of the mode arrives with each beta.
+      </p>
+
       <H2>Road to Legend</H2>
       <p>
         Every career chases one thing: becoming a Basketball Legend. Very few get there. Play each game in 3D, controlling only your player, or sim from your

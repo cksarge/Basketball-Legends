@@ -13,6 +13,12 @@ export interface CareerGameRef {
   gameId: string;
 }
 
+/** Links a match to a franchise game. */
+export interface FranchiseGameRef {
+  franchiseId: string;
+  gameId: string;
+}
+
 export type MatchMode = "quick" | "career" | "franchise" | "practice" | "online" | "park";
 
 /** A Play in the Park game: which park, what's being played, and everyone's street clothes. */
@@ -73,6 +79,8 @@ export interface PendingMatch {
   career?: CareerGameRef;
   /** A career's pickup run at the park. */
   careerRun?: string;
+  /** Franchise game this match belongs to. */
+  franchise?: FranchiseGameRef;
   /** Overrides the difficulty from Settings (careers have their own). */
   difficulty?: Difficulty;
   /** Career: what to do when the locked player goes to the bench. */
@@ -96,6 +104,7 @@ export interface MatchResult {
   injuries: InjuryRecord[];
   career?: CareerGameRef;
   careerRun?: string;
+  franchise?: FranchiseGameRef;
   /** Park games: who won (for the next-game-up line) and the results shown on the park screen. */
   park?: { youWon: boolean; title: string; lines: { name: string; value: string; you?: boolean }[] };
 }

@@ -2,6 +2,15 @@
 
 Every release of Basketball Legends is listed here, newest first. Each version's section doubles as its release notes on GitHub.
 
+## v0.4.0 (in beta)
+
+In testing at legends.carterscoding.com/beta/. These notes grow as Franchise mode lands.
+
+### Franchise
+
+- **Take over a team:** pick any pro team and start a franchise. College and Arizona high school teams arrive in later betas.
+- **Your saves:** franchises save in your browser after everything you do, with Export and Import to back them up or move them.
+
 ## v0.3.0 — November 1, 2026
 
 Road to Legend is here: one player, from a freshman tryout to the Hall of Fame and a shot at becoming a Basketball Legend.
