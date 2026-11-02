@@ -33,6 +33,7 @@ import { toast } from "../Toaster";
 import { ReplayDirector } from "@/game3d/replay";
 import { ReplayOverlay, useReplay } from "./ReplayOverlay";
 import { BreakScreen, type BreakKind } from "./BreakScreen";
+import { MatchupPicker } from "../MatchupPicker";
 import { TacticsPanel } from "../TacticsPanel";
 import { LoadingScreen } from "./LoadingScreen";
 import { TutorialOverlay } from "./TutorialOverlay";
@@ -796,6 +797,18 @@ function PauseMenu({
                 refresh((x) => x + 1);
               }}
             />
+            {saveGroup === "franchise" && (
+              <MatchupPicker
+                mine={s.teams[humanTeam].roster}
+                theirs={s.teams[humanTeam === 0 ? 1 : 0].roster}
+                value={s.teams[humanTeam].tactics}
+                onChange={(t) => {
+                  s.teams[humanTeam].tactics = t;
+                  match.assignRoles();
+                  refresh((x) => x + 1);
+                }}
+              />
+            )}
           </div>
         )}
         {tab === "menu" && <PlayByPlay match={match} />}

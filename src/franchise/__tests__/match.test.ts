@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { Team } from "@/engine/types";
 import { emptyLine } from "@/game/sim/stats";
 import type { MatchResult } from "@/state/matchStore";
-import { nextFranchiseEvent, simDay } from "../core/season";
+import { applyGame, nextFranchiseEvent, simDay } from "../core/season";
 import { createFranchise } from "../create";
 import { applyFinishedFranchiseMatch, franchisePending, resultToBox } from "../match";
 import type { Franchise } from "../types";
@@ -98,6 +98,25 @@ describe("the coaching plan in games", () => {
     for (let i = 0; i < 30 && !f.season.games.some((g) => g.result && (g.homeId === team.id || g.awayId === team.id)); i++)
       f = simDay(f, teams, { includeUser: true }).franchise;
     expect(f.season.stats[f.plan.starters[0]]).toMatchObject({ gs: 1 });
+  });
+});
+
+describe("matchups", () => {
+  it("last for one game", () => {
+    const f = make();
+    const set = { ...f, plan: { ...f.plan, tactics: { ...f.plan.tactics, matchups: { a: "b" }, doubleTarget: "b" } } };
+    const next = applyFinishedFranchiseMatch(set, result(set), teams);
+    expect(next.plan.tactics.matchups).toBeUndefined();
+    expect(next.plan.tactics.doubleTarget).toBeUndefined();
+  });
+
+  it("clear when the user's game is simmed, but not for someone else's game", () => {
+    const f = make();
+    const set = { ...f, plan: { ...f.plan, tactics: { ...f.plan.tactics, matchups: { a: "b" } } } };
+    const other = applyGame(set, set.season.games.find((g) => g.homeId !== team.id && g.awayId !== team.id)!.id, resultToBox(result(set), 4), false);
+    expect(other.plan.tactics.matchups).toEqual({ a: "b" });
+    const mine = simDay({ ...set, date: firstGame(set).date }, teams, { includeUser: true }).franchise;
+    expect(mine.plan.tactics.matchups).toBeUndefined();
   });
 });
 

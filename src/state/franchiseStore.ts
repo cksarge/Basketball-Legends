@@ -25,6 +25,9 @@ interface FranchiseStore {
   close: () => void;
 }
 
+/** Saves run one at a time, each building on the last, so quick changes can't look like another tab's. */
+let saving: Promise<unknown> = Promise.resolve();
+
 export const useFranchise = create<FranchiseStore>((set, get) => ({
   franchise: null,
   team: null,
@@ -50,18 +53,23 @@ export const useFranchise = create<FranchiseStore>((set, get) => ({
     const saved = await createFranchiseSave(f, team ?? undefined);
     set({ franchise: saved, team, status: "ready", error: null });
   },
-  update: async (fn, changedPlayers) => {
-    const cur = get().franchise;
-    if (!cur || get().status !== "ready") return false;
-    try {
-      const saved = await commitFranchise(fn(cur), get().team ?? undefined, changedPlayers);
-      set({ franchise: saved });
-      return true;
-    } catch (e) {
-      if (e instanceof StaleFranchiseError) set({ status: "stale" });
-      else set({ status: "error", error: "Couldn't save. Your last change isn't stored." });
-      return false;
-    }
+  update: (fn, changedPlayers) => {
+    const run = async () => {
+      const cur = get().franchise;
+      if (!cur || get().status !== "ready") return false;
+      try {
+        const saved = await commitFranchise(fn(cur), get().team ?? undefined, changedPlayers);
+        set({ franchise: saved });
+        return true;
+      } catch (e) {
+        if (e instanceof StaleFranchiseError) set({ status: "stale" });
+        else set({ status: "error", error: "Couldn't save. Your last change isn't stored." });
+        return false;
+      }
+    };
+    const next = saving.then(run);
+    saving = next;
+    return next;
   },
   close: () => set({ franchise: null, team: null, status: "idle", error: null }),
 }));

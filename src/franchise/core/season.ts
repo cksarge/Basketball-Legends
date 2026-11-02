@@ -65,6 +65,8 @@ interface Working {
   playoffStats: Record<string, SeasonLine>;
   players: Record<string, Player>;
   changed: Set<string>;
+  /** The user's game was decided, so its matchups are done. */
+  userPlayed: boolean;
 }
 
 const working = (f: Franchise): Working => ({
@@ -75,6 +77,7 @@ const working = (f: Franchise): Working => ({
   playoffStats: { ...f.season.playoffStats },
   players: { ...f.players },
   changed: new Set(),
+  userPlayed: false,
 });
 
 /** A line scaled up to full game length, for a played game with shorter quarters. */
@@ -84,6 +87,7 @@ function fullLength(line: StatLine, scale: number): StatLine {
 }
 
 function record(w: Working, g: ScheduledGame, r: BoxResult, played: boolean, starters: Set<string>, statScale = 1) {
+  if (isUsers(w.f, g)) w.userPlayed = true;
   const roster = w.f.rosters[w.f.teamId];
   const box = isUsers(w.f, g) ? Object.fromEntries(Object.entries(r.box).filter(([id]) => roster.includes(id))) : undefined;
   w.games[w.index.get(g.id)!] = {
@@ -112,11 +116,17 @@ function record(w: Working, g: ScheduledGame, r: BoxResult, played: boolean, sta
   }
 }
 
-const finish = (w: Working): Franchise => ({
-  ...w.f,
-  players: w.players,
-  season: { ...w.f.season, games: w.games, stats: w.stats, playoffStats: w.playoffStats },
-});
+function finish(w: Working): Franchise {
+  const tactics = { ...w.f.plan.tactics };
+  delete tactics.matchups;
+  delete tactics.doubleTarget;
+  return {
+    ...w.f,
+    plan: w.userPlayed ? { ...w.f.plan, tactics } : w.f.plan,
+    players: w.players,
+    season: { ...w.f.season, games: w.games, stats: w.stats, playoffStats: w.playoffStats },
+  };
+}
 
 /** Records one game. A game that already has a result stays as it is. */
 export function applyGame(f: Franchise, gameId: string, r: BoxResult, played: boolean, starters: string[] = [], statScale = 1): Franchise {

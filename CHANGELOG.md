@@ -18,6 +18,11 @@ In testing at legends.carterscoding.com/beta/. These notes grow as Franchise mod
 - **Your games are safe:** a finished game is kept until it's saved to your franchise, so reloading or closing the tab on the final screen can't lose it, and going back never restarts it.
 - **Honest saves:** if the browser's storage is full, Save and quit now says so and keeps you in the game, here and in Road to Legend.
 - **Sims stay with you:** leave the hub during a sim and it's still running, with Stop, when you come back.
+- **Coach your team:** a new Coaching tab with a depth chart, starters and minutes, or Auto rotation if you'd rather leave it to your staff. It warns you about tired, out-of-position and hurt players, and if someone's hurt the game works around your plan and returns to it when they're back.
+- **Tactics that count in every game:** defense, pace, three-point emphasis and rebounding now change simulated games as well as played ones.
+- **Game plans:** choose who guards whom and who gets double-teamed for your next game, or change it from the pause menu.
+- **Practice:** pick a team focus and give any player their own plan, including learning a new position over 12 weeks. Young players with a strong work ethic improve fastest.
+- **Hire your staff:** a lead assistant, development coach, head scout and head trainer, each with their own rating and salary. Scouting pays off when the draft arrives.
 - The offseason arrives in a later beta, so a franchise currently ends with the first champion.
 
 ## v0.3.0 — November 1, 2026

@@ -151,6 +151,14 @@ export default function HowToPlay() {
           <b>Your hub:</b> Schedule has box scores for your games. Click a column heading in Roster, Standings or Leaders to sort by it.
         </li>
         <li>
+          <b>Coaching:</b> the Coaching tab sets your depth chart, tactics, practice and staff. Turn off Auto rotation to choose starters and minutes. If a
+          player is hurt, the game works around your plan and returns to it when he&apos;s back.
+        </li>
+        <li>
+          <b>Game plan:</b> before a game, choose who guards whom and who gets double-teamed on the Home tab, or from the pause menu. A game plan lasts one
+          game.
+        </li>
+        <li>
           <b>Save slots:</b> Franchise has three of its own. Resume a saved game from the hub.
         </li>
         <li>

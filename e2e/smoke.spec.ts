@@ -195,6 +195,44 @@ test("Save and quit stays in the game when the save fails @gpu", async ({ page }
   expect(page.url()).toContain("/game/");
 });
 
+test("coaching a franchise: lineup, practice and staff stick, and the lineup starts games", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto("franchise/new/");
+  await page.getByRole("button", { name: /Phoenix/ }).click();
+  await page.getByRole("button", { name: "Start franchise" }).click();
+  await page.waitForURL(/franchise\/hub\/\?id=/);
+  await page.getByRole("tab", { name: "Coaching" }).click();
+  await page.getByRole("switch", { name: "Auto rotation" }).click();
+  const slot = page.getByLabel("Starting PG");
+  await expect(slot).toBeVisible();
+  const bench = (await slot.locator("option").allTextContents()).at(-1)!;
+  await slot.selectOption({ label: bench });
+  await page.getByRole("radio", { name: "Practice" }).click();
+  await page.getByLabel("Team focus").selectOption("shooting");
+  await page.getByRole("radio", { name: "Staff" }).click();
+  await page.getByRole("button", { name: /^Hire/ }).nth(6).click();
+  await expect(page.getByText("Current:").nth(1)).not.toContainText("Nobody");
+  await page.reload();
+  await page.getByRole("tab", { name: "Coaching" }).click();
+  await expect(page.getByLabel("Starting PG").locator("option:checked")).toHaveText(bench);
+  await page.getByRole("radio", { name: "Practice" }).click();
+  await expect(page.getByLabel("Team focus")).toHaveValue("shooting");
+  await page.getByRole("radio", { name: "Staff" }).click();
+  await expect(page.getByText("Current:").nth(1)).not.toContainText("Nobody");
+  await page.getByRole("tab", { name: "Home" }).click();
+  await page.getByRole("button", { name: "Sim game", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Sim game", exact: true })).toBeEnabled({ timeout: 60_000 });
+  await page.getByRole("tab", { name: "Roster" }).click();
+  const name = bench.split(" (")[0];
+  await expect(
+    page
+      .getByRole("row", { name: new RegExp(name) })
+      .getByRole("cell")
+      .nth(7),
+  ).toHaveText("1");
+  expect(errors).toEqual([]);
+});
+
 test("create a career, then find it on the career screen after a reload", async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto("career/new/");

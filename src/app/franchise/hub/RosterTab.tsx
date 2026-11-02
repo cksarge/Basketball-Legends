@@ -22,6 +22,7 @@ export function RosterTab({ f }: { f: Franchise }) {
     { key: "ht", label: "Ht", value: (p) => p.heightIn, render: (p) => heightStr(p.heightIn) },
     { key: "ovr", label: "OVR", value: playerOvr },
     { key: "gp", label: "GP", value: (p) => line(p)?.gp ?? 0 },
+    { key: "gs", label: "GS", value: (p) => line(p)?.gs ?? 0 },
     { key: "ppg", label: "PPG", value: (p) => per(p, "pts") },
     { key: "apg", label: "APG", value: (p) => per(p, "ast") },
     { key: "salary", label: "Salary", value: (p) => p.contract?.salary ?? 0, render: (p) => (p.contract ? money(p.contract.salary) : "-") },

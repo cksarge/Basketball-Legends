@@ -10,6 +10,7 @@ import { useFranchise } from "@/state/franchiseStore";
 import { Button, PageShell, Panel } from "@/ui/kit";
 import { toast } from "@/ui/Toaster";
 import { pruneSaves, useLeagueTeams } from "./actions";
+import { CoachingTab } from "./CoachingTab";
 import { HomeTab } from "./HomeTab";
 import { LeadersTab } from "./LeadersTab";
 import { PlayoffsTab } from "./PlayoffsTab";
@@ -17,7 +18,7 @@ import { RosterTab } from "./RosterTab";
 import { ScheduleTab } from "./ScheduleTab";
 import { StandingsTab } from "./StandingsTab";
 
-const TABS = ["Home", "Schedule", "Roster", "Standings", "Leaders", "Playoffs"] as const;
+const TABS = ["Home", "Schedule", "Roster", "Coaching", "Standings", "Leaders", "Playoffs"] as const;
 type Tab = (typeof TABS)[number];
 
 export function FranchiseHub() {
@@ -126,6 +127,7 @@ export function FranchiseHub() {
       {tab === "Home" && <HomeTab f={franchise} teams={teams} />}
       {tab === "Schedule" && <ScheduleTab f={franchise} teams={teams} team={team} />}
       {tab === "Roster" && <RosterTab f={franchise} />}
+      {tab === "Coaching" && <CoachingTab f={franchise} />}
       {tab === "Standings" && <StandingsTab f={franchise} teams={teams} />}
       {tab === "Leaders" && <LeadersTab f={franchise} teams={teams} />}
       {tab === "Playoffs" && <PlayoffsTab f={franchise} teams={teams} />}

@@ -30,6 +30,14 @@ describe("resolveLineup", () => {
     expect(total(l.rotation)).toBe(240);
   });
 
+  it("gives a starter with no planned minutes real minutes", () => {
+    const newStarter = roster[12];
+    const plan = manual({ starters: [newStarter.id, ...roster.slice(1, 5).map((p) => p.id)] });
+    const l = resolveLineup(plan, roster, 240);
+    expect(l.rotation[newStarter.id]).toBeGreaterThanOrEqual(15);
+    expect(total(l.rotation)).toBe(240);
+  });
+
   it("replaces a hurt starter with a healthy player at his position", () => {
     const hurtRoster = roster.map((p, i) => (i === 0 ? hurt(p) : p));
     const l = resolveLineup(manual(), hurtRoster, 240);

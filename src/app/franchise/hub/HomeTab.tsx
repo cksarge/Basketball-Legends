@@ -2,6 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { addDays } from "@/career/calendar";
+import type { ScheduledGame } from "@/career/types";
 import { formatDate } from "@/career/format";
 import { primaryDevice } from "@/ui/game/primaryDevice";
 import { teamLabel } from "@/data/leagues";
@@ -13,12 +14,35 @@ import { franchisePending } from "@/franchise/match";
 import { loadFranchise } from "@/franchise/storage";
 import type { Franchise } from "@/franchise/types";
 import { runFranchiseSim, useFranchiseSim } from "@/state/franchiseSim";
+import { useFranchise } from "@/state/franchiseStore";
 import { useMatchStore } from "@/state/matchStore";
 import { findFranchiseSave } from "@/state/suspended";
 import { Button, Panel } from "@/ui/kit";
 import { useInputDevice } from "@/ui/MenuNavigator";
+import { MatchupPicker } from "@/ui/MatchupPicker";
 import { TeamLogo } from "@/ui/TeamLogo";
 import { toast } from "@/ui/Toaster";
+
+/** Who guards whom in the next game. */
+function GamePlanPanel({ f, game }: { f: Franchise; game: ScheduledGame }) {
+  const update = useFranchise((s) => s.update);
+  const running = useFranchiseSim((s) => s.running);
+  const opponent = game.homeId === f.teamId ? game.awayId : game.homeId;
+  const roster = (id: string) => f.rosters[id].map((p) => f.players[p]);
+  const mine = roster(f.teamId);
+  return (
+    <Panel title="Game plan">
+      <p className="mb-2 text-sm text-steel">For this game only. Matchups apply when you play man-to-man.</p>
+      <MatchupPicker
+        mine={mine.filter((p) => !p.injury)}
+        theirs={roster(opponent).filter((p) => !p.injury)}
+        value={f.plan.tactics}
+        disabled={running}
+        onChange={(tactics) => update((x) => ({ ...x, plan: { ...x.plan, tactics } }))}
+      />
+    </Panel>
+  );
+}
 
 export function HomeTab({ f, teams }: { f: Franchise; teams: Team[] }) {
   const router = useRouter();
@@ -129,6 +153,7 @@ export function HomeTab({ f, teams }: { f: Franchise; teams: Team[] }) {
           </>
         )}
       </Panel>
+      {ev.kind === "game" && <GamePlanPanel f={f} game={ev.game} />}
       <Panel title="Sim ahead">
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex flex-col gap-1 text-sm text-steel">

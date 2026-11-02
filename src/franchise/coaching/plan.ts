@@ -7,6 +7,8 @@ import { defaultRotation, spreadMinutes } from "../rotation";
 import type { TeamPlan } from "../types";
 
 const FATIGUE_MINUTES = 38;
+/** Nobody starts and sits: the least a starter plays, per 240 minutes. */
+const STARTER_MINUTES = 18;
 /** A rotation shorter than this leaves a healthy player's zero minutes worth a warning. */
 const THIN_ROTATION = 8;
 
@@ -45,7 +47,10 @@ export function resolveLineup(plan: TeamPlan, roster: Player[], totalMinutes: nu
   if (!wanted.some((p) => plan.minutes[p.id] > 0)) return { starters, rotation: orderFirst(starters, defaultRotation(healthy, totalMinutes)) };
   // someone filling in takes on the minutes of the starter he replaced
   const stoodInFor = new Map(starters.map((id, i) => [id, plan.starters[i]]));
-  const weight = (p: Player) => plan.minutes[p.id] || plan.minutes[stoodInFor.get(p.id) ?? ""] || 1;
+  const weight = (p: Player) => {
+    const planned = plan.minutes[p.id] || plan.minutes[stoodInFor.get(p.id) ?? ""] || 0;
+    return starters.includes(p.id) ? Math.max(planned, (STARTER_MINUTES * totalMinutes) / 240) : planned;
+  };
   const minutes = spreadMinutes(wanted.map(weight), totalMinutes);
   return { starters, rotation: orderFirst(starters, Object.fromEntries(wanted.map((p, i) => [p.id, minutes[i]]))) };
 }

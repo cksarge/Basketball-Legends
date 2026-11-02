@@ -38,6 +38,24 @@ describe("franchise store", () => {
     expect(useFranchise.getState().franchise?.revision).toBe(1);
   });
 
+  it("saves quick changes one after another", async () => {
+    await start();
+    const { update } = useFranchise.getState();
+    const done = await Promise.all([
+      update((f) => ({ ...f, date: "2026-12-25" })),
+      update((f) => ({ ...f, settings: { ...f.settings, closeGameMargin: 3 } })),
+      update((f) => ({ ...f, plan: { ...f.plan, practice: "defense" } })),
+    ]);
+    expect(done).toEqual([true, true, true]);
+    expect(useFranchise.getState().status).toBe("ready");
+    expect(useFranchise.getState().franchise).toMatchObject({
+      date: "2026-12-25",
+      revision: 3,
+      settings: { closeGameMargin: 3 },
+      plan: { practice: "defense" },
+    });
+  });
+
   it("goes stale instead of overwriting changes from another tab", async () => {
     const f = await start();
     await commitFranchise({ ...f, date: "2027-01-01" }, teams[0]);
