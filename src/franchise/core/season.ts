@@ -3,6 +3,7 @@ import { addDays } from "@/career/calendar";
 import type { IsoDate, ScheduledGame } from "@/career/types";
 import type { Player, Team } from "@/engine/types";
 import { addLine, emptyLine, type StatLine } from "@/game/sim/stats";
+import { resolveLineup } from "../coaching/plan";
 import { simBox, type BoxInput, type BoxResult, type BoxSide } from "../boxsim";
 import { seasonAwards } from "./awards";
 import { leagueModule } from "../leagues";
@@ -30,6 +31,7 @@ export function dueGame(f: Franchise): ScheduledGame | null {
 
 function boxSide(f: Franchise, teamId: string): BoxSide {
   const roster = f.rosters[teamId].map((id) => f.players[id]);
+  if (teamId === f.teamId) return { teamId, roster, ...resolveLineup(f.plan, roster, leagueTotalMinutes(f)), tactics: f.plan.tactics };
   const rotation = defaultRotation(roster, leagueTotalMinutes(f));
   return { teamId, roster, rotation, starters: Object.keys(rotation).slice(0, 5) };
 }

@@ -57,6 +57,24 @@ const DEFENSE_GAIN = 0.021;
 const USAGE_SCALE = 20;
 /** Chance a player who plays all 48 minutes gets hurt. */
 const INJURY_PER_48 = 0.0225;
+/** What a defense does to the offense facing it, read from the real engine's tactics baseline. */
+const SCHEMES: Record<
+  TeamTactics["defense"],
+  { three: number; twoMake: number; threeMake: number; turnover: number; steal: number; foul: number; assist: number }
+> = {
+  man: { three: 0, twoMake: 0, threeMake: 0, turnover: 0, steal: 0, foul: 0, assist: 0 },
+  zone23: { three: 0.1, twoMake: -0.015, threeMake: 0, turnover: -0.012, steal: 0, foul: -0.01, assist: 0.05 },
+  zone32: { three: -0.035, twoMake: 0.012, threeMake: -0.012, turnover: 0, steal: 0, foul: 0.03, assist: 0.03 },
+  press: { three: -0.05, twoMake: 0.018, threeMake: 0, turnover: 0.045, steal: 0.2, foul: 0.035, assist: 0 },
+};
+/** Offensive rebound chance per unit of crashBoards above the default. */
+const CRASH_GAIN = 0.1;
+const DEFAULT_CRASH = 0.4;
+/** A doubled player shoots less and passes more. */
+const DOUBLED = { usage: 0.72, passer: 1.5, make: -0.025 };
+const STAR_POTENTIAL = 88;
+/** Make rate per rating point between an assigned defender and the team's average. */
+const MATCHUP_GAIN = 0.0035;
 const INJURIES = [
   ["Sprained ankle", 2, 9],
   ["Sore knee", 1, 6],
@@ -67,6 +85,8 @@ const INJURIES = [
 
 interface Skater {
   p: Player;
+  /** Change in make rate from how the defense is playing this player. */
+  guarded: number;
   seconds: number;
   usage: number;
   threeShare: number;
@@ -105,6 +125,7 @@ function buildTeam(side: BoxSide, gameMinutes: number): Team {
     const share = seconds[i] / (gameMinutes * 5 * 60);
     return {
       p,
+      guarded: 0,
       seconds: seconds[i],
       usage: share * Math.exp((scoring - AVG.off) / USAGE_SCALE),
       threeShare: clamp(THREE_SHARE + (r.three - inside) * 0.008 + (lean - 0.5) * 0.3, 0.02, 0.85),
@@ -128,6 +149,24 @@ function buildTeam(side: BoxSide, gameMinutes: number): Team {
     handling: weighted((s) => avg(s.p.ratings.ballHandle, s.p.ratings.passAccuracy, s.p.ratings.iq)),
     score: 0,
   };
+}
+
+/** Doubles and assigned defenders change how a team's players score. */
+function applyDefense(off: Team, def: Team) {
+  const t = def.side.tactics;
+  for (const s of off.list) {
+    const doubled = t?.doubleTarget ? s.p.id === t.doubleTarget : t?.doubleTeamStars && s.p.potential > STAR_POTENTIAL;
+    if (doubled) {
+      s.usage *= DOUBLED.usage;
+      s.passer *= DOUBLED.passer;
+      s.guarded += DOUBLED.make;
+    }
+  }
+  for (const [mineId, theirId] of Object.entries(t?.matchups ?? {})) {
+    const stopper = def.list.find((s) => s.p.id === mineId);
+    const mark = off.list.find((s) => s.p.id === theirId);
+    if (stopper && mark) mark.guarded -= (avg(stopper.p.ratings.perimeterD, stopper.p.ratings.interiorD) - def.defense) * MATCHUP_GAIN;
+  }
 }
 
 function choose<T>(rng: Rng, items: T[], weight: (x: T) => number, skip?: T): T {
@@ -157,24 +196,25 @@ function shootFreeThrows(rng: Rng, s: Skater, n: number, line: StatLine, team: T
 function possession(rng: Rng, off: Team, def: Team, box: BoxScore, edge: number) {
   const lineOf = (s: Skater) => box[s.p.id];
   const shooter = choose(rng, off.list, (s) => s.usage);
-  const turnover = clamp(TURNOVER + (def.handling - off.handling) * 0.005, 0.08, 0.3);
+  const scheme = SCHEMES[def.side.tactics?.defense ?? "man"];
+  const turnover = clamp(TURNOVER + scheme.turnover + (def.handling - off.handling) * 0.005, 0.08, 0.3);
   if (rng.chance(turnover)) {
     lineOf(shooter).tov++;
-    if (rng.chance(STEAL_SHARE)) lineOf(choose(rng, def.list, (s) => s.steal)).stl++;
+    if (rng.chance(STEAL_SHARE + scheme.steal)) lineOf(choose(rng, def.list, (s) => s.steal)).stl++;
     return;
   }
   if (rng.chance(LOOSE_FOUL)) lineOf(choose(rng, def.list, (s) => s.foul)).pf++;
   const line = lineOf(shooter);
-  if (rng.chance(SHOOTING_FOUL)) {
+  if (rng.chance(SHOOTING_FOUL + scheme.foul)) {
     lineOf(choose(rng, def.list, (s) => s.foul)).pf++;
     shootFreeThrows(rng, shooter, 2, line, off);
     return;
   }
-  const three = rng.chance(shooter.threeShare);
+  const three = rng.chance(clamp(shooter.threeShare + scheme.three, 0.02, 0.85));
   const defense = (def.defense - AVG.def) * DEFENSE_GAIN;
   const make = three
-    ? THREE_MAKE + (shooter.three - AVG.three) * SHOOT_GAIN - defense + edge
-    : TWO_MAKE + (shooter.inside - AVG.off) * SHOOT_GAIN - defense + edge;
+    ? THREE_MAKE + scheme.threeMake + (shooter.three - AVG.three) * SHOOT_GAIN - defense + edge + shooter.guarded
+    : TWO_MAKE + scheme.twoMake + (shooter.inside - AVG.off) * SHOOT_GAIN - defense + edge + shooter.guarded;
   line.fga++;
   if (three) line.tpa++;
   if (rng.chance(clamp(make, 0.15, 0.8))) {
@@ -183,11 +223,12 @@ function possession(rng: Rng, off: Team, def: Team, box: BoxScore, edge: number)
     off.score += three ? 3 : 2;
     if (three) line.tpm++;
     else if (rng.chance(DUNK_SHARE * (shooter.dunk / AVG.off) ** 2)) line.dunks++;
-    if (rng.chance(ASSIST)) lineOf(choose(rng, off.list, (s) => s.passer, shooter)).ast++;
+    if (rng.chance(ASSIST + scheme.assist)) lineOf(choose(rng, off.list, (s) => s.passer, shooter)).ast++;
     return;
   }
   if (!three && rng.chance(BLOCK)) lineOf(choose(rng, def.list, (s) => s.block)).blk++;
-  const offBoard = clamp(OFFENSIVE_REBOUND + (off.rebounding - def.rebounding) * 0.01, 0.12, 0.45);
+  const boards = ((off.side.tactics?.crashBoards ?? DEFAULT_CRASH) - DEFAULT_CRASH) * CRASH_GAIN;
+  const offBoard = clamp(OFFENSIVE_REBOUND + boards + (off.rebounding - def.rebounding) * 0.01, 0.12, 0.45);
   if (rng.chance(TEAM_REBOUND)) return;
   const crash = rng.chance(offBoard);
   const board = choose(rng, crash ? off.list : def.list, (s) => s.rebound);
@@ -215,6 +256,8 @@ export function simBox(i: BoxInput): BoxResult {
   const gameMinutes = i.quarterMinutes * i.periods;
   const home = buildTeam(i.home, gameMinutes);
   const away = buildTeam(i.away, gameMinutes);
+  applyDefense(home, away);
+  applyDefense(away, home);
   const box: BoxScore = {};
   for (const t of [home, away]) for (const s of t.list) box[s.p.id] = { ...emptyLine(), min: s.seconds };
   const edge = i.neutral ? 0 : HOME_EDGE;

@@ -5,6 +5,7 @@ import { uniformColors } from "@/game3d/character/uniformTexture";
 import type { MatchResult, PendingMatch } from "@/state/matchStore";
 import type { BoxResult } from "./boxsim";
 import type { ScheduledGame } from "@/career/types";
+import { resolveLineup } from "./coaching/plan";
 import { advancePostseason, applyGame } from "./core/season";
 import { seedNumber } from "./create";
 import { leagueModule } from "./leagues";
@@ -34,13 +35,30 @@ export function franchisePending(f: Franchise, game: ScheduledGame, teams: Team[
   const homeIsUs = home.id === f.teamId;
   const homeRoster = dressed(f, home.id),
     awayRoster = dressed(f, away.id);
+  const coached = (roster: Player[]) => {
+    if (f.plan.autoRotation) return { starters: startersOf(roster), tactics: f.plan.tactics };
+    const m = leagueModule(f.league);
+    return { ...resolveLineup(f.plan, roster, m.quarterMinutes * m.periods * 5), tactics: f.plan.tactics };
+  };
   const awayUniform = uniformColors(home, "home").base.toLowerCase() === uniformColors(away, "away").base.toLowerCase() ? "alt" : "away";
   return {
     mode: "franchise",
     league: f.league,
     arena: "pro",
-    home: { team: home, roster: homeRoster, starters: startersOf(homeRoster), uniform: "home", controllers: homeIsUs ? [controller] : [] },
-    away: { team: away, roster: awayRoster, starters: startersOf(awayRoster), uniform: awayUniform, controllers: homeIsUs ? [] : [controller] },
+    home: {
+      team: home,
+      roster: homeRoster,
+      uniform: "home",
+      controllers: homeIsUs ? [controller] : [],
+      ...(homeIsUs ? coached(homeRoster) : { starters: startersOf(homeRoster) }),
+    },
+    away: {
+      team: away,
+      roster: awayRoster,
+      uniform: awayUniform,
+      controllers: homeIsUs ? [] : [controller],
+      ...(homeIsUs ? { starters: startersOf(awayRoster) } : coached(awayRoster)),
+    },
     quarterMinutes: f.settings.quarterMinutes,
     returnTo: `/franchise/hub/?id=${encodeURIComponent(f.id)}`,
     seed: seedNumber(`${f.seed}:${game.id}`),
@@ -68,7 +86,11 @@ export function applyFinishedFranchiseMatch(f: Franchise, r: MatchResult, teams:
   const m = leagueModule(f.league);
   const g = f.season.games.find((x) => x.id === r.franchise!.gameId);
   if (!g || g.result) return f;
-  const starters = [...startersOf(dressed(f, g.homeId)), ...startersOf(dressed(f, g.awayId))];
+  const lineupOf = (id: string) => {
+    if (id !== f.teamId || f.plan.autoRotation) return startersOf(dressed(f, id));
+    return resolveLineup(f.plan, dressed(f, id), m.quarterMinutes * m.periods * 5).starters;
+  };
+  const starters = [...lineupOf(g.homeId), ...lineupOf(g.awayId)];
   const next = applyGame(f, g.id, resultToBox(r, m.periods), !r.simulated, starters, m.quarterMinutes / r.quarterMinutes);
   return advancePostseason(next, teams);
 }

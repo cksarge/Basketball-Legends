@@ -65,6 +65,42 @@ describe("franchisePending", () => {
   });
 });
 
+describe("the coaching plan in games", () => {
+  const coached = (): Franchise => {
+    const f = make();
+    const ids = f.rosters[team.id];
+    const starters = [ids[9], ids[1], ids[2], ids[3], ids[4]];
+    const minutes = Object.fromEntries(ids.slice(0, 10).map((id) => [id, 24]));
+    return { ...f, plan: { ...f.plan, autoRotation: false, starters, minutes, tactics: { ...f.plan.tactics, defense: "zone23" as const } } };
+  };
+
+  it("goes into a played game on the user's side only", () => {
+    const f = coached();
+    const g = firstGame(f);
+    const p = franchisePending(f, g, teams, "keyboard");
+    const [mine, theirs] = g.homeId === team.id ? [p.home, p.away] : [p.away, p.home];
+    expect(mine.starters).toEqual(f.plan.starters);
+    expect(mine.rotation?.[f.plan.starters[0]]).toBe(24);
+    expect(mine.tactics?.defense).toBe("zone23");
+    expect(theirs.tactics).toBeUndefined();
+    expect(theirs.rotation).toBeUndefined();
+  });
+
+  it("leaves rotation to the game on auto", () => {
+    const f = make();
+    const g = firstGame(f);
+    const p = franchisePending(f, g, teams, "keyboard");
+    expect((g.homeId === team.id ? p.home : p.away).rotation).toBeUndefined();
+  });
+
+  it("starts the chosen players in a simmed game", () => {
+    let f = coached();
+    for (let i = 0; i < 30 && !f.season.games.some((g) => g.result && (g.homeId === team.id || g.awayId === team.id)); i++)
+      f = simDay(f, teams, { includeUser: true }).franchise;
+    expect(f.season.stats[f.plan.starters[0]]).toMatchObject({ gs: 1 });
+  });
+});
+
 describe("resultToBox", () => {
   it("counts overtimes past regulation", () => {
     expect(resultToBox(result(make(), { periods: 6 }), 4).overtimes).toBe(2);
