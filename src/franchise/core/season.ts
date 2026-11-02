@@ -150,7 +150,7 @@ export function applyGame(f: Franchise, gameId: string, r: BoxResult, played: bo
 export function advancePostseason(f: Franchise, teams: Team[]): Franchise {
   const next = leagueModule(f.league).postseason(f, teams);
   if (next.phase !== "offseason" || f.phase === "offseason") return next;
-  return { ...next, season: { ...next.season, awards: seasonAwards(next, teams) } };
+  return { ...next, offseason: { step: "review", report: null }, season: { ...next.season, awards: seasonAwards(next, teams) } };
 }
 
 /** Is a game close enough after three quarters to ask the user to finish it? */

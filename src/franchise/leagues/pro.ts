@@ -1,5 +1,5 @@
 // The pro league in Franchise: the 82-game schedule, play-in and best-of-seven playoffs.
-import { addDays, proCalendar } from "@/career/calendar";
+import { addDays, draftCalendar, iso, proCalendar } from "@/career/calendar";
 import { standings } from "@/career/hs/sim";
 import { nextSeries, seriesWins } from "@/career/pro/bracket";
 import { generateProSchedule } from "@/career/pro/schedule";
@@ -77,4 +77,13 @@ export const proLeague: LeagueModule = {
   periods: 4,
   schedule: (teams, year, seed) => generateProSchedule(teams, year, seed),
   postseason,
+  offseasonSteps: ["review", "progress", "lottery", "draft", "contracts", "freeAgency", "camp"],
+  offseasonDate: (step, year) => {
+    if (step === "lottery") return iso(year + 1, 6, 18);
+    if (step === "draft") return draftCalendar(year + 1).draft;
+    if (step === "contracts") return iso(year + 1, 6, 29);
+    if (step === "freeAgency") return iso(year + 1, 7, 1);
+    if (step === "camp") return proCalendar(year + 1).camp;
+    return null;
+  },
 };

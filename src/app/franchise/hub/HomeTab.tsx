@@ -7,7 +7,6 @@ import { formatDate } from "@/career/format";
 import { primaryDevice } from "@/ui/game/primaryDevice";
 import { teamLabel } from "@/data/leagues";
 import type { Team } from "@/engine/types";
-import { fullName } from "@/engine/player";
 import { dueGame, nextFranchiseEvent, startFourth } from "@/franchise/core/season";
 import { leagueModule } from "@/franchise/leagues";
 import { fourthPending, franchisePending } from "@/franchise/match";
@@ -22,6 +21,7 @@ import { useInputDevice } from "@/ui/MenuNavigator";
 import { MatchupPicker } from "@/ui/MatchupPicker";
 import { TeamLogo } from "@/ui/TeamLogo";
 import { toast } from "@/ui/Toaster";
+import { SeasonReview } from "./OffseasonTab";
 
 /** Who guards whom in the next game. */
 function GamePlanPanel({ f, game }: { f: Franchise; game: ScheduledGame }) {
@@ -44,7 +44,7 @@ function GamePlanPanel({ f, game }: { f: Franchise; game: ScheduledGame }) {
   );
 }
 
-export function HomeTab({ f, teams }: { f: Franchise; teams: Team[] }) {
+export function HomeTab({ f, teams, onOffseason }: { f: Franchise; teams: Team[]; onOffseason: () => void }) {
   const router = useRouter();
   const setPending = useMatchStore((s) => s.setPending);
   const device = useInputDevice((s) => s.device);
@@ -87,34 +87,15 @@ export function HomeTab({ f, teams }: { f: Franchise; teams: Team[] }) {
   const live = ev.kind === "game" && f.live?.gameId === ev.game.id ? f.live.partial : null;
   const dayAfter = until || addDays(f.date, 7);
 
-  if (ev.kind === "seasonEnd") {
-    const champ = f.season.championId;
-    const pick = (id: string) => f.season.awards.filter((a) => a.id === id);
+  if (ev.kind === "seasonEnd")
     return (
       <div className="flex flex-col gap-5">
-        {champ && (
-          <Panel>
-            <div className="flex items-center gap-4">
-              <TeamLogo team={byId(champ)} size={72} />
-              <p className="font-display text-3xl font-black">{teamLabel(byId(champ))} won the championship</p>
-            </div>
-          </Panel>
-        )}
-        <Panel title="Awards">
-          <ul className="flex flex-col gap-1">
-            {["mvp", "dpoy", "sixth", "finalsMvp"].flatMap(pick).map((a) => (
-              <li key={a.id}>
-                <span className="text-steel">{a.label}:</span> {fullName(f.players[a.playerId])}, {byId(a.teamId).name}
-              </li>
-            ))}
-          </ul>
-        </Panel>
+        <SeasonReview f={f} teams={teams} />
         <Panel>
-          <p className="text-steel">The offseason arrives in a later update. Your season is saved.</p>
+          <Button onClick={onOffseason}>Go to the offseason</Button>
         </Panel>
       </div>
     );
-  }
 
   return (
     <div className="flex flex-col gap-5">

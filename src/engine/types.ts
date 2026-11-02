@@ -203,6 +203,8 @@ export interface PlayerFile {
   service: number;
   /** Seasons in a row with this team. */
   teamSeasons: number;
+  /** Best overall so far, recorded each summer. */
+  peak?: number;
   draft?: { year: number; pick: number; teamId: string };
   /** The team that holds his veteran rights while he's a free agent. */
   rightsTeamId?: string;

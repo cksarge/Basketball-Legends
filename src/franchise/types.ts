@@ -107,6 +107,8 @@ export type OffseasonStep = "review" | "progress" | "lottery" | "draft" | "contr
 
 export interface ProgressReport {
   retired: string[];
+  /** Where each retired player finished. */
+  lastTeams: Record<string, string | null>;
   changes: { id: string; before: number; after: number }[];
 }
 

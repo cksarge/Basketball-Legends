@@ -140,7 +140,7 @@ export default function HowToPlay() {
       <H2>Franchise</H2>
       <p>
         Franchise mode is in beta. Pick a pro team from the main menu and run its season. All 30 teams play 82 games, then the play-in and playoffs decide a
-        champion. The offseason arrives in a later beta.
+        champion, and then the offseason sets up the next season.
       </p>
       <ul>
         <li>
@@ -165,6 +165,14 @@ export default function HowToPlay() {
         <li>
           <b>Game plan:</b> before a game, choose who guards whom and who gets double-teamed on the Home tab, or from the pause menu. A game plan lasts one
           game.
+        </li>
+        <li>
+          <b>Offseason:</b> after the Finals, the Offseason tab walks through player progress, the lottery, the draft and training camp, then the next season
+          starts.
+        </li>
+        <li>
+          <b>Scouting:</b> on the Draft tab, choose up to 12 prospects for your scouts to follow. Their rating ranges narrow every week. A rookie shows a range
+          until he plays.
         </li>
         <li>
           <b>Save slots:</b> Franchise has three of its own. Resume a saved game from the hub.

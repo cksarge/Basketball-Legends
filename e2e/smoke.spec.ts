@@ -104,7 +104,7 @@ test("create a franchise, reload the hub and find it on the franchise screen", a
 });
 
 test("sim a franchise season: results, leaders, a reload, Stop, and a champion", async ({ page }) => {
-  test.setTimeout(240_000);
+  test.setTimeout(360_000);
   const errors = watchErrors(page);
   await page.goto("franchise/new/");
   await page.getByRole("button", { name: /Phoenix/ }).click();
@@ -133,6 +133,31 @@ test("sim a franchise season: results, leaders, a reload, Stop, and a champion",
   await expect(page.getByText("The Finals").first()).toBeVisible();
   await page.getByRole("tab", { name: "Roster" }).click();
   await expect(page.getByRole("button", { name: "OVR" })).toBeVisible();
+  // the offseason, through to next season's opening day with a rookie on the roster
+  await page.getByRole("tab", { name: "Home" }).click();
+  await page.getByRole("button", { name: "Go to the offseason" }).click();
+  await page.getByRole("button", { name: "Continue to Player progress" }).click();
+  await expect(page.getByRole("heading", { name: "Your players" })).toBeVisible();
+  await page.getByRole("button", { name: "Continue to Draft lottery" }).click();
+  await expect(page.getByRole("heading", { name: "Lottery results" })).toBeVisible();
+  await page.getByRole("button", { name: "Continue to Draft", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Continue to Contracts" })).toBeDisabled();
+  await page.getByRole("button", { name: "Sim to my pick" }).click();
+  await expect(page.getByText("You're on the clock.")).toBeVisible();
+  await page.getByRole("button", { name: "Draft", exact: true }).first().click();
+  await expect(page.getByRole("heading", { name: "Draft results" })).toBeVisible();
+  await page.getByRole("button", { name: "Sim the draft" }).click();
+  await page.getByRole("button", { name: "Continue to Contracts" }).click();
+  await page.getByRole("button", { name: "Continue to Free agency" }).click();
+  await page.getByRole("button", { name: "Continue to Training camp" }).click();
+  await page.getByRole("button", { name: /^Start the \d{4} season$/ }).click();
+  await expect(page.getByRole("tab", { name: "Offseason" })).toHaveCount(0);
+  await page.getByRole("tab", { name: "Home" }).click();
+  await expect(page.getByRole("heading", { name: "Next game" })).toBeVisible();
+  await page.getByRole("tab", { name: "Roster" }).click();
+  await expect(page.getByRole("cell", { name: /^\d{2}-\d{2}$/ }).first()).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Next game" })).toBeVisible();
   expect(errors).toEqual([]);
 });
 

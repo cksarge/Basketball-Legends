@@ -1,6 +1,7 @@
 "use client";
 import { heightStr, playerOvr } from "@/engine/player";
 import type { Player } from "@/engine/types";
+import { shownOvr } from "@/franchise/pro/scouting";
 import type { Franchise } from "@/franchise/types";
 import { Panel } from "@/ui/kit";
 import { SortTable, type Column } from "@/ui/SortTable";
@@ -20,7 +21,7 @@ export function RosterTab({ f }: { f: Franchise }) {
     { key: "pos", label: "Pos", text: true, value: (p) => p.pos },
     { key: "age", label: "Age", value: (p) => p.age },
     { key: "ht", label: "Ht", value: (p) => p.heightIn, render: (p) => heightStr(p.heightIn) },
-    { key: "ovr", label: "OVR", value: playerOvr },
+    { key: "ovr", label: "OVR", value: (p) => (p.file?.range ? (p.file.range.ovr[0] + p.file.range.ovr[1]) / 2 : playerOvr(p)), render: shownOvr },
     { key: "gp", label: "GP", value: (p) => line(p)?.gp ?? 0 },
     { key: "gs", label: "GS", value: (p) => line(p)?.gs ?? 0 },
     { key: "ppg", label: "PPG", value: (p) => per(p, "pts") },

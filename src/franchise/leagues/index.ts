@@ -1,7 +1,7 @@
 // What a league has to provide to run in Franchise. College and high school add their own later.
 import type { IsoDate, ScheduledGame } from "@/career/types";
 import type { LeagueId, Team } from "@/engine/types";
-import type { Franchise } from "../types";
+import type { Franchise, OffseasonStep } from "../types";
 import { proLeague } from "./pro";
 
 export interface LeagueModule {
@@ -12,6 +12,10 @@ export interface LeagueModule {
   schedule(teams: Team[], year: number, seed: string): ScheduledGame[];
   /** Creates the postseason games that are due and advances series. */
   postseason(f: Franchise, teams: Team[]): Franchise;
+  /** The summer, in order. */
+  offseasonSteps: OffseasonStep[];
+  /** When a step happens, for the season starting in this year. */
+  offseasonDate(step: OffseasonStep, year: number): IsoDate | null;
 }
 
 export function leagueModule(id: LeagueId): LeagueModule {

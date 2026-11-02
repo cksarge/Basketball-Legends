@@ -80,16 +80,19 @@ export function leagueProgress(f: Franchise): { franchise: Franchise; report: Pr
   const mine = new Set(f.rosters[f.teamId]);
   const players = { ...f.players };
   const gone = new Set<string>();
+  const lastTeams: ProgressReport["lastTeams"] = {};
   const changes: ProgressReport["changes"] = [];
   for (const [id, p] of Object.entries(f.players)) {
     const rng = new Rng(`${f.seed}:progress:${year}:${id}`);
-    const next = progressPlayer(p, rng, mine.has(id) ? bonus : 0);
+    const grown = progressPlayer(p, rng, mine.has(id) ? bonus : 0);
+    const next = { ...grown, file: { ...grown.file!, peak: Math.max(grown.file?.peak ?? 0, playerOvr(p), playerOvr(grown)) } };
     // a deal that's in its last year ends this summer
     if (retires(next, rng, (p.contract?.years ?? 0) > 1)) {
       const out = { ...next, teamId: null };
       delete out.contract;
       players[id] = out;
       gone.add(id);
+      lastTeams[id] = p.teamId;
       continue;
     }
     players[id] = next;
@@ -99,6 +102,6 @@ export function leagueProgress(f: Franchise): { franchise: Franchise; report: Pr
   const table = (t: Record<string, string[]>) => Object.fromEntries(Object.entries(t).map(([k, ids]) => [k, without(ids)]));
   return {
     franchise: { ...f, players, rosters: table(f.rosters), devRosters: table(f.devRosters), freeAgents: without(f.freeAgents) },
-    report: { retired: [...gone], changes },
+    report: { retired: [...gone], lastTeams, changes },
   };
 }

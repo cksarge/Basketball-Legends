@@ -29,6 +29,10 @@ In testing at legends.carterscoding.com/beta/. These notes grow as Franchise mod
 - **Close games only:** turn it on and sims stop whenever one of your games is close going into the 4th quarter.
 - **Review fixes:** normal substitutions in 4th-quarter games, Restart starts the period clean, a play called on defense waits for your next possession, the call button moves through your whole book, and injuries are as likely in close-game sims as in any other game.
 - The offseason arrives in a later beta, so a franchise currently ends with the first champion.
+- **Seasons that keep going:** after the Finals, a stepped offseason runs season review, player progress, the lottery, the draft, then training camp and a new season.
+- **A living league:** every player ages, grows or fades, and veterans retire. Your development coach and each player's work ethic matter.
+- **Scouting:** each class of 70 prospects is there all season. Pick up to 12 for your scouts to follow, and their rating ranges narrow week by week. A rookie's true rating stays uncertain until he plays.
+- **The draft:** a weighted lottery sets the top four picks, then two rounds with rookie-scale deals. Make your picks, sim to your next one, or sim the rest. Contracts and free agency are still to come.
 
 ## v0.3.0 — November 1, 2026
 
