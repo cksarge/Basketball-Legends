@@ -36,6 +36,7 @@ function measure(tactics: Partial<TeamTactics>, oppTactics?: Partial<TeamTactics
 }
 const base = measure({});
 
+const settings: Omit<typeof baseline, "systems"> = baseline;
 type Check = [
   name: keyof typeof baseline,
   side: "own" | "opp",
