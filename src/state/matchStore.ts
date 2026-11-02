@@ -109,6 +109,8 @@ export interface MatchResult {
   career?: CareerGameRef;
   careerRun?: string;
   franchise?: FranchiseGameRef;
+  /** The game began here, partway through. */
+  startFrom?: LateStart;
   /** Park games: who won (for the next-game-up line) and the results shown on the park screen. */
   park?: { youWon: boolean; title: string; lines: { name: string; value: string; you?: boolean }[] };
 }

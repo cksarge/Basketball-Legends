@@ -38,6 +38,14 @@ describe("hub sims", () => {
     expect(await run).toBe("done");
   });
 
+  it("refuses changes while it runs, instead of colliding with its saves", async () => {
+    const run = runFranchiseSim({ until: addDays(f.date, 3), includeUser: true }, teams);
+    expect(await useFranchise.getState().update((x) => ({ ...x, plan: { ...x.plan, practice: "defense" } }))).toBe(false);
+    await run;
+    expect(useFranchise.getState().status).toBe("ready");
+    expect(await useFranchise.getState().update((x) => ({ ...x, plan: { ...x.plan, practice: "defense" } }))).toBe(true);
+  });
+
   it("reports stopped when stopped", async () => {
     const run = runFranchiseSim({ until: addDays(f.date, 30), includeUser: true }, teams);
     stopFranchiseSim();

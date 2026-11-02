@@ -238,6 +238,7 @@ export function GameView({ pending }: { pending: PendingMatch }) {
         return !best || gs > best.gs ? { id: p.id, gs } : best;
       }, null);
       const result: MatchResult = {
+        startFrom: pending.startFrom,
         mode: pending.mode,
         homeId: s.teams[0].team.id,
         awayId: s.teams[1].team.id,
@@ -833,7 +834,9 @@ function PauseMenu({
                       ? "This game will be lost. Choose Save game to keep it in a slot."
                       : "Progress in this game will be lost."
                 : confirm === "restart"
-                  ? "The score and stats reset to zero."
+                  ? match.state.cfg.startFrom
+                    ? "This period starts over from the score it began with."
+                    : "The score and stats reset to zero."
                   : "The CPU plays out the remaining time for both teams."}
             </p>
             <div className="mt-5 flex justify-end gap-2">

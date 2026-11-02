@@ -195,6 +195,22 @@ describe("calling plays", () => {
     expect([press(), press(), press()]).toEqual(["floppy", "backdoor", "floppy"]);
   });
 
+  it("moves on to the next play each possession, not back to the first", () => {
+    const m = coached(["floppy", "backdoor"]);
+    m.nextPlay(0);
+    m.state.teams[0].playCall = null;
+    m.nextPlay(0);
+    expect(m.state.teams[0].playCall).toBe("backdoor");
+  });
+
+  it("holds a play called on defense for the next possession", () => {
+    const m = coached(["floppy"]);
+    m.state.offense = 1;
+    expect(m.callPlay(0, "floppy")).toBe(true);
+    (m as unknown as { changePossessionTracking(t: 0 | 1): void }).changePossessionTracking(0);
+    expect(m.state.teams[0].playCall).toBe("floppy");
+  });
+
   it("still calls a pick-and-roll with no system", () => {
     const m = new Match({ ...setup({}, 8), fast: true });
     m.nextPlay(0);

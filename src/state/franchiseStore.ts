@@ -15,6 +15,8 @@ interface FranchiseStore {
   team: Team | null;
   status: "idle" | "loading" | "ready" | "missing" | "error" | "stale";
   error: string | null;
+  /** A sim is saving, so changes wait until it's done. */
+  locked: boolean;
   open: (id: string) => Promise<void>;
   /** Pick up changes saved by a sim, without a loading screen. */
   refresh: () => Promise<void>;
@@ -33,6 +35,7 @@ export const useFranchise = create<FranchiseStore>((set, get) => ({
   team: null,
   status: "idle",
   error: null,
+  locked: false,
   open: async (id) => {
     set({ status: "loading", error: null });
     try {
@@ -56,7 +59,7 @@ export const useFranchise = create<FranchiseStore>((set, get) => ({
   update: (fn, changedPlayers) => {
     const run = async () => {
       const cur = get().franchise;
-      if (!cur || get().status !== "ready") return false;
+      if (!cur || get().status !== "ready" || get().locked) return false;
       try {
         const saved = await commitFranchise(fn(cur), get().team ?? undefined, changedPlayers);
         set({ franchise: saved });

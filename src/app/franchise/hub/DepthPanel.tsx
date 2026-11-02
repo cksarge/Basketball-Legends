@@ -3,8 +3,9 @@ import { fullName, playerOvr } from "@/engine/player";
 import { POSITIONS, type Player } from "@/engine/types";
 import { defaultPlan, depthWarnings, resolveLineup, type DepthWarning } from "@/franchise/coaching/plan";
 import { leagueModule } from "@/franchise/leagues";
-import type { Franchise, TeamPlan } from "@/franchise/types";
+import type { Franchise } from "@/franchise/types";
 import { Button, Panel, Select, Slider, Toggle } from "@/ui/kit";
+import type { PlanPatch } from "./CoachingTab";
 
 const WARNING: Record<DepthWarning["kind"], string> = {
   fatigue: "will tire: over 38 minutes",
@@ -14,7 +15,7 @@ const WARNING: Record<DepthWarning["kind"], string> = {
 };
 const label = (p: Player) => `${fullName(p)} (${p.pos} ${playerOvr(p)})`;
 
-export function DepthPanel({ f, setPlan }: { f: Franchise; setPlan: (p: Partial<TeamPlan>) => void }) {
+export function DepthPanel({ f, setPlan }: { f: Franchise; setPlan: (p: PlanPatch) => void }) {
   const roster = f.rosters[f.teamId].map((id) => f.players[id]).sort((a, b) => playerOvr(b) - playerOvr(a));
   const league = leagueModule(f.league);
   const total = league.quarterMinutes * league.periods * 5;
@@ -26,13 +27,14 @@ export function DepthPanel({ f, setPlan }: { f: Franchise; setPlan: (p: Partial<
     const l = resolveLineup({ ...plan, autoRotation: true }, roster, total);
     setPlan({ autoRotation: false, starters: l.starters, minutes: l.rotation });
   };
-  const setStarter = (slot: number, id: string) => {
-    const starters = [...plan.starters];
-    const was = starters.indexOf(id);
-    if (was >= 0) starters[was] = starters[slot];
-    starters[slot] = id;
-    setPlan({ starters });
-  };
+  const setStarter = (slot: number, id: string) =>
+    setPlan((x) => {
+      const starters = [...x.starters];
+      const was = starters.indexOf(id);
+      if (was >= 0) starters[was] = starters[slot];
+      starters[slot] = id;
+      return { starters };
+    });
 
   return (
     <Panel title="Depth chart">
@@ -71,7 +73,7 @@ export function DepthPanel({ f, setPlan }: { f: Franchise; setPlan: (p: Partial<
                   max={total / 5}
                   step={1}
                   format={(v) => `${v} min`}
-                  onChange={(v) => setPlan({ minutes: { ...plan.minutes, [p.id]: v } })}
+                  onChange={(v) => setPlan((x) => ({ minutes: { ...x.minutes, [p.id]: v } }))}
                 />
               </li>
             ))}

@@ -184,12 +184,14 @@ export function HomeTab({ f, teams }: { f: Franchise; teams: Team[] }) {
       </Panel>
       {ev.kind === "game" && <GamePlanPanel f={f} game={ev.game} />}
       <Panel title="Sim ahead">
-        <Toggle
-          label="Close games only"
-          hint={`Sims your games, and stops if the 4th quarter starts within ${f.settings.closeGameMargin} points`}
-          checked={f.settings.closeGamesOnly}
-          onChange={(closeGamesOnly) => update((x) => ({ ...x, settings: { ...x.settings, closeGamesOnly } }))}
-        />
+        <fieldset disabled={running}>
+          <Toggle
+            label="Close games only"
+            hint={`Sims your games, and stops if the 4th quarter starts within ${f.settings.closeGameMargin} points`}
+            checked={f.settings.closeGamesOnly}
+            onChange={(closeGamesOnly) => update((x) => ({ ...x, settings: { ...x.settings, closeGamesOnly } }))}
+          />
+        </fieldset>
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex flex-col gap-1 text-sm text-steel">
             Sim through

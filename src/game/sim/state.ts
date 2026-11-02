@@ -229,6 +229,8 @@ export interface TeamGameState {
   /** Minutes a coach has planned for specific players; they check in when they fall behind. */
   planned?: Record<string, number>;
   playCall: string | null;
+  /** The last play called, so the call button moves on to the next. */
+  playLast?: string;
   /** When the called play runs out. */
   playUntil?: number;
   /** The possession that last picked a play. */
@@ -236,6 +238,8 @@ export interface TeamGameState {
 }
 
 export interface MatchConfig {
+  /** The game began partway through. */
+  startFrom?: boolean;
   league: import("@/engine/types").LeagueId;
   rules: LeagueRules;
   court: CourtSpec;

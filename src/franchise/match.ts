@@ -114,7 +114,7 @@ export function applyFinishedFranchiseMatch(f: Franchise, r: MatchResult, teams:
   };
   const starters = [...lineupOf(g.homeId), ...lineupOf(g.awayId)];
   const scale = m.quarterMinutes / r.quarterMinutes;
-  const earlier = f.live?.gameId === g.id ? f.live.partial.box : undefined;
+  const earlier = r.startFrom?.box;
   const next = applyGame(f, g.id, resultToBox(r, m.periods), !r.simulated, starters, scale, earlier && lastPeriodScaled(r.box, earlier, scale));
   const done = { ...next };
   delete done.live;

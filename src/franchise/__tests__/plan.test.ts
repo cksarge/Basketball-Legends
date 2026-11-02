@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { generateRoster } from "@/engine/player";
 import type { Player, Team } from "@/engine/types";
 import { SYSTEMS } from "@/game/sim/playbook";
-import { defaultPlan, depthWarnings, resolveLineup, setSystem, togglePlay } from "../coaching/plan";
+import { defaultPlan, depthWarnings, resolveLineup, setPlayerFocus, setPlayerPosition, setSystem, togglePlay } from "../coaching/plan";
 import { defaultRotation } from "../rotation";
 import type { TeamPlan } from "../types";
 
@@ -108,6 +108,26 @@ describe("the playbook", () => {
     expect(plan.tactics.plays).toHaveLength(6);
     expect(togglePlay(plan, "postEntry").tactics.plays).toHaveLength(6);
     expect(togglePlay(setSystem(defaultPlan(), "isoStar"), "clearout").tactics.plays).toEqual(["clearout"]);
+  });
+});
+
+describe("player plans", () => {
+  const id = roster[0].id;
+  it("keeps a position in progress when the focus goes back to the team's", () => {
+    const plan = { ...defaultPlan(), playerPlans: { [id]: { focus: "shooting", newPos: "C", posWeeks: 11 } as const } };
+    expect(setPlayerFocus(plan, id, "").playerPlans[id]).toEqual({ focus: "", newPos: "C", posWeeks: 11 });
+  });
+
+  it("drops a plan with nothing left in it", () => {
+    const plan = { ...defaultPlan(), playerPlans: { [id]: { focus: "shooting" } } };
+    expect(setPlayerFocus(plan, id, "").playerPlans[id]).toBeUndefined();
+    const learning = { ...defaultPlan(), playerPlans: { [id]: { focus: "", newPos: "C", posWeeks: 3 } as const } };
+    expect(setPlayerPosition(learning, id, undefined).playerPlans[id]).toBeUndefined();
+  });
+
+  it("starts the clock on a new position, and keeps the focus", () => {
+    const plan = { ...defaultPlan(), playerPlans: { [id]: { focus: "defense" } } };
+    expect(setPlayerPosition(plan, id, "C").playerPlans[id]).toEqual({ focus: "defense", newPos: "C", posWeeks: 0 });
   });
 });
 

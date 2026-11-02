@@ -27,6 +27,7 @@ In testing at legends.carterscoding.com/beta/. These notes grow as Franchise mod
 - **Call plays:** the call button works through your plays during a game, or pick one from the Plays tab in the pause menu.
 - **Play the 4th quarter:** jump in with the score from three simulated quarters.
 - **Close games only:** turn it on and sims stop whenever one of your games is close going into the 4th quarter.
+- **Review fixes:** normal substitutions in 4th-quarter games, Restart starts the period clean, a play called on defense waits for your next possession, the call button moves through your whole book, and injuries are as likely in close-game sims as in any other game.
 - The offseason arrives in a later beta, so a franchise currently ends with the first champion.
 
 ## v0.3.0 — November 1, 2026

@@ -5,7 +5,7 @@ import { POSITIONS, type PlayId, type Player, type Position, type SystemId } fro
 import { DEFAULT_TACTICS } from "@/game/sim/match";
 import { SYSTEMS } from "@/game/sim/playbook";
 import { defaultRotation, spreadMinutes } from "../rotation";
-import type { TeamPlan } from "../types";
+import type { PlayerPlan, TeamPlan } from "../types";
 
 const FATIGUE_MINUTES = 38;
 /** Nobody starts and sits: the least a starter plays, per 240 minutes. */
@@ -35,6 +35,23 @@ export function togglePlay(plan: TeamPlan, id: PlayId): TeamPlan {
   const next = plays.includes(id) ? plays.filter((p) => p !== id) : [...plays, id];
   if (!next.length || next.length > MAX_PLAYS) return plan;
   return { ...plan, tactics: { ...plan.tactics, plays: next } };
+}
+
+function withPlayerPlan(plan: TeamPlan, id: string, next: PlayerPlan): TeamPlan {
+  const playerPlans = { ...plan.playerPlans };
+  delete playerPlans[id];
+  return { ...plan, playerPlans: next.focus || next.newPos ? { ...playerPlans, [id]: next } : playerPlans };
+}
+
+/** Sets a player's own focus. An empty focus follows the team's. */
+export function setPlayerFocus(plan: TeamPlan, id: string, focus: string): TeamPlan {
+  return withPlayerPlan(plan, id, { ...plan.playerPlans[id], focus });
+}
+
+/** Starts a player learning a new position, or stops. */
+export function setPlayerPosition(plan: TeamPlan, id: string, newPos: Position | undefined): TeamPlan {
+  const focus = plan.playerPlans[id]?.focus ?? "";
+  return withPlayerPlan(plan, id, newPos ? { focus, newPos, posWeeks: 0 } : { focus });
 }
 
 export interface Lineup {

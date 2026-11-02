@@ -2,7 +2,9 @@
 import { TRAINING } from "@/career/pro/season";
 import { fullName, playerOvr } from "@/engine/player";
 import { POSITIONS, type Position } from "@/engine/types";
-import type { Franchise, PlayerPlan, PracticeFocus, TeamPlan } from "@/franchise/types";
+import { setPlayerFocus, setPlayerPosition } from "@/franchise/coaching/plan";
+import type { Franchise, PracticeFocus } from "@/franchise/types";
+import type { PlanPatch } from "./CoachingTab";
 import { Panel, Select } from "@/ui/kit";
 
 const TEAM: { value: PracticeFocus; label: string }[] = [
@@ -15,13 +17,8 @@ const TEAM: { value: PracticeFocus; label: string }[] = [
 ];
 const NONE = "";
 
-export function PracticePanel({ f, setPlan }: { f: Franchise; setPlan: (p: Partial<TeamPlan>) => void }) {
+export function PracticePanel({ f, setPlan }: { f: Franchise; setPlan: (p: PlanPatch) => void }) {
   const roster = f.rosters[f.teamId].map((id) => f.players[id]).sort((a, b) => playerOvr(b) - playerOvr(a));
-  const setPlayer = (id: string, plan: PlayerPlan | null) => {
-    const playerPlans = { ...f.plan.playerPlans };
-    delete playerPlans[id];
-    setPlan({ playerPlans: plan ? { ...playerPlans, [id]: plan } : playerPlans });
-  };
   return (
     <div className="flex flex-col gap-5">
       <Panel title="Team practice">
@@ -44,7 +41,7 @@ export function PracticePanel({ f, setPlan }: { f: Franchise; setPlan: (p: Parti
                   label={`${fullName(p)} focus`}
                   value={own?.focus ?? NONE}
                   options={[{ value: NONE, label: "Team focus" }, ...TRAINING.map((t) => ({ value: t.id, label: t.label }))]}
-                  onChange={(focus) => setPlayer(p.id, focus ? { ...own, focus } : null)}
+                  onChange={(focus) => setPlan((x) => setPlayerFocus(x, p.id, focus))}
                 />
                 <Select
                   label="New position"
@@ -53,7 +50,7 @@ export function PracticePanel({ f, setPlan }: { f: Franchise; setPlan: (p: Parti
                     { value: NONE, label: "None" },
                     ...POSITIONS.filter((x) => x !== p.pos && x !== p.secondaryPos).map((x) => ({ value: x, label: x })),
                   ]}
-                  onChange={(v) => setPlayer(p.id, { focus: own?.focus ?? "", posWeeks: 0, ...(v ? { newPos: v as Position } : {}) })}
+                  onChange={(v) => setPlan((x) => setPlayerPosition(x, p.id, v ? (v as Position) : undefined))}
                 />
               </li>
             );

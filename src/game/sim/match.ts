@@ -197,6 +197,7 @@ export class Match {
       boundaryAssist: setup.boundaryAssist ?? true,
       practice: setup.practice ?? false,
       park: setup.park ?? null,
+      startFrom: !!setup.startFrom,
     };
     this.rng = new Rng(cfg.seed);
     const mkTeam = (s: MatchSetup["home"], side: 1 | -1): TeamGameState => {
@@ -297,9 +298,10 @@ export class Match {
     });
     for (const [id, line] of Object.entries(from.box)) {
       if (!s.box[id]) continue;
-      s.box[id] = line;
+      s.box[id] = { ...line };
       const team = s.teams.find((t) => t.roster.some((p) => p.id === id))!;
-      team.minutes[id] = line.min;
+      // substitutions read minutes at this game's quarter length
+      team.minutes[id] = line.min * (s.cfg.quarterMinutes / s.cfg.rules.quarterMinutes);
     }
     // the second half is at the other end
     const half = s.cfg.rules.periods / 2;
@@ -2084,8 +2086,10 @@ export class Match {
         a.laneTime = 0;
         a.pickedUp = false;
       }
-      s.teams[0].playCall = null;
-      s.teams[1].playCall = null;
+      // a play called on defense waits for the ball
+      s.teams.forEach((t, ti) => {
+        if (ti !== newOffense || (t.playUntil ?? 0) < s.time) t.playCall = null;
+      });
       // half court: the new offense has to take it back past the arc
       if (s.park) s.park.cleared = false;
       // defensive human controller moves to the nearest defender of the ball
@@ -2940,6 +2944,8 @@ export class Match {
   callPlay(ti: TeamIdx, id: PlayId): boolean {
     if (!this.playBook(ti).includes(id)) return false;
     setPlay(this, ti, PLAYS[id]);
+    this.state.teams[ti].playLast = id;
+    if (this.state.offense !== ti) this.state.teams[ti].playUntil! += this.state.cfg.rules.shotClock ?? 30;
     this.emit({ t: "play", team: ti, name: PLAYS[id].label });
     return true;
   }
@@ -2951,7 +2957,7 @@ export class Match {
       this.state.teams[ti].playCall = "pnr";
       return;
     }
-    const at = book.indexOf(this.state.teams[ti].playCall as PlayId);
+    const at = book.indexOf(this.state.teams[ti].playLast as PlayId);
     this.callPlay(ti, book[(at + 1) % book.length]);
   }
 

@@ -25,6 +25,7 @@ export async function runFranchiseSim(range: Omit<SimRange, "id">, teams: Team[]
   if (handle) return "busy";
   stopped = false;
   useFranchiseSim.setState({ running: true, date: f.date });
+  useFranchise.setState({ locked: true });
   handle = startSim({ ...range, id: f.id }, teams, (date) => useFranchiseSim.setState({ date }));
   try {
     await handle.done;
@@ -36,6 +37,7 @@ export async function runFranchiseSim(range: Omit<SimRange, "id">, teams: Team[]
     else useFranchise.setState({ status: "error", error: "The sim stopped before finishing. Everything up to the last finished day is saved." });
     return "failed";
   } finally {
+    useFranchise.setState({ locked: false });
     handle = null;
     useFranchiseSim.setState({ running: false, date: null });
   }

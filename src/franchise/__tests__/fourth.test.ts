@@ -44,6 +44,7 @@ function played(f: Franchise): MatchResult {
     simulated: false,
     injuries: [],
     franchise: { franchiseId: f.id, gameId: g.id },
+    startFrom: { period: 4, homeScore: f.live!.partial.home, awayScore: f.live!.partial.away, box: f.live!.partial.box },
   };
 }
 
@@ -94,6 +95,17 @@ describe("playing the 4th quarter", () => {
     expect(after.live).toBeUndefined();
     const again = simDay(startFourth(f, g), teams, { includeUser: true, simLive: true }).franchise;
     expect(again.season.games.find((x) => x.id === g.id)!.result).toEqual(r);
+  });
+});
+
+describe("a full game finished while a partial is waiting", () => {
+  it("counts as a full game, and the partial goes", () => {
+    const f = startFourth(make(), gameOf(make()));
+    const id = f.rosters[team.id][0];
+    const r: MatchResult = { ...played(f), startFrom: undefined, box: { [id]: { ...emptyLine(), min: 720, pts: 12 } } };
+    const next = applyFinishedFranchiseMatch(f, r, teams);
+    expect(next.season.stats[id].pts).toBe(24);
+    expect(next.live).toBeUndefined();
   });
 });
 

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { generateRoster } from "@/engine/player";
 import type { Team } from "@/engine/types";
 import { finishPartial, nextFranchiseEvent, startFourth } from "../core/season";
-import { simQuarters, type BoxInput } from "../boxsim";
+import { finishBox, simBox, simQuarters, type BoxInput } from "../boxsim";
 import { createFranchise } from "../create";
 import { defaultRotation } from "../rotation";
 import type { Franchise } from "../types";
@@ -44,6 +44,20 @@ describe("simQuarters", () => {
   it("can end level", () => {
     const ties = Array.from({ length: 400 }, (_, i) => simQuarters(input(`t${i}`), 3)).filter((p) => p.home === p.away);
     expect(ties.length).toBeGreaterThan(0);
+  });
+});
+
+describe("injuries", () => {
+  it("happen as often in a game finished from a partial as in a whole one", () => {
+    let whole = 0,
+      split = 0;
+    for (let i = 0; i < 1500; i++) {
+      const g = input(`i${i}`);
+      whole += simBox(g).injuries.length;
+      split += finishBox(g, simQuarters(g, 3)).injuries.length;
+    }
+    expect(split).toBeGreaterThan(whole * 0.7);
+    expect(split).toBeLessThan(whole * 1.3);
   });
 });
 

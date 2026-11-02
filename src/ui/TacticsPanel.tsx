@@ -21,9 +21,23 @@ const pct = (v: number) => `${Math.round(v * 100)}%`;
 const pace = (v: number) => (v < 0.34 ? "Slow" : v < 0.67 ? "Normal" : "Fast");
 
 /** Coach settings for one team: pace, shot profile, defense, rebounding, double teams. */
-export function TacticsPanel({ value, onChange, compact }: { value: Partial<TeamTactics> | undefined; onChange: (t: TeamTactics) => void; compact?: boolean }) {
+export function TacticsPanel({
+  value,
+  onChange,
+  onPatch,
+  compact,
+}: {
+  value: Partial<TeamTactics> | undefined;
+  onChange: (t: TeamTactics) => void;
+  /** Also reports just what changed, for callers saving in the background. */
+  onPatch?: (patch: Partial<TeamTactics>) => void;
+  compact?: boolean;
+}) {
   const t: TeamTactics = { ...DEFAULT_TACTICS, ...(value ?? {}) };
-  const set = (patch: Partial<TeamTactics>) => onChange({ ...t, ...patch });
+  const set = (patch: Partial<TeamTactics>) => {
+    onChange({ ...t, ...patch });
+    onPatch?.(patch);
+  };
   return (
     <div className={compact ? "" : "flex flex-col"}>
       <Select label="Defense" hint={DEFENSE_HINTS[t.defense]} value={t.defense} options={DEFENSE_OPTIONS} onChange={(defense) => set({ defense })} />
