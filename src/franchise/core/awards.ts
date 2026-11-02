@@ -1,5 +1,6 @@
 // Stat leaders and the end-of-season awards.
 import { standings } from "@/career/hs/sim";
+import { fullName } from "@/engine/player";
 import type { Team } from "@/engine/types";
 import { gameScore, reb } from "@/game/sim/stats";
 import type { Award, Franchise, SeasonLine } from "../types";
@@ -36,6 +37,12 @@ export function leaders(f: Franchise, key: LeaderKey, limit = 10) {
     .map(([playerId, l]) => ({ playerId, teamId: f.players[playerId].teamId!, value: VALUE[key](l), gp: l.gp }))
     .sort((a, b) => b.value - a.value)
     .slice(0, limit);
+}
+
+/** A stats row's name and team. A retired player or free agent has no team. */
+export function leaderRow(f: Franchise, teams: Team[], id: string) {
+  const p = f.players[id];
+  return { name: fullName(p), team: teams.find((t) => t.id === p.teamId)?.abbrev ?? "" };
 }
 
 const impact = (l: SeasonLine) => (l.pts + reb(l) * 0.7 + l.ast * 0.9 + (l.stl + l.blk) * 1.2) / l.gp;

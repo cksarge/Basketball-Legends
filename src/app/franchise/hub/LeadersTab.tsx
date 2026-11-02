@@ -1,8 +1,8 @@
 "use client";
 import { useMemo } from "react";
-import { fullName } from "@/engine/player";
 import type { Team } from "@/engine/types";
 import { reb, type StatLine } from "@/game/sim/stats";
+import { leaderRow } from "@/franchise/core/awards";
 import type { Franchise, SeasonLine } from "@/franchise/types";
 import { Panel } from "@/ui/kit";
 import { SortTable, type Column } from "@/ui/SortTable";
@@ -22,8 +22,8 @@ export function LeadersTab({ f, teams }: { f: Franchise; teams: Team[] }) {
   );
   const stat = (key: keyof StatLine, label: string): Column<Row> => ({ key, label, value: (r) => avg(r.l, r.l[key]) });
   const columns: Column<Row>[] = [
-    { key: "name", label: "Player", text: true, value: (r) => fullName(f.players[r.id]) },
-    { key: "team", label: "Team", text: true, value: (r) => teams.find((t) => t.id === f.players[r.id].teamId)?.abbrev ?? "" },
+    { key: "name", label: "Player", text: true, value: (r) => leaderRow(f, teams, r.id).name },
+    { key: "team", label: "Team", text: true, value: (r) => leaderRow(f, teams, r.id).team },
     { key: "gp", label: "GP", value: (r) => r.l.gp },
     stat("pts", "PPG"),
     { key: "reb", label: "RPG", value: (r) => avg(r.l, reb(r.l)) },
