@@ -87,13 +87,14 @@ export function processWaivers(f: Franchise): { franchise: Franchise; changedPla
   const due = f.waivers.filter((w) => w.until <= f.date);
   if (!due.length) return { franchise: f, changedPlayers: [] };
   const claimants = Object.keys(f.rosters)
-    .filter((id) => id !== f.teamId && standardCount(f, id) < ROSTER_MAX)
+    .filter((id) => id !== f.teamId)
     .sort((a, b) => wins(f, a) - wins(f, b) || a.localeCompare(b));
   let next = f;
   for (const w of due) {
     const p = next.players[w.playerId];
     if (marketValue(next, p) >= p.contract!.salary)
       for (const teamId of claimants) {
+        if (standardCount(next, teamId) >= ROSTER_MAX) continue;
         const claimed = claimWaiver(next, teamId, w.playerId);
         if (claimed !== next) {
           next = claimed;

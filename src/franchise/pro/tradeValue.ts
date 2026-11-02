@@ -36,11 +36,11 @@ interface TeamRead {
   /** Team id -> 1 for the weakest team. */
   slot: Record<string, number>;
 }
-const reads = new WeakMap<object, TeamRead>();
+const reads = new WeakMap<object, WeakMap<object, TeamRead>>();
 
-/** Every team read once per roster state, since trade searches ask constantly. */
+/** Every team read once per league state, since trade searches ask constantly. The key has to change with anything the read uses, or a reloaded save would decide differently. */
 function teamRead(f: Franchise): TeamRead {
-  const hit = reads.get(f.rosters);
+  const hit = reads.get(f.players)?.get(f.season.games);
   if (hit) return hit;
   const ids = Object.keys(f.rosters);
   const strength = Object.fromEntries(ids.map((id) => [id, topEight(f, id)]));
@@ -51,7 +51,8 @@ function teamRead(f: Franchise): TeamRead {
   );
   const order = [...ids].sort((a, b) => score(a) - score(b));
   const read = { direction, slot: Object.fromEntries(order.map((id, i) => [id, i + 1])) };
-  reads.set(f.rosters, read);
+  if (!reads.has(f.players)) reads.set(f.players, new WeakMap());
+  reads.get(f.players)!.set(f.season.games, read);
   return read;
 }
 

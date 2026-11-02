@@ -84,6 +84,16 @@ describe("release", () => {
     expect(done.books[me].dead).toEqual([]);
   });
 
+  it("a team with one open spot claims only one of several players", () => {
+    const start = make();
+    const [a, b] = start.rosters[me].slice(0, 2);
+    let f: Franchise = { ...set(set(start, a, 1.2e6, 1), b, 1.2e6, 1), phase: "offseason" };
+    f = releasePlayer(releasePlayer(f, a), b);
+    const claimer = teams[5].id;
+    f = setPayroll({ ...f, rosters: { ...f.rosters, [claimer]: f.rosters[claimer].slice(0, 14) } }, claimer, 100e6);
+    expect(processWaivers(later(f, 2)).franchise.rosters[claimer].length).toBe(15);
+  });
+
   it("a team that can't fit the contract can't claim", () => {
     const start = make();
     const id = start.rosters[me][0];

@@ -85,9 +85,10 @@ describe("a full season", () => {
     expect(nextFranchiseEvent(season).kind).toBe("seasonEnd");
   });
 
-  it("finishes all 82 games for every team, with nobody over 82 played", () => {
+  it("finishes all 82 games for every team, and only a traded player can pass 82", () => {
     for (const t of teams) expect(finished(season, t.id)).toBe(82);
-    for (const line of Object.values(season.season.stats)) expect(line.gp).toBeLessThanOrEqual(82);
+    const moved = new Set(season.tradeLog.flatMap((t) => t.assets.map((a) => a.id)));
+    for (const [id, line] of Object.entries(season.season.stats)) expect(line.gp).toBeLessThanOrEqual(moved.has(id) ? 90 : 82);
   });
 
   it("sends 16 teams to the first round, seeded from the standings", () => {

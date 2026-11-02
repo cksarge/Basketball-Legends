@@ -5,11 +5,13 @@ import type { Player, Position } from "@/engine/types";
 import type { DraftState } from "../types";
 
 export const CLASS_SIZE = 70;
-const TOP_OVR = 79;
-const OVR_PER_RANK = 0.26;
+const TOP_OVR = 78.5;
+const OVR_PER_RANK = 0.28;
+/** The top of a class has the most upside. */
+const LOTTERY_TALENT = 12;
 const POSITIONS: Position[] = ["PG", "SG", "SF", "PF", "C"];
-/** About once in 12 years, a class has a once-in-a-generation talent. */
-const GENERATIONAL_CHANCE = 1 / 12;
+/** About once in 8 years, a class has a once-in-a-generation talent. */
+const GENERATIONAL_CHANCE = 1 / 8;
 
 function prospect(rng: Rng, year: number, rank: number, generational: boolean): Player {
   const age = rng.int(19, 22);
@@ -17,7 +19,9 @@ function prospect(rng: Rng, year: number, rank: number, generational: boolean): 
   const p = generatePlayer(rng, { pos: rng.pick(POSITIONS), targetOvr: target, age, league: "college", teamId: null, hometownPool: "mixed" });
   const ovr = playerOvr(p);
   const youth = (23 - age) / 2;
-  const potential = generational ? rng.int(97, 99) : Math.round(clamp(ovr + youth * rng.range(3, 9) + rng.normal(0, 2.5), ovr, 99));
+  const potential = generational
+    ? rng.int(97, 99)
+    : Math.round(clamp(ovr + youth * rng.range(2, 7) + Math.max(0, LOTTERY_TALENT - rank) * 0.6 + rng.normal(0, 2.5), ovr, 99));
   const out: Player = { ...p, id: `draft-${year}-${rank}`, potential, teamId: null, file: { service: 0, teamSeasons: 0 } };
   delete out.classYear;
   return out;

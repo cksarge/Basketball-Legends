@@ -199,7 +199,7 @@ export function aiResign(f: Franchise): Franchise {
   return next;
 }
 
-const worth = (p: Player) => playerOvr(p) + Math.max(0, p.potential - playerOvr(p)) * 0.3;
+const worth = (p: Player) => playerOvr(p) + Math.max(0, p.potential - playerOvr(p)) * 0.15;
 
 /** A team below its minimum with nobody left to sign finds someone from overseas. */
 function replacement(f: Franchise, teamId: string): Player {

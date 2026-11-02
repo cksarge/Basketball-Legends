@@ -183,6 +183,13 @@ export default function HowToPlay() {
           less as rounds pass. Anyone left can sign at any time.
         </li>
         <li>
+          <b>Trades:</b> on the Trades tab, tick what moves between up to three teams. The builder checks salaries and rosters as you go. The finder shows what
+          you could send for a player, and players on your trade block draw offers. The deadline is in February.
+        </li>
+        <li>
+          <b>Undo:</b> your last roster move can be undone until the next game is simulated.
+        </li>
+        <li>
           <b>Roster rules:</b> you need 13 to 15 players on standard deals to play or sim, plus up to three two-way and three developmental players. Released
           players go on waivers, and their pay still counts against your cap.
         </li>

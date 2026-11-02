@@ -23,8 +23,8 @@ const MIN_GAIN = 0.2;
 const FINDER_RESULTS = 5;
 const BLOCK_TEAMS = 10;
 const BLOCK_OFFERS = 5;
-const AI_TRADE_CHANCE = 0.45;
-const AI_ATTEMPTS = 6;
+const AI_TRADE_CHANCE = 0.7;
+const AI_ATTEMPTS = 12;
 const VETERAN_AGE = 27;
 
 function assetValue(f: Franchise, a: TradeAsset, teamId: string) {
