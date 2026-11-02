@@ -2,7 +2,7 @@
 import { addDays } from "@/career/calendar";
 import type { IsoDate, ScheduledGame } from "@/career/types";
 import type { Player, Team } from "@/engine/types";
-import { addLine, emptyLine } from "@/game/sim/stats";
+import { addLine, emptyLine, type StatLine } from "@/game/sim/stats";
 import { simBox, type BoxInput, type BoxResult, type BoxSide } from "../boxsim";
 import { seasonAwards } from "./awards";
 import { leagueModule } from "../leagues";
@@ -67,7 +67,13 @@ const working = (f: Franchise): Working => ({
   changed: new Set(),
 });
 
-function record(w: Working, g: ScheduledGame, r: BoxResult, played: boolean, starters: Set<string>) {
+/** A line scaled up to full game length, for a played game with shorter quarters. */
+function fullLength(line: StatLine, scale: number): StatLine {
+  if (scale === 1) return line;
+  return Object.fromEntries(Object.entries(line).map(([k, v]) => [k, Math.round(v * scale)])) as unknown as StatLine;
+}
+
+function record(w: Working, g: ScheduledGame, r: BoxResult, played: boolean, starters: Set<string>, statScale = 1) {
   const mine = w.f.rosters[w.f.teamId];
   const box = isUsers(w.f, g) ? Object.fromEntries(Object.entries(r.box).filter(([id]) => mine.includes(id))) : undefined;
   w.games[w.index.get(g.id)!] = {
@@ -78,7 +84,7 @@ function record(w: Working, g: ScheduledGame, r: BoxResult, played: boolean, sta
   for (const [id, line] of Object.entries(r.box)) {
     if (line.min <= 0) continue;
     const prev = table[id] ?? { ...emptyLine(), gp: 0, gs: 0 };
-    table[id] = { ...addLine(prev, line), gp: prev.gp + 1, gs: prev.gs + (starters.has(id) ? 1 : 0) };
+    table[id] = { ...addLine(prev, fullLength(line, statScale)), gp: prev.gp + 1, gs: prev.gs + (starters.has(id) ? 1 : 0) };
   }
   // every team game takes one off an injury, then this game's new ones land
   for (const id of [...w.f.rosters[g.homeId], ...w.f.rosters[g.awayId]]) {
@@ -102,11 +108,11 @@ const finish = (w: Working): Franchise => ({
 });
 
 /** Records one game. A game that already has a result stays as it is. */
-export function applyGame(f: Franchise, gameId: string, r: BoxResult, played: boolean, starters: string[] = []): Franchise {
+export function applyGame(f: Franchise, gameId: string, r: BoxResult, played: boolean, starters: string[] = [], statScale = 1): Franchise {
   const g = f.season.games.find((x) => x.id === gameId);
   if (!g || g.result) return f;
   const w = working(f);
-  record(w, g, r, played, new Set(starters));
+  record(w, g, r, played, new Set(starters), statScale);
   return finish(w);
 }
 

@@ -1,0 +1,74 @@
+// Turning a franchise game into a 3D match, and the finished match back into league results.
+import { playerOvr } from "@/engine/player";
+import type { Player, Team } from "@/engine/types";
+import { uniformColors } from "@/game3d/character/uniformTexture";
+import type { MatchResult, PendingMatch } from "@/state/matchStore";
+import type { BoxResult } from "./boxsim";
+import type { ScheduledGame } from "@/career/types";
+import { advancePostseason, applyGame } from "./core/season";
+import { seedNumber } from "./create";
+import { leagueModule } from "./leagues";
+import { defaultRotation } from "./rotation";
+import type { Franchise } from "./types";
+
+/** Who dresses: hurt players stay home unless the team can't field five. */
+function dressed(f: Franchise, teamId: string): Player[] {
+  const m = leagueModule(f.league);
+  const roster = f.rosters[teamId].map((id) => f.players[id]);
+  const healthy = roster.filter((p) => !p.injury);
+  if (healthy.length >= 5) return healthy;
+  const rotation = defaultRotation(roster, m.quarterMinutes * m.periods * 5);
+  return roster.filter((p) => rotation[p.id] > 0);
+}
+
+const startersOf = (roster: Player[]) =>
+  [...roster]
+    .sort((a, b) => playerOvr(b) - playerOvr(a))
+    .slice(0, 5)
+    .map((p) => p.id);
+
+export function franchisePending(f: Franchise, game: ScheduledGame, teams: Team[], controller: string): PendingMatch {
+  const find = (id: string) => teams.find((t) => t.id === id)!;
+  const home = find(game.homeId),
+    away = find(game.awayId);
+  const homeIsUs = home.id === f.teamId;
+  const homeRoster = dressed(f, home.id),
+    awayRoster = dressed(f, away.id);
+  const awayUniform = uniformColors(home, "home").base.toLowerCase() === uniformColors(away, "away").base.toLowerCase() ? "alt" : "away";
+  return {
+    mode: "franchise",
+    league: f.league,
+    arena: "pro",
+    home: { team: home, roster: homeRoster, starters: startersOf(homeRoster), uniform: "home", controllers: homeIsUs ? [controller] : [] },
+    away: { team: away, roster: awayRoster, starters: startersOf(awayRoster), uniform: awayUniform, controllers: homeIsUs ? [] : [controller] },
+    quarterMinutes: f.settings.quarterMinutes,
+    returnTo: `/franchise/hub/?id=${encodeURIComponent(f.id)}`,
+    seed: seedNumber(`${f.seed}:${game.id}`),
+    occasion: game.label,
+    franchise: { franchiseId: f.id, gameId: game.id },
+    difficulty: f.settings.difficulty,
+    resume: false,
+  };
+}
+
+export function resultToBox(r: MatchResult, regulationPeriods: number): BoxResult {
+  return {
+    home: r.homeScore,
+    away: r.awayScore,
+    overtimes: Math.max(0, r.periods - regulationPeriods),
+    box: r.box,
+    playerOfGame: r.playerOfGame,
+    injuries: r.injuries.map((x) => ({ playerId: x.playerId, name: x.name, gamesOut: x.gamesOut })),
+  };
+}
+
+/** Records a finished match. Stats count at full game length, so a short played game doesn't sink a player's averages. */
+export function applyFinishedFranchiseMatch(f: Franchise, r: MatchResult, teams: Team[]): Franchise {
+  if (r.franchise?.franchiseId !== f.id) return f;
+  const m = leagueModule(f.league);
+  const g = f.season.games.find((x) => x.id === r.franchise!.gameId);
+  if (!g || g.result) return f;
+  const starters = [...startersOf(dressed(f, g.homeId)), ...startersOf(dressed(f, g.awayId))];
+  const next = applyGame(f, g.id, resultToBox(r, m.periods), !r.simulated, starters, m.quarterMinutes / r.quarterMinutes);
+  return advancePostseason(next, teams);
+}

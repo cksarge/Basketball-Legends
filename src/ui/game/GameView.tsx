@@ -111,6 +111,9 @@ function buildMatch(p: PendingMatch, quarterMinutes: number, g: ReturnType<typeo
   return { match, devices };
 }
 
+/** Where a career or franchise game goes back to, for messages. */
+const hubName = (g: SaveGroup) => (g === "franchise" ? "franchise hub" : "career hub");
+
 export function GameView({ pending }: { pending: PendingMatch }) {
   const router = useRouter();
   const settings = useSettings();
@@ -245,6 +248,7 @@ export function GameView({ pending }: { pending: PendingMatch }) {
         injuries: s.injuries,
         career: pending.career,
         careerRun: pending.careerRun,
+        franchise: pending.franchise,
         park: pending.park ? parkOutcome(match, pending.park, contestRivals(pending)) : undefined,
       });
       setScreen("final");
@@ -499,11 +503,11 @@ export function GameView({ pending }: { pending: PendingMatch }) {
             router.push(pending.returnTo);
           }}
           onSaveCareer={
-            pending.career && !pending.practice
+            (pending.career || pending.franchise) && !pending.practice
               ? () => {
                   // stays in its Career slot if it has one; otherwise the autosave holds it for the hub
                   saveSuspended(match, { ...pending, saveSlot: slotRef.current ?? undefined }, slotRef.current ?? "auto");
-                  toast("Game saved. Resume it from your career hub.", "good");
+                  toast(`Game saved. Resume it from your ${hubName(saveGroupOf(pending))}.`, "good");
                   router.push(pending.returnTo);
                 }
               : undefined
@@ -526,7 +530,7 @@ export function GameView({ pending }: { pending: PendingMatch }) {
           }
           saveSlot={slot}
           saveGroup={saveGroupOf(pending)}
-          onQuitToMenu={() => router.push(pending.career ? pending.returnTo : "/")}
+          onQuitToMenu={() => router.push(pending.career || pending.franchise ? pending.returnTo : "/")}
           onReplay={() => {
             const c = replay.recentClip();
             setScreen("playing");
@@ -796,9 +800,9 @@ function PauseMenu({
             <p className="mt-2 text-sm text-steel">
               {confirm === "quit"
                 ? saveSlot
-                  ? `This game stays saved in slot ${saveSlot} (it saves itself as you play). Resume it any time from ${onSaveCareer ? "your career hub or " : ""}the main menu.`
+                  ? `This game stays saved in slot ${saveSlot} (it saves itself as you play). Resume it any time from ${onSaveCareer ? `your ${hubName(saveGroup)} or ` : ""}the main menu.`
                   : onSaveCareer
-                    ? "This game will be lost. Choose Save game or Save and quit to finish it later from your career hub."
+                    ? `This game will be lost. Choose Save game or Save and quit to finish it later from your ${hubName(saveGroup)}.`
                     : onSaveTo
                       ? "This game will be lost. Choose Save game to keep it in a slot."
                       : "Progress in this game will be lost."
@@ -1188,7 +1192,7 @@ function SavePanel({
           </p>
           <div className="mt-3 flex gap-2">
             <button onClick={onQuitToMenu} className="rounded-[var(--radius-chip)] bg-amber px-4 py-2 font-semibold text-navy">
-              {group === "career" ? "Back to your career" : "Quit to main menu"}
+              {group === "career" ? "Back to your career" : group === "franchise" ? "Back to your franchise" : "Quit to main menu"}
             </button>
             <button onClick={onResume} className="rounded-[var(--radius-chip)] px-4 py-2 text-steel hover:text-net">
               Keep playing
