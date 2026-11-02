@@ -2,6 +2,7 @@
 import { fullName, playerOvr } from "@/engine/player";
 import { Rng } from "@/engine/rng";
 import type { Team } from "@/engine/types";
+import { autoFinances, autoStep } from "../auto";
 import { seasonGoals } from "../club/owner";
 import { leagueTactics } from "../coaching/aiPlan";
 import { addSeason } from "../history/career";
@@ -59,14 +60,15 @@ function enter(f: Franchise, step: OffseasonStep, teams: Team[]): Franchise {
   return f;
 }
 
-export function advanceOffseason(f: Franchise, teams: Team[]): Franchise {
-  if (!f.offseason || !canAdvance(f).ok) return f;
+export function advanceOffseason(start: Franchise, teams: Team[]): Franchise {
+  const f = autoStep(start);
+  if (!f.offseason || !canAdvance(f).ok) return start;
   const m = leagueModule(f.league);
   const step = m.offseasonSteps[m.offseasonSteps.indexOf(f.offseason.step) + 1];
   if (!step) return startNewSeason(f, teams);
   const date = m.offseasonDate(step, f.season.year);
   const moved: Franchise = { ...f, date: date && date > f.date ? date : f.date, offseason: { ...f.offseason, step } };
-  return prunePlan(clearUndo(processWaivers(enter(moved, step, teams)).franchise));
+  return autoStep(prunePlan(clearUndo(processWaivers(enter(moved, step, teams)).franchise)));
 }
 
 function summarize(f: Franchise): SeasonSummary {
@@ -142,5 +144,6 @@ export function startNewSeason(f: Franchise, teams: Team[]): Franchise {
   delete next.offseason;
   delete next.freeAgency;
   const ready = prunePlan(clearUndo({ ...next, picks: rollPicks(next, teams) }));
-  return { ...ready, aiTactics: leagueTactics(ready), job: { ...ready.job, goals: seasonGoals(ready, teams) } };
+  const coached = autoFinances(autoStep({ ...ready, aiTactics: leagueTactics(ready) }), teams);
+  return { ...coached, job: { ...coached.job, goals: seasonGoals(coached, teams) } };
 }

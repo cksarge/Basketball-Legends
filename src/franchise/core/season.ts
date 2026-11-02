@@ -16,7 +16,7 @@ import { powerSnapshot } from "../history/power";
 import { gameRecords } from "../history/records";
 import { seasonAwards } from "./awards";
 import { leagueModule } from "../leagues";
-import { weeklyMarket } from "../pro/freeAgency";
+import { setRoster, weeklyMarket } from "../pro/freeAgency";
 import { activeRoster, processWaivers, rosterProblem } from "../pro/rosterMoves";
 import { weeklyScouting } from "../pro/scouting";
 import { aiTradeDay, refreshOffers } from "../pro/tradeAi";
@@ -211,9 +211,12 @@ export interface SimDayResult {
 }
 
 /** Sims the day's games and moves to the next day, unless the user's game is still open. */
-export function simDay(f: Franchise, teams: Team[], opts: { includeUser: boolean; simLive?: boolean }): SimDayResult {
-  if (f.phase === "offseason") return { franchise: f, changedPlayers: [], blocked: false };
+export function simDay(start: Franchise, teams: Team[], opts: { includeUser: boolean; simLive?: boolean }): SimDayResult {
+  if (start.phase === "offseason") return { franchise: start, changedPlayers: [], blocked: false };
+  // with auto roster on, a short or long roster gets fixed rather than stopping the sim
+  const f = start.settings.auto.roster && rosterProblem(start) ? setRoster(start, start.teamId) : start;
   if (rosterProblem(f)) return { franchise: f, changedPlayers: [], blocked: true };
+  const rosterMoves = f === start ? [] : Object.keys(f.players).filter((id) => f.players[id] !== start.players[id]);
   const today = f.season.games.filter((g) => g.date <= f.date && !g.result);
   const w = working(f);
   let blocked = false;
@@ -246,7 +249,7 @@ export function simDay(f: Franchise, teams: Team[], opts: { includeUser: boolean
     w.results.flatMap(({ g, r }) => gameNews(finished, g, r, teams)),
   );
   const done = w.results.reduce((x, { g, r }) => gameRecords(x, g, r.box), told);
-  const changedPlayers = [...w.changed];
+  const changedPlayers = [...w.changed, ...rosterMoves];
   if (blocked) return { franchise: done, changedPlayers, blocked };
   const next = advancePostseason(done, teams);
   const dated = { ...next, date: next.phase === "offseason" ? next.date : addDays(next.date, 1) };

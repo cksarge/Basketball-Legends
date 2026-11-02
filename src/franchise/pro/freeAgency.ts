@@ -102,7 +102,7 @@ export function withdrawBid(f: Franchise, playerId: string): Franchise {
 function aiBids(f: Franchise, rng: Rng): (Offer & { playerId: string })[] {
   const out: (Offer & { playerId: string })[] = [];
   const placed = new Map<string, number>();
-  const teams = aiTeams(f);
+  const teams = f.settings.auto.freeAgency ? Object.keys(f.rosters) : aiTeams(f);
   for (const playerId of byValue(f, f.freeAgents).slice(0, CHASED)) {
     const p = f.players[playerId];
     for (const teamId of rng.shuffle([...teams]).slice(0, TEAMS_PER_PLAYER)) {
@@ -142,7 +142,7 @@ function runRound(f: Franchise): Franchise {
     const scored = live.map((b) => ({ b, score: offerScore(next, p, b) })).sort((a, b) => b.score - a.score);
     const best = scored[0];
     if (!best || best.score < roundBar(round)) {
-      kept.push(...live.filter((b) => b.teamId === f.teamId));
+      kept.push(...live.filter((b) => st.bids.includes(b)));
       continue;
     }
     const check = canSign(next, best.b.teamId, p, best.b.salary);

@@ -2,6 +2,7 @@
 import { addDays } from "@/career/calendar";
 import { playerOvr } from "@/engine/player";
 import { Rng } from "@/engine/rng";
+import { prunePlan } from "../core/moves";
 import type { DraftPick, Franchise } from "../types";
 import { currentPick } from "./draft";
 import { pickTradeValue, playerTradeValue, teamDirection } from "./tradeValue";
@@ -127,13 +128,15 @@ export function refreshOffers(f: Franchise): Franchise {
 
 /** A contender tries to buy a veteran from a rebuilding team, paying with picks and a matching contract. */
 function aiDeal(f: Franchise, buyer: string, seller: string): Trade | null {
-  const veterans = f.rosters[seller].map((id) => f.players[id]).filter((p) => p.age >= VETERAN_AGE && playerOvr(p) >= 75 && !p.contract?.twoWay);
+  const veterans = f.rosters[seller]
+    .map((id) => f.players[id])
+    .filter((p) => p.age >= VETERAN_AGE && playerOvr(p) >= 75 && !p.contract?.twoWay && !p.file?.untouchable);
   const target = veterans.sort((a, b) => playerOvr(b) - playerOvr(a))[0];
   if (!target) return null;
   const salary = target.contract!.salary;
   const filler = f.rosters[buyer]
     .map((id) => f.players[id])
-    .filter((p) => !p.contract?.twoWay && p.contract!.salary <= salary * 1.1)
+    .filter((p) => !p.contract?.twoWay && !p.file?.untouchable && p.contract!.salary <= salary * 1.1)
     .sort((a, b) => b.contract!.salary - a.contract!.salary)
     .slice(0, 4);
   const picks = f.picks.filter((p: DraftPick) => p.ownerId === buyer).sort((a, b) => a.round - b.round || a.year - b.year);
@@ -153,14 +156,14 @@ function aiDeal(f: Franchise, buyer: string, seller: string): Trade | null {
 /** Most weeks, one contender and one rebuilding team find a deal. */
 export function aiTradeDay(f: Franchise, rng: Rng): { franchise: Franchise; changedPlayers: string[] } {
   if (!tradeOpen(f) || !rng.chance(AI_TRADE_CHANCE)) return { franchise: f, changedPlayers: [] };
-  const others = Object.keys(f.rosters).filter((id) => id !== f.teamId);
+  const others = Object.keys(f.rosters).filter((id) => id !== f.teamId || f.settings.auto.trades);
   const buyers = rng.shuffle(others.filter((id) => teamDirection(f, id) !== "rebuilding"));
   const sellers = rng.shuffle(others.filter((id) => teamDirection(f, id) !== "contending"));
   for (let i = 0; i < AI_ATTEMPTS && i < buyers.length && i < sellers.length; i++) {
     if (buyers[i] === sellers[i]) continue;
     const t = aiDeal(f, buyers[i], sellers[i]);
     if (!t) continue;
-    const next = applyTrade(f, t);
+    const next = prunePlan(applyTrade(f, t));
     const entry = { date: f.date, teams: t.teams, assets: t.assets };
     return { franchise: { ...next, tradeLog: [...next.tradeLog, entry] }, changedPlayers: t.assets.flatMap((a) => (a.kind === "player" ? [a.id] : [])) };
   }
