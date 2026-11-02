@@ -1,7 +1,7 @@
 // A possession-by-possession stat model for the games nobody watches. It runs in about a millisecond a game and returns
 // the same box score a played game does. The constants below are tuned to real engine games (see engine-baseline.json).
 import { Rng, clamp } from "@/engine/rng";
-import type { LeagueId, Player, TeamTactics } from "@/engine/types";
+import type { LeagueId, Player, SystemId, TeamTactics } from "@/engine/types";
 import { emptyLine, gameScore, type BoxScore, type StatLine } from "@/game/sim/stats";
 
 export interface BoxSide {
@@ -69,6 +69,15 @@ const SCHEMES: Record<
   zone32: { three: -0.035, twoMake: 0.012, threeMake: -0.012, turnover: 0, steal: 0, foul: 0.03, assist: 0.03 },
   press: { three: -0.05, twoMake: 0.018, threeMake: 0, turnover: 0.045, steal: 0.2, foul: 0.035, assist: 0 },
 };
+/** What a playbook does to a team's shots, read from the real engine's tactics baseline. */
+const SYSTEM_STYLE: Record<SystemId, { three: number; bigs: number; assist: number; turnover: number; make: number }> = {
+  motion: { three: -0.15, bigs: 1.55, assist: 0.08, turnover: 0.03, make: 0.004 },
+  pickRoll: { three: -0.09, bigs: 0.88, assist: -0.06, turnover: 0, make: 0.008 },
+  postUp: { three: -0.15, bigs: 1.6, assist: -0.015, turnover: 0.004, make: 0.006 },
+  paceSpace: { three: 0.17, bigs: 0.75, assist: -0.05, turnover: -0.015, make: 0.004 },
+  isoStar: { three: -0.03, bigs: 0.8, assist: -0.1, turnover: 0, make: 0.008 },
+};
+const NO_STYLE = { three: 0, bigs: 1, assist: 0, turnover: 0, make: 0 };
 /** Offensive rebound chance per unit of crashBoards above the default. */
 const CRASH_GAIN = 0.1;
 const DEFAULT_CRASH = 0.4;
@@ -120,6 +129,7 @@ function buildTeam(side: BoxSide, gameMinutes: number): Team {
   // rounding must not change the team's total
   seconds[0] += gameMinutes * 5 * 60 - seconds.reduce((a, b) => a + b, 0);
   const lean = side.tactics?.threeRate ?? 0.5;
+  const style = side.tactics?.system ? SYSTEM_STYLE[side.tactics.system] : NO_STYLE;
   const list = players.map((p, i): Skater => {
     const r = p.ratings;
     const inside = avg(r.closeShot, r.layup, r.midRange, r.layup);
@@ -129,8 +139,8 @@ function buildTeam(side: BoxSide, gameMinutes: number): Team {
       p,
       guarded: 0,
       seconds: seconds[i],
-      usage: share * Math.exp((scoring - AVG.off) / USAGE_SCALE),
-      threeShare: clamp(THREE_SHARE + (r.three - inside) * 0.008 + (lean - 0.5) * 0.3, 0.02, 0.85),
+      usage: share * Math.exp((scoring - AVG.off) / USAGE_SCALE) * (p.pos === "C" || p.pos === "PF" ? style.bigs : 1),
+      threeShare: clamp(THREE_SHARE + style.three + (r.three - inside) * 0.008 + (lean - 0.5) * 0.3, 0.02, 0.85),
       three: r.three,
       inside,
       ft: r.freeThrow,
@@ -196,11 +206,12 @@ function shootFreeThrows(rng: Rng, s: Skater, n: number, line: StatLine, team: T
 }
 
 function possession(rng: Rng, off: Team, def: Team, box: BoxScore, homeEdge: number) {
-  const edge = homeEdge + (off.side.coachEdge ?? 0);
+  const style = off.side.tactics?.system ? SYSTEM_STYLE[off.side.tactics.system] : NO_STYLE;
+  const edge = homeEdge + (off.side.coachEdge ?? 0) + style.make;
   const lineOf = (s: Skater) => box[s.p.id];
   const shooter = choose(rng, off.list, (s) => s.usage);
   const scheme = SCHEMES[def.side.tactics?.defense ?? "man"];
-  const turnover = clamp(TURNOVER + scheme.turnover + (def.handling - off.handling) * 0.005, 0.08, 0.3);
+  const turnover = clamp(TURNOVER + scheme.turnover + style.turnover + (def.handling - off.handling) * 0.005, 0.08, 0.3);
   if (rng.chance(turnover)) {
     lineOf(shooter).tov++;
     if (rng.chance(STEAL_SHARE + scheme.steal)) lineOf(choose(rng, def.list, (s) => s.steal)).stl++;
@@ -226,7 +237,7 @@ function possession(rng: Rng, off: Team, def: Team, box: BoxScore, homeEdge: num
     off.score += three ? 3 : 2;
     if (three) line.tpm++;
     else if (rng.chance(DUNK_SHARE * (shooter.dunk / AVG.off) ** 2)) line.dunks++;
-    if (rng.chance(ASSIST + scheme.assist)) lineOf(choose(rng, off.list, (s) => s.passer, shooter)).ast++;
+    if (rng.chance(ASSIST + scheme.assist + style.assist)) lineOf(choose(rng, off.list, (s) => s.passer, shooter)).ast++;
     return;
   }
   if (!three && rng.chance(BLOCK)) lineOf(choose(rng, def.list, (s) => s.block)).blk++;

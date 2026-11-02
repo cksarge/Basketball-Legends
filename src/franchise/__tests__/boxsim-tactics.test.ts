@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { generateRoster, teamTalentTarget } from "@/engine/player";
-import type { Player, Team, TeamTactics } from "@/engine/types";
+import type { Player, SystemId, Team, TeamTactics } from "@/engine/types";
+import { SYSTEMS } from "@/game/sim/playbook";
 import { emptyLine, type StatLine } from "@/game/sim/stats";
 import { simBox } from "../boxsim";
 import { defaultRotation } from "../rotation";
@@ -66,13 +67,50 @@ const TACTICS: Record<string, Partial<TeamTactics>> = {
 describe("simBox tactics move the same way as the real engine", () => {
   for (const [name, who, stat, dir] of CHECKS)
     it(`${name}: ${who} ${stat} ${dir > 0 ? "rises" : "falls"}`, () => {
-      expect(Math.sign(baseline[name][who][stat])).toBe(dir);
+      expect(Math.sign(settings[name][who][stat])).toBe(dir);
       const r = measure(TACTICS[name]);
       expect(Math.sign(r[who][stat] - base[who][stat])).toBe(dir);
     });
 
   it("crashing the glass gets more offensive rebounds than staying back", () => {
     expect(measure({ crashBoards: 0.9 }).own.oreb).toBeGreaterThan(measure({ crashBoards: 0.1 }).own.oreb);
+  });
+});
+
+describe("simBox playbooks move the same way as the real engine", () => {
+  type Measure = "tpa" | "tov" | "bigShare" | "assistRate";
+  const value = (r: ReturnType<typeof measure>, m: Measure) => {
+    if (m === "tpa" || m === "tov") return r.own[m];
+    if (m === "assistRate") return r.own.ast / r.own.fgm;
+    return rh.filter((p) => p.pos === "C" || p.pos === "PF").reduce((s, p) => s + (r.by[p.id]?.fga ?? 0), 0) / r.own.fga;
+  };
+  const SYSTEM_CHECKS: [SystemId, Measure][] = [
+    ["motion", "assistRate"],
+    ["motion", "bigShare"],
+    ["motion", "tpa"],
+    ["pickRoll", "tpa"],
+    ["pickRoll", "assistRate"],
+    ["postUp", "bigShare"],
+    ["postUp", "tpa"],
+    ["paceSpace", "tpa"],
+    ["isoStar", "assistRate"],
+  ];
+  const engine = (id: SystemId, m: Measure) => {
+    const b = baseline.systems[id];
+    return m === "tpa" || m === "tov" ? b.own[m] : b[m];
+  };
+  for (const [id, m] of SYSTEM_CHECKS)
+    it(`${id}: ${m}`, () => {
+      expect(Math.abs(engine(id, m))).toBeGreaterThan(0.03);
+      expect(Math.sign(value(measure({ system: id }), m) - value(base, m))).toBe(Math.sign(engine(id, m)));
+    });
+
+  it("keeps every system's scoring close to the default", () => {
+    for (const id of Object.keys(SYSTEMS) as SystemId[]) {
+      const pts = measure({ system: id }).own.pts;
+      expect(pts).toBeGreaterThan(base.own.pts * 0.95);
+      expect(pts).toBeLessThan(base.own.pts * 1.1);
+    }
   });
 });
 

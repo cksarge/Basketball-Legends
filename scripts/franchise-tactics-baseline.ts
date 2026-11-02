@@ -8,7 +8,8 @@ import path from "node:path";
 import { runMatchSync } from "../src/career/hs/play";
 import pro from "../src/data/generated/pro.json";
 import { generateRoster, teamTalentTarget } from "../src/engine/player";
-import type { Team, TeamTactics } from "../src/engine/types";
+import type { SystemId, Team, TeamTactics } from "../src/engine/types";
+import { SYSTEMS } from "../src/game/sim/playbook";
 import type { StatLine } from "../src/game/sim/stats";
 
 const GAMES = 20;
@@ -30,20 +31,23 @@ const SETTINGS: Record<string, Partial<TeamTactics>> = {
   crashLow: { crashBoards: 0.1 },
   crashHigh: { crashBoards: 0.9 },
 };
+const SYSTEM_IDS = Object.keys(SYSTEMS) as SystemId[];
 
 function measure(tactics: Partial<TeamTactics>) {
   const own = Object.fromEntries(KEYS.map((k) => [k, 0])) as Record<(typeof KEYS)[number], number>;
   const opp = { ...own };
+  let bigs = 0;
   for (let i = 0; i < GAMES; i++) {
     const m = runMatchSync({ league: "pro", quarterMinutes: 12, seed: 500 + i, home: { team: home, roster: rh, tactics }, away: { team: away, roster: ra } });
     const s = m.state;
     const lines = (r: typeof rh) => r.map((p) => s.box[p.id]).filter(Boolean) as StatLine[];
+    bigs += rh.filter((p) => p.pos === "C" || p.pos === "PF").reduce((sum, p) => sum + (s.box[p.id]?.fga ?? 0), 0) / GAMES;
     for (const k of KEYS) {
       own[k] += lines(rh).reduce((sum, l) => sum + l[k], 0) / GAMES;
       opp[k] += lines(ra).reduce((sum, l) => sum + l[k], 0) / GAMES;
     }
   }
-  return { own, opp };
+  return { own, opp, bigShare: bigs / own.fga, assistRate: own.ast / own.fgm };
 }
 
 const base = measure({});
@@ -55,4 +59,15 @@ for (const [name, t] of Object.entries(SETTINGS)) {
   out[name] = { own: change(r.own, base.own), opp: change(r.opp, base.opp) };
   console.log(name, JSON.stringify(out[name]));
 }
+const systems: Record<string, unknown> = {};
+for (const id of SYSTEM_IDS) {
+  const r = measure({ system: id, plays: SYSTEMS[id].plays });
+  systems[id] = {
+    own: change(r.own, base.own),
+    bigShare: Math.round((r.bigShare / base.bigShare - 1) * 1000) / 1000,
+    assistRate: Math.round((r.assistRate / base.assistRate - 1) * 1000) / 1000,
+  };
+  console.log(id, JSON.stringify(systems[id]));
+}
+out.systems = systems;
 fs.writeFileSync(path.join(__dirname, "..", "src", "franchise", "__tests__", "tactics-baseline.json"), `${JSON.stringify(out, null, 2)}\n`);
