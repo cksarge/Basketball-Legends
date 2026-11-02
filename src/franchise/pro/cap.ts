@@ -41,7 +41,8 @@ export function taxBill(pay: number, rules: CapRules): number {
 
 export function veteranRights(p: Player, teamId: string): "full" | "early" | "none" {
   if ((p.teamId ?? p.file?.rightsTeamId) !== teamId) return "none";
-  const seasons = p.file?.teamSeasons ?? 0;
+  // tenure ticks over on July 1, so the season a rostered player is in counts too
+  const seasons = (p.file?.teamSeasons ?? 0) + (p.teamId === teamId ? 1 : 0);
   return seasons >= FULL_RIGHTS_SEASONS ? "full" : seasons >= 1 ? "early" : "none";
 }
 

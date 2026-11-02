@@ -45,6 +45,7 @@ export function NegotiateDialog({ f, player, kind, onClose }: { f: Franchise; pl
   const submit = async () => {
     if (kind === "extend") {
       const limit = rightsLimit(f, player, f.teamId);
+      if (limit === 0) return setMessage("You don't hold his veteran rights yet.");
       if (offer.salary > limit) return setMessage(`Veteran rights let you pay him up to ${moneyM(limit)}.`);
       const reply = negotiate(f, player, offer);
       say(reply);

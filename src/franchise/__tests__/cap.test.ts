@@ -59,6 +59,13 @@ describe("veteran rights", () => {
     expect(rightsLimit(f, agent(f, 8, 5, id), other)).toBe(0);
   });
 
+  it("the season he's on the team counts toward rights, before the contract year turns", () => {
+    const f = make();
+    const p = f.players[f.rosters[id][0]];
+    expect(veteranRights({ ...p, file: { service: 5, teamSeasons: 0 } }, id)).toBe("early");
+    expect(veteranRights({ ...p, file: { service: 5, teamSeasons: 2 } }, id)).toBe("full");
+  });
+
   it("a signed player's rights belong to his team", () => {
     const f = make();
     const p = f.players[f.rosters[id][0]];

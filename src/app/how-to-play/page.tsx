@@ -175,6 +175,18 @@ export default function HowToPlay() {
           until he plays.
         </li>
         <li>
+          <b>Contracts:</b> decide team options and re-sign players in the Contracts step, or extend anyone in his last year from the Roster tab. Veteran rights
+          let you go over the cap to keep your own players.
+        </li>
+        <li>
+          <b>Free agency:</b> place bids during the moratorium and watch five rounds play out. Players weigh money, role, winning and loyalty, and they accept
+          less as rounds pass. Anyone left can sign at any time.
+        </li>
+        <li>
+          <b>Roster rules:</b> you need 13 to 15 players on standard deals to play or sim, plus up to three two-way and three developmental players. Released
+          players go on waivers, and their pay still counts against your cap.
+        </li>
+        <li>
           <b>Save slots:</b> Franchise has three of its own. Resume a saved game from the hub.
         </li>
         <li>

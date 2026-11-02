@@ -32,7 +32,11 @@ In testing at legends.carterscoding.com/beta/. These notes grow as Franchise mod
 - **Seasons that keep going:** after the Finals, a stepped offseason runs season review, player progress, the lottery, the draft, then training camp and a new season.
 - **A living league:** every player ages, grows or fades, and veterans retire. Your development coach and each player's work ethic matter.
 - **Scouting:** each class of 70 prospects is there all season. Pick up to 12 for your scouts to follow, and their rating ranges narrow week by week. A rookie's true rating stays uncertain until he plays.
-- **The draft:** a weighted lottery sets the top four picks, then two rounds with rookie-scale deals. Make your picks, sim to your next one, or sim the rest. Contracts and free agency are still to come.
+- **The draft:** a weighted lottery sets the top four picks, then two rounds with rookie-scale deals. Make your picks, sim to your next one, or sim the rest.
+- **The salary cap:** a $140M cap that rises each year, with a tax line, two aprons, maximum deals by years of service, veteran rights, mid-level and biannual exceptions, and dead money. The Roster tab has a full cap sheet.
+- **Contracts:** team and player options, extensions, and rookie deals with team options. Players negotiate based on money, role, winning and loyalty, and they walk away if you lowball them too often.
+- **Free agency:** a moratorium, then five bidding rounds where AI teams bid too. Anyone left stays on the market through the season as their asks fall.
+- **Roster moves:** waivers with claims, buyouts, three two-way players and three developmental players. You need 13 to 15 players on standard deals to play or sim.
 
 ## v0.3.0 — November 1, 2026
 

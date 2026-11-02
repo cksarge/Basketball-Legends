@@ -165,7 +165,7 @@ test("sim a franchise season: results, leaders, a reload, Stop, and a champion",
 });
 
 test("run a franchise offseason: option, re-sign, bid, release, two-way", async ({ page }) => {
-  test.setTimeout(480_000);
+  test.setTimeout(240_000);
   const errors = watchErrors(page);
   await page.goto("franchise/new/");
   await page.getByRole("button", { name: /Phoenix/ }).click();
@@ -186,10 +186,23 @@ test("run a franchise offseason: option, re-sign, bid, release, two-way", async 
   if (await resign.isVisible()) {
     await resign.click();
     await page.getByRole("button", { name: "Make offer" }).click();
+    // his ask can top what veteran rights allow, and then the dialog stays open and says so
+    await page
+      .getByRole("button", { name: "Close", exact: true })
+      .click({ timeout: 1500 })
+      .catch(() => undefined);
     await expect(page.getByRole("dialog")).toHaveCount(0);
   }
   await page.getByRole("button", { name: "Continue to Free agency" }).click();
   await expect(page.getByRole("heading", { name: "Moratorium" })).toBeVisible();
+  // the most expensive player is out of reach, and the dialog says why
+  await page.getByRole("button", { name: "Bid", exact: true }).first().click();
+  await page.getByRole("button", { name: "Place bid" }).click();
+  await expect(page.getByRole("status").filter({ hasText: /most this team can pay/ })).toBeVisible();
+  await page.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: "Ask", exact: true }).click();
+  await page.getByRole("button", { name: "Ask", exact: true }).click();
   await page.getByRole("button", { name: "Bid", exact: true }).first().click();
   await page.getByRole("button", { name: "Place bid" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
