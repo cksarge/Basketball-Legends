@@ -34,6 +34,7 @@ import { ReplayDirector } from "@/game3d/replay";
 import { ReplayOverlay, useReplay } from "./ReplayOverlay";
 import { BreakScreen, type BreakKind } from "./BreakScreen";
 import { MatchupPicker } from "../MatchupPicker";
+import { PlaysPanel } from "./PlaysPanel";
 import { TacticsPanel } from "../TacticsPanel";
 import { LoadingScreen } from "./LoadingScreen";
 import { TutorialOverlay } from "./TutorialOverlay";
@@ -732,7 +733,7 @@ function PauseMenu({
   onHighlights: () => void;
   highlightCount: number;
 }) {
-  const [tab, setTab] = useState<"menu" | "box" | "subs" | "tactics" | "controls" | "save">(initialTab);
+  const [tab, setTab] = useState<"menu" | "box" | "subs" | "tactics" | "plays" | "controls" | "save">(initialTab);
   const [, refresh] = useState(0);
   const [confirm, setConfirm] = useState<null | "quit" | "restart" | "sim">(null);
   const s = match.state;
@@ -759,6 +760,7 @@ function PauseMenu({
         {!s.cfg.practice && item("Box score", () => setTab("box"))}
         {!s.cfg.practice && !s.cfg.park && item("Substitutions", () => setTab("subs"))}
         {!s.cfg.practice && !s.cfg.park && item("Tactics", () => setTab("tactics"))}
+        {match.playBook(humanTeam as TeamIdx).length > 0 && item("Plays", () => setTab("plays"))}
         {!s.cfg.practice &&
           !s.cfg.park &&
           item(`Timeout (${s.teams[humanTeam].timeouts} left)`, () => {
@@ -784,6 +786,7 @@ function PauseMenu({
         {tab === "save" && onSaveTo && (
           <SavePanel match={match} group={saveGroup} current={saveSlot} onSave={onSaveTo} onQuitToMenu={onQuitToMenu} onResume={onResume} />
         )}
+        {tab === "plays" && <PlaysPanel match={match} team={humanTeam as TeamIdx} />}
         {tab === "tactics" && (
           <div className="max-w-2xl">
             <h2 className="mb-1 font-display text-3xl font-black">Tactics</h2>

@@ -31,6 +31,8 @@ import {
 } from "./state";
 import { type BoxScore, emptyLine } from "./stats";
 import { exportAIMemory, importAIMemory, runAI } from "./ai";
+import { PLAYS, SYSTEMS, type PlayId } from "./playbook";
+import { setPlay } from "./plays";
 import type { Drill } from "./drill";
 import { type Crew, createCrew, crewOnEvent, crewStartHandoff, crewStep, refHand } from "./officials";
 
@@ -989,7 +991,7 @@ export class Match {
         if (hasBall) a.action = ia.on ? act("post") : act("idle");
         break;
       case "callScreen":
-        s.teams[a.team].playCall = "pnr";
+        this.nextPlay(a.team);
         break;
       case "takeCharge":
         if (!hasBall && !this.isBusy(a)) this.startAction(a, "stance", 0.8, { charge: true });
@@ -2892,6 +2894,31 @@ export class Match {
       changed = true;
     }
     if (changed) this.rebuildAgentsKeepPositions();
+  }
+
+  /** The plays a team can call. */
+  playBook(ti: TeamIdx): PlayId[] {
+    const t = this.state.teams[ti].tactics;
+    return t.system ? (t.plays?.length ? t.plays : SYSTEMS[t.system].plays) : [];
+  }
+
+  /** Calls a play from the team's book. */
+  callPlay(ti: TeamIdx, id: PlayId): boolean {
+    if (!this.playBook(ti).includes(id)) return false;
+    setPlay(this, ti, PLAYS[id]);
+    this.emit({ t: "play", team: ti, name: PLAYS[id].label });
+    return true;
+  }
+
+  /** The call button: the next play in the book, or a pick-and-roll for a team without one. */
+  nextPlay(ti: TeamIdx) {
+    const book = this.playBook(ti);
+    if (!book.length) {
+      this.state.teams[ti].playCall = "pnr";
+      return;
+    }
+    const at = book.indexOf(this.state.teams[ti].playCall as PlayId);
+    this.callPlay(ti, book[(at + 1) % book.length]);
   }
 
   /** Manual substitution (from the pause menu). */

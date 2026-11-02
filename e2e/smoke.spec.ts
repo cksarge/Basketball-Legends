@@ -173,6 +173,28 @@ test("a franchise game saves to a Franchise slot, resumes from the hub and recor
   await expect(page.getByText(/^[WL]$/)).toHaveCount(1);
 });
 
+test("pick a playbook, then call a play in the game @gpu", async ({ page }) => {
+  test.setTimeout(240_000);
+  await lowGraphics(page);
+  await page.goto("franchise/new/");
+  await page.getByRole("button", { name: /Phoenix/ }).click();
+  await page.getByRole("button", { name: "Start franchise" }).click();
+  await page.waitForURL(/franchise\/hub\/\?id=/);
+  await page.getByRole("tab", { name: "Coaching" }).click();
+  await page.getByRole("radio", { name: "Playbook" }).click();
+  await page.getByLabel("System").selectOption("motion");
+  await expect(page.getByRole("checkbox", { name: /Floppy/ })).toBeChecked();
+  await page.getByRole("tab", { name: "Home" }).click();
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.waitForURL("**/game/");
+  await expect(page.getByText("Loading the arena")).toBeHidden({ timeout: 60_000 });
+  await clockRuns(page);
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Plays" }).click();
+  await page.getByRole("button", { name: /Floppy/ }).click();
+  await expect(page.getByText("Floppy called")).toBeVisible();
+});
+
 test("Save and quit stays in the game when the save fails @gpu", async ({ page }) => {
   test.setTimeout(240_000);
   await lowGraphics(page);

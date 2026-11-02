@@ -152,6 +152,43 @@ describe("plays", () => {
   });
 });
 
+describe("calling plays", () => {
+  const coached = (plays: PlayId[]) => new Match({ ...setup({ system: "motion", plays }, 8), fast: true });
+
+  it("calls a play in the book", () => {
+    const m = coached(["floppy", "backdoor"]);
+    expect(m.callPlay(0, "floppy")).toBe(true);
+    expect(m.state.teams[0].playCall).toBe("floppy");
+  });
+
+  it("refuses a play that isn't in the book", () => {
+    const m = coached(["floppy"]);
+    expect(m.callPlay(0, "clearout")).toBe(false);
+    expect(m.state.teams[0].playCall).toBeNull();
+  });
+
+  it("cycles through the book with the call button, and wraps", () => {
+    const m = coached(["floppy", "backdoor"]);
+    const press = () => {
+      m.nextPlay(0);
+      return m.state.teams[0].playCall;
+    };
+    expect([press(), press(), press()]).toEqual(["floppy", "backdoor", "floppy"]);
+  });
+
+  it("still calls a pick-and-roll with no system", () => {
+    const m = new Match({ ...setup({}, 8), fast: true });
+    m.nextPlay(0);
+    expect(m.state.teams[0].playCall).toBe("pnr");
+  });
+
+  it("announces the play", () => {
+    const m = coached(["floppy"]);
+    m.callPlay(0, "floppy");
+    expect(m.state.events.some((e) => e.t === "play" && e.team === 0 && e.name === "Floppy")).toBe(true);
+  });
+});
+
 describe("older saved games", () => {
   it("resume with no system", () => {
     const m = runMatchSync({ ...setup({}, 6), quarterMinutes: 1 });

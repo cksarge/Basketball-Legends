@@ -16,6 +16,7 @@ export type GameEvent =
   | { t: "pass"; from: number; to: number; kind: string }
   | { t: "dribbleMove"; player: number; move: string; broke: number | null }
   | { t: "sub"; team: TeamIdx; in: string; out: string }
+  | { t: "play"; team: TeamIdx; name: string }
   | { t: "timeout"; team: TeamIdx; remaining: number }
   | { t: "periodStart"; period: number }
   | { t: "periodEnd"; period: number }

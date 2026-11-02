@@ -6,10 +6,11 @@ import { useFranchise } from "@/state/franchiseStore";
 import { Panel, Segmented } from "@/ui/kit";
 import { TacticsPanel } from "@/ui/TacticsPanel";
 import { DepthPanel } from "./DepthPanel";
+import { PlaybookPanel } from "./PlaybookPanel";
 import { PracticePanel } from "./PracticePanel";
 import { StaffPanel } from "./StaffPanel";
 
-const SECTIONS = ["Depth", "Tactics", "Practice", "Staff"] as const;
+const SECTIONS = ["Depth", "Tactics", "Playbook", "Practice", "Staff"] as const;
 type Section = (typeof SECTIONS)[number];
 
 export function CoachingTab({ f }: { f: Franchise }) {
@@ -32,6 +33,7 @@ export function CoachingTab({ f }: { f: Franchise }) {
             <TacticsPanel value={f.plan.tactics} onChange={(tactics) => setPlan({ tactics })} />
           </Panel>
         )}
+        {section === "Playbook" && <PlaybookPanel f={f} />}
         {section === "Practice" && <PracticePanel f={f} setPlan={setPlan} />}
         {section === "Staff" && <StaffPanel f={f} />}
       </fieldset>

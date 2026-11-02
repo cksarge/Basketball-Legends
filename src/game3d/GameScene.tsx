@@ -281,6 +281,7 @@ function SimDriver(
         showBanner({ title, sub, color: c.primary, accent: c.accent === c.primary ? "#ffffff" : c.accent });
       };
       for (const e of events) {
+        if (e.t === "play") banner(e.name.toUpperCase(), e.team, "Play called");
         if (e.t === "make") {
           const sh = s.agents[e.shooter];
           if (!sh) continue;

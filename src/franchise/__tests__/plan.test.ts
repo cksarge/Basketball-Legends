@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { generateRoster } from "@/engine/player";
 import type { Player, Team } from "@/engine/types";
-import { defaultPlan, depthWarnings, resolveLineup } from "../coaching/plan";
+import { SYSTEMS } from "@/game/sim/playbook";
+import { defaultPlan, depthWarnings, resolveLineup, setSystem, togglePlay } from "../coaching/plan";
 import { defaultRotation } from "../rotation";
 import type { TeamPlan } from "../types";
 
@@ -80,6 +81,33 @@ describe("resolveLineup", () => {
     );
     expect(l.starters).toHaveLength(5);
     expect(total(l.rotation)).toBe(240);
+  });
+});
+
+describe("the playbook", () => {
+  it("starts with a system's full book", () => {
+    const plan = setSystem(defaultPlan(), "motion");
+    expect(plan.tactics.system).toBe("motion");
+    expect(plan.tactics.plays).toEqual(SYSTEMS.motion.plays);
+  });
+
+  it("clears with no system, back to the default offense", () => {
+    const plan = setSystem(setSystem(defaultPlan(), "motion"), undefined);
+    expect(plan.tactics.system).toBeUndefined();
+    expect(plan.tactics.plays).toBeUndefined();
+  });
+
+  it("drops plays the new system doesn't run", () => {
+    const plan = setSystem(setSystem(defaultPlan(), "motion"), "isoStar");
+    expect(plan.tactics.plays).toEqual(["clearout"]);
+  });
+
+  it("adds and removes plays, up to six and never the last", () => {
+    let plan = setSystem(defaultPlan(), "isoStar");
+    for (const id of ["drag", "horns", "elbow", "floppy", "backdoor"] as const) plan = togglePlay(plan, id);
+    expect(plan.tactics.plays).toHaveLength(6);
+    expect(togglePlay(plan, "postEntry").tactics.plays).toHaveLength(6);
+    expect(togglePlay(setSystem(defaultPlan(), "isoStar"), "clearout").tactics.plays).toEqual(["clearout"]);
   });
 });
 

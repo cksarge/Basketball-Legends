@@ -1,8 +1,9 @@
 // The user's coaching plan, and turning it into the lineup for a game. A plan is never changed by who's available:
 // the game works around injuries, and the plan is still there when a player comes back.
 import { playerOvr } from "@/engine/player";
-import { POSITIONS, type Player, type Position } from "@/engine/types";
+import { POSITIONS, type PlayId, type Player, type Position, type SystemId } from "@/engine/types";
 import { DEFAULT_TACTICS } from "@/game/sim/match";
+import { SYSTEMS } from "@/game/sim/playbook";
 import { defaultRotation, spreadMinutes } from "../rotation";
 import type { TeamPlan } from "../types";
 
@@ -14,6 +15,26 @@ const THIN_ROTATION = 8;
 
 export function defaultPlan(): TeamPlan {
   return { autoRotation: true, starters: [], minutes: {}, tactics: { ...DEFAULT_TACTICS }, practice: "balanced", playerPlans: {}, staff: [] };
+}
+
+const MAX_PLAYS = 6;
+
+/** Picks a system, or none for the default offense. Plays the new system doesn't run are dropped. */
+export function setSystem(plan: TeamPlan, system: SystemId | undefined): TeamPlan {
+  const tactics = { ...plan.tactics };
+  delete tactics.system;
+  delete tactics.plays;
+  if (!system) return { ...plan, tactics };
+  const had = plan.tactics.plays?.filter((id) => SYSTEMS[system].plays.includes(id)) ?? [];
+  return { ...plan, tactics: { ...tactics, system, plays: had.length ? had : [...SYSTEMS[system].plays] } };
+}
+
+/** Adds or removes a play. A book holds at most six and at least one. */
+export function togglePlay(plan: TeamPlan, id: PlayId): TeamPlan {
+  const plays = plan.tactics.plays ?? [];
+  const next = plays.includes(id) ? plays.filter((p) => p !== id) : [...plays, id];
+  if (!next.length || next.length > MAX_PLAYS) return plan;
+  return { ...plan, tactics: { ...plan.tactics, plays: next } };
 }
 
 export interface Lineup {
