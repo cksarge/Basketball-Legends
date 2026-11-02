@@ -87,7 +87,7 @@ export function processWaivers(f: Franchise): { franchise: Franchise; changedPla
   const due = f.waivers.filter((w) => w.until <= f.date);
   if (!due.length) return { franchise: f, changedPlayers: [] };
   const claimants = Object.keys(f.rosters)
-    .filter((id) => id !== f.teamId)
+    .filter((id) => id !== f.teamId && standardCount(f, id) < ROSTER_MAX)
     .sort((a, b) => wins(f, a) - wins(f, b) || a.localeCompare(b));
   let next = f;
   for (const w of due) {
@@ -126,7 +126,7 @@ export function buyOut(f: Franchise, id: string, amount: number): Franchise {
   };
 }
 
-function joinTeam(f: Franchise, teamId: string, id: string, contract: Contract) {
+export function joinTeam(f: Franchise, teamId: string, id: string, contract: Contract) {
   const p = f.players[id];
   return {
     ...p,

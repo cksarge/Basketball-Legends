@@ -9,6 +9,7 @@ import { coachEdge, staffRating, trainerGamesOut } from "../coaching/staff";
 import { finishBox, simBox, simQuarters, type BoxInput, type BoxResult, type BoxSide } from "../boxsim";
 import { seasonAwards } from "./awards";
 import { leagueModule } from "../leagues";
+import { weeklyMarket } from "../pro/freeAgency";
 import { activeRoster, processWaivers, rosterProblem } from "../pro/rosterMoves";
 import { weeklyScouting } from "../pro/scouting";
 import { conferenceSeeds } from "../leagues/pro";
@@ -218,9 +219,11 @@ export function simDay(f: Franchise, teams: Team[], opts: { includeUser: boolean
   const dated = { ...next, date: next.phase === "offseason" ? next.date : addDays(next.date, 1) };
   const practice = weeklyDevelopment(dated);
   const weekDone = practice.franchise.devDate !== dated.devDate;
+  const market = weekDone ? weeklyMarket(weeklyScouting(practice.franchise)) : { franchise: practice.franchise, changedPlayers: [] };
+  const waivers = processWaivers(market.franchise);
   return {
-    franchise: weekDone ? weeklyScouting(practice.franchise) : practice.franchise,
-    changedPlayers: [...new Set([...changedPlayers, ...practice.changedPlayers])],
+    franchise: waivers.franchise,
+    changedPlayers: [...new Set([...changedPlayers, ...practice.changedPlayers, ...market.changedPlayers, ...waivers.changedPlayers])],
     blocked,
   };
 }

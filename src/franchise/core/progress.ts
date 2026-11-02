@@ -101,7 +101,14 @@ export function leagueProgress(f: Franchise): { franchise: Franchise; report: Pr
   const without = (ids: string[]) => ids.filter((id) => !gone.has(id));
   const table = (t: Record<string, string[]>) => Object.fromEntries(Object.entries(t).map(([k, ids]) => [k, without(ids)]));
   return {
-    franchise: { ...f, players, rosters: table(f.rosters), devRosters: table(f.devRosters), freeAgents: without(f.freeAgents) },
+    franchise: {
+      ...f,
+      players,
+      rosters: table(f.rosters),
+      devRosters: table(f.devRosters),
+      freeAgents: without(f.freeAgents),
+      waivers: f.waivers.filter((w) => !gone.has(w.playerId)),
+    },
     report: { retired: [...gone], lastTeams, changes },
   };
 }

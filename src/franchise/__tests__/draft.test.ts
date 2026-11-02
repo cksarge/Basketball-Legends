@@ -1,12 +1,10 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { playerOvr } from "@/engine/player";
 import type { Team } from "@/engine/types";
 import { createFranchise } from "../create";
-import { boardScore, aiChoice, currentPick, makePick, rookieDeal, simDraftToEnd, simToUserPick, trimRoster } from "../pro/draft";
+import { boardScore, aiChoice, currentPick, makePick, rookieDeal, simDraftToEnd, simToUserPick } from "../pro/draft";
 import { runLottery } from "../pro/lottery";
 import { capRules } from "../pro/rules";
-import type { Franchise } from "../types";
 import { finishedSeason } from "./draftHelpers";
 
 const teams = (JSON.parse(readFileSync("src/data/generated/pro.json", "utf8")) as { teams: Team[] }).teams;
@@ -93,15 +91,5 @@ describe("the draft", () => {
       expect(f.players[id].contract).toBeUndefined();
       expect(f.players[id].file?.range).toBeDefined();
     }
-  });
-
-  it("a team over the limit lets its weakest players go", () => {
-    const f: Franchise = simDraftToEnd(ready());
-    const id = teams[3].id;
-    const trimmed = trimRoster(f, id, 12);
-    expect(trimmed.rosters[id]).toHaveLength(12);
-    const left = f.rosters[id].filter((x) => !trimmed.rosters[id].includes(x));
-    expect(Math.min(...trimmed.rosters[id].map((x) => playerOvr(f.players[x])))).toBeGreaterThanOrEqual(Math.min(...left.map((x) => playerOvr(f.players[x]))));
-    for (const x of left) expect(trimmed.freeAgents).toContain(x);
   });
 });

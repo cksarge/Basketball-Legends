@@ -3,6 +3,8 @@ import type { IsoDate, ProSeries, ScheduledGame } from "@/career/types";
 import type { LeagueId, Player, PlayerFile, Position, TeamTactics } from "@/engine/types";
 import type { Difficulty } from "@/game/sim/state";
 import type { BoxScore, StatLine } from "@/game/sim/stats";
+import type { SigningVia } from "./pro/cap";
+import type { Offer } from "./pro/market";
 
 export const FRANCHISE_VERSION = 3;
 
@@ -135,6 +137,16 @@ export interface WaiverEntry {
   until: IsoDate;
 }
 
+export interface FreeAgencyState {
+  stage: "moratorium" | "bidding" | "open";
+  round: number;
+  /** The user's bids that are still alive. */
+  bids: (Offer & { playerId: string })[];
+  signed: { playerId: string; teamId: string; salary: number; years: number; round: number; via: SigningVia }[];
+  /** What happened to the user's bids in the last round. */
+  notices: string[];
+}
+
 export interface RetiredPlayer {
   id: string;
   name: string;
@@ -192,6 +204,7 @@ export interface Franchise {
   draft: DraftState;
   /** Set during the offseason. */
   offseason?: OffseasonState;
+  freeAgency?: FreeAgencyState;
   /** Player id -> tries used in contract talks this year. */
   talks: Record<string, number>;
   retired: RetiredPlayer[];

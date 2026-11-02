@@ -8,6 +8,7 @@ import { advanceOffseason, canAdvance, startNewSeason } from "../core/offseason"
 import { createFranchise } from "../create";
 import { leagueModule } from "../leagues";
 import { simDraftToEnd } from "../pro/draft";
+import { staffHandles } from "../pro/freeAgency";
 import { commitFranchise, createFranchiseSave, loadFranchise, openFranchiseDb } from "../storage";
 import type { Franchise } from "../types";
 
@@ -21,7 +22,7 @@ function simSeason(f: Franchise) {
 function throughOffseason(f: Franchise) {
   for (let i = 0; i < 12 && f.phase === "offseason"; i++) {
     if (f.offseason?.step === "draft") f = simDraftToEnd(f);
-    f = advanceOffseason(f, teams);
+    f = advanceOffseason(staffHandles(f), teams);
   }
   return f;
 }
@@ -46,7 +47,7 @@ describe("the offseason", () => {
       seen.push(step);
       dates[step] = f.date;
       if (step === "draft") f = simDraftToEnd(f);
-      f = advanceOffseason(f, teams);
+      f = advanceOffseason(staffHandles(f), teams);
     }
     expect(seen).toEqual(["review", "progress", "lottery", "draft", "contracts", "freeAgency", "camp"]);
     expect(dates.draft).toBe(draftCalendar(year + 1).draft);
@@ -101,14 +102,14 @@ describe("the next season", () => {
       let f = ended;
       while (f.offseason?.step !== "camp") {
         if (f.offseason?.step === "draft") f = simDraftToEnd(f);
-        f = advanceOffseason(f, teams);
+        f = advanceOffseason(staffHandles(f), teams);
       }
       return f;
     })();
     const gone = camp.offseason!.report!.retired;
     expect(gone.length).toBeGreaterThan(3);
     for (const id of gone) expect(camp.players[id]).toBeDefined();
-    const after = startNewSeason(camp, teams);
+    const after = startNewSeason(staffHandles(camp), teams);
     for (const id of gone) {
       expect(after.players[id]).toBeUndefined();
       expect(after.retired.find((r) => r.id === id)).toBeDefined();
@@ -156,14 +157,15 @@ describe("the next season", () => {
     for (let i = 0; i < 2; i++) f = throughOffseason(simSeason(f));
     expect(f.season.year).toBe(year + 3);
     for (const t of teams) {
-      expect(f.rosters[t.id]).toHaveLength(15);
+      expect(f.rosters[t.id].length).toBeGreaterThanOrEqual(13);
+      expect(f.rosters[t.id].length).toBeLessThanOrEqual(15);
       for (const id of f.rosters[t.id]) {
         expect(f.players[id]).toBeDefined();
         expect(f.players[id].teamId).toBe(t.id);
       }
     }
     for (const id of f.freeAgents) expect(f.players[id].teamId).toBeNull();
-    const placed = [...Object.values(f.rosters).flat(), ...f.freeAgents];
+    const placed = [...Object.values(f.rosters).flat(), ...Object.values(f.devRosters).flat(), ...f.freeAgents];
     expect(new Set(placed).size).toBe(placed.length);
     expect(placed.length).toBe(Object.keys(f.players).length);
   }, 120_000);

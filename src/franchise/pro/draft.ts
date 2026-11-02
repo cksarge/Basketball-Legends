@@ -1,5 +1,4 @@
 // Running the draft: each pick in order, AI boards, rookie deals and the players nobody took.
-import { playerOvr } from "@/engine/player";
 import type { Contract, Player } from "@/engine/types";
 import type { DraftPick, Franchise } from "../types";
 import { capRules, roundMoney, type CapRules } from "./rules";
@@ -109,20 +108,3 @@ export function simDraftToEnd(f: Franchise): Franchise {
   for (let pick = currentPick(next); pick; pick = currentPick(next)) next = select(next, pick, aiChoice(next, pick.ownerId));
   return next;
 }
-
-/** Lets the weakest players go, straight to free agency, until the team is at the limit. */
-export function trimRoster(f: Franchise, teamId: string, limit: number): Franchise {
-  const keep = [...f.rosters[teamId]].sort((a, b) => worth(f.players[b]) - worth(f.players[a]));
-  const cut = keep.slice(limit);
-  if (!cut.length) return f;
-  const players = { ...f.players };
-  for (const id of cut) {
-    const released = { ...players[id], teamId: null };
-    delete released.contract;
-    players[id] = released;
-  }
-  const order = f.rosters[teamId].filter((id) => !cut.includes(id));
-  return { ...f, players, rosters: { ...f.rosters, [teamId]: order }, freeAgents: [...f.freeAgents, ...cut] };
-}
-
-const worth = (p: Player) => playerOvr(p) + Math.max(0, p.potential - playerOvr(p)) * 0.3;

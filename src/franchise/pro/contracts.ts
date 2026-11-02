@@ -33,13 +33,17 @@ export function extendContract(f: Franchise, id: string, salary: number, years: 
   return withContract(f, id, { ...c, extension: { salary, years } });
 }
 
+/** The call an AI front office makes on a team option. */
+export const decideOptionsFor = (f: Franchise, id: string) =>
+  setTeamOption(f, id, marketValue(f, f.players[id]) >= f.players[id].contract!.salary * KEEP_OPTION);
+
 /** Everyone but the user's front office decides: players on their options, AI teams on theirs. */
 export function decideOptions(f: Franchise): Franchise {
   let next = f;
   for (const [teamId, ids] of Object.entries(f.rosters))
     for (const id of ids) {
       const p = next.players[id];
-      if (teamId !== f.teamId && optionDue(p.contract)) next = setTeamOption(next, id, marketValue(next, p) >= p.contract!.salary * KEEP_OPTION);
+      if (teamId !== f.teamId && optionDue(p.contract)) next = decideOptionsFor(next, id);
       const c = next.players[id].contract;
       if (c?.playerOption && c.years === 2)
         next = withContract(next, id, playerOptionChoice(next, next.players[id]) ? { ...c, playerOption: false } : { ...c, years: 1 });

@@ -2,11 +2,14 @@
 import { fullName, playerOvr } from "@/engine/player";
 import type { Team } from "@/engine/types";
 import { leagueModule } from "../leagues";
-import { currentPick, trimRoster } from "../pro/draft";
+import { decideOptions, pendingOptions, rollContracts } from "../pro/contracts";
+import { currentPick } from "../pro/draft";
 import { newDraftState } from "../pro/draftClass";
+import { aiFillRosters, aiResign, cutTo, finishBidding, openFreeAgency } from "../pro/freeAgency";
 import { runLottery } from "../pro/lottery";
 import { rollPicks } from "../pro/picks";
-import { OFFSEASON_ROSTER_MAX, ROSTER_MAX, nextCap } from "../pro/rules";
+import { processWaivers, standardCount } from "../pro/rosterMoves";
+import { OFFSEASON_ROSTER_MAX, ROSTER_MAX, ROSTER_MIN } from "../pro/rules";
 import type { Franchise, OffseasonStep, RetiredPlayer, SeasonSummary } from "../types";
 import { leagueProgress } from "./progress";
 
@@ -14,22 +17,14 @@ import { leagueProgress } from "./progress";
 const FREE_AGENT_POOL = 100;
 
 export function canAdvance(f: Franchise): { ok: true } | { ok: false; reason: string } {
-  if (f.offseason?.step === "draft" && currentPick(f)) return { ok: false, reason: "Finish the draft first." };
+  const step = f.offseason?.step;
+  if (step === "draft" && currentPick(f)) return { ok: false, reason: "Finish the draft first." };
+  if (step === "contracts" && pendingOptions(f, f.teamId).length) return { ok: false, reason: "Decide your team options first." };
+  if (step === "camp") {
+    const n = standardCount(f, f.teamId);
+    if (n < ROSTER_MIN || n > ROSTER_MAX) return { ok: false, reason: `You have ${n} players on standard deals, and need ${ROSTER_MIN} to ${ROSTER_MAX}.` };
+  }
   return { ok: true };
-}
-
-const allTeams = (f: Franchise, limit: number, teams: Team[]) => teams.reduce((x, t) => trimRoster(x, t.id, limit), f);
-
-/** Each contract loses a year. Task 7 replaces this with real expiries. */
-function rollContracts(f: Franchise): Franchise {
-  const players = Object.fromEntries(
-    Object.entries(f.players).map(([id, p]) => {
-      const file = { ...p.file!, service: p.file!.service + (p.teamId ? 1 : 0), teamSeasons: p.file!.teamSeasons + (p.teamId ? 1 : 0) };
-      if (!p.contract) return [id, { ...p, file }];
-      return [id, { ...p, file, contract: { ...p.contract, years: Math.max(1, p.contract.years - 1) } }];
-    }),
-  );
-  return { ...f, players };
 }
 
 /** What happens on arriving at a step. */
@@ -39,8 +34,9 @@ function enter(f: Franchise, step: OffseasonStep, teams: Team[]): Franchise {
     return { ...franchise, offseason: { step, report } };
   }
   if (step === "lottery") return runLottery(f, teams);
-  if (step === "contracts") return allTeams(f, OFFSEASON_ROSTER_MAX, teams);
-  if (step === "freeAgency") return { ...rollContracts(f), cap: nextCap(f.cap, f.seed) };
+  if (step === "contracts") return teams.reduce((x, t) => (t.id === f.teamId ? x : cutTo(x, t.id, OFFSEASON_ROSTER_MAX)), decideOptions(f));
+  if (step === "freeAgency") return openFreeAgency(aiResign(rollContracts(f)));
+  if (step === "camp") return aiFillRosters(finishBidding(f));
   return f;
 }
 
@@ -51,7 +47,7 @@ export function advanceOffseason(f: Franchise, teams: Team[]): Franchise {
   if (!step) return startNewSeason(f, teams);
   const date = m.offseasonDate(step, f.season.year);
   const moved: Franchise = { ...f, date: date && date > f.date ? date : f.date, offseason: { ...f.offseason, step } };
-  return enter(moved, step, teams);
+  return processWaivers(enter(moved, step, teams)).franchise;
 }
 
 function summarize(f: Franchise): SeasonSummary {
@@ -94,8 +90,10 @@ function leaveLeague(f: Franchise, year: number) {
 export function startNewSeason(f: Franchise, teams: Team[]): Franchise {
   const year = f.season.year + 1;
   const m = leagueModule(f.league);
-  const trimmed = allTeams(f, ROSTER_MAX, teams);
-  const left = leaveLeague(trimmed, year);
+  const date = m.calendar(year).opening;
+  const trimmed = aiFillRosters(processWaivers({ ...f, date }).franchise);
+  const cleared = processWaivers({ ...trimmed, waivers: trimmed.waivers.map((w) => ({ ...w, until: date })) }).franchise;
+  const left = leaveLeague(cleared, year);
   const healed = Object.fromEntries(
     Object.entries(left.players).map(([id, p]) => {
       if (!p.injury) return [id, p];
@@ -104,9 +102,8 @@ export function startNewSeason(f: Franchise, teams: Team[]): Franchise {
       return [id, fresh];
     }),
   );
-  const date = m.calendar(year).opening;
   const next: Franchise = {
-    ...trimmed,
+    ...cleared,
     ...left,
     players: healed,
     date,
@@ -118,5 +115,6 @@ export function startNewSeason(f: Franchise, teams: Team[]): Franchise {
     season: { year, games: m.schedule(teams, year, f.seed), series: [], stats: {}, playoffStats: {}, awards: [] },
   };
   delete next.offseason;
+  delete next.freeAgency;
   return { ...next, picks: rollPicks(next, teams) };
 }

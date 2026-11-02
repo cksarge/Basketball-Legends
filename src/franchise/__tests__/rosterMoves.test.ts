@@ -103,6 +103,18 @@ describe("release", () => {
   });
 });
 
+describe("waivers in the season", () => {
+  it("simDay clears waivers on their date", () => {
+    const start = make();
+    const id = start.rosters[me][14];
+    let f = releasePlayer(set(start, id, 40e6, 2), id);
+    f = { ...f, rosters: { ...f.rosters, [me]: [...f.rosters[me]] } };
+    for (let i = 0; i < 3; i++) f = simDay(f, teams, { includeUser: true }).franchise;
+    expect(f.waivers).toEqual([]);
+    expect(f.freeAgents).toContain(id);
+  });
+});
+
 describe("buyouts", () => {
   it("a buyout below the player's ask is refused, and an accepted one becomes dead cap", () => {
     const start = make();
