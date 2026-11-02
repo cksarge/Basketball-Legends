@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { formatDate } from "@/career/format";
-import { deleteFranchise, exportFranchise, importFranchise, listFranchises, loadFranchise } from "@/franchise/storage";
+import { deleteFranchise, exportFranchise, importFranchise, pastSeasons, listFranchises, loadFranchise } from "@/franchise/storage";
 import type { Franchise, FranchiseSummary } from "@/franchise/types";
 import { franchiseTeam } from "@/state/franchiseStore";
 import { pruneFranchiseSaves } from "@/state/suspended";
@@ -31,7 +31,7 @@ export function FranchiseSelect() {
   const onExport = async (s: FranchiseSummary) => {
     const f = await loadFranchise(s.id);
     if (!f) return;
-    downloadText(`${fileSlug(s.teamName)}.blfranchise`, exportFranchise(f));
+    downloadText(`${fileSlug(s.teamName)}.blfranchise`, exportFranchise(f, await pastSeasons(s.id)));
     toast("Franchise exported");
   };
 

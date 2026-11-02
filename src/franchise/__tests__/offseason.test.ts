@@ -120,6 +120,21 @@ describe("the next season", () => {
     expect(r.year).toBe(year + 1);
   });
 
+  it("career totals, awards and titles carry into the next season", () => {
+    const line = ended.season.stats;
+    const id = Object.keys(line).find((x) => next.players[x] && line[x].gp > 40)!;
+    expect(next.players[id].file?.career).toMatchObject({ seasons: 1, gp: line[id].gp, pts: line[id].pts });
+    const champ = ended.rosters[ended.season.championId!].find((x) => next.players[x])!;
+    expect(next.players[champ].file?.titles).toBe(1);
+    const mvp = ended.season.awards.find((a) => a.id === "mvp")!.playerId;
+    expect(next.players[mvp]?.file?.awards ?? 1).toBeGreaterThan(0);
+  });
+
+  it("a retired player keeps his career totals", () => {
+    const r = next.retired.find((x) => ended.season.stats[x.id]);
+    expect(r?.career?.gp).toBe(ended.season.stats[r!.id].gp);
+  });
+
   it("the season summary keeps the champion, record and award names", () => {
     const s = next.history[0];
     expect(s.year).toBe(year);

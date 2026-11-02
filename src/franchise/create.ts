@@ -4,9 +4,17 @@ import type { LeagueId, Player, Team } from "@/engine/types";
 import { defaultPlan } from "./coaching/plan";
 import { leagueModule } from "./leagues";
 import { fillGmState } from "./pro/gmState";
+import { DEFAULT_AUTO, DEFAULT_LEAGUE } from "./settings";
 import { FRANCHISE_VERSION, type Franchise, type FranchiseSettings } from "./types";
 
-export const DEFAULT_FRANCHISE_SETTINGS: FranchiseSettings = { quarterMinutes: 6, difficulty: "pro", closeGameMargin: 8, closeGamesOnly: false };
+export const DEFAULT_FRANCHISE_SETTINGS: FranchiseSettings = {
+  quarterMinutes: 6,
+  difficulty: "pro",
+  closeGameMargin: 8,
+  closeGamesOnly: false,
+  auto: DEFAULT_AUTO,
+  league: DEFAULT_LEAGUE,
+};
 const START_YEAR = 2026;
 
 /** generateRoster takes a number, and a franchise seed is a string. */
@@ -36,22 +44,25 @@ export function createFranchise(o: {
     for (const p of roster) players[p.id] = p;
   }
   const date = leagueModule(o.league).calendar(year).opening;
-  return fillGmState({
-    id: `f-${now.toString(36)}-${seedNumber(o.seed).toString(36)}`,
-    version: FRANCHISE_VERSION,
-    seed: o.seed,
-    revision: 0,
-    createdAt: now,
-    updatedAt: now,
-    league: o.league,
-    teamId: o.team.id,
-    date,
-    phase: "regular",
-    settings: { ...DEFAULT_FRANCHISE_SETTINGS, ...o.settings },
-    plan: defaultPlan(),
-    devDate: date,
-    players,
-    rosters,
-    season: { year, games: leagueModule(o.league).schedule(o.teams, year, o.seed), series: [], stats: {}, playoffStats: {}, awards: [] },
-  });
+  return fillGmState(
+    {
+      id: `f-${now.toString(36)}-${seedNumber(o.seed).toString(36)}`,
+      version: FRANCHISE_VERSION,
+      seed: o.seed,
+      revision: 0,
+      createdAt: now,
+      updatedAt: now,
+      league: o.league,
+      teamId: o.team.id,
+      date,
+      phase: "regular",
+      settings: { ...DEFAULT_FRANCHISE_SETTINGS, ...o.settings },
+      plan: defaultPlan(),
+      devDate: date,
+      players,
+      rosters,
+      season: { year, games: leagueModule(o.league).schedule(o.teams, year, o.seed), series: [], stats: {}, playoffStats: {}, awards: [] },
+    },
+    o.teams,
+  );
 }

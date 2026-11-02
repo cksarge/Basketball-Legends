@@ -24,6 +24,9 @@ const SHARE = {
   twoWaySalary: 0.0043,
   devSalary: 0.0003,
   tradeCushion: 0.0018,
+  budgetMin: 4 / 140,
+  budgetDefault: 15 / 140,
+  budgetMax: 40 / 140,
 };
 /** Share of the cap a player can earn, by years of service. */
 const MAX_SHARE: { service: number; share: number }[] = [
@@ -32,6 +35,7 @@ const MAX_SHARE: { service: number; share: number }[] = [
   { service: 0, share: 0.25 },
 ];
 const CAP_RISE = [0.03, 0.06] as const;
+const TICKET_SHARE = 120 / START_CAP;
 
 export type CapRules = { salaryCap: number; maxSalary: (service: number) => number } & Record<keyof typeof SHARE, number>;
 
@@ -45,6 +49,9 @@ export function capRules(cap: CapState): CapRules {
     maxSalary: (service) => roundMoney(cap.salaryCap * MAX_SHARE.find((m) => service >= m.service)!.share),
   };
 }
+
+/** A normal ticket price under this cap. */
+export const ticketBase = (cap: CapState) => Math.round(cap.salaryCap * TICKET_SHARE);
 
 /** Next year's cap. M8 ties this to league revenue. */
 export function nextCap(cap: CapState, seed: string): CapState {

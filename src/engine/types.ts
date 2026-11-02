@@ -199,6 +199,19 @@ export interface Contract {
   startsNext?: boolean;
 }
 
+/** Regular season totals over a Franchise career. */
+export interface CareerLine {
+  seasons: number;
+  gp: number;
+  min: number;
+  pts: number;
+  reb: number;
+  ast: number;
+  stl: number;
+  blk: number;
+  bestSeasonPts: number;
+}
+
 /** A pro's record in Franchise. */
 export interface PlayerFile {
   /** Pro seasons played. */
@@ -212,6 +225,13 @@ export interface PlayerFile {
   lastSalary?: number;
   /** The team that holds his veteran rights while he's a free agent. */
   rightsTeamId?: string;
+  career?: CareerLine;
+  awards?: number;
+  titles?: number;
+  /** Auto-manage won't trade him. */
+  untouchable?: boolean;
+  /** The last team he played for. */
+  lastTeamId?: string;
   /** What the league believes about a rookie until he plays. */
   range?: { ovr: [number, number]; pot: [number, number] };
 }

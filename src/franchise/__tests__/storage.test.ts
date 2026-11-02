@@ -15,6 +15,7 @@ import {
   loadFranchise,
   migrateFranchise,
   openFranchiseDb,
+  pastSeasons,
   type FranchiseDb,
 } from "../storage";
 import { defaultPlan } from "../coaching/plan";
@@ -154,6 +155,81 @@ describe("franchise storage", () => {
     const again = (await loadFranchise(f.id))!;
     expect(Object.values(again.players).every((p) => p.file)).toBe(true);
     expect(again.players[f.rosters[team.id][1]].file).toEqual(before);
+  });
+
+  /** A save as beta.10 wrote it: version 3, before finances and history. */
+  function beta10(f: Franchise) {
+    const old = JSON.parse(JSON.stringify(f));
+    for (const k of ["finance", "job", "news", "hall", "records", "powerLast", "aiTactics"]) delete old[k];
+    delete old.settings.auto;
+    delete old.settings.league;
+    for (const p of Object.values(old.players) as { file: Record<string, unknown> }[]) delete p.file.career;
+    return { ...old, version: 3 } as Franchise;
+  }
+
+  it("a beta.10 save opens with finance, a job and empty news, and keeps its stats", async () => {
+    const f = make();
+    const id = f.rosters[team.id][0];
+    await createFranchiseSave(beta10({ ...f, season: { ...f.season, stats: { [id]: { ...emptyLine(), gp: 3, gs: 3, pts: 60 } } } }), team);
+    const up = (await loadFranchise(f.id))!;
+    expect(up.version).toBe(FRANCHISE_VERSION);
+    expect(FRANCHISE_VERSION).toBe(4);
+    expect(up.season.stats[id].pts).toBe(60);
+    expect(Object.keys(up.finance)).toHaveLength(30);
+    expect(up.finance[team.id]).toMatchObject({ hype: 50, facilities: 50, balance: 0 });
+    expect(up.job.security).toBe(60);
+    expect(up.job.stints).toEqual([{ teamId: team.id, league: "pro", from: f.season.year, w: 0, l: 0, titles: 0 }]);
+    expect(up.news).toEqual([]);
+    expect(up.settings.league.gamesPerSeason).toBe(82);
+    expect(up.settings.auto.roster).toBe(true);
+    expect(up.settings.auto.trades).toBe(false);
+  });
+
+  it("a beta.10 save in the offseason opens at its step", () => {
+    const up = migrateFranchise({ ...beta10(make()), phase: "offseason", offseason: { step: "draft", report: null } });
+    expect(up.offseason?.step).toBe("draft");
+    expect(up.finance).toBeDefined();
+  });
+
+  it("every player keeps career totals after a partial commit and a reload", async () => {
+    const f = make();
+    const [a, b] = f.rosters[team.id];
+    const career = { seasons: 1, gp: 10, min: 1, pts: 5, reb: 1, ast: 1, stl: 1, blk: 1, bestSeasonPts: 5 };
+    const players = {
+      ...f.players,
+      [a]: { ...f.players[a], file: { ...f.players[a].file!, career } },
+      [b]: { ...f.players[b], file: { ...f.players[b].file!, career } },
+    };
+    const open = await createFranchiseSave({ ...f, players }, team);
+    await commitFranchise(open, team, [a]);
+    const back = (await loadFranchise(f.id))!;
+    expect(back.players[b].file?.career).toEqual(career);
+    expect(back.players[a].file?.career).toEqual(career);
+  });
+
+  it("an export with three past seasons imports with all three", async () => {
+    const f = make();
+    const past = [2023, 2024, 2025].map((year) => ({ ...f.season, year, games: [] }));
+    const text = exportFranchise(f, past);
+    const copy = await importFranchise(text, () => team);
+    const back = await pastSeasons(copy.id);
+    expect(back.map((s) => s.year)).toEqual([2023, 2024, 2025]);
+  });
+
+  it("an old export with no past seasons still imports", async () => {
+    const f = make();
+    const copy = await importFranchise(exportFranchise(f), () => team);
+    expect(await pastSeasons(copy.id)).toEqual([]);
+  });
+
+  it("a finished season's row keeps its stats and loses its games once the year turns", async () => {
+    const f = await createFranchiseSave(make(), team);
+    const year = f.season.year;
+    const next = { ...f, history: [{ year, record: { w: 1, l: 0 }, awards: [] }], season: { ...f.season, year: year + 1 } };
+    await commitFranchise(next, team);
+    const [old] = await pastSeasons(f.id);
+    expect(old.year).toBe(year);
+    expect(old.games).toEqual([]);
   });
 
   it("gives an imported save a new id when the original exists", async () => {

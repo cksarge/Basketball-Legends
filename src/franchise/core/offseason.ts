@@ -2,6 +2,7 @@
 import { fullName, playerOvr } from "@/engine/player";
 import { Rng } from "@/engine/rng";
 import type { Team } from "@/engine/types";
+import { addSeason } from "../history/career";
 import { leagueModule } from "../leagues";
 import { decideOptions, pendingOptions, rollContracts } from "../pro/contracts";
 import { currentPick } from "../pro/draft";
@@ -86,6 +87,9 @@ function leaveLeague(f: Franchise, year: number) {
       age: p.age,
       peak: p.file.peak ?? playerOvr(p),
       lastTeamId: report?.lastTeams[id] ?? null,
+      career: p.file.career,
+      awards: p.file.awards,
+      titles: p.file.titles,
     });
   }
   return { players, retired: [...f.retired, ...retired], freeAgents: pool.slice(0, FREE_AGENT_POOL) };
@@ -97,7 +101,8 @@ export function startNewSeason(f: Franchise, teams: Team[]): Franchise {
   const date = m.calendar(year).opening;
   const trimmed = aiFillRosters(processWaivers({ ...f, date }).franchise);
   const cleared = processWaivers({ ...trimmed, waivers: trimmed.waivers.map((w) => ({ ...w, until: date })) }).franchise;
-  const left = leaveLeague(cleared, year);
+  const credited = { ...cleared, players: Object.fromEntries(Object.entries(cleared.players).map(([id, p]) => [id, addSeason(p, f.season.stats[id], f)])) };
+  const left = leaveLeague(credited, year);
   const healed = Object.fromEntries(
     Object.entries(left.players).map(([id, p]) => {
       if (!p.injury) return [id, p];
@@ -107,7 +112,7 @@ export function startNewSeason(f: Franchise, teams: Team[]): Franchise {
     }),
   );
   const next: Franchise = {
-    ...cleared,
+    ...credited,
     ...left,
     players: healed,
     date,

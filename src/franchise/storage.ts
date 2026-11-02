@@ -3,6 +3,7 @@
 import Dexie, { type Table } from "dexie";
 import type { Player, Team } from "@/engine/types";
 import { defaultPlan } from "./coaching/plan";
+import { archiveSeason } from "./history/career";
 import { fillGmState } from "./pro/gmState";
 import { FRANCHISE_VERSION, type Franchise, type FranchiseSummary, type LeagueSeason } from "./types";
 
@@ -101,12 +102,13 @@ export async function loadFranchise(id: string): Promise<Franchise | null> {
   });
 }
 
-export async function createFranchiseSave(f: Franchise, team: Team | undefined): Promise<Franchise> {
+export async function createFranchiseSave(f: Franchise, team: Team | undefined, past: LeagueSeason[] = []): Promise<Franchise> {
   const d = getDb();
   await d.transaction("rw", d.saves, d.players, d.seasons, async () => {
     await d.saves.put(saveRow(f, team));
     await d.players.bulkPut(playerRows(f, Object.keys(f.players)));
     await d.seasons.put({ saveId: f.id, year: f.season.year, data: f.season });
+    await d.seasons.bulkPut(past.map((data) => ({ saveId: f.id, year: data.year, data })));
   });
   return f;
 }
@@ -118,6 +120,11 @@ export async function commitFranchise(f: Franchise, team: Team | undefined, chan
   await d.transaction("rw", d.saves, d.players, d.seasons, async () => {
     const row = await d.saves.get(f.id);
     if (!row || row.revision !== f.revision) throw new StaleFranchiseError();
+    // the year just turned, so the finished season keeps its numbers and drops its games
+    if (saved.history.length !== row.data.history?.length) {
+      const old = await d.seasons.get([f.id, saved.season.year - 1]);
+      if (old) await d.seasons.put({ ...old, data: archiveSeason(old.data) });
+    }
     await d.saves.put(saveRow(saved, team));
     await d.players.bulkPut(playerRows(saved, changedPlayers ?? Object.keys(saved.players)));
     if (!changedPlayers) {
@@ -127,6 +134,13 @@ export async function commitFranchise(f: Franchise, team: Team | undefined, chan
     await d.seasons.put({ saveId: saved.id, year: saved.season.year, data: saved.season });
   });
   return saved;
+}
+
+/** Every finished season of a save, oldest first. */
+export async function pastSeasons(id: string): Promise<LeagueSeason[]> {
+  const rows = await getDb().seasons.where("saveId").equals(id).toArray();
+  const seasons = rows.map((r) => r.data).sort((a, b) => a.year - b.year);
+  return seasons.slice(0, -1).map(archiveSeason);
 }
 
 export async function deleteFranchise(id: string) {
@@ -155,8 +169,8 @@ export function migrateFranchise(f: Franchise): Franchise {
 
 export const FRANCHISE_EXPORT_KIND = "basketball-legends-franchise";
 
-export function exportFranchise(f: Franchise): string {
-  return JSON.stringify({ kind: FRANCHISE_EXPORT_KIND, version: FRANCHISE_VERSION, exportedAt: new Date().toISOString(), franchise: f });
+export function exportFranchise(f: Franchise, past: LeagueSeason[] = []): string {
+  return JSON.stringify({ kind: FRANCHISE_EXPORT_KIND, version: FRANCHISE_VERSION, exportedAt: new Date().toISOString(), franchise: f, past });
 }
 
 /** Parses a .blfranchise file. Imports never overwrite: a franchise whose id already exists gets a new id. */
@@ -167,10 +181,10 @@ export async function importFranchise(text: string, team: (f: Franchise) => Team
   } catch {
     throw new Error("That file isn't a franchise save.");
   }
-  const file = parsed as { kind?: string; franchise?: Franchise };
+  const file = parsed as { kind?: string; franchise?: Franchise; past?: LeagueSeason[] };
   if (file?.kind !== FRANCHISE_EXPORT_KIND || !file.franchise) throw new Error("That file isn't a franchise save.");
   let f = migrateFranchise(file.franchise);
   if (!team(f)) throw new Error("That file isn't a franchise save.");
   if (await getDb().saves.get(f.id)) f = { ...f, id: `${f.id}-import-${Date.now().toString(36)}` };
-  return createFranchiseSave(f, team(f));
+  return createFranchiseSave(f, team(f), Array.isArray(file.past) ? file.past : []);
 }

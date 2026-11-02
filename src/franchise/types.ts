@@ -1,6 +1,6 @@
 // The Franchise save format: one persistent league, its players and the season in progress.
 import type { IsoDate, ProSeries, ScheduledGame } from "@/career/types";
-import type { LeagueId, Player, PlayerFile, Position, TeamTactics } from "@/engine/types";
+import type { CareerLine, LeagueId, Player, PlayerFile, Position, TeamTactics } from "@/engine/types";
 import type { Difficulty } from "@/game/sim/state";
 import type { BoxScore, StatLine } from "@/game/sim/stats";
 import type { SigningVia } from "./pro/cap";
@@ -8,9 +8,9 @@ import type { Offer } from "./pro/market";
 import type { TradeOffer } from "./pro/tradeAi";
 import type { TradeAsset } from "./pro/trades";
 
-export const FRANCHISE_VERSION = 3;
+export const FRANCHISE_VERSION = 4;
 
-export type { PlayerFile };
+export type { CareerLine, PlayerFile };
 
 export type FranchisePhase = "regular" | "playIn" | "playoffs" | "offseason";
 
@@ -22,6 +22,21 @@ export interface FranchiseSettings {
   closeGameMargin: number;
   /** Sims the user's games to the last period, and stops only if they're close. */
   closeGamesOnly: boolean;
+  /** Systems that run themselves. */
+  auto: Record<AutoKey, boolean>;
+  league: LeagueSettings;
+  /** League changes that wait for next season. */
+  pendingLeague?: LeagueSettings;
+}
+
+export type AutoKey = "tactics" | "practice" | "scouting" | "draft" | "contracts" | "freeAgency" | "trades" | "finances" | "roster";
+
+export interface LeagueSettings {
+  gamesPerSeason: 82 | 70 | 58 | 41;
+  playoffFormat: { firstRoundBestOf: 5 | 7; playIn: boolean };
+  tradeDifficulty: "easy" | "normal" | "hard";
+  injuries: "off" | "fewer" | "normal" | "more";
+  progression: "slow" | "normal" | "fast";
 }
 
 export interface SeasonLine extends StatLine {
@@ -45,6 +60,8 @@ export interface LeagueSeason {
   playoffStats: Record<string, SeasonLine>;
   awards: Award[];
   championId?: string;
+  /** Who was on the champion when the title was won. */
+  championRoster?: string[];
 }
 
 export type PracticeFocus = "balanced" | "shooting" | "finishing" | "playmaking" | "defense" | "conditioning";
@@ -164,6 +181,86 @@ export interface RetiredPlayer {
   age: number;
   peak: number;
   lastTeamId: string | null;
+  career?: CareerLine;
+  awards?: number;
+  titles?: number;
+}
+
+export type BudgetKey = "coaching" | "scouting" | "facilities";
+
+export interface TeamFinance {
+  ticketPrice: number;
+  budgets: Record<BudgetKey, number>;
+  /** 0..100, built slowly by the facilities budget. */
+  facilities: number;
+  /** 0..100, fan interest. */
+  hype: number;
+  balance: number;
+  season: { revenue: number; expenses: number; attendance: number; homeGames: number };
+  lastSeason?: { revenue: number; expenses: number; profit: number; attendance: number };
+}
+
+export interface OwnerGoal {
+  key: "winning" | "profit" | "development";
+  target: number;
+}
+
+export type Grade = "A" | "B" | "C" | "D" | "F";
+
+export interface OwnerReview {
+  year: number;
+  grades: Record<OwnerGoal["key"], Grade>;
+  change: number;
+  note: string;
+}
+
+export interface JobStint {
+  teamId: string;
+  league: LeagueId;
+  from: number;
+  to?: number;
+  w: number;
+  l: number;
+  titles: number;
+}
+
+export interface JobState {
+  security: number;
+  goals: OwnerGoal[];
+  /** Seasons finished for this owner. */
+  seasons: number;
+  reviews: OwnerReview[];
+  stints: JobStint[];
+  fired?: { year: number; teamId: string };
+}
+
+export interface NewsItem {
+  id: string;
+  date: IsoDate;
+  kind: "trade" | "signing" | "injury" | "milestone" | "upset" | "award" | "draft" | "retirement" | "job";
+  text: string;
+  teamIds: string[];
+}
+
+export interface HallEntry {
+  id: string;
+  name: string;
+  pos: Position;
+  year: number;
+  score: number;
+  career: CareerLine;
+  awards: number;
+  titles: number;
+  lastTeamId: string | null;
+}
+
+export interface LeagueRecord {
+  key: string;
+  label: string;
+  value: number;
+  playerId: string;
+  name: string;
+  year: number;
 }
 
 export interface SeasonSummary {
@@ -219,6 +316,15 @@ export interface Franchise {
   tradeOffers: TradeOffer[];
   /** Trades around the league. */
   tradeLog: { date: IsoDate; teams: string[]; assets: TradeAsset[] }[];
+  finance: Record<string, TeamFinance>;
+  job: JobState;
+  news: NewsItem[];
+  hall: HallEntry[];
+  records: LeagueRecord[];
+  /** Team id -> power rank a week ago. */
+  powerLast: Record<string, number>;
+  /** Each AI team's system for the season. */
+  aiTactics: Record<string, TeamTactics>;
   /** Player id -> tries used in contract talks this year. */
   talks: Record<string, number>;
   retired: RetiredPlayer[];
