@@ -81,6 +81,8 @@ export interface PendingMatch {
   careerRun?: string;
   /** Franchise game this match belongs to. */
   franchise?: FranchiseGameRef;
+  /** The game is over, so reopening it goes back to returnTo instead of restarting it. */
+  finished?: boolean;
   /** Overrides the difficulty from Settings (careers have their own). */
   difficulty?: Difficulty;
   /** Career: what to do when the locked player goes to the bench. */
@@ -129,6 +131,16 @@ export const useMatchStore = create<MatchStore>((set) => ({
   },
   setResult: (lastResult) => set({ lastResult }),
 }));
+
+/** Marks the session's match as over. Only the stored copy changes, so the final screen stays up until you leave it. */
+export function markPendingFinished() {
+  try {
+    const p = restorePending();
+    if (p) sessionStorage.setItem("bl-pending", JSON.stringify({ ...p, finished: true }));
+  } catch {
+    /* ignore */
+  }
+}
 
 /** Restore a pending match after a page reload (session only). */
 export function restorePending(): PendingMatch | null {

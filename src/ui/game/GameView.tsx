@@ -23,7 +23,8 @@ import { gameScore } from "@/game/sim/stats";
 import { audio } from "@/audio/engine";
 import { overall } from "@/engine/player";
 import { useSettings, type CameraMode } from "@/state/settings";
-import { type PendingMatch, useHud, useMatchStore } from "@/state/matchStore";
+import { storeFranchiseResult } from "@/state/franchiseResult";
+import { markPendingFinished, type MatchResult, type PendingMatch, useHud, useMatchStore } from "@/state/matchStore";
 import { CommentaryFeed, ControlsStrip, PlayBannerView, PlayerTag, ScoreBug, ShotMeter, StatOverlayView } from "../hud/Hud";
 import { TeamLogo } from "../TeamLogo";
 import { BoxScoreTable } from "../BoxScore";
@@ -233,7 +234,7 @@ export function GameView({ pending }: { pending: PendingMatch }) {
         const gs = gameScore(line);
         return !best || gs > best.gs ? { id: p.id, gs } : best;
       }, null);
-      setResult({
+      const result: MatchResult = {
         mode: pending.mode,
         homeId: s.teams[0].team.id,
         awayId: s.teams[1].team.id,
@@ -250,7 +251,12 @@ export function GameView({ pending }: { pending: PendingMatch }) {
         careerRun: pending.careerRun,
         franchise: pending.franchise,
         park: pending.park ? parkOutcome(match, pending.park, contestRivals(pending)) : undefined,
-      });
+      };
+      setResult(result);
+      if (pending.franchise) {
+        storeFranchiseResult(result);
+        markPendingFinished();
+      }
       setScreen("final");
     },
     [match, pending, setResult],
@@ -506,7 +512,10 @@ export function GameView({ pending }: { pending: PendingMatch }) {
             (pending.career || pending.franchise) && !pending.practice
               ? () => {
                   // stays in its Career slot if it has one; otherwise the autosave holds it for the hub
-                  saveSuspended(match, { ...pending, saveSlot: slotRef.current ?? undefined }, slotRef.current ?? "auto");
+                  if (!saveSuspended(match, { ...pending, saveSlot: slotRef.current ?? undefined }, slotRef.current ?? "auto")) {
+                    toast("Couldn't save: this browser's storage is full or blocked", "bad");
+                    return;
+                  }
                   toast(`Game saved. Resume it from your ${hubName(saveGroupOf(pending))}.`, "good");
                   router.push(pending.returnTo);
                 }

@@ -7,35 +7,40 @@ import { primaryDevice } from "@/ui/game/primaryDevice";
 import { teamLabel } from "@/data/leagues";
 import type { Team } from "@/engine/types";
 import { fullName } from "@/engine/player";
-import { nextFranchiseEvent } from "@/franchise/core/season";
+import { dueGame, nextFranchiseEvent } from "@/franchise/core/season";
 import { leagueModule } from "@/franchise/leagues";
 import { franchisePending } from "@/franchise/match";
 import { loadFranchise } from "@/franchise/storage";
 import type { Franchise } from "@/franchise/types";
+import { runFranchiseSim, useFranchiseSim } from "@/state/franchiseSim";
 import { useMatchStore } from "@/state/matchStore";
 import { findFranchiseSave } from "@/state/suspended";
 import { Button, Panel } from "@/ui/kit";
 import { useInputDevice } from "@/ui/MenuNavigator";
 import { TeamLogo } from "@/ui/TeamLogo";
-import type { useSim } from "./actions";
+import { toast } from "@/ui/Toaster";
 
-export function HomeTab({ f, teams, sim }: { f: Franchise; teams: Team[]; sim: ReturnType<typeof useSim> }) {
+export function HomeTab({ f, teams }: { f: Franchise; teams: Team[] }) {
   const router = useRouter();
   const setPending = useMatchStore((s) => s.setPending);
   const device = useInputDevice((s) => s.device);
   const ev = nextFranchiseEvent(f);
   const [until, setUntil] = useState("");
-  const running = sim.sim.running;
+  const running = useFranchiseSim((s) => s.running);
   const byId = (id: string) => teams.find((t) => t.id === id)!;
   const seasonEnd = leagueModule(f.league).calendar(f.season.year).seasonEnd;
 
   const play = async () => {
     if (ev.kind !== "game") return;
     // the rest of the league catches up to game day first
-    await sim.run({ until: "nextUserGame", includeUser: false });
+    if ((await runFranchiseSim({ until: "nextUserGame", includeUser: false }, teams)) !== "done") return;
     const fresh = await loadFranchise(f.id);
-    if (!fresh) return;
-    setPending(franchisePending(fresh, ev.game, teams, primaryDevice(device)));
+    const game = fresh && dueGame(fresh);
+    if (!game || game.id !== ev.game.id) {
+      toast("That game has changed. Check the schedule and try again.", "bad");
+      return;
+    }
+    setPending(franchisePending(fresh, game, teams, primaryDevice(device)));
     router.push("/game/");
   };
   const saved = ev.kind === "game" ? findFranchiseSave(f.id, ev.game.id) : null;
@@ -103,11 +108,11 @@ export function HomeTab({ f, teams, sim }: { f: Franchise; teams: Team[]; sim: R
                   Play
                 </Button>
               )}
-              <Button variant="secondary" disabled={running} onClick={() => sim.run({ until: ev.date, includeUser: true })}>
+              <Button variant="secondary" disabled={running} onClick={() => runFranchiseSim({ until: ev.date, includeUser: true }, teams)}>
                 Sim game
               </Button>
               {ev.date > f.date && (
-                <Button variant="secondary" disabled={running} onClick={() => sim.run({ until: "nextUserGame", includeUser: false })}>
+                <Button variant="secondary" disabled={running} onClick={() => runFranchiseSim({ until: "nextUserGame", includeUser: false }, teams)}>
                   Sim to next event
                 </Button>
               )}
@@ -117,7 +122,7 @@ export function HomeTab({ f, teams, sim }: { f: Franchise; teams: Team[]; sim: R
           <>
             <p className="text-steel">Your team has no game scheduled right now.</p>
             <div className="mt-4">
-              <Button disabled={running} onClick={() => sim.run({ until: "nextUserGame", includeUser: false })}>
+              <Button disabled={running} onClick={() => runFranchiseSim({ until: "nextUserGame", includeUser: false }, teams)}>
                 Sim to next event
               </Button>
             </div>
@@ -137,10 +142,10 @@ export function HomeTab({ f, teams, sim }: { f: Franchise; teams: Team[]; sim: R
               className="rounded-[var(--radius-chip)] bg-navy px-3 py-2 text-net ring-1 ring-line"
             />
           </label>
-          <Button variant="secondary" disabled={running} onClick={() => sim.run({ until: dayAfter, includeUser: true })}>
+          <Button variant="secondary" disabled={running} onClick={() => runFranchiseSim({ until: dayAfter, includeUser: true }, teams)}>
             Sim to date
           </Button>
-          <Button variant="secondary" disabled={running} onClick={() => sim.run({ until: "seasonEnd", includeUser: true })}>
+          <Button variant="secondary" disabled={running} onClick={() => runFranchiseSim({ until: "seasonEnd", includeUser: true }, teams)}>
             Sim the season
           </Button>
         </div>

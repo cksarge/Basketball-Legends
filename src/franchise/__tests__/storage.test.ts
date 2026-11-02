@@ -96,6 +96,18 @@ describe("franchise storage", () => {
     expect(await listFranchises()).toHaveLength(0);
   });
 
+  it("rejects a save file with no rosters and stores nothing", async () => {
+    const f = make();
+    const broken = JSON.stringify({ ...JSON.parse(exportFranchise(f)), franchise: { ...f, rosters: undefined } });
+    await expect(importFranchise(broken, () => team)).rejects.toThrow("That file isn't a franchise save.");
+    expect(await listFranchises()).toHaveLength(0);
+  });
+
+  it("rejects a save file for a team the game doesn't have", async () => {
+    await expect(importFranchise(exportFranchise(make()), () => undefined)).rejects.toThrow("That file isn't a franchise save.");
+    expect(await listFranchises()).toHaveLength(0);
+  });
+
   it("keeps the last save readable when storage is full", async () => {
     const f = await createFranchiseSave(make(), team);
     const [a] = Object.keys(f.players);

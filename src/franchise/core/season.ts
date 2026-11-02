@@ -22,6 +22,12 @@ export function nextFranchiseEvent(f: Franchise): FranchiseEvent {
   return open ? { kind: "game", date: open.date, game: open } : { kind: "day", date: f.date };
 }
 
+/** The user's game, if it's ready to play today. */
+export function dueGame(f: Franchise): ScheduledGame | null {
+  const ev = nextFranchiseEvent(f);
+  return ev.kind === "game" && ev.date <= f.date ? ev.game : null;
+}
+
 function boxSide(f: Franchise, teamId: string): BoxSide {
   const roster = f.rosters[teamId].map((id) => f.players[id]);
   const rotation = defaultRotation(roster, leagueTotalMinutes(f));

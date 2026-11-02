@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it } from "vitest";
 import { addDays, proCalendar } from "@/career/calendar";
 import type { Team } from "@/engine/types";
-import { applyGame, conferenceSeeds, nextFranchiseEvent, simDay } from "../core/season";
+import { applyGame, conferenceSeeds, dueGame, nextFranchiseEvent, simDay } from "../core/season";
 import { createFranchise } from "../create";
 import { simBox } from "../boxsim";
 import { defaultRotation } from "../rotation";
@@ -139,6 +139,32 @@ describe("a full season", () => {
     const t0 = performance.now();
     simSeason(make("speed"));
     expect(performance.now() - t0).toBeLessThan(60_000);
+  });
+});
+
+describe("dueGame", () => {
+  const atGameDay = () => {
+    let f = make("due");
+    for (let i = 0; i < 60; i++) {
+      const r = simDay(f, teams, { includeUser: false });
+      f = r.franchise;
+      if (r.blocked) break;
+    }
+    return f;
+  };
+
+  it("is the user's game once the league has caught up to it", () => {
+    const f = atGameDay();
+    const ev = nextFranchiseEvent(f);
+    expect(dueGame(f)?.id).toBe(ev.kind === "game" ? ev.game.id : "none");
+  });
+
+  it("is nothing while the game is still days away", () => {
+    expect(dueGame({ ...make("due"), date: "2026-10-01" })).toBeNull();
+  });
+
+  it("is nothing once the season is over", () => {
+    expect(dueGame(season)).toBeNull();
   });
 });
 

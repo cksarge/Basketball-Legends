@@ -20,8 +20,8 @@ interface FranchiseStore {
   refresh: () => Promise<void>;
   /** Save a new franchise and open it. */
   set: (f: Franchise) => Promise<void>;
-  /** Apply a change and save it. */
-  update: (fn: (f: Franchise) => Franchise, changedPlayers?: string[]) => Promise<void>;
+  /** Apply a change and save it. False means it wasn't saved, and the status says why. */
+  update: (fn: (f: Franchise) => Franchise, changedPlayers?: string[]) => Promise<boolean>;
   close: () => void;
 }
 
@@ -52,13 +52,15 @@ export const useFranchise = create<FranchiseStore>((set, get) => ({
   },
   update: async (fn, changedPlayers) => {
     const cur = get().franchise;
-    if (!cur || get().status !== "ready") return;
+    if (!cur || get().status !== "ready") return false;
     try {
       const saved = await commitFranchise(fn(cur), get().team ?? undefined, changedPlayers);
       set({ franchise: saved });
+      return true;
     } catch (e) {
       if (e instanceof StaleFranchiseError) set({ status: "stale" });
       else set({ status: "error", error: "Couldn't save. Your last change isn't stored." });
+      return false;
     }
   },
   close: () => set({ franchise: null, team: null, status: "idle", error: null }),

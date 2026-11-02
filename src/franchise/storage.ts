@@ -134,7 +134,8 @@ export async function deleteFranchise(id: string) {
 
 /** Upgrades older saves to the current format. */
 export function migrateFranchise(f: Franchise): Franchise {
-  if (!f || typeof f !== "object" || !f.id || !f.players || !f.season) throw new Error("That file isn't a franchise save.");
+  if (!f || typeof f !== "object" || !f.id || !f.teamId || !f.players || !f.rosters || !Array.isArray(f.season?.games))
+    throw new Error("That file isn't a franchise save.");
   if (f.version > FRANCHISE_VERSION) throw new Error("This franchise was saved by a newer version of the game. Update the game to open it.");
   return f;
 }
@@ -156,6 +157,7 @@ export async function importFranchise(text: string, team: (f: Franchise) => Team
   const file = parsed as { kind?: string; franchise?: Franchise };
   if (file?.kind !== FRANCHISE_EXPORT_KIND || !file.franchise) throw new Error("That file isn't a franchise save.");
   let f = migrateFranchise(file.franchise);
+  if (!team(f)) throw new Error("That file isn't a franchise save.");
   if (await getDb().saves.get(f.id)) f = { ...f, id: `${f.id}-import-${Date.now().toString(36)}` };
   return createFranchiseSave(f, team(f));
 }

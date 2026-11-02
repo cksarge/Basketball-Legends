@@ -1,4 +1,5 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { loadLeague, rosterFor } from "@/data/leagues";
 import { useSettings } from "@/state/settings";
@@ -23,6 +24,7 @@ async function demoMatch(): Promise<PendingMatch> {
 }
 
 export function GamePageClient() {
+  const router = useRouter();
   const stored = useMatchStore((s) => s.pending);
   // the match set up before a reload lives in session storage; read it without a hydration mismatch
   const savedRaw = useSyncExternalStore(
@@ -49,7 +51,11 @@ export function GamePageClient() {
   useEffect(() => {
     if (hydrated && !stored && !saved) demoMatch().then(setDemo);
   }, [hydrated, stored, saved]);
-  if (!pending) {
+  const finished = pending?.finished ? pending.returnTo : null;
+  useEffect(() => {
+    if (finished) router.replace(finished);
+  }, [finished, router]);
+  if (!pending || finished) {
     return (
       <div className="grid min-h-dvh place-items-center" role="status">
         <p className="font-display text-3xl font-black text-steel">Loading the arena…</p>

@@ -159,16 +159,40 @@ test("a franchise game saves to a Franchise slot, resumes from the hub and recor
   await expect(page.getByRole("dialog", { name: "Paused" })).toBeVisible({ timeout: 60_000 });
   await page.getByRole("button", { name: "Sim to end" }).click();
   await page.getByRole("alertdialog").getByRole("button", { name: "Sim to end" }).click();
-  await page
-    .getByRole("button", { name: /Continue|Back|Done/ })
-    .first()
-    .click({ timeout: 120_000 });
+  await expect(page.getByRole("button", { name: "Continue" })).toBeVisible({ timeout: 120_000 });
+  // reloading the final screen doesn't lose the game or start it over
+  await page.reload();
   await page.waitForURL(/franchise\/hub\/\?id=/);
   await page.getByRole("tab", { name: "Schedule" }).click();
-  await expect(page.getByText(/^[WL]$/).first()).toBeVisible();
-  // the result landed once, and the finished game's save is gone
-  await expect(page.getByRole("tab", { name: "Home" })).toBeVisible();
+  await expect(page.getByText(/^[WL]$/)).toHaveCount(1);
   expect(await page.evaluate(() => localStorage.getItem("bl-franchise-save-1"))).toBeNull();
+  // and reopening the finished game leads back to the hub, with one result
+  await page.goto("game/");
+  await page.waitForURL(/franchise\/hub\/\?id=/);
+  await page.getByRole("tab", { name: "Schedule" }).click();
+  await expect(page.getByText(/^[WL]$/)).toHaveCount(1);
+});
+
+test("Save and quit stays in the game when the save fails @gpu", async ({ page }) => {
+  test.setTimeout(240_000);
+  await lowGraphics(page);
+  await page.goto("franchise/new/");
+  await page.getByRole("button", { name: /Phoenix/ }).click();
+  await page.getByRole("button", { name: "Start franchise" }).click();
+  await page.waitForURL(/franchise\/hub\/\?id=/);
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.waitForURL("**/game/");
+  await expect(page.getByText("Loading the arena")).toBeHidden({ timeout: 60_000 });
+  await clockRuns(page);
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => {
+    Storage.prototype.setItem = () => {
+      throw new DOMException("full", "QuotaExceededError");
+    };
+  });
+  await page.getByRole("button", { name: "Save and quit" }).click();
+  await expect(page.getByText(/Couldn't save/)).toBeVisible();
+  expect(page.url()).toContain("/game/");
 });
 
 test("create a career, then find it on the career screen after a reload", async ({ page }) => {

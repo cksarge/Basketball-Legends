@@ -33,7 +33,7 @@ describe("franchise store", () => {
 
   it("applies and saves a change", async () => {
     await start();
-    await useFranchise.getState().update((f) => ({ ...f, date: "2026-12-25" }));
+    expect(await useFranchise.getState().update((f) => ({ ...f, date: "2026-12-25" }))).toBe(true);
     expect(useFranchise.getState().franchise?.date).toBe("2026-12-25");
     expect(useFranchise.getState().franchise?.revision).toBe(1);
   });
@@ -41,14 +41,14 @@ describe("franchise store", () => {
   it("goes stale instead of overwriting changes from another tab", async () => {
     const f = await start();
     await commitFranchise({ ...f, date: "2027-01-01" }, teams[0]);
-    await useFranchise.getState().update((x) => ({ ...x, date: "2027-02-02" }));
+    expect(await useFranchise.getState().update((x) => ({ ...x, date: "2027-02-02" }))).toBe(false);
     expect(useFranchise.getState().status).toBe("stale");
   });
 
   it("says so when a save fails, instead of claiming it worked", async () => {
     await start();
     const spy = vi.spyOn(db.saves, "put").mockRejectedValueOnce(new DOMException("full", "QuotaExceededError"));
-    await useFranchise.getState().update((x) => ({ ...x, date: "2027-02-02" }));
+    expect(await useFranchise.getState().update((x) => ({ ...x, date: "2027-02-02" }))).toBe(false);
     spy.mockRestore();
     expect(useFranchise.getState().status).toBe("error");
     expect(useFranchise.getState().error).toBe("Couldn't save. Your last change isn't stored.");

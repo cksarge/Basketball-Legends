@@ -4,9 +4,12 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { formatDate } from "@/career/format";
 import { teamLabel } from "@/data/leagues";
+import { applyFranchiseResult } from "@/state/franchiseResult";
+import { stopFranchiseSim, useFranchiseSim } from "@/state/franchiseSim";
 import { useFranchise } from "@/state/franchiseStore";
 import { Button, PageShell, Panel } from "@/ui/kit";
-import { applyLastResult, pruneSaves, useLeagueTeams, useSim } from "./actions";
+import { toast } from "@/ui/Toaster";
+import { pruneSaves, useLeagueTeams } from "./actions";
 import { HomeTab } from "./HomeTab";
 import { LeadersTab } from "./LeadersTab";
 import { PlayoffsTab } from "./PlayoffsTab";
@@ -22,7 +25,7 @@ export function FranchiseHub() {
   const { franchise, team, status, error, open } = useFranchise();
 
   const teams = useLeagueTeams(franchise);
-  const sim = useSim(teams);
+  const sim = useFranchiseSim();
   const [tab, setTab] = useState<Tab>("Home");
   const prepared = useRef<string | null>(null);
 
@@ -34,7 +37,9 @@ export function FranchiseHub() {
   useEffect(() => {
     if (status !== "ready" || !franchise || !teams || franchise.id !== id || prepared.current === id) return;
     prepared.current = id;
-    applyLastResult(franchise, teams);
+    applyFranchiseResult(franchise, teams).then((outcome) => {
+      if (outcome === "unused") toast("That game was already decided, so this result wasn't used.", "bad");
+    });
   }, [status, franchise, teams, id]);
 
   // a game simmed from the hub can't be resumed anymore, so any save of it goes
@@ -97,10 +102,10 @@ export function FranchiseHub() {
       <p className="mb-4 text-steel">
         {franchise.season.year}-{String(franchise.season.year + 1).slice(2)} · {record.w}-{record.l} · {formatDate(franchise.date)}
       </p>
-      {sim.sim.running && (
+      {sim.running && (
         <div className="mb-4 flex items-center gap-3 rounded-[var(--radius-chip)] bg-deck p-3 ring-1 ring-line" role="status">
-          <span className="flex-1">Simulating{sim.sim.date ? `: ${formatDate(sim.sim.date)}` : "…"}</span>
-          <Button variant="secondary" onClick={sim.stop}>
+          <span className="flex-1">Simulating{sim.date ? `: ${formatDate(sim.date)}` : "…"}</span>
+          <Button variant="secondary" onClick={stopFranchiseSim}>
             Stop
           </Button>
         </div>
@@ -118,7 +123,7 @@ export function FranchiseHub() {
           </button>
         ))}
       </nav>
-      {tab === "Home" && <HomeTab f={franchise} teams={teams} sim={sim} />}
+      {tab === "Home" && <HomeTab f={franchise} teams={teams} />}
       {tab === "Schedule" && <ScheduleTab f={franchise} teams={teams} team={team} />}
       {tab === "Roster" && <RosterTab f={franchise} />}
       {tab === "Standings" && <StandingsTab f={franchise} teams={teams} />}

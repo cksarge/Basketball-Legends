@@ -15,6 +15,9 @@ In testing at legends.carterscoding.com/beta/. These notes grow as Franchise mod
 - **Real stats for every game:** a new simulator gives every game in the league a full box score, tuned against the real game. Stat leaders, All-League teams, MVP, Defensive Player of the Year, Sixth Man and Finals MVP all come from those numbers.
 - **Your hub:** Home, Schedule with box scores, Roster, Standings, Leaders and Playoffs, with sortable tables. Injuries sideline players across the league.
 - **Save a game in progress:** Franchise games use their own three save slots, and the hub resumes them.
+- **Your games are safe:** a finished game is kept until it's saved to your franchise, so reloading or closing the tab on the final screen can't lose it, and going back never restarts it.
+- **Honest saves:** if the browser's storage is full, Save and quit now says so and keeps you in the game, here and in Road to Legend.
+- **Sims stay with you:** leave the hub during a sim and it's still running, with Stop, when you come back.
 - The offseason arrives in a later beta, so a franchise currently ends with the first champion.
 
 ## v0.3.0 — November 1, 2026
