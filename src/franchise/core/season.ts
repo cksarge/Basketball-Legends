@@ -3,7 +3,9 @@ import { addDays } from "@/career/calendar";
 import type { IsoDate, ScheduledGame } from "@/career/types";
 import type { Player, Team } from "@/engine/types";
 import { addLine, emptyLine, type StatLine } from "@/game/sim/stats";
+import { weeklyDevelopment } from "../coaching/development";
 import { resolveLineup } from "../coaching/plan";
+import { coachEdge, staffRating, trainerGamesOut } from "../coaching/staff";
 import { simBox, type BoxInput, type BoxResult, type BoxSide } from "../boxsim";
 import { seasonAwards } from "./awards";
 import { leagueModule } from "../leagues";
@@ -31,7 +33,7 @@ export function dueGame(f: Franchise): ScheduledGame | null {
 
 function boxSide(f: Franchise, teamId: string): BoxSide {
   const roster = f.rosters[teamId].map((id) => f.players[id]);
-  if (teamId === f.teamId) return { teamId, roster, ...resolveLineup(f.plan, roster, leagueTotalMinutes(f)), tactics: f.plan.tactics };
+  if (teamId === f.teamId) return { teamId, roster, ...resolveLineup(f.plan, roster, leagueTotalMinutes(f)), tactics: f.plan.tactics, coachEdge: coachEdge(f) };
   const rotation = defaultRotation(roster, leagueTotalMinutes(f));
   return { teamId, roster, rotation, starters: Object.keys(rotation).slice(0, 5) };
 }
@@ -82,8 +84,8 @@ function fullLength(line: StatLine, scale: number): StatLine {
 }
 
 function record(w: Working, g: ScheduledGame, r: BoxResult, played: boolean, starters: Set<string>, statScale = 1) {
-  const mine = w.f.rosters[w.f.teamId];
-  const box = isUsers(w.f, g) ? Object.fromEntries(Object.entries(r.box).filter(([id]) => mine.includes(id))) : undefined;
+  const roster = w.f.rosters[w.f.teamId];
+  const box = isUsers(w.f, g) ? Object.fromEntries(Object.entries(r.box).filter(([id]) => roster.includes(id))) : undefined;
   w.games[w.index.get(g.id)!] = {
     ...g,
     result: { home: r.home, away: r.away, played, overtimes: r.overtimes, playerOfGame: r.playerOfGame, ...(box ? { box } : {}) },
@@ -104,7 +106,8 @@ function record(w: Working, g: ScheduledGame, r: BoxResult, played: boolean, sta
     w.changed.add(id);
   }
   for (const x of r.injuries) {
-    w.players[x.playerId] = { ...w.players[x.playerId], injury: { name: x.name, gamesOut: x.gamesOut } };
+    const gamesOut = roster.includes(x.playerId) ? trainerGamesOut(x.gamesOut, staffRating(w.f, "trainer")) : x.gamesOut;
+    w.players[x.playerId] = { ...w.players[x.playerId], injury: { name: x.name, gamesOut } };
     w.changed.add(x.playerId);
   }
 }
@@ -157,5 +160,7 @@ export function simDay(f: Franchise, teams: Team[], opts: { includeUser: boolean
   const changedPlayers = [...w.changed];
   if (blocked) return { franchise: done, changedPlayers, blocked };
   const next = advancePostseason(done, teams);
-  return { franchise: { ...next, date: next.phase === "offseason" ? next.date : addDays(next.date, 1) }, changedPlayers, blocked };
+  const dated = { ...next, date: next.phase === "offseason" ? next.date : addDays(next.date, 1) };
+  const practice = weeklyDevelopment(dated);
+  return { franchise: practice.franchise, changedPlayers: [...new Set([...changedPlayers, ...practice.changedPlayers])], blocked };
 }

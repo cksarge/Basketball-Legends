@@ -10,6 +10,8 @@ export interface BoxSide {
   rotation: Record<string, number>;
   starters: string[];
   tactics?: Partial<TeamTactics>;
+  /** Added to the team's make rate by its assistant coach. */
+  coachEdge?: number;
 }
 
 export interface BoxInput {
@@ -193,7 +195,8 @@ function shootFreeThrows(rng: Rng, s: Skater, n: number, line: StatLine, team: T
   }
 }
 
-function possession(rng: Rng, off: Team, def: Team, box: BoxScore, edge: number) {
+function possession(rng: Rng, off: Team, def: Team, box: BoxScore, homeEdge: number) {
+  const edge = homeEdge + (off.side.coachEdge ?? 0);
   const lineOf = (s: Skater) => box[s.p.id];
   const shooter = choose(rng, off.list, (s) => s.usage);
   const scheme = SCHEMES[def.side.tactics?.defense ?? "man"];
@@ -234,7 +237,7 @@ function possession(rng: Rng, off: Team, def: Team, box: BoxScore, edge: number)
   const board = choose(rng, crash ? off.list : def.list, (s) => s.rebound);
   if (crash) {
     lineOf(board).oreb++;
-    possession(rng, off, def, box, edge);
+    possession(rng, off, def, box, homeEdge);
   } else lineOf(board).dreb++;
 }
 
