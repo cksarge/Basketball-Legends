@@ -10,6 +10,12 @@ In testing at legends.carterscoding.com/beta/. These notes grow as Franchise mod
 
 - **Take over a team:** pick any pro team and start a franchise. College and Arizona high school teams arrive in later betas.
 - **Your saves:** franchises save in your browser after everything you do, with Export and Import to back them up or move them.
+- **A full season:** all 30 teams play the 82-game schedule, then the play-in and best-of-seven playoffs, with a champion and awards at the end.
+- **Play or sim:** play any of your games in 3D with control of the whole team, sim one game, sim to a date, or sim the whole season. Sims run in the background, with a Stop button, and save after every day.
+- **Real stats for every game:** a new simulator gives every game in the league a full box score, tuned against the real game. Stat leaders, All-League teams, MVP, Defensive Player of the Year, Sixth Man and Finals MVP all come from those numbers.
+- **Your hub:** Home, Schedule with box scores, Roster, Standings, Leaders and Playoffs, with sortable tables. Injuries sideline players across the league.
+- **Save a game in progress:** Franchise games use their own three save slots, and the hub resumes them.
+- The offseason arrives in a later beta, so a franchise currently ends with the first champion.
 
 ## v0.3.0 — November 1, 2026
 

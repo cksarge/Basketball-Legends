@@ -139,9 +139,24 @@ export default function HowToPlay() {
       </ul>
       <H2>Franchise</H2>
       <p>
-        Franchise mode is in beta. Pick a pro team and start a franchise from the main menu. It saves in your browser after everything you do, and Export backs
-        it up to a file. More of the mode arrives with each beta.
+        Franchise mode is in beta. Pick a pro team from the main menu and run its season. All 30 teams play 82 games, then the play-in and playoffs decide a
+        champion. The offseason arrives in a later beta.
       </p>
+      <ul>
+        <li>
+          <b>Play or sim:</b> Play a game in 3D with control of the whole team, or use Sim game, Sim to date or Sim the season. Stop ends a sim at the end of
+          that day.
+        </li>
+        <li>
+          <b>Your hub:</b> Schedule has box scores for your games. Click a column heading in Roster, Standings or Leaders to sort by it.
+        </li>
+        <li>
+          <b>Save slots:</b> Franchise has three of its own. Resume a saved game from the hub.
+        </li>
+        <li>
+          <b>Backups:</b> your franchise saves in your browser after every day. Export it from the Franchise screen to keep a copy.
+        </li>
+      </ul>
 
       <H2>Road to Legend</H2>
       <p>
@@ -300,8 +315,8 @@ export default function HowToPlay() {
           <b>Autosave:</b> games save every few seconds. Pick up from Resume game on the main menu.
         </li>
         <li>
-          <b>Save slots:</b> choose Save game in the pause menu. Quick Play and the park share three slots, and Road to Legend has three of its own. A game in a
-          slot keeps saving itself there.
+          <b>Save slots:</b> choose Save game in the pause menu. Quick Play and the park share three slots, and Road to Legend and Franchise each have three of
+          their own. A game in a slot keeps saving itself there.
         </li>
         <li>
           <b>Resume game:</b> lists the autosave and every slot to resume or delete. Your career hub picks up a saved career game too. Games resume paused.

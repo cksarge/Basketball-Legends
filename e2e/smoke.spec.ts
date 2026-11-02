@@ -103,6 +103,74 @@ test("create a franchise, reload the hub and find it on the franchise screen", a
   expect(errors).toEqual([]);
 });
 
+test("sim a franchise season: results, leaders, a reload, Stop, and a champion", async ({ page }) => {
+  test.setTimeout(240_000);
+  const errors = watchErrors(page);
+  await page.goto("franchise/new/");
+  await page.getByRole("button", { name: /Phoenix/ }).click();
+  await page.getByRole("button", { name: "Start franchise" }).click();
+  await page.waitForURL(/franchise\/hub\/\?id=/);
+  await page.getByRole("button", { name: "Sim game", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Sim game", exact: true })).toBeEnabled({ timeout: 60_000 });
+  await page.getByRole("tab", { name: "Schedule" }).click();
+  await expect(page.getByText(/^[WL]$/).first()).toBeVisible();
+  await page.reload();
+  await page.getByRole("tab", { name: "Schedule" }).click();
+  await expect(page.getByText(/^[WL]$/).first()).toBeVisible();
+  // Stop during a long sim, then run the season out
+  await page.getByRole("tab", { name: "Home" }).click();
+  await page.getByRole("button", { name: "Sim the season" }).click();
+  await page.getByRole("button", { name: "Stop" }).click();
+  await expect(page.getByRole("button", { name: "Sim the season" })).toBeEnabled({ timeout: 60_000 });
+  await page.getByRole("button", { name: "Sim the season" }).click();
+  await expect(page.getByText(/won the championship/)).toBeVisible({ timeout: 180_000 });
+  await expect(page.getByText("Most Valuable Player")).toBeVisible();
+  await page.getByRole("tab", { name: "Leaders" }).click();
+  await expect(page.getByRole("button", { name: "PPG" })).toBeVisible();
+  await page.getByRole("tab", { name: "Standings" }).click();
+  await expect(page.getByRole("heading", { name: "Standings" })).toBeVisible();
+  await page.getByRole("tab", { name: "Playoffs" }).click();
+  await expect(page.getByText("The Finals").first()).toBeVisible();
+  await page.getByRole("tab", { name: "Roster" }).click();
+  await expect(page.getByRole("button", { name: "OVR" })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("a franchise game saves to a Franchise slot, resumes from the hub and records its result @gpu", async ({ page }) => {
+  test.setTimeout(240_000);
+  await lowGraphics(page);
+  await page.goto("franchise/new/");
+  await page.getByRole("button", { name: /Phoenix/ }).click();
+  await page.getByRole("button", { name: "Start franchise" }).click();
+  await page.waitForURL(/franchise\/hub\/\?id=/);
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.waitForURL("**/game/");
+  await expect(page.getByText("Loading the arena")).toBeHidden({ timeout: 60_000 });
+  await clockRuns(page);
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Save game" }).click();
+  await page.getByRole("button", { name: /^1 Empty/ }).click();
+  await expect(page.getByText("Saved to slot 1:")).toBeVisible();
+  await page.getByRole("button", { name: "Back to your franchise" }).click();
+  await page.waitForURL(/franchise\/hub\/\?id=/);
+  expect(await page.evaluate(() => [localStorage.getItem("bl-franchise-save-1") !== null, localStorage.getItem("bl-save-1") !== null])).toEqual([true, false]);
+  await page.getByRole("button", { name: "Resume game" }).click();
+  await page.waitForURL("**/game/");
+  await expect(page.getByRole("dialog", { name: "Paused" })).toBeVisible({ timeout: 60_000 });
+  await page.getByRole("button", { name: "Sim to end" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Sim to end" }).click();
+  await page
+    .getByRole("button", { name: /Continue|Back|Done/ })
+    .first()
+    .click({ timeout: 120_000 });
+  await page.waitForURL(/franchise\/hub\/\?id=/);
+  await page.getByRole("tab", { name: "Schedule" }).click();
+  await expect(page.getByText(/^[WL]$/).first()).toBeVisible();
+  // the result landed once, and the finished game's save is gone
+  await expect(page.getByRole("tab", { name: "Home" })).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem("bl-franchise-save-1"))).toBeNull();
+});
+
 test("create a career, then find it on the career screen after a reload", async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto("career/new/");

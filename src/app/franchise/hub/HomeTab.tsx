@@ -1,0 +1,150 @@
+"use client";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { addDays } from "@/career/calendar";
+import { formatDate } from "@/career/format";
+import { primaryDevice } from "@/ui/game/primaryDevice";
+import { teamLabel } from "@/data/leagues";
+import type { Team } from "@/engine/types";
+import { fullName } from "@/engine/player";
+import { nextFranchiseEvent } from "@/franchise/core/season";
+import { leagueModule } from "@/franchise/leagues";
+import { franchisePending } from "@/franchise/match";
+import { loadFranchise } from "@/franchise/storage";
+import type { Franchise } from "@/franchise/types";
+import { useMatchStore } from "@/state/matchStore";
+import { findFranchiseSave } from "@/state/suspended";
+import { Button, Panel } from "@/ui/kit";
+import { useInputDevice } from "@/ui/MenuNavigator";
+import { TeamLogo } from "@/ui/TeamLogo";
+import type { useSim } from "./actions";
+
+export function HomeTab({ f, teams, sim }: { f: Franchise; teams: Team[]; sim: ReturnType<typeof useSim> }) {
+  const router = useRouter();
+  const setPending = useMatchStore((s) => s.setPending);
+  const device = useInputDevice((s) => s.device);
+  const ev = nextFranchiseEvent(f);
+  const [until, setUntil] = useState("");
+  const running = sim.sim.running;
+  const byId = (id: string) => teams.find((t) => t.id === id)!;
+  const seasonEnd = leagueModule(f.league).calendar(f.season.year).seasonEnd;
+
+  const play = async () => {
+    if (ev.kind !== "game") return;
+    // the rest of the league catches up to game day first
+    await sim.run({ until: "nextUserGame", includeUser: false });
+    const fresh = await loadFranchise(f.id);
+    if (!fresh) return;
+    setPending(franchisePending(fresh, ev.game, teams, primaryDevice(device)));
+    router.push("/game/");
+  };
+  const saved = ev.kind === "game" ? findFranchiseSave(f.id, ev.game.id) : null;
+  const dayAfter = until || addDays(f.date, 7);
+
+  if (ev.kind === "seasonEnd") {
+    const champ = f.season.championId;
+    const pick = (id: string) => f.season.awards.filter((a) => a.id === id);
+    return (
+      <div className="flex flex-col gap-5">
+        {champ && (
+          <Panel>
+            <div className="flex items-center gap-4">
+              <TeamLogo team={byId(champ)} size={72} />
+              <p className="font-display text-3xl font-black">{teamLabel(byId(champ))} won the championship</p>
+            </div>
+          </Panel>
+        )}
+        <Panel title="Awards">
+          <ul className="flex flex-col gap-1">
+            {["mvp", "dpoy", "sixth", "finalsMvp"].flatMap(pick).map((a) => (
+              <li key={a.id}>
+                <span className="text-steel">{a.label}:</span> {fullName(f.players[a.playerId])}, {byId(a.teamId).name}
+              </li>
+            ))}
+          </ul>
+        </Panel>
+        <Panel>
+          <p className="text-steel">The offseason arrives in a later update. Your season is saved.</p>
+        </Panel>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      <Panel title={ev.kind === "game" ? "Next game" : "Next up"}>
+        {ev.kind === "game" ? (
+          <>
+            <div className="flex items-center gap-4">
+              <TeamLogo team={byId(ev.game.homeId === f.teamId ? ev.game.awayId : ev.game.homeId)} size={56} />
+              <div>
+                <p className="font-display text-2xl font-black">
+                  {ev.game.homeId === f.teamId ? "vs" : "at"} {teamLabel(byId(ev.game.homeId === f.teamId ? ev.game.awayId : ev.game.homeId))}
+                </p>
+                <p className="text-sm text-steel">
+                  {formatDate(ev.date)}
+                  {ev.game.label ? ` · ${ev.game.label}` : ""}
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {saved ? (
+                <Button
+                  disabled={running}
+                  onClick={() => {
+                    setPending(saved.pending);
+                    router.push("/game/");
+                  }}
+                >
+                  Resume game
+                </Button>
+              ) : (
+                <Button disabled={running} onClick={play}>
+                  Play
+                </Button>
+              )}
+              <Button variant="secondary" disabled={running} onClick={() => sim.run({ until: ev.date, includeUser: true })}>
+                Sim game
+              </Button>
+              {ev.date > f.date && (
+                <Button variant="secondary" disabled={running} onClick={() => sim.run({ until: "nextUserGame", includeUser: false })}>
+                  Sim to next event
+                </Button>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="text-steel">Your team has no game scheduled right now.</p>
+            <div className="mt-4">
+              <Button disabled={running} onClick={() => sim.run({ until: "nextUserGame", includeUser: false })}>
+                Sim to next event
+              </Button>
+            </div>
+          </>
+        )}
+      </Panel>
+      <Panel title="Sim ahead">
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="flex flex-col gap-1 text-sm text-steel">
+            Sim through
+            <input
+              type="date"
+              value={dayAfter}
+              min={f.date}
+              max={seasonEnd}
+              onChange={(e) => setUntil(e.target.value)}
+              className="rounded-[var(--radius-chip)] bg-navy px-3 py-2 text-net ring-1 ring-line"
+            />
+          </label>
+          <Button variant="secondary" disabled={running} onClick={() => sim.run({ until: dayAfter, includeUser: true })}>
+            Sim to date
+          </Button>
+          <Button variant="secondary" disabled={running} onClick={() => sim.run({ until: "seasonEnd", includeUser: true })}>
+            Sim the season
+          </Button>
+        </div>
+      </Panel>
+    </div>
+  );
+}

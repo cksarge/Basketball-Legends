@@ -79,12 +79,7 @@ import { useCareer } from "@/state/careerStore";
 import { useMatchStore, type MatchResult, type PendingMatch } from "@/state/matchStore";
 import { clearSuspended, findCareerSave, pruneCareerSaves } from "@/state/suspended";
 
-/** The controller for your player: the first connected gamepad unless you're on the keyboard. */
-export function primaryDevice(device: string): string {
-  if (device === "keyboard" || typeof navigator === "undefined") return "keyboard";
-  const pad = [...(navigator.getGamepads?.() ?? [])].find((p): p is Gamepad => !!p && p.connected);
-  return pad ? `pad${pad.index}` : "keyboard";
-}
+export { primaryDevice } from "@/ui/game/primaryDevice";
 
 export function useHsContext(): HsContext | null {
   const [ctx, setCtx] = useState<HsContext | null>(null);

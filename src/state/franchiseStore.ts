@@ -16,6 +16,8 @@ interface FranchiseStore {
   status: "idle" | "loading" | "ready" | "missing" | "error" | "stale";
   error: string | null;
   open: (id: string) => Promise<void>;
+  /** Pick up changes saved by a sim, without a loading screen. */
+  refresh: () => Promise<void>;
   /** Save a new franchise and open it. */
   set: (f: Franchise) => Promise<void>;
   /** Apply a change and save it. */
@@ -37,6 +39,11 @@ export const useFranchise = create<FranchiseStore>((set, get) => ({
     } catch (e) {
       set({ status: "error", error: e instanceof Error ? e.message : String(e) });
     }
+  },
+  refresh: async () => {
+    const id = get().franchise?.id;
+    const f = id ? await loadFranchise(id) : null;
+    if (f) set({ franchise: f });
   },
   set: async (f) => {
     const team = (await franchiseTeam(f)) ?? null;

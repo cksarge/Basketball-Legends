@@ -14,7 +14,16 @@ export interface BracketInput {
 const ROUND_NAME = ["Play-In", "First Round", "Semifinals", "Conference Finals", "Finals"];
 export const roundStart = (year: number, round: number) => addDays(proCalendar(year).playoffs, (round - 1) * 15);
 
-export function makeSeries(id: string, conf: ProSeries["conf"], round: number, high: string, low: string, bestOf: number, start: IsoDate, label?: string): ProSeries {
+export function makeSeries(
+  id: string,
+  conf: ProSeries["conf"],
+  round: number,
+  high: string,
+  low: string,
+  bestOf: number,
+  start: IsoDate,
+  label?: string,
+): ProSeries {
   return { id, conf, round, label: label ?? (conf === "Finals" ? "The Finals" : `${conf} ${ROUND_NAME[round]}`), high, low, bestOf, start, games: [] };
 }
 
@@ -91,4 +100,3 @@ export function nextSeries(s: BracketInput): ProSeries[] {
   }
   return out;
 }
-

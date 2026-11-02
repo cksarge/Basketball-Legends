@@ -61,6 +61,8 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
   if (!IS_BETA && url.pathname.startsWith("/beta/")) return;
+  // a worker's startup config is in its URL fragment, which a cached response would lose (offline, sims run on the page)
+  if (req.destination === "worker") return;
   if (req.mode === "navigate") { event.respondWith(networkFirst(req)); return; }
   if (url.pathname.startsWith(BASE + "/_next/static/")) { event.respondWith(cacheFirst(req)); return; }
   if (/\.(glb|png|jpg|webp|svg|ico|webmanifest|woff2?|json|txt)$/.test(url.pathname)) { event.respondWith(staleWhileRevalidate(req)); return; }

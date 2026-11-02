@@ -65,7 +65,7 @@ const ITEMS: Item[] = [
     href: "/franchise/",
     beta: true,
     blurb: "Coach and run a team for as many seasons as you like.",
-    detail: ["Pick any pro team and take over", "Play or sim every game", "Trades, the draft and more arrive in later betas"],
+    detail: ["Pick any pro team and run a full season", "Play or sim every game", "Trades, the draft and more arrive in later betas"],
   },
   {
     id: "multiplayer",
