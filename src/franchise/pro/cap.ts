@@ -98,7 +98,7 @@ export function canSign(f: Franchise, teamId: string, p: Player, salary: number)
 }
 
 /** Records what a signing used up. */
-export function useException(f: Franchise, teamId: string, via: SigningVia, salary: number): Franchise {
+export function spendException(f: Franchise, teamId: string, via: SigningVia, salary: number): Franchise {
   const books = f.books[teamId];
   if (via === "midLevel" || via === "roomMidLevel" || via === "taxMidLevel")
     return { ...f, books: { ...f.books, [teamId]: { ...books, midLevelUsed: books.midLevelUsed + salary } } };

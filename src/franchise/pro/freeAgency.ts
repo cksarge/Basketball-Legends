@@ -5,7 +5,7 @@ import { Rng, clamp } from "@/engine/rng";
 import type { Contract, Player } from "@/engine/types";
 import { clearUndo } from "../core/moves";
 import type { Franchise, FreeAgencyState } from "../types";
-import { canSign, moneyM, signingRoom, useException, type SigningVia } from "./cap";
+import { canSign, moneyM, signingRoom, spendException, type SigningVia } from "./cap";
 import { decideOptionsFor, pendingOptions } from "./contracts";
 import { askingPrice, marketValue, offerScore, type Offer } from "./market";
 import { joinTeam, releasePlayer, standardCount } from "./rosterMoves";
@@ -46,7 +46,7 @@ function dealOf(o: Offer): Contract {
 /** Signs a free agent who's already been checked against the cap. */
 function sign(f: Franchise, id: string, o: Offer, via: SigningVia): Franchise {
   return {
-    ...useException(f, o.teamId, via, o.salary),
+    ...spendException(f, o.teamId, via, o.salary),
     players: { ...f.players, [id]: joinTeam(f, o.teamId, id, dealOf(o)) },
     rosters: { ...f.rosters, [o.teamId]: [...f.rosters[o.teamId], id] },
     freeAgents: f.freeAgents.filter((x) => x !== id),

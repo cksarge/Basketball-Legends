@@ -49,7 +49,7 @@ export function ContractsPanel({ f }: { f: Franchise }) {
       </Panel>
       <Panel title="Expiring deals">
         {ending.length === 0 ? (
-          <p className="text-steel">Nobody's deal ends this summer.</p>
+          <p className="text-steel">Nobody&apos;s deal ends this summer.</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {ending.map((p) => (

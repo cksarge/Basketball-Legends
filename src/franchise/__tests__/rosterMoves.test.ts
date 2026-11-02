@@ -141,7 +141,9 @@ describe("buyouts", () => {
 
 describe("two-way and developmental deals", () => {
   it("three two-way slots outside the cap and the 15", () => {
-    let { f, id } = withAgent(make());
+    const made = withAgent(make());
+    const id = made.id;
+    let f = made.f;
     const pay = payroll(f, me);
     f = signTwoWay(f, me, id);
     expect(f.players[id].contract).toMatchObject({ twoWay: true, salary: capRules(f.cap).twoWaySalary, years: 1 });
@@ -160,7 +162,9 @@ describe("two-way and developmental deals", () => {
   });
 
   it("a two-way player sits out the playoffs and stops at 50 games", () => {
-    let { f, id } = withAgent(make());
+    const made = withAgent(make());
+    const id = made.id;
+    let f = made.f;
     f = signTwoWay(f, me, id);
     const g = f.season.games.find((x) => x.homeId === me || x.awayId === me)!;
     expect(activeRoster(f, me, g).map((p) => p.id)).toContain(id);
@@ -170,7 +174,9 @@ describe("two-way and developmental deals", () => {
   });
 
   it("developmental players stay outside the roster until called up", () => {
-    let { f, id } = withAgent(make());
+    const made = withAgent(make());
+    const id = made.id;
+    let f = made.f;
     f = signDev(f, me, id);
     expect(f.devRosters[me]).toEqual([id]);
     expect(f.rosters[me]).not.toContain(id);

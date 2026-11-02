@@ -127,7 +127,7 @@ export function FreeAgentsTab({ f }: { f: Franchise }) {
           <Segmented label="Position" value={pos} options={FILTERS.map((p) => ({ value: p, label: p }))} onChange={setPos} />
         </div>
         {rows.length === 0 ? (
-          <p className="text-steel">Nobody's available.</p>
+          <p className="text-steel">Nobody&apos;s available.</p>
         ) : (
           <SortTable label="Free agents" rows={rows} columns={columns} rowKey={(p) => p.id} initial="value" />
         )}

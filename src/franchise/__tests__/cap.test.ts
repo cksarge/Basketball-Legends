@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type { Player, Team } from "@/engine/types";
 import { createFranchise } from "../create";
-import { canSign, leagueAverageSalary, payroll, rightsLimit, signingRoom, taxBill, useException, veteranRights } from "../pro/cap";
+import { canSign, leagueAverageSalary, payroll, rightsLimit, signingRoom, taxBill, spendException, veteranRights } from "../pro/cap";
 import { capRules } from "../pro/rules";
 import type { Franchise } from "../types";
 import { setPayroll } from "./capHelpers";
@@ -91,9 +91,9 @@ describe("signing room", () => {
   it("the mid-level splits across signings until it's used up", () => {
     let f = setPayroll(make(), id, 160e6);
     expect(canSign(f, id, free(f), 8e6)).toEqual({ ok: true, via: "midLevel" });
-    f = useException(f, id, "midLevel", 8e6);
+    f = spendException(f, id, "midLevel", 8e6);
     expect(canSign(f, id, free(f), 4e6)).toEqual({ ok: true, via: "midLevel" });
-    f = useException(f, id, "midLevel", 4e6);
+    f = spendException(f, id, "midLevel", 4e6);
     expect(canSign(f, id, free(f), 4e6)).toEqual({ ok: true, via: "biannual" });
   });
 
@@ -111,9 +111,9 @@ describe("signing room", () => {
 
   it("the biannual can't be used two years in a row", () => {
     let f = setPayroll(make(), id, 160e6);
-    f = useException(f, id, "midLevel", rules.midLevel);
+    f = spendException(f, id, "midLevel", rules.midLevel);
     expect(canSign(f, id, free(f), 4e6)).toEqual({ ok: true, via: "biannual" });
-    f = useException(f, id, "biannual", 4e6);
+    f = spendException(f, id, "biannual", 4e6);
     expect(canSign(f, id, free(f), 4e6).ok).toBe(false);
     const nextYear = { ...f, cap: { ...f.cap, year: f.cap.year + 1 } };
     expect(canSign(nextYear, id, free(nextYear), 4e6).ok).toBe(false);
