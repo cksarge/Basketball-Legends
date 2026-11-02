@@ -19,6 +19,7 @@ import { rollPicks } from "../pro/picks";
 import { processWaivers, standardCount } from "../pro/rosterMoves";
 import { aiTradeDay } from "../pro/tradeAi";
 import { OFFSEASON_ROSTER_MAX, ROSTER_MAX, ROSTER_MIN } from "../pro/rules";
+import { applyPending, trimSchedule } from "../settings";
 import type { Franchise, OffseasonStep, RetiredPlayer, SeasonSummary } from "../types";
 import { clearUndo, prunePlan } from "./moves";
 import { leagueProgress } from "./progress";
@@ -111,7 +112,8 @@ function leaveLeague(f: Franchise, year: number) {
   return { players, retired: [...f.retired, ...retired], freeAgents: pool.slice(0, FREE_AGENT_POOL) };
 }
 
-export function startNewSeason(f: Franchise, teams: Team[]): Franchise {
+export function startNewSeason(old: Franchise, teams: Team[]): Franchise {
+  const f = applyPending(old);
   const year = f.season.year + 1;
   const m = leagueModule(f.league);
   const date = m.calendar(year).opening;
@@ -139,7 +141,19 @@ export function startNewSeason(f: Franchise, teams: Team[]): Franchise {
     talks: {},
     history: [...f.history, summarize(f)],
     draft: newDraftState(f.seed, year + 1),
-    season: { year, games: m.schedule(teams, year, f.seed), series: [], stats: {}, playoffStats: {}, awards: [] },
+    season: {
+      year,
+      games: trimSchedule(
+        m.schedule(teams, year, f.seed),
+        teams.map((t) => t.id),
+        f.settings.league.gamesPerSeason,
+        `${f.seed}:${year}`,
+      ),
+      series: [],
+      stats: {},
+      playoffStats: {},
+      awards: [],
+    },
   };
   delete next.offseason;
   delete next.freeAgency;

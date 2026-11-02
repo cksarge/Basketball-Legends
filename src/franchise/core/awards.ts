@@ -31,7 +31,8 @@ function gamesNeeded(f: Franchise) {
 export function leaders(f: Franchise, key: LeaderKey, limit = 10) {
   const need = gamesNeeded(f);
   const attempts = ATTEMPTS[key];
-  const min = key in MIN_ATTEMPTS ? MIN_ATTEMPTS[key as keyof typeof MIN_ATTEMPTS] : 0;
+  const shortSeason = f.settings.league.gamesPerSeason / 82;
+  const min = key in MIN_ATTEMPTS ? MIN_ATTEMPTS[key as keyof typeof MIN_ATTEMPTS] * shortSeason : 0;
   return Object.entries(f.season.stats)
     .filter(([, l]) => l.gp >= need && (!attempts || attempts(l) >= min))
     .map(([playerId, l]) => ({ playerId, teamId: f.players[playerId].teamId!, value: VALUE[key](l), gp: l.gp }))

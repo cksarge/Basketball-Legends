@@ -4,6 +4,7 @@ import { Rng, clamp } from "@/engine/rng";
 import type { Player, RatingKey, Ratings } from "@/engine/types";
 import { budgetEffect } from "../club/finance";
 import { staffRating } from "../coaching/staff";
+import { PROGRESSION_SPEED } from "../settings";
 import type { Franchise, ProgressReport } from "../types";
 
 const LEGS: RatingKey[] = ["speed", "accel", "vertical", "stamina"];
@@ -51,13 +52,13 @@ function toOverall(p: Player, target: number): Ratings {
   return best;
 }
 
-export function progressPlayer(p: Player, rng: Rng, bonus = 0): Player {
+export function progressPlayer(p: Player, rng: Rng, bonus = 0, speed = 1): Player {
   const age = p.age + 1;
   const start = playerOvr(p);
   const base = ageChange(age);
   const mean = base > 0 ? base * Math.min(2.6, Math.max(0, p.potential - start) / FULL_ROOM) : base;
   const effort = (p.traits.workEthic - 0.5) * 1.2 + (age <= LAST_GROWING_AGE ? bonus : bonus * 0.3);
-  const change = mean + effort + rng.normal(0, 2.2 - p.traits.consistency);
+  const change = (mean + effort + rng.normal(0, 2.2 - p.traits.consistency)) * speed;
   const ceiling = age <= PEAK_AGE ? Math.max(start, p.potential) : MAX_RATING;
   const target = Math.round(clamp(start + change, MIN_RATING, ceiling));
   const ratings = target === start ? p.ratings : toOverall(p, target);
@@ -86,7 +87,7 @@ export function leagueProgress(f: Franchise): { franchise: Franchise; report: Pr
   for (const id of Object.keys(f.players).sort()) {
     const p = f.players[id];
     const rng = new Rng(`${f.seed}:progress:${year}:${id}`);
-    const grown = progressPlayer(p, rng, mine.has(id) ? bonus : 0);
+    const grown = progressPlayer(p, rng, mine.has(id) ? bonus : 0, PROGRESSION_SPEED[f.settings.league.progression]);
     const next = { ...grown, file: { ...grown.file!, peak: Math.max(grown.file?.peak ?? 0, playerOvr(p), playerOvr(grown)) } };
     // a deal that's in its last year ends this summer
     if (retires(next, rng, (p.contract?.years ?? 0) > 1)) {

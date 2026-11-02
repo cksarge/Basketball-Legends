@@ -5,7 +5,7 @@ import { seasonGoals } from "./club/owner";
 import { defaultPlan } from "./coaching/plan";
 import { leagueModule } from "./leagues";
 import { fillGmState } from "./pro/gmState";
-import { DEFAULT_AUTO, DEFAULT_LEAGUE } from "./settings";
+import { DEFAULT_AUTO, DEFAULT_LEAGUE, trimSchedule } from "./settings";
 import { FRANCHISE_VERSION, type Franchise, type FranchiseSettings } from "./types";
 
 export const DEFAULT_FRANCHISE_SETTINGS: FranchiseSettings = {
@@ -62,7 +62,19 @@ export function createFranchise(o: {
       devDate: date,
       players,
       rosters,
-      season: { year, games: leagueModule(o.league).schedule(o.teams, year, o.seed), series: [], stats: {}, playoffStats: {}, awards: [] },
+      season: {
+        year,
+        games: trimSchedule(
+          leagueModule(o.league).schedule(o.teams, year, o.seed),
+          o.teams.map((t) => t.id),
+          (o.settings?.league ?? DEFAULT_LEAGUE).gamesPerSeason,
+          o.seed,
+        ),
+        series: [],
+        stats: {},
+        playoffStats: {},
+        awards: [],
+      },
     },
     o.teams,
   );

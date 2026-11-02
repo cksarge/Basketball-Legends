@@ -23,6 +23,8 @@ export interface BoxInput {
   away: BoxSide;
   neutral?: boolean;
   seed: string;
+  /** League setting: how often injuries happen, with 1 as normal. */
+  injuryRate?: number;
 }
 
 export interface BoxResult {
@@ -253,11 +255,11 @@ function possession(rng: Rng, off: Team, def: Team, box: BoxScore, homeEdge: num
   } else lineOf(board).dreb++;
 }
 
-function rollInjuries(rng: Rng, teams: Team[], box: BoxScore): BoxResult["injuries"] {
+function rollInjuries(rng: Rng, teams: Team[], box: BoxScore, rate = 1): BoxResult["injuries"] {
   const out: BoxResult["injuries"] = [];
   for (const t of teams)
     for (const s of t.list) {
-      const risk = INJURY_PER_48 * (box[s.p.id].min / (48 * 60)) * (1 + (70 - s.p.ratings.durability) / 40);
+      const risk = rate * INJURY_PER_48 * (box[s.p.id].min / (48 * 60)) * (1 + (70 - s.p.ratings.durability) / 40);
       if (rng.chance(risk)) {
         const [name, low, high] = rng.pick(INJURIES);
         out.push({ playerId: s.p.id, name, gamesOut: rng.int(low, high) });
@@ -311,7 +313,7 @@ function finishGame(i: BoxInput, rng: Rng, minutes: number, earlier?: PartialGam
     const score = gameScore(line);
     if (score > top) [best, top] = [id, score];
   }
-  return { home: home.score, away: away.score, overtimes, box, playerOfGame: best, injuries: rollInjuries(rng, [home, away], box) };
+  return { home: home.score, away: away.score, overtimes, box, playerOfGame: best, injuries: rollInjuries(rng, [home, away], box, i.injuryRate) };
 }
 
 export function simBox(i: BoxInput): BoxResult {

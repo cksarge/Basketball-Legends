@@ -28,7 +28,9 @@ const addDead = (f: Franchise, teamId: string, dead: DeadCap) => ({ ...f.books, 
 /** Who can play in this game. */
 export function activeRoster(f: Franchise, teamId: string, g: ScheduledGame): Player[] {
   const roster = f.rosters[teamId].map((id) => f.players[id]);
-  return roster.filter((p) => !isTwoWay(p) || (g.kind !== "playoff" && (f.season.stats[p.id]?.gp ?? 0) < TWO_WAY_GAMES));
+  return roster.filter(
+    (p) => !isTwoWay(p) || (g.kind !== "playoff" && (f.season.stats[p.id]?.gp ?? 0) < (TWO_WAY_GAMES * f.settings.league.gamesPerSeason) / 82),
+  );
 }
 
 /** Why the user's team can't take the floor. */

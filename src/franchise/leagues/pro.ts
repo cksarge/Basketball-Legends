@@ -28,7 +28,7 @@ function postseason(f: Franchise, teams: Team[]): Franchise {
   const seedOrder = { East: conferenceSeeds(f, teams, "East"), West: conferenceSeeds(f, teams, "West") };
   for (let guard = 0; guard < 100; guard++) {
     let changed = false;
-    const fresh = nextSeries({ year: f.season.year, games, series, seeds: (conf) => seedOrder[conf] });
+    const fresh = nextSeries({ year: f.season.year, games, series, seeds: (conf) => seedOrder[conf], format: f.settings.league.playoffFormat });
     if (fresh.length) {
       series.push(...fresh);
       changed = true;

@@ -14,6 +14,7 @@ import { finishBox, simBox, simQuarters, type BoxInput, type BoxResult, type Box
 import { addNews, firedNews, gameNews, seasonNews, seriesNews, tradeNews } from "../history/news";
 import { powerSnapshot } from "../history/power";
 import { gameRecords } from "../history/records";
+import { INJURY_RATE } from "../settings";
 import { seasonAwards } from "./awards";
 import { leagueModule } from "../leagues";
 import { setRoster, weeklyMarket } from "../pro/freeAgency";
@@ -64,6 +65,7 @@ export function boxInputFor(f: Franchise, g: ScheduledGame): BoxInput {
     away: boxSide(f, g.awayId, g),
     neutral: g.neutral,
     seed: `${f.seed}:${g.id}`,
+    injuryRate: INJURY_RATE[f.settings.league.injuries],
   };
 }
 

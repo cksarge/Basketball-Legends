@@ -3,6 +3,7 @@ import { addDays } from "@/career/calendar";
 import { playerOvr } from "@/engine/player";
 import { Rng } from "@/engine/rng";
 import { prunePlan } from "../core/moves";
+import { TRADE_MARGINS } from "../settings";
 import type { DraftPick, Franchise } from "../types";
 import { currentPick } from "./draft";
 import { pickTradeValue, playerTradeValue, teamDirection } from "./tradeValue";
@@ -14,8 +15,8 @@ export interface TradeOffer {
   date: string;
 }
 
-/** What an AI team has to gain. It becomes the trade difficulty setting. */
-export const TRADE_MARGIN = 0.08;
+/** What an AI team has to gain at normal difficulty. */
+export const TRADE_MARGIN = TRADE_MARGINS.normal;
 const OFFER_DAYS = 7;
 /** Extra pieces in a package count for less: a roster only has so many spots. */
 const PACKAGE_WEIGHTS = [1, 0.6, 0.35, 0.2];
@@ -57,7 +58,7 @@ export function tradeReply(f: Franchise, t: Trade): { accepted: boolean; note: s
       teamId,
     );
     const going = t.assets.filter((a) => a.from === teamId).reduce((sum, a) => sum + assetValue(f, a, teamId), 0);
-    gap = Math.max(gap, going + Math.abs(going) * TRADE_MARGIN + MIN_GAIN - coming);
+    gap = Math.max(gap, going + Math.abs(going) * TRADE_MARGINS[f.settings.league.tradeDifficulty] + MIN_GAIN - coming);
   }
   return gap > 0 ? { accepted: false, note: "They'd need more to do this deal.", gap } : { accepted: true, note: "They'd do this deal.", gap: 0 };
 }
