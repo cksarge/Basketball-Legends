@@ -234,9 +234,9 @@ test("make a franchise trade, undo it and make it again", async ({ page }) => {
   await page.waitForURL(/franchise\/hub\/\?id=/);
   await page.getByRole("tab", { name: "Trades" }).click();
   const theirs = page.locator("fieldset").nth(1);
-  const name = (await theirs.locator("li span").nth(7).innerText()).split(",")[0];
+  const name = (await theirs.locator("li span").nth(14).innerText()).split(",")[0];
   // one of their players for nothing is refused
-  await theirs.getByRole("checkbox").nth(7).check();
+  await theirs.getByRole("checkbox").nth(14).check();
   await expect(page.getByRole("list", { name: "Problems with this deal" })).toBeVisible();
   await page.getByRole("button", { name: "Find a deal" }).click();
   await page.getByRole("button", { name: "Load deal" }).first().click();
@@ -247,7 +247,7 @@ test("make a franchise trade, undo it and make it again", async ({ page }) => {
   await page.getByRole("button", { name: "Undo" }).click();
   await expect(page.getByRole("cell", { name, exact: true })).toHaveCount(0);
   await page.getByRole("tab", { name: "Trades" }).click();
-  await theirs.getByRole("checkbox").nth(7).check();
+  await theirs.getByRole("checkbox").nth(14).check();
   await page.getByRole("button", { name: "Find a deal" }).click();
   await page.getByRole("button", { name: "Load deal" }).first().click();
   await page.getByRole("button", { name: "Propose trade" }).click();
