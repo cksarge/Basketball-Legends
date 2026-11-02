@@ -6,6 +6,7 @@ import type { Player, Team } from "@/engine/types";
 import { addLine, emptyLine, type BoxScore, type StatLine } from "@/game/sim/stats";
 import { weeklyDevelopment } from "../coaching/development";
 import { closeSeasonBooks, payGates } from "../club/finance";
+import { applyReview, ownerReview } from "../club/owner";
 import { resolveLineup } from "../coaching/plan";
 import { clearUndo } from "./moves";
 import { coachEdge, staffRating, trainerGamesOut } from "../coaching/staff";
@@ -162,10 +163,11 @@ export function advancePostseason(f: Franchise, teams: Team[]): Franchise {
   const next = leagueModule(f.league).postseason(paid, teams);
   if (next.phase !== "offseason" || f.phase === "offseason") return next;
   const championRoster = next.season.championId ? next.rosters[next.season.championId] : [];
-  return closeSeasonBooks(
+  const closed = closeSeasonBooks(
     { ...next, offseason: { step: "review", report: null }, season: { ...next.season, championRoster, awards: seasonAwards(next, teams) } },
     teams,
   );
+  return applyReview(closed, ownerReview(closed));
 }
 
 /** Is a game close enough after three quarters to ask the user to finish it? */

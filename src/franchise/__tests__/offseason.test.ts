@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { draftCalendar, proCalendar } from "@/career/calendar";
 import type { Team } from "@/engine/types";
 import { simDay } from "../core/season";
+import { jobOffers, takeJob } from "../club/jobs";
 import { advanceOffseason, canAdvance, startNewSeason } from "../core/offseason";
 import { createFranchise } from "../create";
 import { leagueModule } from "../leagues";
@@ -22,6 +23,7 @@ function simSeason(f: Franchise) {
 function throughOffseason(f: Franchise) {
   for (let i = 0; i < 12 && f.phase === "offseason"; i++) {
     if (f.offseason?.step === "draft") f = simDraftToEnd(f);
+    if (f.job.fired) f = takeJob(f, jobOffers(f, teams)[0], teams);
     f = advanceOffseason(staffHandles(f), teams);
   }
   return f;

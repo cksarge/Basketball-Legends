@@ -56,6 +56,9 @@ function teamRead(f: Franchise): TeamRead {
   return read;
 }
 
+/** 1 for the league's weakest team. */
+export const teamSlot = (f: Franchise, teamId: string) => teamRead(f).slot[teamId];
+
 export const teamDirection = (f: Franchise, teamId: string) => teamRead(f).direction[teamId];
 
 /** Value as a roster piece, before the contract. */

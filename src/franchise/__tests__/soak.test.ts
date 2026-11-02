@@ -3,6 +3,7 @@ import { appendFileSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { playerOvr } from "@/engine/player";
 import type { Team } from "@/engine/types";
+import { jobOffers, takeJob } from "../club/jobs";
 import { advanceOffseason } from "../core/offseason";
 import { simDay } from "../core/season";
 import { createFranchise } from "../create";
@@ -79,6 +80,7 @@ function summer(f: Franchise) {
   let x = f;
   for (let i = 0; i < 12 && x.phase === "offseason"; i++) {
     if (x.offseason?.step === "draft") x = simDraftToEnd(x);
+    if (x.job.fired) x = takeJob(x, jobOffers(x, teams)[0], teams);
     x = advanceOffseason(staffHandles(x), teams);
   }
   return x;

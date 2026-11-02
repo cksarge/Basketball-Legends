@@ -61,8 +61,11 @@ export const useFranchise = create<FranchiseStore>((set, get) => ({
       const cur = get().franchise;
       if (!cur || get().status !== "ready" || get().locked) return false;
       try {
-        const saved = await commitFranchise(fn(cur), get().team ?? undefined, changedPlayers);
-        set({ franchise: saved });
+        const next = fn(cur);
+        // a new job means a new team on the save's summary and the hub
+        const team = next.teamId === cur.teamId ? get().team : ((await franchiseTeam(next)) ?? null);
+        const saved = await commitFranchise(next, team ?? undefined, changedPlayers);
+        set({ franchise: saved, team });
         return true;
       } catch (e) {
         if (e instanceof StaleFranchiseError) set({ status: "stale" });

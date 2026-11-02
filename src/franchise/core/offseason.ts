@@ -2,6 +2,7 @@
 import { fullName, playerOvr } from "@/engine/player";
 import { Rng } from "@/engine/rng";
 import type { Team } from "@/engine/types";
+import { seasonGoals } from "../club/owner";
 import { addSeason } from "../history/career";
 import { leagueModule } from "../leagues";
 import { decideOptions, pendingOptions, rollContracts } from "../pro/contracts";
@@ -22,6 +23,7 @@ const FREE_AGENT_POOL = 100;
 
 export function canAdvance(f: Franchise): { ok: true } | { ok: false; reason: string } {
   const step = f.offseason?.step;
+  if (f.job.fired) return { ok: false, reason: "Choose your next job first." };
   if (step === "draft" && currentPick(f)) return { ok: false, reason: "Finish the draft first." };
   if (step === "contracts" && pendingOptions(f, f.teamId).length) return { ok: false, reason: "Decide your team options first." };
   if (step === "camp") {
@@ -125,5 +127,6 @@ export function startNewSeason(f: Franchise, teams: Team[]): Franchise {
   };
   delete next.offseason;
   delete next.freeAgency;
-  return prunePlan(clearUndo({ ...next, picks: rollPicks(next, teams) }));
+  const ready = prunePlan(clearUndo({ ...next, picks: rollPicks(next, teams) }));
+  return { ...ready, job: { ...ready.job, goals: seasonGoals(ready, teams) } };
 }

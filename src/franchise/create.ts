@@ -1,6 +1,7 @@
 // Builds a new franchise: a full league of generated rosters, ready for its first season.
 import { generateRoster } from "@/engine/player";
 import type { LeagueId, Player, Team } from "@/engine/types";
+import { seasonGoals } from "./club/owner";
 import { defaultPlan } from "./coaching/plan";
 import { leagueModule } from "./leagues";
 import { fillGmState } from "./pro/gmState";
@@ -44,7 +45,7 @@ export function createFranchise(o: {
     for (const p of roster) players[p.id] = p;
   }
   const date = leagueModule(o.league).calendar(year).opening;
-  return fillGmState(
+  const made = fillGmState(
     {
       id: `f-${now.toString(36)}-${seedNumber(o.seed).toString(36)}`,
       version: FRANCHISE_VERSION,
@@ -65,4 +66,5 @@ export function createFranchise(o: {
     },
     o.teams,
   );
+  return { ...made, job: { ...made.job, goals: seasonGoals(made, o.teams) } };
 }
