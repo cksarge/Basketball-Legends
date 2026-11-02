@@ -224,6 +224,9 @@ export interface Player {
   isUser?: boolean;
 }
 
+export type SystemId = "motion" | "pickRoll" | "postUp" | "paceSpace" | "isoStar";
+export type PlayId = "horns" | "floppy" | "clearout" | "postEntry" | "backdoor" | "drag" | "spainPnr" | "elbow";
+
 export interface TeamTactics {
   pace: number; // 0..1
   threeRate: number; // 0..1 preference for threes
@@ -234,6 +237,10 @@ export interface TeamTactics {
   matchups?: Record<string, string>;
   /** Their player to double. It replaces the usual choice of stars. */
   doubleTarget?: string;
+  /** With no system, a team plays the game's default offense. */
+  system?: SystemId;
+  /** The plays in the book, at most six. */
+  plays?: PlayId[];
 }
 
 export interface LeagueRules {

@@ -229,6 +229,10 @@ export interface TeamGameState {
   /** Minutes a coach has planned for specific players; they check in when they fall behind. */
   planned?: Record<string, number>;
   playCall: string | null;
+  /** When the called play runs out. */
+  playUntil?: number;
+  /** The possession that last picked a play. */
+  playPicked?: number;
 }
 
 export interface MatchConfig {

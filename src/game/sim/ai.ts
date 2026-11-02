@@ -1,9 +1,12 @@
 // Team and player AI. Produces AgentIntents for every non-human agent.
 // `decide` is true on decision ticks (~5 Hz); movement steering runs every frame.
 import { clamp } from "@/engine/rng";
+import type { TeamTactics } from "@/engine/types";
 import { distToRim, inLane, isThree, rimPos } from "../court";
 import { dist2, distToSeg2, v2, type V2 } from "../vec";
 import { type Match, PARK_POSSESSION } from "./match";
+import { SYSTEMS, type PlanKind } from "./playbook";
+import { activePlay, focusAgent, pickPlay, playRoute } from "./plays";
 import { type Agent, type TeamIdx, tuningFor } from "./state";
 
 interface AIMemo {
@@ -19,6 +22,7 @@ interface AIMemo {
   variant?: number;
 }
 const memo = new WeakMap<Agent, AIMemo>();
+const systemOf = (t: TeamTactics) => (t.system ? SYSTEMS[t.system] : undefined);
 const M = (a: Agent) => {
   let m = memo.get(a);
   if (!m) {
@@ -314,20 +318,37 @@ function offenseAI(match: Match, a: Agent, decide: boolean) {
       .filter((d) => (rim.x - d.pos.x) * side < (rim.x - a.pos.x) * side + 1 && Math.abs(d.pos.z - a.pos.z) < 6).length;
     if (dRim < 11 && defendersAhead === 0) m.plan = "drive";
 
+    // a set play: get the ball to its focus, or run it if that's you
+    const system = systemOf(s.teams[a.team].tactics);
+    if (system) pickPlay(match, a.team);
+    const play = system || s.teams[a.team].playCall ? activePlay(match, a.team) : null;
+    const isFocus = !!play && focusAgent(match, a.team, play) === a;
+    if (decide && play) {
+      const to = focusAgent(match, a.team, play);
+      if (to === a && (m.plan !== play.plan || (m.planUntil ?? 0) < s.time)) {
+        m.plan = play.plan;
+        m.planUntil = s.time + 2.5;
+        if (play.plan === "pnr") requestScreen(match, a);
+      } else if (to && to !== a && a.holdTime > 0.5 && openness(match, to) > 0.5 && passLaneClear(match, a, to)) {
+        a.intent.act = { type: "pass", to: to.idx, kind: passKind(match, a, to) };
+        return;
+      }
+    }
+
     if (decide) {
       m.lastDecision = s.time;
       const ev = match.shotValue(a);
       const three = isThree(c, side, a.pos.x, a.pos.z);
       const tac = s.teams[a.team].tactics;
       const tune = tuningFor(s.cfg);
-      const threePref = (0.85 + tac.threeRate * 0.3) * tune.threeBias;
+      const threePref = (0.85 + tac.threeRate * 0.3) * tune.threeBias * (system?.threeBias ?? 1);
       const clockPressure = shotClock < 5 ? 0.35 : shotClock < 9 ? 0.15 : 0;
       // possession maturity: early in the clock only take clearly good shots
       const shotClockMax = s.cfg.park ? PARK_POSSESSION : (s.cfg.rules.shotClock ?? 35);
       const elapsed = shotClockMax - shotClock;
       const patience = 9 + tune.patience + (1 - tac.pace) * 9;
       const early = elapsed < patience ? 0.4 * (1 - elapsed / patience) : 0;
-      const threshold = (three ? 1.07 / threePref : 1.0) + early - clockPressure - (a.heat > 0.5 ? 0.05 : 0);
+      const threshold = (three ? 1.07 / threePref : 1.0) + early - clockPressure - (a.heat > 0.5 ? 0.05 : 0) - (isFocus ? 0.06 : 0);
       const holdOk = a.holdTime > 0.5 || s.time - s.ball.lastPassTime > 0.9;
       // shoot
       if (ev > threshold && holdOk && dRim < c.threeRadius + 1.6 && (dRim > 3 || match.contestOn(a) < 0.5)) {
@@ -367,7 +388,8 @@ function offenseAI(match: Match, a: Agent, decide: boolean) {
           }
         }
         const myVal = ev + (m.plan === "drive" ? 0.25 : 0);
-        if (best && bv > myVal + 0.12 && (a.holdTime > 1.2 || bv > 1.1)) {
+        const sharing = system?.passFirst ?? 0;
+        if (best && bv > myVal + 0.12 - sharing && (a.holdTime > 1.2 - sharing * 8 || bv > 1.1)) {
           a.intent.act = { type: "pass", to: best.idx, kind: passKind(match, a, best) };
           m.nextPassOk = s.time + 0.6;
           m.plan = undefined;
@@ -405,7 +427,7 @@ function offenseAI(match: Match, a: Agent, decide: boolean) {
         ];
         m.plan = match.rng.weighted(
           opts.map((o) => o[0]),
-          opts.map((o) => o[1]),
+          opts.map((o) => o[1] * (system?.plans[o[0] as PlanKind] ?? 1)),
         );
         m.planUntil = s.time + 1.5 + match.rng.range(0, 1.5);
         if (m.plan === "pnr") requestScreen(match, a);
@@ -444,6 +466,11 @@ function offenseAI(match: Match, a: Agent, decide: boolean) {
         if (scr && dist2(scr.pos, a.pos) < 3) {
           const t = v2(scr.pos.x + side * 1.8, scr.pos.z + (scr.pos.z > a.pos.z ? 1.5 : -1.5));
           goTo(a, t, { slow: 0.6 });
+          // a coached team attacks off the screen
+          if (system && decide && match.rng.chance(0.3)) {
+            m.plan = "drive";
+            m.planUntil = s.time + 2;
+          }
         } else {
           goTo(a, match.spacingSpot("ball", side), { slow: 1.5 });
         }
@@ -452,6 +479,11 @@ function offenseAI(match: Match, a: Agent, decide: boolean) {
       case "iso": {
         const t = v2(rim.x - side * (c.threeRadius - 0.6), a.pos.z * 0.8);
         goTo(a, t, { slow: 1.2 });
+        // a coached team attacks once it has its spot
+        if (system && decide && dist2(a.pos, t) < 1.2 && match.rng.chance(0.3)) {
+          m.plan = "drive";
+          m.planUntil = s.time + 2;
+        }
         break;
       }
       case "kick": {
@@ -495,6 +527,13 @@ function offBall(match: Match, a: Agent, decide: boolean, side: 1 | -1, rim: { x
     goTo(a, v2(rim.x - side * (a.role === "post" ? 2 : 6), lane), { sprint: true, slow: 2 });
     return;
   }
+  // a set play's route
+  const route = playRoute(match, a, rim.x, side);
+  if (route) {
+    goTo(a, route, { sprint: true, slow: 0.8, face: handler.pos, inLaneOk: a.laneTime < 1.2 });
+    keepInBounds(match, a);
+    return;
+  }
   // screener duty
   if (m.screenFor !== undefined && (m.planUntil ?? 0) > s.time) {
     const user = s.agents[m.screenFor];
@@ -521,7 +560,12 @@ function offBall(match: Match, a: Agent, decide: boolean, side: 1 | -1, rim: { x
     const def = a.guarding !== null ? null : match.nearestOpponent(a);
     const d = def ?? match.nearestOpponent(a);
     const defFacingBall = d ? Math.abs(angleBetween(d.facing, Math.atan2(handler.pos.x - d.pos.x, handler.pos.z - d.pos.z))) < 0.6 : false;
-    if (d && defFacingBall && match.rng.chance(0.07 * (match.r(a, "iq") / 70)) && distToRim(c, side, a.pos.x, a.pos.z) > 3) {
+    if (
+      d &&
+      defFacingBall &&
+      match.rng.chance(0.07 * (match.r(a, "iq") / 70) * (systemOf(s.teams[a.team].tactics)?.cutRate ?? 1)) &&
+      distToRim(c, side, a.pos.x, a.pos.z) > 3
+    ) {
       m.cutUntil = s.time + 1.6;
       m.target = v2(rim.x - side * 1.2, rim.z + match.rng.range(-1, 1));
     } else if (match.rng.chance(0.04)) {
