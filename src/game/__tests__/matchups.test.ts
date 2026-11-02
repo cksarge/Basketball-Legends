@@ -42,19 +42,21 @@ describe("matchups", () => {
 });
 
 describe("a chosen double team", () => {
-  /** Frames the player had the ball with two defenders on him. */
+  /** The share of his time on the ball that the player had two defenders on him. */
   function pressure(tactics: Partial<TeamTactics>, target: Player) {
-    let frames = 0;
+    let held = 0,
+      doubled = 0;
     for (const seed of [9, 10, 11, 12]) {
       const m = make(tactics, seed);
       for (let i = 0; i < 15_000 && m.state.phase !== "final"; i++) {
         m.step(1 / 30);
         const h = m.handler();
         if (h?.player.id !== target.id) continue;
-        if (m.agentsOf(0).filter((d) => (d.pos.x - h.pos.x) ** 2 + (d.pos.z - h.pos.z) ** 2 < 2.2 ** 2).length >= 2) frames++;
+        held++;
+        if (m.agentsOf(0).filter((d) => (d.pos.x - h.pos.x) ** 2 + (d.pos.z - h.pos.z) ** 2 < 2.2 ** 2).length >= 2) doubled++;
       }
     }
-    return frames;
+    return doubled / held;
   }
 
   it("sends help at the named player even if he isn't a star", () => {
