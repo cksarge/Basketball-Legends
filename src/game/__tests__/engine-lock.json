@@ -1,32 +1,35 @@
 {
-  "pro man": {
-    "home": 28,
-    "away": 24,
-    "possessions": [27, 27]
-  },
-  "pro zone": {
-    "home": 38,
-    "away": 28,
-    "possessions": [33, 34]
-  },
-  "college man": {
-    "home": 5,
-    "away": 7,
-    "possessions": [11, 12]
-  },
-  "college press": {
-    "home": 12,
-    "away": 11,
-    "possessions": [14, 14]
-  },
-  "hs man": {
-    "home": 17,
-    "away": 11,
-    "possessions": [27, 27]
-  },
-  "hs zone": {
-    "home": 8,
-    "away": 22,
-    "possessions": [27, 27]
+  "machine": "darwin-arm64",
+  "games": {
+    "pro man": {
+      "home": 28,
+      "away": 24,
+      "possessions": [27, 27]
+    },
+    "pro zone": {
+      "home": 38,
+      "away": 28,
+      "possessions": [33, 34]
+    },
+    "college man": {
+      "home": 5,
+      "away": 7,
+      "possessions": [11, 12]
+    },
+    "college press": {
+      "home": 12,
+      "away": 11,
+      "possessions": [14, 14]
+    },
+    "hs man": {
+      "home": 17,
+      "away": 11,
+      "possessions": [27, 27]
+    },
+    "hs zone": {
+      "home": 8,
+      "away": 22,
+      "possessions": [27, 27]
+    }
   }
 }

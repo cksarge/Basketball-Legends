@@ -155,6 +155,14 @@ export default function HowToPlay() {
           player is hurt, the game works around your plan and returns to it when he&apos;s back.
         </li>
         <li>
+          <b>Playbooks:</b> pick a system and up to six plays in the Coaching tab. During a game, the call button works through your plays, and the Plays tab in
+          the pause menu calls one directly.
+        </li>
+        <li>
+          <b>Short on time?</b> Play the 4th quarter sims the first three and hands you the rest. Close games only stops your sims when a game is within 8
+          points going into the 4th.
+        </li>
+        <li>
           <b>Game plan:</b> before a game, choose who guards whom and who gets double-teamed on the Home tab, or from the pause menu. A game plan lasts one
           game.
         </li>

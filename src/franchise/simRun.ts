@@ -9,6 +9,8 @@ export interface SimRange {
   id: string;
   until: IsoDate | "nextUserGame" | "seasonEnd";
   includeUser: boolean;
+  /** Settle a game that's partway through. */
+  simLive?: boolean;
 }
 
 const reached = (f: Franchise, r: SimRange) => {
@@ -24,7 +26,7 @@ export async function runSim(r: SimRange, teams: Team[], onDay: (date: IsoDate) 
   if (!f) throw new Error("That franchise isn't saved in this browser.");
   const team = teams.find((t) => t.id === f!.teamId);
   while (!reached(f, r) && !cancelled()) {
-    const day = simDay(f, teams, { includeUser: r.includeUser });
+    const day = simDay(f, teams, { includeUser: r.includeUser, simLive: r.simLive });
     f = await commitFranchise(day.franchise, team, day.changedPlayers);
     onDay(f.date);
     if (day.blocked) break;

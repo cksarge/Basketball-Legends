@@ -14,6 +14,8 @@ export interface FranchiseSettings {
   difficulty: Difficulty;
   /** "Close games only": the fourth-quarter margin that counts as close. */
   closeGameMargin: number;
+  /** Sims the user's games to the last period, and stops only if they're close. */
+  closeGamesOnly: boolean;
 }
 
 export interface SeasonLine extends StatLine {

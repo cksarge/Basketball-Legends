@@ -195,6 +195,28 @@ test("pick a playbook, then call a play in the game @gpu", async ({ page }) => {
   await expect(page.getByText("Floppy called")).toBeVisible();
 });
 
+test("play only the 4th quarter of a franchise game @gpu", async ({ page }) => {
+  test.setTimeout(240_000);
+  await lowGraphics(page);
+  await page.goto("franchise/new/");
+  await page.getByRole("button", { name: /Phoenix/ }).click();
+  await page.getByRole("button", { name: "Start franchise" }).click();
+  await page.waitForURL(/franchise\/hub\/\?id=/);
+  await page.getByRole("button", { name: "Play the 4th quarter" }).click();
+  await page.waitForURL("**/game/");
+  await expect(page.getByText("Loading the arena")).toBeHidden({ timeout: 60_000 });
+  await clockRuns(page);
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Sim to end" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Sim to end" }).click();
+  await page.getByRole("button", { name: "Continue" }).click({ timeout: 120_000 });
+  await page.waitForURL(/franchise\/hub\/\?id=/);
+  await page.getByRole("tab", { name: "Schedule" }).click();
+  await expect(page.getByText(/^[WL]$/)).toHaveCount(1);
+  await page.getByRole("tab", { name: "Home" }).click();
+  await expect(page.getByText(/After three quarters/)).toBeHidden();
+});
+
 test("Save and quit stays in the game when the save fails @gpu", async ({ page }) => {
   test.setTimeout(240_000);
   await lowGraphics(page);

@@ -5,7 +5,7 @@ import { defaultPlan } from "./coaching/plan";
 import { leagueModule } from "./leagues";
 import { FRANCHISE_VERSION, type Franchise, type FranchiseSettings } from "./types";
 
-export const DEFAULT_FRANCHISE_SETTINGS: FranchiseSettings = { quarterMinutes: 6, difficulty: "pro", closeGameMargin: 8 };
+export const DEFAULT_FRANCHISE_SETTINGS: FranchiseSettings = { quarterMinutes: 6, difficulty: "pro", closeGameMargin: 8, closeGamesOnly: false };
 const START_YEAR = 2026;
 
 /** generateRoster takes a number, and a franchise seed is a string. */

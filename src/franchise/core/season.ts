@@ -2,7 +2,7 @@
 import { addDays } from "@/career/calendar";
 import type { IsoDate, ScheduledGame } from "@/career/types";
 import type { Player, Team } from "@/engine/types";
-import { addLine, emptyLine, type StatLine } from "@/game/sim/stats";
+import { addLine, emptyLine, type BoxScore, type StatLine } from "@/game/sim/stats";
 import { weeklyDevelopment } from "../coaching/development";
 import { resolveLineup } from "../coaching/plan";
 import { coachEdge, staffRating, trainerGamesOut } from "../coaching/staff";
@@ -11,7 +11,7 @@ import { seasonAwards } from "./awards";
 import { leagueModule } from "../leagues";
 import { conferenceSeeds } from "../leagues/pro";
 import { defaultRotation } from "../rotation";
-import type { Franchise, SeasonLine } from "../types";
+import type { Franchise, PartialGame, SeasonLine } from "../types";
 
 export { conferenceSeeds };
 
@@ -86,7 +86,7 @@ function fullLength(line: StatLine, scale: number): StatLine {
   return Object.fromEntries(Object.entries(line).map(([k, v]) => [k, Math.round(v * scale)])) as unknown as StatLine;
 }
 
-function record(w: Working, g: ScheduledGame, r: BoxResult, played: boolean, starters: Set<string>, statScale = 1) {
+function record(w: Working, g: ScheduledGame, r: BoxResult, played: boolean, starters: Set<string>, statScale = 1, statBox?: BoxScore) {
   if (isUsers(w.f, g)) w.userPlayed = true;
   const roster = w.f.rosters[w.f.teamId];
   const box = isUsers(w.f, g) ? Object.fromEntries(Object.entries(r.box).filter(([id]) => roster.includes(id))) : undefined;
@@ -95,10 +95,10 @@ function record(w: Working, g: ScheduledGame, r: BoxResult, played: boolean, sta
     result: { home: r.home, away: r.away, played, overtimes: r.overtimes, playerOfGame: r.playerOfGame, ...(box ? { box } : {}) },
   };
   const table = g.kind === "playoff" ? w.playoffStats : w.stats;
-  for (const [id, line] of Object.entries(r.box)) {
+  for (const [id, line] of Object.entries(statBox ?? r.box)) {
     if (line.min <= 0) continue;
     const prev = table[id] ?? { ...emptyLine(), gp: 0, gs: 0 };
-    table[id] = { ...addLine(prev, fullLength(line, statScale)), gp: prev.gp + 1, gs: prev.gs + (starters.has(id) ? 1 : 0) };
+    table[id] = { ...addLine(prev, statBox ? line : fullLength(line, statScale)), gp: prev.gp + 1, gs: prev.gs + (starters.has(id) ? 1 : 0) };
   }
   // every team game takes one off an injury, then this game's new ones land
   for (const id of [...w.f.rosters[g.homeId], ...w.f.rosters[g.awayId]]) {
@@ -129,11 +129,11 @@ function finish(w: Working): Franchise {
 }
 
 /** Records one game. A game that already has a result stays as it is. */
-export function applyGame(f: Franchise, gameId: string, r: BoxResult, played: boolean, starters: string[] = [], statScale = 1): Franchise {
+export function applyGame(f: Franchise, gameId: string, r: BoxResult, played: boolean, starters: string[] = [], statScale = 1, statBox?: BoxScore): Franchise {
   const g = f.season.games.find((x) => x.id === gameId);
   if (!g || g.result) return f;
   const w = working(f);
-  record(w, g, r, played, new Set(starters), statScale);
+  record(w, g, r, played, new Set(starters), statScale, statBox);
   return finish(w);
 }
 
@@ -143,6 +143,9 @@ export function advancePostseason(f: Franchise, teams: Team[]): Franchise {
   if (next.phase !== "offseason" || f.phase === "offseason") return next;
   return { ...next, season: { ...next.season, awards: seasonAwards(next, teams) } };
 }
+
+/** Is a game close enough after three quarters to ask the user to finish it? */
+export const isClose = (p: PartialGame, margin: number) => Math.abs(p.home - p.away) <= margin;
 
 /** Sims all but the last period of the user's game. The result is saved, so reopening the game gets the same score. */
 export function startFourth(f: Franchise, game: ScheduledGame): Franchise {
@@ -169,7 +172,7 @@ export interface SimDayResult {
 }
 
 /** Sims the day's games and moves to the next day, unless the user's game is still open. */
-export function simDay(f: Franchise, teams: Team[], opts: { includeUser: boolean }): SimDayResult {
+export function simDay(f: Franchise, teams: Team[], opts: { includeUser: boolean; simLive?: boolean }): SimDayResult {
   if (f.phase === "offseason") return { franchise: f, changedPlayers: [], blocked: false };
   const today = f.season.games.filter((g) => g.date <= f.date && !g.result);
   const w = working(f);
@@ -177,6 +180,20 @@ export function simDay(f: Franchise, teams: Team[], opts: { includeUser: boolean
   for (const g of today) {
     if (isUsers(f, g) && !opts.includeUser) {
       blocked = true;
+      continue;
+    }
+    if (isUsers(f, g) && (f.live?.gameId === g.id || f.settings.closeGamesOnly)) {
+      const started = startFourth({ ...f, players: w.players }, g);
+      const partial = started.live!.partial;
+      if (!opts.simLive && f.settings.closeGamesOnly && isClose(partial, f.settings.closeGameMargin)) {
+        w.f = { ...w.f, live: started.live };
+        blocked = true;
+        continue;
+      }
+      const input = boxInput({ ...f, players: w.players }, g);
+      record(w, g, finishBox(input, partial), false, new Set([...input.home.starters, ...input.away.starters]));
+      w.f = { ...w.f };
+      delete w.f.live;
       continue;
     }
     // hurt players are read from the working copy, in case an earlier game changed them

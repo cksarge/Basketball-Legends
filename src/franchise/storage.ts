@@ -139,7 +139,13 @@ export function migrateFranchise(f: Franchise): Franchise {
     throw new Error("That file isn't a franchise save.");
   if (f.version > FRANCHISE_VERSION) throw new Error("This franchise was saved by a newer version of the game. Update the game to open it.");
   // version 2 added coaching
-  return { ...f, version: FRANCHISE_VERSION, plan: f.plan ?? defaultPlan(), devDate: f.devDate ?? f.date };
+  return {
+    ...f,
+    version: FRANCHISE_VERSION,
+    plan: f.plan ?? defaultPlan(),
+    devDate: f.devDate ?? f.date,
+    settings: { ...f.settings, closeGamesOnly: f.settings.closeGamesOnly ?? false },
+  };
 }
 
 export const FRANCHISE_EXPORT_KIND = "basketball-legends-franchise";

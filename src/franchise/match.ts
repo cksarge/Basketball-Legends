@@ -1,6 +1,7 @@
 // Turning a franchise game into a 3D match, and the finished match back into league results.
 import { playerOvr } from "@/engine/player";
 import type { Player, Team } from "@/engine/types";
+import { emptyLine, type BoxScore, type StatLine } from "@/game/sim/stats";
 import { uniformColors } from "@/game3d/character/uniformTexture";
 import type { MatchResult, PendingMatch } from "@/state/matchStore";
 import type { BoxResult } from "./boxsim";
@@ -69,6 +70,16 @@ export function franchisePending(f: Franchise, game: ScheduledGame, teams: Team[
   };
 }
 
+/** The last period of a game simulated this far. */
+export function fourthPending(f: Franchise, game: ScheduledGame, teams: Team[], controller: string): PendingMatch {
+  const { partial } = f.live!;
+  return {
+    ...franchisePending(f, game, teams, controller),
+    startFrom: { period: leagueModule(f.league).periods, homeScore: partial.home, awayScore: partial.away, box: partial.box },
+    occasion: "Last period",
+  };
+}
+
 export function resultToBox(r: MatchResult, regulationPeriods: number): BoxResult {
   return {
     home: r.homeScore,
@@ -78,6 +89,17 @@ export function resultToBox(r: MatchResult, regulationPeriods: number): BoxResul
     playerOfGame: r.playerOfGame,
     injuries: r.injuries.map((x) => ({ playerId: x.playerId, name: x.name, gamesOut: x.gamesOut })),
   };
+}
+
+/** Season stats for a game finished from a partial: the simulated part counts as it is, and only what was played scales up. */
+function lastPeriodScaled(box: BoxScore, earlier: BoxScore, scale: number): BoxScore {
+  return Object.fromEntries(
+    Object.entries(box).map(([id, line]) => {
+      const before = earlier[id] ?? emptyLine();
+      const merged = Object.fromEntries((Object.keys(line) as (keyof StatLine)[]).map((k) => [k, before[k] + Math.round((line[k] - before[k]) * scale)]));
+      return [id, merged as unknown as StatLine];
+    }),
+  );
 }
 
 /** Records a finished match. Stats count at full game length, so a short played game doesn't sink a player's averages. */
@@ -91,6 +113,10 @@ export function applyFinishedFranchiseMatch(f: Franchise, r: MatchResult, teams:
     return resolveLineup(f.plan, dressed(f, id), m.quarterMinutes * m.periods * 5).starters;
   };
   const starters = [...lineupOf(g.homeId), ...lineupOf(g.awayId)];
-  const next = applyGame(f, g.id, resultToBox(r, m.periods), !r.simulated, starters, m.quarterMinutes / r.quarterMinutes);
-  return advancePostseason(next, teams);
+  const scale = m.quarterMinutes / r.quarterMinutes;
+  const earlier = f.live?.gameId === g.id ? f.live.partial.box : undefined;
+  const next = applyGame(f, g.id, resultToBox(r, m.periods), !r.simulated, starters, scale, earlier && lastPeriodScaled(r.box, earlier, scale));
+  const done = { ...next };
+  delete done.live;
+  return advancePostseason(done, teams);
 }

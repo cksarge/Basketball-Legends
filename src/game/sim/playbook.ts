@@ -66,7 +66,7 @@ export const SYSTEMS: Record<SystemId, SystemDef> = {
     label: "Pace and space",
     hint: "Early threes and driving lanes. Needs shooters.",
     plans: { drive: 0.7, hold: 1.1 },
-    threeBias: 1.22,
+    threeBias: 1.12,
     cutRate: 1,
     passFirst: -0.05,
     plays: ["floppy", "drag"],

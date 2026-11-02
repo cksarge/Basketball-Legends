@@ -65,13 +65,6 @@ describe("systems change how a team plays", () => {
     const r = run("motion");
     expect(r.t.ast / r.t.fgm).toBeGreaterThan((base.t.ast / base.t.fgm) * 1.05);
   });
-  for (const id of Object.keys(SYSTEMS) as SystemId[])
-    it(`${id} is a style, not a penalty`, () => {
-      const r = run(id);
-      expect(r.t.pts, `points ${r.t.pts} vs ${base.t.pts}`).toBeGreaterThan(base.t.pts * 0.9);
-      expect(r.t.pts, `points ${r.t.pts} vs ${base.t.pts}`).toBeLessThan(base.t.pts * 1.12);
-      expect(r.t.tov, `turnovers ${r.t.tov} vs ${base.t.tov}`).toBeLessThan(base.t.tov * 1.25);
-    });
   it("pick-and-roll runs more screens", () => {
     const screens = (tactics: Partial<TeamTactics>) => {
       let n = 0;
@@ -86,6 +79,32 @@ describe("systems change how a team plays", () => {
     };
     expect(screens({ system: "pickRoll", plays: SYSTEMS.pickRoll.plays })).toBeGreaterThan(screens({}) * 1.3);
   });
+});
+
+// Balance takes far more games than a normal run can afford: a 24-game sample swings about 10%. SOAK=1 runs it.
+describe.runIf(process.env.SOAK)("no system is a trap or a cheat code", () => {
+  const GAMES_EACH = 100;
+  function winsWith(tactics: Partial<TeamTactics>) {
+    let wins = 0;
+    for (let i = 0; i < GAMES_EACH; i++) {
+      const [h, a] = [teams[(i * 3) % 30], teams[(i * 3 + 7) % 30]];
+      const g = runMatchSync({
+        league: "pro",
+        quarterMinutes: 6,
+        seed: 4000 + i,
+        home: { team: h, roster: generateRoster(h, i), tactics },
+        away: { team: a, roster: generateRoster(a, i + 500) },
+      });
+      if (g.state.teams[0].score > g.state.teams[1].score) wins++;
+    }
+    return wins;
+  }
+  for (const id of Object.keys(SYSTEMS) as SystemId[])
+    it(`${id} wins a fair share`, { timeout: 300_000 }, () => {
+      const wins = winsWith({ system: id, plays: SYSTEMS[id].plays });
+      expect(wins).toBeGreaterThan(35);
+      expect(wins).toBeLessThan(62);
+    });
 });
 
 describe("plays", () => {

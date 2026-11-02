@@ -23,6 +23,10 @@ In testing at legends.carterscoding.com/beta/. These notes grow as Franchise mod
 - **Game plans:** choose who guards whom and who gets double-teamed for your next game, or change it from the pause menu.
 - **Practice:** pick a team focus and give any player their own plan, including learning a new position over 12 weeks. Young players with a strong work ethic improve fastest.
 - **Hire your staff:** a lead assistant, development coach, head scout and head trainer, each with their own rating and salary. Scouting pays off when the draft arrives.
+- **Playbooks:** choose a system (motion, pick-and-roll, post-up, pace and space or iso-star) and up to six plays. Each one changes who gets the ball, where players run and what shots they take, in played and simulated games alike. Teams with no system play exactly as before.
+- **Call plays:** the call button works through your plays during a game, or pick one from the Plays tab in the pause menu.
+- **Play the 4th quarter:** jump in with the score from three simulated quarters.
+- **Close games only:** turn it on and sims stop whenever one of your games is close going into the 4th quarter.
 - The offseason arrives in a later beta, so a franchise currently ends with the first champion.
 
 ## v0.3.0 — November 1, 2026
