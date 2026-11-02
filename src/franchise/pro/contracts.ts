@@ -102,5 +102,5 @@ export function rollContracts(f: Franchise): Franchise {
       { ...b, midLevelUsed: 0, dead: b.dead.map((d) => ({ ...d, years: d.years - 1 })).filter((d) => d.years > 0) },
     ]),
   );
-  return { ...f, players, rosters, devRosters, freeAgents, books, cap: nextCap(f.cap, f.seed) };
+  return { ...f, players, rosters, devRosters, freeAgents, books, cap: nextCap(f.cap, f.seed, f.revenueGrowth) };
 }

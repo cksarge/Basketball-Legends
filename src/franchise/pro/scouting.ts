@@ -2,6 +2,7 @@
 import { playerOvr } from "@/engine/player";
 import { Rng, clamp } from "@/engine/rng";
 import type { Player } from "@/engine/types";
+import { budgetEffect } from "../club/finance";
 import { staffRating } from "../coaching/staff";
 import type { Franchise } from "../types";
 
@@ -17,8 +18,7 @@ const AVERAGE_SCOUT = 70;
 
 export type Range = [number, number];
 
-/** M8 adds the scouting budget here. */
-export const scoutMultiplier = (f: Franchise) => staffRating(f, "scout") / AVERAGE_SCOUT;
+export const scoutMultiplier = (f: Franchise) => (staffRating(f, "scout") / AVERAGE_SCOUT) * budgetEffect(f, "scouting");
 
 function around(truth: number, offset: number, half: number): Range {
   const center = truth + offset * half;

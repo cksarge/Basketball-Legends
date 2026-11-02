@@ -30,6 +30,7 @@ const PLAYER_OPTION_VALUE = 1.05;
 const TEAM_OPTION_COST = 0.94;
 const YEAR_MISMATCH = 0.06;
 export const TALK_TRIES = 3;
+const FACILITY_MOOD = 400;
 /** Teams with fewer games than this are judged as average. */
 const WINNING_GAMES = 10;
 
@@ -91,7 +92,8 @@ export function mood(f: Franchise, p: Player, teamId: string): Mood {
   const weights = { money: 0.1, role: 0.2 + ego * 0.3, winning: 0.5 - ego * 0.15, loyalty: 0.3 };
   const total = weights.money + weights.role + weights.winning + (isHome(p, teamId) ? weights.loyalty : 0);
   const sum = parts.money * weights.money + parts.role * weights.role + parts.winning * weights.winning + parts.loyalty * weights.loyalty;
-  return { score: sum / total, parts };
+  // better buildings help a little everywhere
+  return { score: sum / total + (f.finance[teamId].facilities - 50) / FACILITY_MOOD, parts };
 }
 
 function wantedYears(p: Player) {

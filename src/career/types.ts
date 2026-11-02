@@ -70,6 +70,8 @@ export interface GameResult {
   away: number;
   /** Played in 3D (true) or simulated. */
   played: boolean;
+  /** Franchise: the home team has its money for this game. */
+  gatePaid?: boolean;
   overtimes: number;
   /** Your player's line, when the game involved your team. */
   userLine?: StatLine;

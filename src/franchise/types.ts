@@ -325,6 +325,10 @@ export interface Franchise {
   powerLast: Record<string, number>;
   /** Each AI team's system for the season. */
   aiTactics: Record<string, TeamTactics>;
+  /** League revenue per cap dollar last season. */
+  revenueBase?: number;
+  /** How that changed, which sets the next cap. */
+  revenueGrowth?: number;
   /** Player id -> tries used in contract talks this year. */
   talks: Record<string, number>;
   retired: RetiredPlayer[];

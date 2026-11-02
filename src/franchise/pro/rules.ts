@@ -1,5 +1,5 @@
 // Every pro cap number, as a share of the salary cap, so the whole system scales as the cap rises.
-import { Rng } from "@/engine/rng";
+import { Rng, clamp } from "@/engine/rng";
 import type { CapState } from "../types";
 
 export const START_CAP = 140_000_000;
@@ -35,6 +35,9 @@ const MAX_SHARE: { service: number; share: number }[] = [
   { service: 0, share: 0.25 },
 ];
 const CAP_RISE = [0.03, 0.06] as const;
+const CAP_LIMITS = [0.02, 0.08] as const;
+const REVENUE_RISE = 0.045;
+const REVENUE_SHARE = 0.5;
 const TICKET_SHARE = 120 / START_CAP;
 
 export type CapRules = { salaryCap: number; maxSalary: (service: number) => number } & Record<keyof typeof SHARE, number>;
@@ -53,8 +56,8 @@ export function capRules(cap: CapState): CapRules {
 /** A normal ticket price under this cap. */
 export const ticketBase = (cap: CapState) => Math.round(cap.salaryCap * TICKET_SHARE);
 
-/** Next year's cap. M8 ties this to league revenue. */
-export function nextCap(cap: CapState, seed: string): CapState {
-  const rise = new Rng(`${seed}:cap:${cap.year + 1}`).range(...CAP_RISE);
+/** Next year's cap, which follows league revenue once there's a year to compare. */
+export function nextCap(cap: CapState, seed: string, growth?: number): CapState {
+  const rise = growth === undefined ? new Rng(`${seed}:cap:${cap.year + 1}`).range(...CAP_RISE) : clamp(REVENUE_RISE + growth * REVENUE_SHARE, ...CAP_LIMITS);
   return { year: cap.year + 1, salaryCap: roundMoney(cap.salaryCap * (1 + rise)) };
 }

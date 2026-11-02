@@ -4,6 +4,7 @@ import { TRAINING } from "@/career/pro/season";
 import { playerOvr } from "@/engine/player";
 import { Rng } from "@/engine/rng";
 import type { Player, RatingKey } from "@/engine/types";
+import { budgetEffect } from "../club/finance";
 import type { Franchise, PlayerPlan, PracticeFocus } from "../types";
 import { staffRating } from "./staff";
 
@@ -52,7 +53,7 @@ function learnPosition(p: Player, plan: PlayerPlan): { player: Player; plan: Pla
 export function weeklyDevelopment(f: Franchise): { franchise: Franchise; changedPlayers: string[] } {
   const date = addDays(f.devDate, WEEK);
   if (f.date < date) return { franchise: f, changedPlayers: [] };
-  const coach = staffRating(f, "development") / 70;
+  const coach = (staffRating(f, "development") / 70) * budgetEffect(f, "coaching");
   const team = teamKeys(f.plan.practice);
   const players = { ...f.players };
   const playerPlans = { ...f.plan.playerPlans };

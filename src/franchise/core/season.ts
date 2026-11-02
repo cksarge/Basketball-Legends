@@ -5,6 +5,7 @@ import { Rng } from "@/engine/rng";
 import type { Player, Team } from "@/engine/types";
 import { addLine, emptyLine, type BoxScore, type StatLine } from "@/game/sim/stats";
 import { weeklyDevelopment } from "../coaching/development";
+import { closeSeasonBooks, payGates } from "../club/finance";
 import { resolveLineup } from "../coaching/plan";
 import { clearUndo } from "./moves";
 import { coachEdge, staffRating, trainerGamesOut } from "../coaching/staff";
@@ -157,10 +158,14 @@ export function applyGame(f: Franchise, gameId: string, r: BoxResult, played: bo
 
 /** Creates the postseason games that are due; the awards land the moment the league's champion is decided. */
 export function advancePostseason(f: Franchise, teams: Team[]): Franchise {
-  const next = leagueModule(f.league).postseason(f, teams);
+  const paid = payGates(f, teams);
+  const next = leagueModule(f.league).postseason(paid, teams);
   if (next.phase !== "offseason" || f.phase === "offseason") return next;
   const championRoster = next.season.championId ? next.rosters[next.season.championId] : [];
-  return { ...next, offseason: { step: "review", report: null }, season: { ...next.season, championRoster, awards: seasonAwards(next, teams) } };
+  return closeSeasonBooks(
+    { ...next, offseason: { step: "review", report: null }, season: { ...next.season, championRoster, awards: seasonAwards(next, teams) } },
+    teams,
+  );
 }
 
 /** Is a game close enough after three quarters to ask the user to finish it? */

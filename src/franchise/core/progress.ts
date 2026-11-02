@@ -2,6 +2,7 @@
 import { overall, playerOvr } from "@/engine/player";
 import { Rng, clamp } from "@/engine/rng";
 import type { Player, RatingKey, Ratings } from "@/engine/types";
+import { budgetEffect } from "../club/finance";
 import { staffRating } from "../coaching/staff";
 import type { Franchise, ProgressReport } from "../types";
 
@@ -76,7 +77,7 @@ export function retires(p: Player, rng: Rng, signed: boolean): boolean {
 /** Everyone in the league ages. Retired players stay readable until the new season, since this season's stats point at them. */
 export function leagueProgress(f: Franchise): { franchise: Franchise; report: ProgressReport } {
   const year = f.season.year;
-  const bonus = (staffRating(f, "development") - 50) / 45;
+  const bonus = ((staffRating(f, "development") - 50) / 45) * budgetEffect(f, "coaching");
   const mine = new Set(f.rosters[f.teamId]);
   const players = { ...f.players };
   const gone = new Set<string>();
