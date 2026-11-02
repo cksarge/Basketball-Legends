@@ -1,6 +1,7 @@
 // Builds a new franchise: a full league of generated rosters, ready for its first season.
 import { generateRoster } from "@/engine/player";
 import type { LeagueId, Player, Team } from "@/engine/types";
+import { defaultPlan } from "./coaching/plan";
 import { leagueModule } from "./leagues";
 import { FRANCHISE_VERSION, type Franchise, type FranchiseSettings } from "./types";
 
@@ -33,6 +34,7 @@ export function createFranchise(o: {
     rosters[t.id] = roster.map((p) => p.id);
     for (const p of roster) players[p.id] = p;
   }
+  const date = leagueModule(o.league).calendar(year).opening;
   return {
     id: `f-${now.toString(36)}-${seedNumber(o.seed).toString(36)}`,
     version: FRANCHISE_VERSION,
@@ -42,9 +44,11 @@ export function createFranchise(o: {
     updatedAt: now,
     league: o.league,
     teamId: o.team.id,
-    date: leagueModule(o.league).calendar(year).opening,
+    date,
     phase: "regular",
     settings: { ...DEFAULT_FRANCHISE_SETTINGS, ...o.settings },
+    plan: defaultPlan(),
+    devDate: date,
     players,
     rosters,
     season: { year, games: leagueModule(o.league).schedule(o.teams, year, o.seed), series: [], stats: {}, playoffStats: {}, awards: [] },

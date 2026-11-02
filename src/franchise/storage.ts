@@ -2,6 +2,7 @@
 // every change, so the summary, players and season live in separate tables and one commit is one transaction.
 import Dexie, { type Table } from "dexie";
 import type { Player, Team } from "@/engine/types";
+import { defaultPlan } from "./coaching/plan";
 import { FRANCHISE_VERSION, type Franchise, type FranchiseSummary, type LeagueSeason } from "./types";
 
 type SaveData = Omit<Franchise, "players" | "season">;
@@ -137,7 +138,8 @@ export function migrateFranchise(f: Franchise): Franchise {
   if (!f || typeof f !== "object" || !f.id || !f.teamId || !f.players || !f.rosters || !Array.isArray(f.season?.games))
     throw new Error("That file isn't a franchise save.");
   if (f.version > FRANCHISE_VERSION) throw new Error("This franchise was saved by a newer version of the game. Update the game to open it.");
-  return f;
+  // version 2 added coaching
+  return { ...f, version: FRANCHISE_VERSION, plan: f.plan ?? defaultPlan(), devDate: f.devDate ?? f.date };
 }
 
 export const FRANCHISE_EXPORT_KIND = "basketball-legends-franchise";

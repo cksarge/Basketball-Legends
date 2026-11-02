@@ -2,6 +2,7 @@ import "fake-indexeddb/auto";
 import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Team } from "@/engine/types";
+import { emptyLine } from "@/game/sim/stats";
 import { createFranchise } from "../create";
 import {
   StaleFranchiseError,
@@ -16,7 +17,8 @@ import {
   openFranchiseDb,
   type FranchiseDb,
 } from "../storage";
-import { FRANCHISE_VERSION } from "../types";
+import { defaultPlan } from "../coaching/plan";
+import { FRANCHISE_VERSION, type Franchise } from "../types";
 
 const teams = (JSON.parse(readFileSync("src/data/generated/pro.json", "utf8")) as { teams: Team[] }).teams;
 const team = teams[0];
@@ -80,6 +82,29 @@ describe("franchise storage", () => {
 
   it("refuses a save from a newer version", () => {
     expect(() => migrateFranchise({ ...make(), version: FRANCHISE_VERSION + 1 })).toThrow(/saved by a newer version/);
+  });
+
+  const version1 = (): Franchise => {
+    const f = { ...make(), version: 1 } as Partial<Franchise>;
+    delete f.plan;
+    delete f.devDate;
+    return f as Franchise;
+  };
+
+  it("opens a version 1 save with default coaching and its stats intact", async () => {
+    const stats = { x: { ...emptyLine(), gp: 3, gs: 3 } };
+    const old = version1();
+    await createFranchiseSave({ ...old, season: { ...old.season, stats } }, team);
+    const f = (await loadFranchise(old.id))!;
+    expect(f.version).toBe(FRANCHISE_VERSION);
+    expect(f.plan).toEqual(defaultPlan());
+    expect(f.devDate).toBe(old.date);
+    expect(f.season.stats).toEqual(stats);
+  });
+
+  it("upgrades a version 1 export", async () => {
+    const f = await importFranchise(exportFranchise(version1()), () => team);
+    expect(f.plan).toEqual(defaultPlan());
   });
 
   it("gives an imported save a new id when the original exists", async () => {

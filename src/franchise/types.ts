@@ -1,10 +1,10 @@
 // The Franchise save format: one persistent league, its players and the season in progress.
 import type { IsoDate, ProSeries, ScheduledGame } from "@/career/types";
-import type { LeagueId, Player } from "@/engine/types";
+import type { LeagueId, Player, Position, TeamTactics } from "@/engine/types";
 import type { Difficulty } from "@/game/sim/state";
 import type { StatLine } from "@/game/sim/stats";
 
-export const FRANCHISE_VERSION = 1;
+export const FRANCHISE_VERSION = 2;
 
 export type FranchisePhase = "regular" | "playIn" | "playoffs" | "offseason";
 
@@ -39,6 +39,38 @@ export interface LeagueSeason {
   championId?: string;
 }
 
+export type PracticeFocus = "balanced" | "shooting" | "finishing" | "playmaking" | "defense" | "conditioning";
+
+export interface PlayerPlan {
+  /** A training id from career/pro/season.ts. */
+  focus: string;
+  newPos?: Position;
+  posWeeks?: number;
+}
+
+export type StaffRole = "assistant" | "development" | "scout" | "trainer";
+
+export interface StaffMember {
+  id: string;
+  role: StaffRole;
+  name: string;
+  /** 40..95 */
+  rating: number;
+  salary: number;
+}
+
+/** How the user coaches their team. */
+export interface TeamPlan {
+  autoRotation: boolean;
+  starters: string[];
+  /** Per 240-minute game. */
+  minutes: Record<string, number>;
+  tactics: TeamTactics;
+  practice: PracticeFocus;
+  playerPlans: Record<string, PlayerPlan>;
+  staff: StaffMember[];
+}
+
 export interface Franchise {
   id: string;
   version: number;
@@ -52,6 +84,9 @@ export interface Franchise {
   date: IsoDate;
   phase: FranchisePhase;
   settings: FranchiseSettings;
+  plan: TeamPlan;
+  /** The last day of practice counted. */
+  devDate: IsoDate;
   players: Record<string, Player>;
   /** Team id -> player ids. */
   rosters: Record<string, string[]>;
