@@ -10,13 +10,14 @@ import { resolveLineup } from "./coaching/plan";
 import { advancePostseason, applyGame } from "./core/season";
 import { seedNumber } from "./create";
 import { leagueModule } from "./leagues";
+import { activeRoster } from "./pro/rosterMoves";
 import { defaultRotation } from "./rotation";
 import type { Franchise } from "./types";
 
 /** Who dresses: hurt players stay home unless the team can't field five. */
-function dressed(f: Franchise, teamId: string): Player[] {
+function dressed(f: Franchise, teamId: string, game: ScheduledGame): Player[] {
   const m = leagueModule(f.league);
-  const roster = f.rosters[teamId].map((id) => f.players[id]);
+  const roster = activeRoster(f, teamId, game);
   const healthy = roster.filter((p) => !p.injury);
   if (healthy.length >= 5) return healthy;
   const rotation = defaultRotation(roster, m.quarterMinutes * m.periods * 5);
@@ -34,8 +35,8 @@ export function franchisePending(f: Franchise, game: ScheduledGame, teams: Team[
   const home = find(game.homeId),
     away = find(game.awayId);
   const homeIsUs = home.id === f.teamId;
-  const homeRoster = dressed(f, home.id),
-    awayRoster = dressed(f, away.id);
+  const homeRoster = dressed(f, home.id, game),
+    awayRoster = dressed(f, away.id, game);
   const coached = (roster: Player[]) => {
     if (f.plan.autoRotation) return { starters: startersOf(roster), tactics: f.plan.tactics };
     const m = leagueModule(f.league);
@@ -109,8 +110,8 @@ export function applyFinishedFranchiseMatch(f: Franchise, r: MatchResult, teams:
   const g = f.season.games.find((x) => x.id === r.franchise!.gameId);
   if (!g || g.result) return f;
   const lineupOf = (id: string) => {
-    if (id !== f.teamId || f.plan.autoRotation) return startersOf(dressed(f, id));
-    return resolveLineup(f.plan, dressed(f, id), m.quarterMinutes * m.periods * 5).starters;
+    if (id !== f.teamId || f.plan.autoRotation) return startersOf(dressed(f, id, g));
+    return resolveLineup(f.plan, dressed(f, id, g), m.quarterMinutes * m.periods * 5).starters;
   };
   const starters = [...lineupOf(g.homeId), ...lineupOf(g.awayId)];
   const scale = m.quarterMinutes / r.quarterMinutes;

@@ -49,7 +49,7 @@ export function aiChoice(f: Franchise, teamId: string): string {
   return available(f).reduce((a, b) => (score(b) > score(a) ? b : a)).id;
 }
 
-function freeJersey(f: Franchise, teamId: string, wanted: number) {
+export function freeJersey(f: Franchise, teamId: string, wanted: number) {
   const used = new Set(f.rosters[teamId].map((id) => f.players[id].jersey));
   let n = wanted;
   while (used.has(n)) n = (n + 1) % 100;

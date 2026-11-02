@@ -9,6 +9,7 @@ import { coachEdge, staffRating, trainerGamesOut } from "../coaching/staff";
 import { finishBox, simBox, simQuarters, type BoxInput, type BoxResult, type BoxSide } from "../boxsim";
 import { seasonAwards } from "./awards";
 import { leagueModule } from "../leagues";
+import { activeRoster, processWaivers, rosterProblem } from "../pro/rosterMoves";
 import { weeklyScouting } from "../pro/scouting";
 import { conferenceSeeds } from "../leagues/pro";
 import { defaultRotation } from "../rotation";
@@ -32,8 +33,8 @@ export function dueGame(f: Franchise): ScheduledGame | null {
   return ev.kind === "game" && ev.date <= f.date ? ev.game : null;
 }
 
-function boxSide(f: Franchise, teamId: string): BoxSide {
-  const roster = f.rosters[teamId].map((id) => f.players[id]);
+function boxSide(f: Franchise, teamId: string, g: ScheduledGame): BoxSide {
+  const roster = activeRoster(f, teamId, g);
   if (teamId === f.teamId) return { teamId, roster, ...resolveLineup(f.plan, roster, leagueTotalMinutes(f)), tactics: f.plan.tactics, coachEdge: coachEdge(f) };
   const rotation = defaultRotation(roster, leagueTotalMinutes(f));
   return { teamId, roster, rotation, starters: Object.keys(rotation).slice(0, 5) };
@@ -50,8 +51,8 @@ function boxInput(f: Franchise, g: ScheduledGame): BoxInput {
     league: f.league,
     quarterMinutes: m.quarterMinutes,
     periods: m.periods,
-    home: boxSide(f, g.homeId),
-    away: boxSide(f, g.awayId),
+    home: boxSide(f, g.homeId, g),
+    away: boxSide(f, g.awayId, g),
     neutral: g.neutral,
     seed: `${f.seed}:${g.id}`,
   };
@@ -183,6 +184,7 @@ export interface SimDayResult {
 /** Sims the day's games and moves to the next day, unless the user's game is still open. */
 export function simDay(f: Franchise, teams: Team[], opts: { includeUser: boolean; simLive?: boolean }): SimDayResult {
   if (f.phase === "offseason") return { franchise: f, changedPlayers: [], blocked: false };
+  if (rosterProblem(f)) return { franchise: f, changedPlayers: [], blocked: true };
   const today = f.season.games.filter((g) => g.date <= f.date && !g.result);
   const w = working(f);
   let blocked = false;
