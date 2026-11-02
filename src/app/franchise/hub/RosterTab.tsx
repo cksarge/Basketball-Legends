@@ -4,6 +4,7 @@ import { fullName, heightStr, playerOvr } from "@/engine/player";
 import type { Player } from "@/engine/types";
 import { buyOut, buyoutAsk, callUp, releasePlayer } from "@/franchise/pro/rosterMoves";
 import { shownOvr } from "@/franchise/pro/scouting";
+import { toggleBlock } from "@/franchise/pro/tradeAi";
 import type { Franchise } from "@/franchise/types";
 import { useFranchiseSim } from "@/state/franchiseSim";
 import { Button, Panel } from "@/ui/kit";
@@ -87,6 +88,9 @@ export function RosterTab({ f }: { f: Franchise }) {
                 Buy out ({money(buyoutAsk(f, p.id))})
               </Button>
             )}
+            <Button variant="ghost" className={small} disabled={running} onClick={() => move(null, (x) => toggleBlock(x, p.id))}>
+              {f.tradeBlock.includes(p.id) ? "Off block" : "Trade block"}
+            </Button>
             <Button variant="ghost" className={small} disabled={running} onClick={() => move(`Released ${fullName(p)}`, (x) => releasePlayer(x, p.id))}>
               Release
             </Button>

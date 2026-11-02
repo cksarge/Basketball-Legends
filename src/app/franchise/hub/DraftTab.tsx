@@ -1,15 +1,18 @@
 "use client";
+import { useMemo } from "react";
 import { formatDate } from "@/career/format";
 import { draftCalendar } from "@/career/calendar";
 import { heightStr } from "@/engine/player";
 import type { Player, Team } from "@/engine/types";
 import { currentPick, makePick, simDraftToEnd, simToUserPick } from "@/franchise/pro/draft";
 import { MAX_ASSIGNED, assignScout, prospectRange } from "@/franchise/pro/scouting";
+import { draftDayOffers } from "@/franchise/pro/tradeAi";
 import type { Franchise } from "@/franchise/types";
 import { useFranchiseSim } from "@/state/franchiseSim";
 import { useFranchise } from "@/state/franchiseStore";
 import { Button, Panel } from "@/ui/kit";
 import { SortTable, type Column } from "@/ui/SortTable";
+import { OffersList } from "./TradesTab";
 
 const middle = (r: [number, number]) => (r[0] + r[1]) / 2;
 
@@ -21,6 +24,7 @@ export function DraftTab({ f, teams }: { f: Franchise; teams: Team[] }) {
   const pick = currentPick(f);
   const live = f.offseason?.step === "draft" && !!pick;
   const myTurn = live && pick?.ownerId === f.teamId;
+  const offers = useMemo(() => (myTurn ? draftDayOffers(f) : []), [f, myTurn]);
   const taken = new Set(draft.results.map((r) => r.playerId));
   const rows = draft.prospects.filter((p) => !taken.has(p.id));
   const abbrev = (id: string) => teams.find((t) => t.id === id)?.abbrev ?? "";
@@ -68,6 +72,11 @@ export function DraftTab({ f, teams }: { f: Franchise; teams: Team[] }) {
               Sim the draft
             </Button>
           </div>
+        </Panel>
+      )}
+      {myTurn && offers.length > 0 && (
+        <Panel title="Calls about your pick">
+          <OffersList f={f} teams={teams} offers={offers} />
         </Panel>
       )}
       {draft.results.length > 0 && (

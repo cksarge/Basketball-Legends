@@ -225,6 +225,43 @@ test("run a franchise offseason: option, re-sign, bid, release, two-way", async 
   expect(errors).toEqual([]);
 });
 
+test("make a franchise trade, undo it and make it again", async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors = watchErrors(page);
+  await page.goto("franchise/new/");
+  await page.getByRole("button", { name: /Phoenix/ }).click();
+  await page.getByRole("button", { name: "Start franchise" }).click();
+  await page.waitForURL(/franchise\/hub\/\?id=/);
+  await page.getByRole("tab", { name: "Trades" }).click();
+  const theirs = page.locator("fieldset").nth(1);
+  const name = (await theirs.locator("li span").nth(7).innerText()).split(",")[0];
+  // one of their players for nothing is refused
+  await theirs.getByRole("checkbox").nth(7).check();
+  await expect(page.getByRole("list", { name: "Problems with this deal" })).toBeVisible();
+  await page.getByRole("button", { name: "Find a deal" }).click();
+  await page.getByRole("button", { name: "Load deal" }).first().click();
+  await page.getByRole("button", { name: "Propose trade" }).click();
+  await expect(page.getByText("Trade done.")).toBeVisible();
+  await page.getByRole("tab", { name: "Roster" }).click();
+  await expect(page.getByRole("cell", { name, exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Undo" }).click();
+  await expect(page.getByRole("cell", { name, exact: true })).toHaveCount(0);
+  await page.getByRole("tab", { name: "Trades" }).click();
+  await theirs.getByRole("checkbox").nth(7).check();
+  await page.getByRole("button", { name: "Find a deal" }).click();
+  await page.getByRole("button", { name: "Load deal" }).first().click();
+  await page.getByRole("button", { name: "Propose trade" }).click();
+  await expect(page.getByText("Trade done.")).toBeVisible();
+  await page.reload();
+  await page.getByRole("tab", { name: "Roster" }).click();
+  await expect(page.getByRole("cell", { name, exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Trade block" }).first().click();
+  await page.getByRole("tab", { name: "Trades" }).click();
+  await expect(page.getByRole("heading", { name: "Trade block" })).toBeVisible();
+  await page.getByRole("button", { name: "Ask around" }).click();
+  expect(errors).toEqual([]);
+});
+
 test("a franchise game saves to a Franchise slot, resumes from the hub and records its result @gpu", async ({ page }) => {
   test.setTimeout(240_000);
   await lowGraphics(page);
