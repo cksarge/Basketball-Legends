@@ -189,6 +189,25 @@ export interface Contract {
   twoWay?: boolean;
   playerOption?: boolean;
   teamOption?: boolean;
+  /** How many of the last years are team options. */
+  teamOptionYears?: number;
+  /** A developmental deal, outside the roster and the cap. */
+  dev?: boolean;
+  /** Takes over when this deal ends. */
+  extension?: { salary: number; years: number };
+}
+
+/** A pro's record in Franchise. */
+export interface PlayerFile {
+  /** Pro seasons played. */
+  service: number;
+  /** Seasons in a row with this team. */
+  teamSeasons: number;
+  draft?: { year: number; pick: number; teamId: string };
+  /** The team that holds his veteran rights while he's a free agent. */
+  rightsTeamId?: string;
+  /** What the league believes about a rookie until he plays. */
+  range?: { ovr: [number, number]; pot: [number, number] };
 }
 
 export interface Injury {
@@ -222,6 +241,7 @@ export interface Player {
   traits: { workEthic: number; ego: number; loyalty: number; consistency: number };
   /** Is this the user's career player. */
   isUser?: boolean;
+  file?: PlayerFile;
 }
 
 export type SystemId = "motion" | "pickRoll" | "postUp" | "paceSpace" | "isoStar";

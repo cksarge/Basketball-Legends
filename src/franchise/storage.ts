@@ -3,6 +3,7 @@
 import Dexie, { type Table } from "dexie";
 import type { Player, Team } from "@/engine/types";
 import { defaultPlan } from "./coaching/plan";
+import { fillGmState } from "./pro/gmState";
 import { FRANCHISE_VERSION, type Franchise, type FranchiseSummary, type LeagueSeason } from "./types";
 
 type SaveData = Omit<Franchise, "players" | "season">;
@@ -110,7 +111,7 @@ export async function createFranchiseSave(f: Franchise, team: Team | undefined):
   return f;
 }
 
-/** Saves a change in one transaction. Pass changedPlayers to skip rewriting the other players. */
+/** Saves a change in one transaction. Pass changedPlayers to skip rewriting the other players; without it, the rows match the save exactly. */
 export async function commitFranchise(f: Franchise, team: Team | undefined, changedPlayers?: string[], now = Date.now()): Promise<Franchise> {
   const d = getDb();
   const saved: Franchise = { ...f, revision: f.revision + 1, updatedAt: now };
@@ -119,6 +120,10 @@ export async function commitFranchise(f: Franchise, team: Team | undefined, chan
     if (!row || row.revision !== f.revision) throw new StaleFranchiseError();
     await d.saves.put(saveRow(saved, team));
     await d.players.bulkPut(playerRows(saved, changedPlayers ?? Object.keys(saved.players)));
+    if (!changedPlayers) {
+      const keys = await d.players.where("saveId").equals(f.id).primaryKeys();
+      await d.players.bulkDelete(keys.filter(([, id]) => !(id in saved.players)));
+    }
     await d.seasons.put({ saveId: saved.id, year: saved.season.year, data: saved.season });
   });
   return saved;
@@ -138,14 +143,14 @@ export function migrateFranchise(f: Franchise): Franchise {
   if (!f || typeof f !== "object" || !f.id || !f.teamId || !f.players || !f.rosters || !Array.isArray(f.season?.games))
     throw new Error("That file isn't a franchise save.");
   if (f.version > FRANCHISE_VERSION) throw new Error("This franchise was saved by a newer version of the game. Update the game to open it.");
-  // version 2 added coaching
-  return {
+  // version 2 added coaching, version 3 the general manager's side
+  return fillGmState({
     ...f,
     version: FRANCHISE_VERSION,
     plan: f.plan ?? defaultPlan(),
     devDate: f.devDate ?? f.date,
     settings: { ...f.settings, closeGamesOnly: f.settings.closeGamesOnly ?? false },
-  };
+  });
 }
 
 export const FRANCHISE_EXPORT_KIND = "basketball-legends-franchise";

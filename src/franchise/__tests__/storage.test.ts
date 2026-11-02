@@ -107,6 +107,55 @@ describe("franchise storage", () => {
     expect(f.plan).toEqual(defaultPlan());
   });
 
+  it("a retired player's row is gone after a full commit and reload", async () => {
+    const f = await createFranchiseSave(make(), team);
+    const players = { ...f.players };
+    const id = f.rosters[team.id][0];
+    delete players[id];
+    await commitFranchise({ ...f, players, rosters: { ...f.rosters, [team.id]: f.rosters[team.id].slice(1) } }, team);
+    expect((await loadFranchise(f.id))!.players[id]).toBeUndefined();
+  });
+
+  /** A save as beta.6 wrote it: version 2, before the general manager's fields. */
+  function beta6(f: Franchise) {
+    const old = JSON.parse(JSON.stringify(f));
+    for (const k of ["cap", "picks", "books", "freeAgents", "devRosters", "waivers", "draft", "talks", "retired", "history"]) delete old[k];
+    for (const p of Object.values(old.players) as { file?: unknown }[]) delete p.file;
+    return { ...old, version: 2 } as Franchise;
+  }
+
+  it("a beta.6 save opens with default books, picks, cap and a class, and keeps its stats", async () => {
+    const f = make();
+    const line = { ...emptyLine(), gp: 3, gs: 3, pts: 60 };
+    const id = f.rosters[team.id][0];
+    await createFranchiseSave(beta6({ ...f, season: { ...f.season, stats: { [id]: line } } }), team);
+    const up = (await loadFranchise(f.id))!;
+    expect(up.version).toBe(FRANCHISE_VERSION);
+    expect(up.season.stats[id].pts).toBe(60);
+    expect(up.cap).toEqual({ year: f.season.year, salaryCap: 140e6 });
+    expect(up.picks).toHaveLength(240);
+    expect(Object.keys(up.books)).toHaveLength(30);
+    expect(up.freeAgents).toEqual([]);
+    expect(up.draft.year).toBe(f.season.year + 1);
+    expect(up.offseason).toBeUndefined();
+  });
+
+  it("a beta.6 save in the offseason opens at the review step", () => {
+    const up = migrateFranchise({ ...beta6(make()), phase: "offseason" });
+    expect(up.offseason).toEqual({ step: "review", report: null });
+  });
+
+  it("every player has a file after a partial commit and a reload", async () => {
+    const f = make();
+    await createFranchiseSave(beta6(f), team);
+    const open = (await loadFranchise(f.id))!;
+    const before = open.players[f.rosters[team.id][1]].file;
+    await commitFranchise(open, team, [f.rosters[team.id][0]]);
+    const again = (await loadFranchise(f.id))!;
+    expect(Object.values(again.players).every((p) => p.file)).toBe(true);
+    expect(again.players[f.rosters[team.id][1]].file).toEqual(before);
+  });
+
   it("gives an imported save a new id when the original exists", async () => {
     const f = await createFranchiseSave(make(), team);
     const copy = await importFranchise(exportFranchise(f), () => team);

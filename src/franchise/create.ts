@@ -3,6 +3,7 @@ import { generateRoster } from "@/engine/player";
 import type { LeagueId, Player, Team } from "@/engine/types";
 import { defaultPlan } from "./coaching/plan";
 import { leagueModule } from "./leagues";
+import { fillGmState } from "./pro/gmState";
 import { FRANCHISE_VERSION, type Franchise, type FranchiseSettings } from "./types";
 
 export const DEFAULT_FRANCHISE_SETTINGS: FranchiseSettings = { quarterMinutes: 6, difficulty: "pro", closeGameMargin: 8, closeGamesOnly: false };
@@ -35,7 +36,7 @@ export function createFranchise(o: {
     for (const p of roster) players[p.id] = p;
   }
   const date = leagueModule(o.league).calendar(year).opening;
-  return {
+  return fillGmState({
     id: `f-${now.toString(36)}-${seedNumber(o.seed).toString(36)}`,
     version: FRANCHISE_VERSION,
     seed: o.seed,
@@ -52,5 +53,5 @@ export function createFranchise(o: {
     players,
     rosters,
     season: { year, games: leagueModule(o.league).schedule(o.teams, year, o.seed), series: [], stats: {}, playoffStats: {}, awards: [] },
-  };
+  });
 }

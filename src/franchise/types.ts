@@ -1,10 +1,12 @@
 // The Franchise save format: one persistent league, its players and the season in progress.
 import type { IsoDate, ProSeries, ScheduledGame } from "@/career/types";
-import type { LeagueId, Player, Position, TeamTactics } from "@/engine/types";
+import type { LeagueId, Player, PlayerFile, Position, TeamTactics } from "@/engine/types";
 import type { Difficulty } from "@/game/sim/state";
 import type { BoxScore, StatLine } from "@/game/sim/stats";
 
-export const FRANCHISE_VERSION = 2;
+export const FRANCHISE_VERSION = 3;
+
+export type { PlayerFile };
 
 export type FranchisePhase = "regular" | "playIn" | "playoffs" | "offseason";
 
@@ -73,6 +75,81 @@ export interface TeamPlan {
   staff: StaffMember[];
 }
 
+export interface DraftPick {
+  id: string;
+  /** The June the draft happens. */
+  year: number;
+  round: 1 | 2;
+  originalTeamId: string;
+  ownerId: string;
+}
+
+/** Money still owed to a player who's gone. */
+export interface DeadCap {
+  playerId: string;
+  name: string;
+  salary: number;
+  years: number;
+}
+
+export interface CapState {
+  year: number;
+  salaryCap: number;
+}
+
+export interface TeamBooks {
+  dead: DeadCap[];
+  midLevelUsed: number;
+  biannualYear?: number;
+}
+
+export type OffseasonStep = "review" | "progress" | "lottery" | "draft" | "contracts" | "freeAgency" | "camp";
+
+export interface ProgressReport {
+  retired: string[];
+  changes: { id: string; before: number; after: number }[];
+}
+
+export interface OffseasonState {
+  step: OffseasonStep;
+  report: ProgressReport | null;
+}
+
+export interface DraftState {
+  year: number;
+  prospects: Player[];
+  /** Scouting points per prospect. */
+  scouting: Record<string, number>;
+  assigned: string[];
+  /** Pick ids in draft order. */
+  order?: string[];
+  lottery?: { teamId: string; from: number; to: number }[];
+  results: { pickId: string; playerId: string; teamId: string }[];
+}
+
+export interface WaiverEntry {
+  playerId: string;
+  fromTeamId: string;
+  until: IsoDate;
+}
+
+export interface RetiredPlayer {
+  id: string;
+  name: string;
+  pos: Position;
+  year: number;
+  age: number;
+  peak: number;
+  lastTeamId: string | null;
+}
+
+export interface SeasonSummary {
+  year: number;
+  championId?: string;
+  record: { w: number; l: number };
+  awards: (Award & { name: string })[];
+}
+
 /** The first part of a game, simulated so the user can play the rest. */
 export interface PartialGame {
   home: number;
@@ -103,6 +180,20 @@ export interface Franchise {
   /** Team id -> player ids. */
   rosters: Record<string, string[]>;
   season: LeagueSeason;
+  cap: CapState;
+  picks: DraftPick[];
+  books: Record<string, TeamBooks>;
+  freeAgents: string[];
+  /** Team id -> developmental players, who are outside the roster. */
+  devRosters: Record<string, string[]>;
+  waivers: WaiverEntry[];
+  draft: DraftState;
+  /** Set during the offseason. */
+  offseason?: OffseasonState;
+  /** Player id -> tries used in contract talks this year. */
+  talks: Record<string, number>;
+  retired: RetiredPlayer[];
+  history: SeasonSummary[];
 }
 
 export interface FranchiseSummary {
