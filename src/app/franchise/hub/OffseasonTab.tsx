@@ -9,7 +9,11 @@ import { useFranchiseSim } from "@/state/franchiseSim";
 import { useFranchise } from "@/state/franchiseStore";
 import { Button, Panel } from "@/ui/kit";
 import { TeamLogo } from "@/ui/TeamLogo";
+import { staffHandles } from "@/franchise/pro/freeAgency";
+import { standardCount } from "@/franchise/pro/rosterMoves";
+import { ContractsPanel } from "./ContractsPanel";
 import { DraftTab } from "./DraftTab";
+import { FreeAgentsTab } from "./FreeAgentsTab";
 import { ProgressPanel } from "./ProgressPanel";
 
 const STEP_NAME: Record<OffseasonStep, string> = {
@@ -94,14 +98,16 @@ export function OffseasonTab({ f, teams }: { f: Franchise; teams: Team[] }) {
       {step === "progress" && <ProgressPanel f={f} />}
       {step === "lottery" && <LotteryPanel f={f} teams={teams} />}
       {step === "draft" && <DraftTab f={f} teams={teams} />}
-      {(step === "contracts" || step === "freeAgency") && (
-        <Panel title={STEP_NAME[step]}>
-          <p className="text-steel">Coming soon. For now, contracts carry over on their own.</p>
-        </Panel>
-      )}
+      {step === "contracts" && <ContractsPanel f={f} />}
+      {step === "freeAgency" && <FreeAgentsTab f={f} />}
       {step === "camp" && (
         <Panel title="Training camp">
-          <p className="text-steel">Your team is set for the {f.season.year + 1} season. Rosters above 15 lose their weakest players when the season starts.</p>
+          <p className="mb-3 text-steel">
+            You have {standardCount(f, f.teamId)} players on standard deals. The {f.season.year + 1} season needs 13 to 15.
+          </p>
+          <Button variant="secondary" onClick={() => update(staffHandles)}>
+            Let your staff set the roster
+          </Button>
         </Panel>
       )}
       <div className="flex flex-wrap items-center gap-3">

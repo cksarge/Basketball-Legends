@@ -148,8 +148,11 @@ test("sim a franchise season: results, leaders, a reload, Stop, and a champion",
   await expect(page.getByRole("heading", { name: "Draft results" })).toBeVisible();
   await page.getByRole("button", { name: "Sim the draft" }).click();
   await page.getByRole("button", { name: "Continue to Contracts" }).click();
+  const staff = page.getByRole("button", { name: "Let your staff decide" });
+  if (await staff.isVisible()) await staff.click();
   await page.getByRole("button", { name: "Continue to Free agency" }).click();
   await page.getByRole("button", { name: "Continue to Training camp" }).click();
+  await page.getByRole("button", { name: "Let your staff set the roster" }).click();
   await page.getByRole("button", { name: /^Start the \d{4} season$/ }).click();
   await expect(page.getByRole("tab", { name: "Offseason" })).toHaveCount(0);
   await page.getByRole("tab", { name: "Home" }).click();
@@ -158,6 +161,54 @@ test("sim a franchise season: results, leaders, a reload, Stop, and a champion",
   await expect(page.getByRole("cell", { name: /^\d{2}-\d{2}$/ }).first()).toBeVisible();
   await page.reload();
   await expect(page.getByRole("heading", { name: "Next game" })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("run a franchise offseason: option, re-sign, bid, release, two-way", async ({ page }) => {
+  test.setTimeout(480_000);
+  const errors = watchErrors(page);
+  await page.goto("franchise/new/");
+  await page.getByRole("button", { name: /Phoenix/ }).click();
+  await page.getByRole("button", { name: "Start franchise" }).click();
+  await page.waitForURL(/franchise\/hub\/\?id=/);
+  await page.getByRole("button", { name: "Sim the season" }).click();
+  await expect(page.getByText(/won the championship/)).toBeVisible({ timeout: 180_000 });
+  await page.getByRole("button", { name: "Go to the offseason" }).click();
+  await page.getByRole("button", { name: "Continue to Player progress" }).click();
+  await page.getByRole("button", { name: "Continue to Draft lottery" }).click();
+  await page.getByRole("button", { name: "Continue to Draft", exact: true }).click();
+  await page.getByRole("button", { name: "Sim the draft" }).click();
+  await page.getByRole("button", { name: "Continue to Contracts" }).click();
+  await expect(page.getByRole("heading", { name: "Team options" })).toBeVisible();
+  const staff = page.getByRole("button", { name: "Let your staff decide" });
+  if (await staff.isVisible()) await staff.click();
+  const resign = page.getByRole("button", { name: "Re-sign" }).first();
+  if (await resign.isVisible()) {
+    await resign.click();
+    await page.getByRole("button", { name: "Make offer" }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+  }
+  await page.getByRole("button", { name: "Continue to Free agency" }).click();
+  await expect(page.getByRole("heading", { name: "Moratorium" })).toBeVisible();
+  await page.getByRole("button", { name: "Bid", exact: true }).first().click();
+  await page.getByRole("button", { name: "Place bid" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: "Start round one" }).click();
+  for (const n of [2, 3, 4, 5]) await page.getByRole("button", { name: `Run round ${n}` }).click();
+  await expect(page.getByRole("heading", { name: "Open market" })).toBeVisible();
+  await page.getByRole("button", { name: "Two-way" }).first().click();
+  await page.getByRole("button", { name: "Continue to Training camp" }).click();
+  await page.getByRole("button", { name: "Let your staff set the roster" }).click();
+  await page.getByRole("button", { name: /^Start the \d{4} season$/ }).click();
+  await page.getByRole("tab", { name: "Roster" }).click();
+  await expect(page.getByRole("heading", { name: "Cap sheet" })).toBeVisible();
+  await expect(page.getByText("2W").first()).toBeVisible();
+  await page.getByRole("button", { name: "Release" }).first().click();
+  await page.getByRole("tab", { name: "Free agents" }).click();
+  await expect(page.getByRole("heading", { name: "On waivers" })).toBeVisible();
+  await page.reload();
+  await page.getByRole("tab", { name: "Free agents" }).click();
+  await expect(page.getByRole("heading", { name: "On waivers" })).toBeVisible();
   expect(errors).toEqual([]);
 });
 

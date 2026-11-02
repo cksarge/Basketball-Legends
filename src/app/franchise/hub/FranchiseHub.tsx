@@ -12,6 +12,7 @@ import { toast } from "@/ui/Toaster";
 import { pruneSaves, useLeagueTeams } from "./actions";
 import { CoachingTab } from "./CoachingTab";
 import { DraftTab } from "./DraftTab";
+import { FreeAgentsTab } from "./FreeAgentsTab";
 import { HomeTab } from "./HomeTab";
 import { LeadersTab } from "./LeadersTab";
 import { OffseasonTab } from "./OffseasonTab";
@@ -20,7 +21,7 @@ import { RosterTab } from "./RosterTab";
 import { ScheduleTab } from "./ScheduleTab";
 import { StandingsTab } from "./StandingsTab";
 
-const TABS = ["Home", "Offseason", "Schedule", "Roster", "Coaching", "Draft", "Standings", "Leaders", "Playoffs"] as const;
+const TABS = ["Home", "Offseason", "Schedule", "Roster", "Coaching", "Free agents", "Draft", "Standings", "Leaders", "Playoffs"] as const;
 type Tab = (typeof TABS)[number];
 
 export function FranchiseHub() {
@@ -131,6 +132,7 @@ export function FranchiseHub() {
       {tab === "Schedule" && <ScheduleTab f={franchise} teams={teams} team={team} />}
       {tab === "Roster" && <RosterTab f={franchise} />}
       {tab === "Coaching" && <CoachingTab f={franchise} />}
+      {tab === "Free agents" && <FreeAgentsTab f={franchise} />}
       {tab === "Draft" && <DraftTab f={franchise} teams={teams} />}
       {tab === "Standings" && <StandingsTab f={franchise} teams={teams} />}
       {tab === "Leaders" && <LeadersTab f={franchise} teams={teams} />}

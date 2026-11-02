@@ -10,6 +10,7 @@ import type { Team } from "@/engine/types";
 import { dueGame, nextFranchiseEvent, startFourth } from "@/franchise/core/season";
 import { leagueModule } from "@/franchise/leagues";
 import { fourthPending, franchisePending } from "@/franchise/match";
+import { rosterProblem } from "@/franchise/pro/rosterMoves";
 import { loadFranchise } from "@/franchise/storage";
 import type { Franchise } from "@/franchise/types";
 import { runFranchiseSim, useFranchiseSim } from "@/state/franchiseSim";
@@ -51,7 +52,9 @@ export function HomeTab({ f, teams, onOffseason }: { f: Franchise; teams: Team[]
   const update = useFranchise((s) => s.update);
   const ev = nextFranchiseEvent(f);
   const [until, setUntil] = useState("");
-  const running = useFranchiseSim((s) => s.running);
+  const simming = useFranchiseSim((s) => s.running);
+  const problem = rosterProblem(f);
+  const running = simming || !!problem;
   const byId = (id: string) => teams.find((t) => t.id === id)!;
   const seasonEnd = leagueModule(f.league).calendar(f.season.year).seasonEnd;
 
@@ -99,6 +102,13 @@ export function HomeTab({ f, teams, onOffseason }: { f: Franchise; teams: Team[]
 
   return (
     <div className="flex flex-col gap-5">
+      {problem && (
+        <Panel>
+          <p role="alert" className="font-semibold text-amber">
+            {problem}
+          </p>
+        </Panel>
+      )}
       <Panel title={ev.kind === "game" ? "Next game" : "Next up"}>
         {ev.kind === "game" ? (
           <>
