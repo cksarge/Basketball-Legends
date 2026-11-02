@@ -3,6 +3,7 @@ import { clamp } from "@/engine/rng";
 import type { Team } from "@/engine/types";
 import { defaultPlan } from "../coaching/plan";
 import { clearUndo } from "../core/moves";
+import { addNews, hiredNews } from "../history/news";
 import { START_SECURITY } from "../pro/gmState";
 import { teamSlot } from "../pro/tradeValue";
 import type { Franchise, JobStint } from "../types";
@@ -39,5 +40,6 @@ export function takeJob(f: Franchise, teamId: string, teams: Team[]): Franchise 
   if (moved.freeAgency) moved.freeAgency = { ...moved.freeAgency, bids: [], notices: [] };
   const job = { ...f.job, security: START_SECURITY, seasons: 0, stints: [...ended, { teamId, league: f.league, from: year + 1, w: 0, l: 0, titles: 0 }] };
   delete job.fired;
-  return { ...moved, job: { ...job, goals: seasonGoals(moved, teams) } };
+  const hired: Franchise = { ...moved, job: { ...job, goals: seasonGoals(moved, teams) } };
+  return addNews(hired, [hiredNews(hired, teams)]);
 }

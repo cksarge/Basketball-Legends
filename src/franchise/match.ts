@@ -9,6 +9,7 @@ import type { ScheduledGame } from "@/career/types";
 import { resolveLineup } from "./coaching/plan";
 import { advancePostseason, applyGame } from "./core/season";
 import { seedNumber } from "./create";
+import { addNews, gameNews } from "./history/news";
 import { leagueModule } from "./leagues";
 import { activeRoster } from "./pro/rosterMoves";
 import { defaultRotation } from "./rotation";
@@ -116,8 +117,10 @@ export function applyFinishedFranchiseMatch(f: Franchise, r: MatchResult, teams:
   const starters = [...lineupOf(g.homeId), ...lineupOf(g.awayId)];
   const scale = m.quarterMinutes / r.quarterMinutes;
   const earlier = r.startFrom?.box;
-  const next = applyGame(f, g.id, resultToBox(r, m.periods), !r.simulated, starters, scale, earlier && lastPeriodScaled(r.box, earlier, scale));
-  const done = { ...next };
-  delete done.live;
-  return advancePostseason(done, teams);
+  const box = resultToBox(r, m.periods);
+  const next = applyGame(f, g.id, box, !r.simulated, starters, scale, earlier && lastPeriodScaled(r.box, earlier, scale));
+  const done = addNews(next, gameNews(next, g, box, teams));
+  const settled = { ...done };
+  delete settled.live;
+  return advancePostseason(settled, teams);
 }

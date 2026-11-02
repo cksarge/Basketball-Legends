@@ -4,7 +4,7 @@ import { formatDate } from "@/career/format";
 import { proCalendar } from "@/career/calendar";
 import type { Team } from "@/engine/types";
 import { askFor, refreshOffers, type TradeOffer } from "@/franchise/pro/tradeAi";
-import { applyTrade, tradeOpen, tradeProblems, type Trade, type TradeAsset } from "@/franchise/pro/trades";
+import { tradeOpen, tradeProblems, userTrade, type Trade, type TradeAsset } from "@/franchise/pro/trades";
 import type { Franchise } from "@/franchise/types";
 import { useFranchiseSim } from "@/state/franchiseSim";
 import { Button, Panel } from "@/ui/kit";
@@ -35,7 +35,7 @@ export function OffersList({ f, teams, offers }: { f: Franchise; teams: Team[]; 
       {offers.map((o) => (
         <li key={o.id} className="flex flex-wrap items-center justify-between gap-2">
           <DealSummary f={f} t={o.trade} teams={teams} />
-          <Button variant="secondary" disabled={running} onClick={() => move("Accepted a trade offer", (x) => applyTrade(x, o.trade))}>
+          <Button variant="secondary" disabled={running} onClick={() => move("Accepted a trade offer", (x) => userTrade(x, o.trade, teams))}>
             Accept
           </Button>
         </li>

@@ -4,7 +4,7 @@ import type { Player, Team } from "@/engine/types";
 import { moneyM } from "@/franchise/pro/cap";
 import { shownOvr } from "@/franchise/pro/scouting";
 import { tradeReply } from "@/franchise/pro/tradeAi";
-import { applyTrade, signAndTradeOptions, tradeProblems, type Trade, type TradeAsset } from "@/franchise/pro/trades";
+import { signAndTradeOptions, userTrade, tradeProblems, type Trade, type TradeAsset } from "@/franchise/pro/trades";
 import type { Franchise } from "@/franchise/types";
 import { useFranchiseSim } from "@/state/franchiseSim";
 import { Button, Panel } from "@/ui/kit";
@@ -112,7 +112,7 @@ export function TradeBuilder({
     onReply(named(answer.note, teams));
     if (!answer.accepted) return;
     const partner = teams.find((t) => t.id === partners[0])?.name ?? "";
-    if (await move(`Traded with ${partner}`, (x) => applyTrade(x, trade))) {
+    if (await move(`Traded with ${partner}`, (x) => userTrade(x, trade, teams))) {
       onDeal([]);
       onReply("Trade done.");
     }

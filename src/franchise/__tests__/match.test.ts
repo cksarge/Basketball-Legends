@@ -37,6 +37,20 @@ function result(f: Franchise, o: Partial<MatchResult> = {}): MatchResult {
   };
 }
 
+describe("news from a played game", () => {
+  it("a big night in a played game makes the news", () => {
+    const f = make();
+    const id = f.rosters[team.id][0];
+    const g = firstGame(f);
+    const next = applyFinishedFranchiseMatch(
+      f,
+      result(f, { box: { [id]: { ...emptyLine(), min: 720, pts: 55, fgm: 20, fga: 30 } }, franchise: { franchiseId: f.id, gameId: g.id } }),
+      teams,
+    );
+    expect(next.news.some((n) => n.text.includes("scored"))).toBe(true);
+  });
+});
+
 describe("franchisePending", () => {
   it("sets up the home team, the user's controller and the way back", () => {
     const f = make();

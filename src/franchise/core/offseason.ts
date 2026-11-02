@@ -4,6 +4,7 @@ import { Rng } from "@/engine/rng";
 import type { Team } from "@/engine/types";
 import { seasonGoals } from "../club/owner";
 import { addSeason } from "../history/career";
+import { addNews, draftNews, retirementNews, signingNews } from "../history/news";
 import { leagueModule } from "../leagues";
 import { decideOptions, pendingOptions, rollContracts } from "../pro/contracts";
 import { currentPick } from "../pro/draft";
@@ -37,13 +38,21 @@ export function canAdvance(f: Franchise): { ok: true } | { ok: false; reason: st
 function enter(f: Franchise, step: OffseasonStep, teams: Team[]): Franchise {
   if (step === "progress") {
     const { franchise, report } = leagueProgress(f);
-    return { ...franchise, offseason: { step, report } };
+    const reported: Franchise = { ...franchise, offseason: { step, report } };
+    return addNews(reported, retirementNews(reported, teams));
   }
   if (step === "lottery") return runLottery(f, teams);
   if (step === "draft") return aiTradeDay(f, new Rng(`${f.seed}:draftday:${f.draft.year}`)).franchise;
-  if (step === "contracts") return teams.reduce((x, t) => (t.id === f.teamId ? x : cutTo(x, t.id, OFFSEASON_ROSTER_MAX)), decideOptions(f));
+  if (step === "contracts")
+    return addNews(
+      teams.reduce((x, t) => (t.id === f.teamId ? x : cutTo(x, t.id, OFFSEASON_ROSTER_MAX)), decideOptions(f)),
+      draftNews(f, teams),
+    );
   if (step === "freeAgency") return openFreeAgency(aiResign(rollContracts(f)));
-  if (step === "camp") return aiFillRosters(finishBidding(f));
+  if (step === "camp") {
+    const done = finishBidding(f);
+    return addNews(aiFillRosters(done), signingNews(done, teams));
+  }
   return f;
 }
 

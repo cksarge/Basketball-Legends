@@ -11,6 +11,8 @@ import { resolveLineup } from "../coaching/plan";
 import { clearUndo } from "./moves";
 import { coachEdge, staffRating, trainerGamesOut } from "../coaching/staff";
 import { finishBox, simBox, simQuarters, type BoxInput, type BoxResult, type BoxSide } from "../boxsim";
+import { addNews, firedNews, gameNews, seasonNews, seriesNews, tradeNews } from "../history/news";
+import { powerSnapshot } from "../history/power";
 import { seasonAwards } from "./awards";
 import { leagueModule } from "../leagues";
 import { weeklyMarket } from "../pro/freeAgency";
@@ -77,6 +79,8 @@ interface Working {
   userPlayed: boolean;
   /** A game was decided, so the last roster move is final. */
   played: boolean;
+  /** What was decided, for the news. */
+  results: { g: ScheduledGame; r: BoxResult }[];
 }
 
 const working = (f: Franchise): Working => ({
@@ -89,6 +93,7 @@ const working = (f: Franchise): Working => ({
   changed: new Set(),
   userPlayed: false,
   played: false,
+  results: [],
 });
 
 /** A line scaled up to full game length, for a played game with shorter quarters. */
@@ -100,6 +105,7 @@ function fullLength(line: StatLine, scale: number): StatLine {
 function record(w: Working, g: ScheduledGame, r: BoxResult, played: boolean, starters: Set<string>, statScale = 1, statBox?: BoxScore) {
   if (isUsers(w.f, g)) w.userPlayed = true;
   w.played = true;
+  w.results.push({ g, r });
   const roster = w.f.rosters[w.f.teamId];
   const box = isUsers(w.f, g) ? Object.fromEntries(Object.entries(r.box).filter(([id]) => roster.includes(id))) : undefined;
   w.games[w.index.get(g.id)!] = {
@@ -160,14 +166,20 @@ export function applyGame(f: Franchise, gameId: string, r: BoxResult, played: bo
 /** Creates the postseason games that are due; the awards land the moment the league's champion is decided. */
 export function advancePostseason(f: Franchise, teams: Team[]): Franchise {
   const paid = payGates(f, teams);
-  const next = leagueModule(f.league).postseason(paid, teams);
+  const decided = leagueModule(f.league).postseason(paid, teams);
+  const was = new Set(f.season.series.filter((x) => x.winner).map((x) => x.id));
+  const next = addNews(
+    decided,
+    decided.season.series.filter((x) => x.winner && !was.has(x.id) && x.round >= 1).map((x) => seriesNews(decided, x, teams)),
+  );
   if (next.phase !== "offseason" || f.phase === "offseason") return next;
   const championRoster = next.season.championId ? next.rosters[next.season.championId] : [];
   const closed = closeSeasonBooks(
     { ...next, offseason: { step: "review", report: null }, season: { ...next.season, championRoster, awards: seasonAwards(next, teams) } },
     teams,
   );
-  return applyReview(closed, ownerReview(closed));
+  const reviewed = applyReview(closed, ownerReview(closed));
+  return addNews(reviewed, [...seasonNews(reviewed, teams), ...(reviewed.job.fired ? [firedNews(reviewed, teams)] : [])]);
 }
 
 /** Is a game close enough after three quarters to ask the user to finish it? */
@@ -227,7 +239,11 @@ export function simDay(f: Franchise, teams: Team[], opts: { includeUser: boolean
     const input = boxInput({ ...f, players: w.players }, g);
     record(w, g, simBox(input), false, new Set([...input.home.starters, ...input.away.starters]));
   }
-  const done = finish(w);
+  const finished = finish(w);
+  const done = addNews(
+    finished,
+    w.results.flatMap(({ g, r }) => gameNews(finished, g, r, teams)),
+  );
   const changedPlayers = [...w.changed];
   if (blocked) return { franchise: done, changedPlayers, blocked };
   const next = advancePostseason(done, teams);
@@ -239,7 +255,11 @@ export function simDay(f: Franchise, teams: Team[], opts: { includeUser: boolean
     weekDone && !blocked
       ? aiTradeDay(refreshOffers(market.franchise), new Rng(`${f.seed}:trades:${dated.date}`))
       : { franchise: market.franchise, changedPlayers: [] };
-  const waivers = processWaivers(trades.franchise);
+  const reported = addNews(
+    trades.franchise,
+    trades.franchise.tradeLog.slice(market.franchise.tradeLog.length).flatMap((t) => tradeNews(trades.franchise, t, teams)),
+  );
+  const waivers = processWaivers(weekDone ? { ...reported, powerLast: powerSnapshot(reported) } : reported);
   return {
     franchise: waivers.franchise,
     changedPlayers: [

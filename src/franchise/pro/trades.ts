@@ -1,5 +1,7 @@
 // Whether a deal is legal, and making it happen. AI deals go through the same checks as the user's.
 import { proCalendar } from "@/career/calendar";
+import type { Team } from "@/engine/types";
+import { addNews, tradeNews } from "../history/news";
 import type { Franchise } from "../types";
 import { moneyM, payroll, rightsLimit } from "./cap";
 import { freeJersey } from "./draft";
@@ -82,6 +84,14 @@ export function tradeProblems(f: Franchise, t: Trade): string[] {
   const assets = t.assets.map((a) => assetProblem(f, t, a)).filter((x): x is string => !!x);
   if (assets.length) return assets;
   return t.teams.flatMap((id) => [salaryProblem(f, t, id), rosterProblem(f, t, id)]).filter((x): x is string => !!x);
+}
+
+/** The user's deal: made, logged and reported. */
+export function userTrade(f: Franchise, t: Trade, teams: Team[]): Franchise {
+  const next = applyTrade(f, t);
+  if (next === f) return f;
+  const entry = { date: f.date, teams: t.teams, assets: t.assets };
+  return addNews({ ...next, tradeLog: [...next.tradeLog, entry] }, tradeNews(next, entry, teams));
 }
 
 /** A team's expired players it could sign and trade during free agency, at what they'd take within its rights. */
