@@ -9,6 +9,7 @@ import { coachEdge, staffRating, trainerGamesOut } from "../coaching/staff";
 import { finishBox, simBox, simQuarters, type BoxInput, type BoxResult, type BoxSide } from "../boxsim";
 import { seasonAwards } from "./awards";
 import { leagueModule } from "../leagues";
+import { weeklyScouting } from "../pro/scouting";
 import { conferenceSeeds } from "../leagues/pro";
 import { defaultRotation } from "../rotation";
 import type { Franchise, PartialGame, SeasonLine } from "../types";
@@ -99,6 +100,14 @@ function record(w: Working, g: ScheduledGame, r: BoxResult, played: boolean, sta
     if (line.min <= 0) continue;
     const prev = table[id] ?? { ...emptyLine(), gp: 0, gs: 0 };
     table[id] = { ...addLine(prev, statBox ? line : fullLength(line, statScale)), gp: prev.gp + 1, gs: prev.gs + (starters.has(id) ? 1 : 0) };
+    // once he's played, everyone can see what he is
+    const file = w.players[id]?.file;
+    if (file?.range) {
+      const known = { ...file };
+      delete known.range;
+      w.players[id] = { ...w.players[id], file: known };
+      w.changed.add(id);
+    }
   }
   // every team game takes one off an injury, then this game's new ones land
   for (const id of [...w.f.rosters[g.homeId], ...w.f.rosters[g.awayId]]) {
@@ -206,5 +215,10 @@ export function simDay(f: Franchise, teams: Team[], opts: { includeUser: boolean
   const next = advancePostseason(done, teams);
   const dated = { ...next, date: next.phase === "offseason" ? next.date : addDays(next.date, 1) };
   const practice = weeklyDevelopment(dated);
-  return { franchise: practice.franchise, changedPlayers: [...new Set([...changedPlayers, ...practice.changedPlayers])], blocked };
+  const weekDone = practice.franchise.devDate !== dated.devDate;
+  return {
+    franchise: weekDone ? weeklyScouting(practice.franchise) : practice.franchise,
+    changedPlayers: [...new Set([...changedPlayers, ...practice.changedPlayers])],
+    blocked,
+  };
 }

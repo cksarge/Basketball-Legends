@@ -2,7 +2,8 @@
 // behind, so a save can be version 3 with players that still need their files.
 import { Rng, clamp } from "@/engine/rng";
 import type { Player } from "@/engine/types";
-import type { DraftState, Franchise, PlayerFile, TeamBooks } from "../types";
+import type { Franchise, PlayerFile, TeamBooks } from "../types";
+import { newDraftState } from "./draftClass";
 import { PICK_YEARS, futurePicks } from "./picks";
 import { START_CAP } from "./rules";
 
@@ -15,8 +16,6 @@ function defaultFile(seed: string, p: Player): PlayerFile {
   const service = clamp(p.age - 20, 0, 18);
   return { service, teamSeasons: new Rng(`${seed}:file:${p.id}`).int(0, Math.min(service, LONGEST_TENURE)) };
 }
-
-export const emptyDraft = (year: number): DraftState => ({ year, prospects: [], scouting: {}, assigned: [], results: [] });
 
 export function fillGmState(f: BareFranchise): Franchise {
   const teamIds = Object.keys(f.rosters);
@@ -33,7 +32,7 @@ export function fillGmState(f: BareFranchise): Franchise {
     freeAgents: f.freeAgents ?? [],
     devRosters: f.devRosters ?? Object.fromEntries(teamIds.map((id) => [id, []])),
     waivers: f.waivers ?? [],
-    draft: f.draft ?? emptyDraft(year + 1),
+    draft: f.draft ?? newDraftState(f.seed, year + 1),
     talks: f.talks ?? {},
     retired: f.retired ?? [],
     history: f.history ?? [],
