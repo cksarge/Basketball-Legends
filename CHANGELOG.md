@@ -49,6 +49,15 @@ In testing at legends.carterscoding.com/beta/. These notes grow as Franchise mod
 - **Your owner:** goals for winning, profit and development each season, with a review and a job security score.
 - **Getting fired:** your save continues. Pick from the teams willing to hire you, and your coaching record comes with you.
 
+### League life
+
+- **News:** a feed of trades, signings, injuries, upsets, milestones, awards and retirements, with a filter for your team.
+- **Power rankings:** updated weekly, with each team's movement.
+- **History:** every finished season, its champion and MVP, top scorers and your record, plus your whole coaching career.
+- **Records:** the best seasons and careers in your league, and your own team's best single games.
+- **Hall of Fame:** great careers are judged at retirement. Legends from Road to Legend get their own section.
+- **Exports:** exported franchises now include every past season.
+
 ## v0.3.0 — November 1, 2026
 
 Road to Legend is here: one player, from a freshman tryout to the Hall of Fame and a shot at becoming a Basketball Legend.

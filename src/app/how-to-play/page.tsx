@@ -201,6 +201,9 @@ export default function HowToPlay() {
           a new team.
         </li>
         <li>
+          <b>The league:</b> the League tab has news, power rankings, history, records and the Hall of Fame. Your Legends from Road to Legend appear there too.
+        </li>
+        <li>
           <b>Save slots:</b> Franchise has three of its own. Resume a saved game from the hub.
         </li>
         <li>

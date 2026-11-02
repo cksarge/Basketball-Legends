@@ -17,6 +17,7 @@ import { DraftTab } from "./DraftTab";
 import { FreeAgentsTab } from "./FreeAgentsTab";
 import { HomeTab } from "./HomeTab";
 import { LeadersTab } from "./LeadersTab";
+import { LeagueTab } from "./LeagueTab";
 import { OffseasonTab } from "./OffseasonTab";
 import { PlayoffsTab } from "./PlayoffsTab";
 import { RosterTab } from "./RosterTab";
@@ -24,7 +25,21 @@ import { ScheduleTab } from "./ScheduleTab";
 import { StandingsTab } from "./StandingsTab";
 import { TradesTab } from "./TradesTab";
 
-const TABS = ["Home", "Offseason", "Schedule", "Roster", "Coaching", "Trades", "Free agents", "Draft", "Club", "Standings", "Leaders", "Playoffs"] as const;
+const TABS = [
+  "Home",
+  "Offseason",
+  "Schedule",
+  "Roster",
+  "Coaching",
+  "Trades",
+  "Free agents",
+  "Draft",
+  "Club",
+  "League",
+  "Standings",
+  "Leaders",
+  "Playoffs",
+] as const;
 type Tab = (typeof TABS)[number];
 
 export function FranchiseHub() {
@@ -146,6 +161,7 @@ export function FranchiseHub() {
       {tab === "Coaching" && <CoachingTab f={franchise} />}
       {tab === "Trades" && <TradesTab f={franchise} teams={teams} />}
       {tab === "Free agents" && <FreeAgentsTab f={franchise} />}
+      {tab === "League" && <LeagueTab f={franchise} teams={teams} />}
       {tab === "Club" && <ClubTab f={franchise} team={team} />}
       {tab === "Draft" && <DraftTab f={franchise} teams={teams} />}
       {tab === "Standings" && <StandingsTab f={franchise} teams={teams} />}

@@ -340,7 +340,7 @@ test("a fired coach takes a new job and the hub follows", async ({ page }) => {
 });
 
 test("the league remembers: news, rankings, history, records and the Hall", async ({ page }) => {
-  test.setTimeout(240_000);
+  test.setTimeout(60_000);
   const errors = watchErrors(page);
   await page.goto("franchise/new/");
   await page.getByRole("button", { name: /Phoenix/ }).click();
@@ -367,13 +367,13 @@ test("the league remembers: news, rankings, history, records and the Hall", asyn
   await page.getByRole("tab", { name: "League" }).click();
   await expect(page.getByRole("heading", { name: "News" })).toBeVisible();
   await expect(page.getByText(/won the championship/).first()).toBeVisible();
-  await page.getByRole("button", { name: "Power rankings" }).click();
+  await page.getByRole("radio", { name: "Power rankings" }).click();
   await expect(page.getByRole("table", { name: "Power rankings" }).getByRole("row")).toHaveCount(31);
-  await page.getByRole("button", { name: "History" }).click();
-  await expect(page.getByText("2026-27")).toBeVisible();
-  await page.getByRole("button", { name: "Records" }).click();
+  await page.getByRole("radio", { name: "History" }).click();
+  await expect(page.getByText(/2026-27: .* won the title/)).toBeVisible();
+  await page.getByRole("radio", { name: "Records" }).click();
   await expect(page.getByText("Most points in a season")).toBeVisible();
-  await page.getByRole("button", { name: "Hall of Fame" }).click();
+  await page.getByRole("radio", { name: "Hall of Fame" }).click();
   await expect(page.getByRole("heading", { name: "Road to Legend" })).toBeVisible();
   await expect(page.getByText("Road Hero")).toBeVisible();
   await page.reload();

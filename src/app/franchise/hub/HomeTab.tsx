@@ -11,6 +11,7 @@ import { dueGame, nextFranchiseEvent, startFourth } from "@/franchise/core/seaso
 import { leagueModule } from "@/franchise/leagues";
 import { fourthPending, franchisePending } from "@/franchise/match";
 import { rosterProblem } from "@/franchise/pro/rosterMoves";
+import { powerRankings } from "@/franchise/history/power";
 import { loadFranchise } from "@/franchise/storage";
 import type { Franchise } from "@/franchise/types";
 import { runFranchiseSim, useFranchiseSim } from "@/state/franchiseSim";
@@ -22,7 +23,10 @@ import { useInputDevice } from "@/ui/MenuNavigator";
 import { MatchupPicker } from "@/ui/MatchupPicker";
 import { TeamLogo } from "@/ui/TeamLogo";
 import { toast } from "@/ui/Toaster";
+import { NewsList } from "./NewsPanel";
 import { SeasonReview } from "./OffseasonTab";
+
+const LATEST_NEWS = 3;
 
 /** Who guards whom in the next game. */
 function GamePlanPanel({ f, game }: { f: Franchise; game: ScheduledGame }) {
@@ -174,6 +178,10 @@ export function HomeTab({ f, teams, onOffseason }: { f: Franchise; teams: Team[]
         )}
       </Panel>
       {ev.kind === "game" && <GamePlanPanel f={f} game={ev.game} />}
+      <Panel title="Around the league">
+        <p className="mb-2 text-sm text-steel">Power ranking: #{powerRankings(f).find((r) => r.teamId === f.teamId)?.rank}</p>
+        {f.news.length ? <NewsList f={f} items={f.news.slice(-LATEST_NEWS)} /> : <p className="text-steel">The season is just getting started.</p>}
+      </Panel>
       <Panel title="Sim ahead">
         <fieldset disabled={running}>
           <Toggle
