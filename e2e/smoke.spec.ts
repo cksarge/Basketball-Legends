@@ -360,6 +360,7 @@ test("the league remembers: news, rankings, history, records and the Hall", asyn
   await page.getByRole("button", { name: "Continue to Training camp" }).click();
   await page.getByRole("button", { name: "Let your staff set the roster" }).click();
   await page.getByRole("button", { name: /^Start the \d{4} season$/ }).click();
+  await expect(page.getByRole("tab", { name: "Offseason" })).toHaveCount(0);
   await page.evaluate(() => {
     localStorage.setItem("bl-legends", JSON.stringify([{ careerId: "c1", player: { id: "legend", firstName: "Road", lastName: "Hero", pos: "SG", age: 38 } }]));
   });
