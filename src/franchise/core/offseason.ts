@@ -4,6 +4,8 @@ import { Rng } from "@/engine/rng";
 import type { Team } from "@/engine/types";
 import { seasonGoals } from "../club/owner";
 import { addSeason } from "../history/career";
+import { induct } from "../history/hall";
+import { updateRecords } from "../history/records";
 import { addNews, draftNews, retirementNews, signingNews } from "../history/news";
 import { leagueModule } from "../leagues";
 import { decideOptions, pendingOptions, rollContracts } from "../pro/contracts";
@@ -114,6 +116,8 @@ export function startNewSeason(f: Franchise, teams: Team[]): Franchise {
   const cleared = processWaivers({ ...trimmed, waivers: trimmed.waivers.map((w) => ({ ...w, until: date })) }).franchise;
   const credited = { ...cleared, players: Object.fromEntries(Object.entries(cleared.players).map(([id, p]) => [id, addSeason(p, f.season.stats[id], f)])) };
   const left = leaveLeague(credited, year);
+  const remembered = updateRecords({ ...credited, retired: left.retired });
+  const inducted = left.retired.slice(credited.retired.length).reduce(induct, remembered);
   const healed = Object.fromEntries(
     Object.entries(left.players).map(([id, p]) => {
       if (!p.injury) return [id, p];
@@ -123,7 +127,7 @@ export function startNewSeason(f: Franchise, teams: Team[]): Franchise {
     }),
   );
   const next: Franchise = {
-    ...credited,
+    ...inducted,
     ...left,
     players: healed,
     date,

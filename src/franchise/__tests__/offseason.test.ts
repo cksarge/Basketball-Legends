@@ -137,6 +137,11 @@ describe("the next season", () => {
     expect(r?.career?.gp).toBe(ended.season.stats[r!.id].gp);
   });
 
+  it("a finished season sets league records", () => {
+    expect(next.records.find((r) => r.key === "seasonPts")?.value).toBeGreaterThan(1000);
+    expect(next.records.find((r) => r.key === "careerPts")?.value).toBeGreaterThan(1000);
+  });
+
   it("the season summary keeps the champion, record and award names", () => {
     const s = next.history[0];
     expect(s.year).toBe(year);

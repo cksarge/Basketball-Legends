@@ -339,6 +339,49 @@ test("a fired coach takes a new job and the hub follows", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test("the league remembers: news, rankings, history, records and the Hall", async ({ page }) => {
+  test.setTimeout(240_000);
+  const errors = watchErrors(page);
+  await page.goto("franchise/new/");
+  await page.getByRole("button", { name: /Phoenix/ }).click();
+  await page.getByRole("button", { name: "Start franchise" }).click();
+  await page.waitForURL(/franchise\/hub\/\?id=/);
+  await page.getByRole("button", { name: "Sim the season" }).click();
+  await expect(page.getByText(/won the championship/)).toBeVisible({ timeout: 180_000 });
+  await page.getByRole("button", { name: "Go to the offseason" }).click();
+  await page.getByRole("button", { name: "Continue to Player progress" }).click();
+  await page.getByRole("button", { name: "Continue to Draft lottery" }).click();
+  await page.getByRole("button", { name: "Continue to Draft", exact: true }).click();
+  await page.getByRole("button", { name: "Sim the draft" }).click();
+  await page.getByRole("button", { name: "Continue to Contracts" }).click();
+  const staff = page.getByRole("button", { name: "Let your staff decide" });
+  if (await staff.isVisible()) await staff.click();
+  await page.getByRole("button", { name: "Continue to Free agency" }).click();
+  await page.getByRole("button", { name: "Continue to Training camp" }).click();
+  await page.getByRole("button", { name: "Let your staff set the roster" }).click();
+  await page.getByRole("button", { name: /^Start the \d{4} season$/ }).click();
+  await page.evaluate(() => {
+    localStorage.setItem("bl-legends", JSON.stringify([{ careerId: "c1", player: { id: "legend", firstName: "Road", lastName: "Hero", pos: "SG", age: 38 } }]));
+  });
+  await page.reload();
+  await page.getByRole("tab", { name: "League" }).click();
+  await expect(page.getByRole("heading", { name: "News" })).toBeVisible();
+  await expect(page.getByText(/won the championship/).first()).toBeVisible();
+  await page.getByRole("button", { name: "Power rankings" }).click();
+  await expect(page.getByRole("table", { name: "Power rankings" }).getByRole("row")).toHaveCount(31);
+  await page.getByRole("button", { name: "History" }).click();
+  await expect(page.getByText("2026-27")).toBeVisible();
+  await page.getByRole("button", { name: "Records" }).click();
+  await expect(page.getByText("Most points in a season")).toBeVisible();
+  await page.getByRole("button", { name: "Hall of Fame" }).click();
+  await expect(page.getByRole("heading", { name: "Road to Legend" })).toBeVisible();
+  await expect(page.getByText("Road Hero")).toBeVisible();
+  await page.reload();
+  await page.getByRole("tab", { name: "League" }).click();
+  await expect(page.getByRole("heading", { name: "News" })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test("a franchise game saves to a Franchise slot, resumes from the hub and records its result @gpu", async ({ page }) => {
   test.setTimeout(240_000);
   await lowGraphics(page);

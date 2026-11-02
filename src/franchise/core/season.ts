@@ -13,6 +13,7 @@ import { coachEdge, staffRating, trainerGamesOut } from "../coaching/staff";
 import { finishBox, simBox, simQuarters, type BoxInput, type BoxResult, type BoxSide } from "../boxsim";
 import { addNews, firedNews, gameNews, seasonNews, seriesNews, tradeNews } from "../history/news";
 import { powerSnapshot } from "../history/power";
+import { gameRecords } from "../history/records";
 import { seasonAwards } from "./awards";
 import { leagueModule } from "../leagues";
 import { weeklyMarket } from "../pro/freeAgency";
@@ -240,10 +241,11 @@ export function simDay(f: Franchise, teams: Team[], opts: { includeUser: boolean
     record(w, g, simBox(input), false, new Set([...input.home.starters, ...input.away.starters]));
   }
   const finished = finish(w);
-  const done = addNews(
+  const told = addNews(
     finished,
     w.results.flatMap(({ g, r }) => gameNews(finished, g, r, teams)),
   );
+  const done = w.results.reduce((x, { g, r }) => gameRecords(x, g, r.box), told);
   const changedPlayers = [...w.changed];
   if (blocked) return { franchise: done, changedPlayers, blocked };
   const next = advancePostseason(done, teams);

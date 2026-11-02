@@ -69,6 +69,7 @@ function measure(f: Franchise) {
     fa: f.freeAgents.length,
     cap: Math.round(r.salaryCap / 1e6),
     trades: f.tradeLog.length,
+    hall: f.hall.length,
   };
 }
 function season(f: Franchise) {
@@ -99,6 +100,11 @@ describe("seasons on autopilot", () => {
       seasons.push(m);
       if (LOG) appendFileSync(LOG, JSON.stringify(m) + "\n");
       expect(rosterProblems(f)).toEqual([]);
+    }
+    // the Hall takes one to three a year once careers have had time to finish
+    if (SEASONS >= 25) {
+      expect(f.hall.length).toBeGreaterThanOrEqual(12);
+      expect(f.hall.length).toBeLessThanOrEqual(75);
     }
     // the whole run gets logged before anything is judged
     for (const m of seasons) {
