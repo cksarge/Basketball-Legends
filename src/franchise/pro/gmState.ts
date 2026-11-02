@@ -2,6 +2,7 @@
 // behind, so a save can be version 3 with players that still need their files.
 import { Rng, clamp } from "@/engine/rng";
 import type { Player, Team } from "@/engine/types";
+import { leagueTactics } from "../coaching/aiPlan";
 import { DEFAULT_AUTO, DEFAULT_LEAGUE } from "../settings";
 import type { Franchise, PlayerFile, TeamBooks, TeamFinance } from "../types";
 import { newDraftState } from "./draftClass";
@@ -91,7 +92,7 @@ export function fillGmState(f: BareFranchise, teams?: Team[]): Franchise {
     hall: f.hall ?? [],
     records: f.records ?? [],
     powerLast: f.powerLast ?? {},
-    aiTactics: f.aiTactics ?? {},
+    aiTactics: f.aiTactics ?? leagueTactics({ rosters: f.rosters, players, seed: f.seed, season: f.season }),
     ...(f.phase === "offseason" && !f.offseason ? { offseason: { step: "review" as const, report: null } } : {}),
   };
 }

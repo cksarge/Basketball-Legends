@@ -46,7 +46,7 @@ function boxSide(f: Franchise, teamId: string, g: ScheduledGame): BoxSide {
   const roster = activeRoster(f, teamId, g);
   if (teamId === f.teamId) return { teamId, roster, ...resolveLineup(f.plan, roster, leagueTotalMinutes(f)), tactics: f.plan.tactics, coachEdge: coachEdge(f) };
   const rotation = defaultRotation(roster, leagueTotalMinutes(f));
-  return { teamId, roster, rotation, starters: Object.keys(rotation).slice(0, 5) };
+  return { teamId, roster, rotation, starters: Object.keys(rotation).slice(0, 5), tactics: f.aiTactics[teamId] };
 }
 
 function leagueTotalMinutes(f: Franchise) {
@@ -54,7 +54,7 @@ function leagueTotalMinutes(f: Franchise) {
   return m.quarterMinutes * m.periods * 5;
 }
 
-function boxInput(f: Franchise, g: ScheduledGame): BoxInput {
+export function boxInputFor(f: Franchise, g: ScheduledGame): BoxInput {
   const m = leagueModule(f.league);
   return {
     league: f.league,
@@ -189,14 +189,14 @@ export const isClose = (p: PartialGame, margin: number) => Math.abs(p.home - p.a
 /** Sims all but the last period of the user's game. The result is saved, so reopening the game gets the same score. */
 export function startFourth(f: Franchise, game: ScheduledGame): Franchise {
   if (f.live?.gameId === game.id) return f;
-  return { ...f, live: { gameId: game.id, partial: simQuarters(boxInput(f, game), leagueModule(f.league).periods - 1) } };
+  return { ...f, live: { gameId: game.id, partial: simQuarters(boxInputFor(f, game), leagueModule(f.league).periods - 1) } };
 }
 
 /** Sims the rest of a game that's partway through. */
 export function finishPartial(f: Franchise, gameId: string, teams: Team[]): Franchise {
   const g = f.season.games.find((x) => x.id === gameId);
   if (!g || g.result || f.live?.gameId !== gameId) return f;
-  const input = boxInput(f, g);
+  const input = boxInputFor(f, g);
   const next = applyGame(f, gameId, finishBox(input, f.live.partial), false, [...input.home.starters, ...input.away.starters]);
   const done = { ...next };
   delete done.live;
@@ -230,14 +230,14 @@ export function simDay(f: Franchise, teams: Team[], opts: { includeUser: boolean
         blocked = true;
         continue;
       }
-      const input = boxInput({ ...f, players: w.players }, g);
+      const input = boxInputFor({ ...f, players: w.players }, g);
       record(w, g, finishBox(input, partial), false, new Set([...input.home.starters, ...input.away.starters]));
       w.f = { ...w.f };
       delete w.f.live;
       continue;
     }
     // hurt players are read from the working copy, in case an earlier game changed them
-    const input = boxInput({ ...f, players: w.players }, g);
+    const input = boxInputFor({ ...f, players: w.players }, g);
     record(w, g, simBox(input), false, new Set([...input.home.starters, ...input.away.starters]));
   }
   const finished = finish(w);

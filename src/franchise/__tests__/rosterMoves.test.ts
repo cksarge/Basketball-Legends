@@ -292,7 +292,8 @@ describe("who takes a two-way or developmental deal", () => {
 describe("roster limits", () => {
   it("simDay won't run while the user's roster is outside 13-15 in season", () => {
     const f = make();
-    const short = { ...f, rosters: { ...f.rosters, [me]: f.rosters[me].slice(0, 12) } };
+    const off = { ...f, settings: { ...f.settings, auto: { ...f.settings.auto, roster: false } } };
+    const short = { ...off, rosters: { ...off.rosters, [me]: off.rosters[me].slice(0, 12) } };
     expect(rosterProblem(short)).toMatch(/13/);
     const day = simDay(short, teams, { includeUser: true });
     expect(day.blocked).toBe(true);

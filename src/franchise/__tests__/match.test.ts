@@ -96,7 +96,7 @@ describe("the coaching plan in games", () => {
     expect(mine.starters).toEqual(f.plan.starters);
     expect(mine.rotation?.[f.plan.starters[0]]).toBe(24);
     expect(mine.tactics?.defense).toBe("zone23");
-    expect(theirs.tactics).toBeUndefined();
+    expect(theirs.tactics?.defense).not.toBe("zone23");
     expect(theirs.rotation).toBeUndefined();
   });
 

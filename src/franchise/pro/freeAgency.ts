@@ -17,8 +17,8 @@ const LAST_ROUND_BAR = 0.62;
 const ROUND_BAR_STEP = 0.07;
 /** How many of the best players AI teams chase each round. */
 const CHASED = 60;
-const TEAMS_PER_PLAYER = 8;
-const BIDS_PER_TEAM = 2;
+const TEAMS_PER_PLAYER = 10;
+const BIDS_PER_TEAM = 3;
 const RESIGN_CHANCE = 0.75;
 /** A team wants a player who'd be in its top nine. */
 const ROTATION = 9;

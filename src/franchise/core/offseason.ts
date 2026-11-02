@@ -3,6 +3,7 @@ import { fullName, playerOvr } from "@/engine/player";
 import { Rng } from "@/engine/rng";
 import type { Team } from "@/engine/types";
 import { seasonGoals } from "../club/owner";
+import { leagueTactics } from "../coaching/aiPlan";
 import { addSeason } from "../history/career";
 import { induct } from "../history/hall";
 import { updateRecords } from "../history/records";
@@ -141,5 +142,5 @@ export function startNewSeason(f: Franchise, teams: Team[]): Franchise {
   delete next.offseason;
   delete next.freeAgency;
   const ready = prunePlan(clearUndo({ ...next, picks: rollPicks(next, teams) }));
-  return { ...ready, job: { ...ready.job, goals: seasonGoals(ready, teams) } };
+  return { ...ready, aiTactics: leagueTactics(ready), job: { ...ready.job, goals: seasonGoals(ready, teams) } };
 }
