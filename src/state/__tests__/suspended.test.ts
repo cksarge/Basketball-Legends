@@ -10,9 +10,11 @@ import {
   pruneCareerSaves,
   resumePending,
   saveGroupOf,
+  saveRows,
   saveSuspended,
   slotLabel,
   SLOTS,
+  type SuspendedGame,
 } from "../suspended";
 
 const store = new Map<string, string>();
@@ -142,5 +144,32 @@ describe("pruneCareerSaves", () => {
     saveSuspended(fakeMatch(), career("c", "g"));
     pruneCareerSaves("c", () => false);
     expect(loadSuspended()).toBeNull();
+  });
+});
+
+describe("the Resume game list", () => {
+  const game = { savedAt: 1 } as SuspendedGame;
+  const names = (rows: ReturnType<typeof saveRows>) => rows.map((r) => `${r.group}-${r.slot}${r.game ? "*" : ""}`);
+
+  it("lists three slots for each kind of game, Franchise included", () => {
+    expect(names(saveRows([]))).toEqual(["play-1", "play-2", "play-3", "career-1", "career-2", "career-3", "franchise-1", "franchise-2", "franchise-3"]);
+  });
+
+  it("moves slots in use to the top, keeping the usual order within each part", () => {
+    const rows = saveRows([
+      { slot: 2, group: "franchise", game },
+      { slot: 1, group: "career", game },
+      { slot: 3, group: "career", game },
+      { slot: 1, group: "play", game },
+    ]);
+    expect(names(rows)).toEqual(["play-1*", "career-1*", "career-3*", "franchise-2*", "play-2", "play-3", "career-2", "franchise-1", "franchise-3"]);
+  });
+
+  it("keeps the autosave first when there is one", () => {
+    const rows = saveRows([
+      { slot: 1, group: "franchise", game },
+      { slot: "auto", group: "play", game },
+    ]);
+    expect(names(rows).slice(0, 2)).toEqual(["play-auto*", "franchise-1*"]);
   });
 });

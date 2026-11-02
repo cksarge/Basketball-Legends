@@ -41,6 +41,10 @@ In testing at legends.carterscoding.com/beta/. These notes grow as Franchise mod
 - **Undo:** take back your last roster move until the next game is simulated.
 - **Roster moves:** waivers with claims, buyouts, three two-way players and three developmental players. You need 13 to 15 players on standard deals to play or sim.
 
+### Saves
+
+- **Resume game:** Franchise now shows its three slots alongside Quick Play and Road to Legend, and slots in use move to the top of the list.
+
 ### Running the club
 
 - **Tickets and crowds:** set your ticket price and watch attendance answer, based on winning, fan interest and your arena.

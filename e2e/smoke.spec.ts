@@ -401,6 +401,15 @@ test("a franchise game saves to a Franchise slot, resumes from the hub and recor
   await page.getByRole("button", { name: "Back to your franchise" }).click();
   await page.waitForURL(/franchise\/hub\/\?id=/);
   expect(await page.evaluate(() => [localStorage.getItem("bl-franchise-save-1") !== null, localStorage.getItem("bl-save-1") !== null])).toEqual([true, false]);
+  await page.goto("./");
+  await page.getByRole("button", { name: "Resume game" }).click();
+  // a slot in use sits above every empty slot, and each kind of game has its three
+  const slots = page.locator("aside ul").last().locator("li");
+  await expect(slots).toHaveCount(9);
+  await expect(slots.first()).toContainText("Franchise slot 1");
+  await expect(slots.nth(1)).toContainText("Slot 1");
+  await expect(slots.last()).toContainText("Franchise slot 3");
+  await page.goBack();
   await page.getByRole("button", { name: "Resume game" }).click();
   await page.waitForURL("**/game/");
   await expect(page.getByRole("dialog", { name: "Paused" })).toBeVisible({ timeout: 60_000 });

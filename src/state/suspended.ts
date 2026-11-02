@@ -175,6 +175,17 @@ function subscribe(fn: () => void) {
 
 export type SavedEntry = { slot: SaveSlot; group: SaveGroup; game: SuspendedGame };
 
+/** The Resume game list: every slot of every kind, with the ones in use at the top. */
+export function saveRows(saves: SavedEntry[]) {
+  const rows = [
+    ...saves.filter((x) => x.slot === "auto"),
+    ...(["play", "career", "franchise"] as const).flatMap((group) =>
+      SLOTS.map((slot) => ({ slot, group, game: saves.find((x) => x.slot === slot && x.group === group)?.game ?? null })),
+    ),
+  ];
+  return [...rows.filter((r) => r.game), ...rows.filter((r) => !r.game)];
+}
+
 /** Every saved game (the autosave first, then the slots), kept in sync with storage; empty while prerendering. */
 export function useSaves(): SavedEntry[] {
   // one string snapshot of every key keeps useSyncExternalStore stable between changes

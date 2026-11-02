@@ -16,8 +16,8 @@ import {
   resumePending,
   type SaveGroup,
   type SaveSlot,
+  saveRows,
   slotLabel,
-  SLOTS,
   type SuspendedGame,
   useSaves,
   whereText,
@@ -145,12 +145,7 @@ export function MainMenu() {
   };
   // the panel lists the saves: Resume game moves the cursor into that list
   const resume = () => document.querySelector<HTMLButtonElement>("[data-save-row]")?.focus();
-  const rows: { slot: SaveSlot; group: SaveGroup; game: SuspendedGame | null }[] = [
-    ...saves.filter((x) => x.slot === "auto"),
-    ...(["play", "career"] as const).flatMap((group) =>
-      SLOTS.map((slot) => ({ slot, group, game: saves.find((x) => x.slot === slot && x.group === group)?.game ?? null })),
-    ),
-  ];
+  const rows = saveRows(saves);
   const discard = (slot: SaveSlot, group: SaveGroup) => {
     clearSuspended(slot, group);
     if (saves.length <= 1) {
@@ -257,7 +252,7 @@ export function MainMenu() {
                       <li key={`${group}-${slot}`} className="rounded-[var(--radius-chip)] px-3 py-2 ring-1 ring-line/60">
                         <span className="block text-xs font-semibold text-steel">{slotLabel(slot, group)}</span>
                         <span className="block text-sm text-steel">
-                          Empty. Choose Save game in the pause menu to keep a {group === "career" ? "career " : ""}game here.
+                          Empty. Choose Save game in the pause menu to keep a {group === "play" ? "" : `${group} `}game here.
                         </span>
                       </li>
                     ) : (
