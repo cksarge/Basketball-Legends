@@ -206,6 +206,8 @@ export interface PlayerFile {
   /** Best overall so far, recorded each summer. */
   peak?: number;
   draft?: { year: number; pick: number; teamId: string };
+  /** What his last deal paid, for veteran rights. */
+  lastSalary?: number;
   /** The team that holds his veteran rights while he's a free agent. */
   rightsTeamId?: string;
   /** What the league believes about a rookie until he plays. */
