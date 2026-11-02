@@ -4,6 +4,7 @@ import type { IsoDate, ScheduledGame } from "@/career/types";
 import type { Player, Team } from "@/engine/types";
 import { addLine, emptyLine } from "@/game/sim/stats";
 import { simBox, type BoxInput, type BoxResult, type BoxSide } from "../boxsim";
+import { seasonAwards } from "./awards";
 import { leagueModule } from "../leagues";
 import { conferenceSeeds } from "../leagues/pro";
 import { defaultRotation } from "../rotation";
@@ -109,6 +110,13 @@ export function applyGame(f: Franchise, gameId: string, r: BoxResult, played: bo
   return finish(w);
 }
 
+/** Creates the postseason games that are due; the awards land the moment the league's champion is decided. */
+export function advancePostseason(f: Franchise, teams: Team[]): Franchise {
+  const next = leagueModule(f.league).postseason(f, teams);
+  if (next.phase !== "offseason" || f.phase === "offseason") return next;
+  return { ...next, season: { ...next.season, awards: seasonAwards(next, teams) } };
+}
+
 export interface SimDayResult {
   franchise: Franchise;
   changedPlayers: string[];
@@ -134,6 +142,6 @@ export function simDay(f: Franchise, teams: Team[], opts: { includeUser: boolean
   const done = finish(w);
   const changedPlayers = [...w.changed];
   if (blocked) return { franchise: done, changedPlayers, blocked };
-  const next = leagueModule(f.league).postseason(done, teams);
+  const next = advancePostseason(done, teams);
   return { franchise: { ...next, date: next.phase === "offseason" ? next.date : addDays(next.date, 1) }, changedPlayers, blocked };
 }
