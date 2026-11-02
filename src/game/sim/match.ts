@@ -427,7 +427,18 @@ export class Match {
     for (const ti of [0, 1] as TeamIdx[]) {
       const mine = s.agents.filter((a) => a.team === ti).sort((a, b) => posRank(a.player.pos) - posRank(b.player.pos));
       const theirs = s.agents.filter((a) => a.team !== ti).sort((a, b) => posRank(a.player.pos) - posRank(b.player.pos));
-      mine.forEach((a, i) => (a.guarding = theirs.length ? theirs[i % theirs.length].idx : null));
+      // a coach's matchups come first, and everyone else takes who's left in position order
+      const plan = s.teams[ti].tactics.matchups ?? {};
+      const taken = new Set<Agent>();
+      const rest = mine.filter((a) => {
+        const mark = theirs.find((t) => t.player.id === plan[a.player.id] && !taken.has(t));
+        if (!mark) return true;
+        a.guarding = mark.idx;
+        taken.add(mark);
+        return false;
+      });
+      const left = theirs.filter((t) => !taken.has(t));
+      rest.forEach((a, i) => (a.guarding = left.length ? left[i % left.length].idx : null));
     }
   }
 

@@ -230,6 +230,10 @@ export interface TeamTactics {
   defense: "man" | "zone23" | "zone32" | "press";
   crashBoards: number; // 0..1
   doubleTeamStars: boolean;
+  /** Who guards whom: my player id -> their player id. */
+  matchups?: Record<string, string>;
+  /** Their player to double. It replaces the usual choice of stars. */
+  doubleTarget?: string;
 }
 
 export interface LeagueRules {

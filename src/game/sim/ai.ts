@@ -688,6 +688,14 @@ function defenseAI(match: Match, a: Agent, decide: boolean) {
         target = v2(handler.pos.x + (rim.x - handler.pos.x) * 0.4, handler.pos.z + (rim.z - handler.pos.z) * 0.4);
       }
     }
+    // a coach's double team: the nearest helper leaves his man and stays on the ball
+    if (handler && s.frontcourt && handler.player.id === tactics.doubleTarget) {
+      const helper = match
+        .agentsOf(a.team)
+        .filter((x) => x.guarding !== handler.idx)
+        .reduce((b, x) => (dist2(x.pos, handler.pos) < dist2(b.pos, handler.pos) ? x : b));
+      if (helper === a) target = v2(handler.pos.x + (rim.x - handler.pos.x) * 0.1, handler.pos.z + (a.pos.z > handler.pos.z ? 1 : -1));
+    }
   }
   const face = handler ? handler.pos : v2(ballPos.x, ballPos.z);
   goTo(a, target, { slow: 0.6, face, sprint: dist2(a.pos, target) > 3, precision: 0.08 });
@@ -708,7 +716,7 @@ function defenseAI(match: Match, a: Agent, decide: boolean) {
     if (match.rng.chance(pSteal)) a.intent.act = { type: "steal" };
   }
   // double team stars
-  if (tactics.doubleTeamStars && !onBall && d < 4 && handler.player.potential > 88 && match.rng.chance(0.1)) {
+  if (tactics.doubleTeamStars && !tactics.doubleTarget && !onBall && d < 4 && handler.player.potential > 88 && match.rng.chance(0.1)) {
     goTo(a, v2(handler.pos.x + toRim.x * 0.8, handler.pos.z + 0.8), { sprint: true });
   }
 }
