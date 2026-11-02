@@ -1,6 +1,7 @@
 // Runs the league one day at a time. Each game gets its own seed, so a run that's interrupted replays the same way.
 import { addDays } from "@/career/calendar";
 import type { IsoDate, ScheduledGame } from "@/career/types";
+import { Rng } from "@/engine/rng";
 import type { Player, Team } from "@/engine/types";
 import { addLine, emptyLine, type BoxScore, type StatLine } from "@/game/sim/stats";
 import { weeklyDevelopment } from "../coaching/development";
@@ -13,6 +14,7 @@ import { leagueModule } from "../leagues";
 import { weeklyMarket } from "../pro/freeAgency";
 import { activeRoster, processWaivers, rosterProblem } from "../pro/rosterMoves";
 import { weeklyScouting } from "../pro/scouting";
+import { aiTradeDay, refreshOffers } from "../pro/tradeAi";
 import { conferenceSeeds } from "../leagues/pro";
 import { defaultRotation } from "../rotation";
 import type { Franchise, PartialGame, SeasonLine } from "../types";
@@ -225,10 +227,16 @@ export function simDay(f: Franchise, teams: Team[], opts: { includeUser: boolean
   const practice = weeklyDevelopment(dated);
   const weekDone = practice.franchise.devDate !== dated.devDate;
   const market = weekDone ? weeklyMarket(weeklyScouting(practice.franchise)) : { franchise: practice.franchise, changedPlayers: [] };
-  const waivers = processWaivers(market.franchise);
+  const trades =
+    weekDone && !blocked
+      ? aiTradeDay(refreshOffers(market.franchise), new Rng(`${f.seed}:trades:${dated.date}`))
+      : { franchise: market.franchise, changedPlayers: [] };
+  const waivers = processWaivers(trades.franchise);
   return {
     franchise: waivers.franchise,
-    changedPlayers: [...new Set([...changedPlayers, ...practice.changedPlayers, ...market.changedPlayers, ...waivers.changedPlayers])],
+    changedPlayers: [
+      ...new Set([...changedPlayers, ...practice.changedPlayers, ...market.changedPlayers, ...trades.changedPlayers, ...waivers.changedPlayers]),
+    ],
     blocked,
   };
 }

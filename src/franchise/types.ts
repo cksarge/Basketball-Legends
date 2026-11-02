@@ -5,6 +5,8 @@ import type { Difficulty } from "@/game/sim/state";
 import type { BoxScore, StatLine } from "@/game/sim/stats";
 import type { SigningVia } from "./pro/cap";
 import type { Offer } from "./pro/market";
+import type { TradeOffer } from "./pro/tradeAi";
+import type { TradeAsset } from "./pro/trades";
 
 export const FRANCHISE_VERSION = 3;
 
@@ -213,6 +215,10 @@ export interface Franchise {
   offseason?: OffseasonState;
   freeAgency?: FreeAgencyState;
   undo?: UndoRecord;
+  tradeBlock: string[];
+  tradeOffers: TradeOffer[];
+  /** Trades around the league. */
+  tradeLog: { date: IsoDate; teams: string[]; assets: TradeAsset[] }[];
   /** Player id -> tries used in contract talks this year. */
   talks: Record<string, number>;
   retired: RetiredPlayer[];

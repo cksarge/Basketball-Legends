@@ -74,6 +74,9 @@ export function playerTradeValue(f: Franchise, p: Player, teamId: string): numbe
 
 export function pickTradeValue(f: Franchise, pick: DraftPick, teamId: string): number {
   const read = teamRead(f);
-  const base = pick.round === 1 ? TOP_PICK * Math.exp(-read.slot[pick.originalTeamId] / PICK_FALLOFF) + PICK_FLOOR : SECOND_ROUND;
+  // once the order's set, a pick is worth its real slot
+  const drawn = f.draft.order?.indexOf(pick.id) ?? -1;
+  const slot = drawn >= 0 ? drawn + 1 : read.slot[pick.originalTeamId];
+  const base = pick.round === 1 ? TOP_PICK * Math.exp(-slot / PICK_FALLOFF) + PICK_FLOOR : SECOND_ROUND;
   return base * YEAR_DISCOUNT ** Math.max(0, pick.year - draftYearOf(f)) * PICK_TASTE[read.direction[teamId]];
 }

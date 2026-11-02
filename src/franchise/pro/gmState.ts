@@ -9,7 +9,8 @@ import { START_CAP } from "./rules";
 
 const LONGEST_TENURE = 6;
 
-type GmFields = "cap" | "picks" | "books" | "freeAgents" | "devRosters" | "waivers" | "draft" | "talks" | "retired" | "history";
+type GmFields =
+  "cap" | "picks" | "books" | "freeAgents" | "devRosters" | "waivers" | "draft" | "talks" | "retired" | "history" | "tradeBlock" | "tradeOffers" | "tradeLog";
 export type BareFranchise = Omit<Franchise, GmFields> & Partial<Pick<Franchise, GmFields>>;
 
 function defaultFile(seed: string, p: Player): PlayerFile {
@@ -36,6 +37,9 @@ export function fillGmState(f: BareFranchise): Franchise {
     talks: f.talks ?? {},
     retired: f.retired ?? [],
     history: f.history ?? [],
+    tradeBlock: f.tradeBlock ?? [],
+    tradeOffers: f.tradeOffers ?? [],
+    tradeLog: f.tradeLog ?? [],
     ...(f.phase === "offseason" && !f.offseason ? { offseason: { step: "review" as const, report: null } } : {}),
   };
 }

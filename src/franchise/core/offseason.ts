@@ -1,5 +1,6 @@
 // The summer, one step at a time, and the start of the next season.
 import { fullName, playerOvr } from "@/engine/player";
+import { Rng } from "@/engine/rng";
 import type { Team } from "@/engine/types";
 import { leagueModule } from "../leagues";
 import { decideOptions, pendingOptions, rollContracts } from "../pro/contracts";
@@ -9,6 +10,7 @@ import { aiFillRosters, aiResign, cutTo, finishBidding, openFreeAgency } from ".
 import { runLottery } from "../pro/lottery";
 import { rollPicks } from "../pro/picks";
 import { processWaivers, standardCount } from "../pro/rosterMoves";
+import { aiTradeDay } from "../pro/tradeAi";
 import { OFFSEASON_ROSTER_MAX, ROSTER_MAX, ROSTER_MIN } from "../pro/rules";
 import type { Franchise, OffseasonStep, RetiredPlayer, SeasonSummary } from "../types";
 import { clearUndo, prunePlan } from "./moves";
@@ -35,6 +37,7 @@ function enter(f: Franchise, step: OffseasonStep, teams: Team[]): Franchise {
     return { ...franchise, offseason: { step, report } };
   }
   if (step === "lottery") return runLottery(f, teams);
+  if (step === "draft") return aiTradeDay(f, new Rng(`${f.seed}:draftday:${f.draft.year}`)).franchise;
   if (step === "contracts") return teams.reduce((x, t) => (t.id === f.teamId ? x : cutTo(x, t.id, OFFSEASON_ROSTER_MAX)), decideOptions(f));
   if (step === "freeAgency") return openFreeAgency(aiResign(rollContracts(f)));
   if (step === "camp") return aiFillRosters(finishBidding(f));
