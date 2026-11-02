@@ -2,9 +2,9 @@
 
 Every release of Basketball Legends is listed here, newest first. Each version's section doubles as its release notes on GitHub.
 
-## v0.3.0 (in beta)
+## v0.3.0 — November 1, 2026
 
-In testing at legends.carterscoding.com/beta/. Career mode is here: one player, from a freshman tryout to the Hall of Fame and a shot at becoming a Basketball Legend.
+Road to Legend is here: one player, from a freshman tryout to the Hall of Fame and a shot at becoming a Basketball Legend.
 
 ### Road to Legend
 
