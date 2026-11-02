@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { formatDate } from "@/career/format";
 import { teamLabel } from "@/data/leagues";
+import { undoMove } from "@/franchise/core/moves";
 import { applyFranchiseResult } from "@/state/franchiseResult";
 import { stopFranchiseSim, useFranchiseSim } from "@/state/franchiseSim";
 import { useFranchise } from "@/state/franchiseStore";
@@ -26,7 +27,7 @@ type Tab = (typeof TABS)[number];
 
 export function FranchiseHub() {
   const id = useSearchParams().get("id");
-  const { franchise, team, status, error, open } = useFranchise();
+  const { franchise, team, status, error, open, update } = useFranchise();
 
   const teams = useLeagueTeams(franchise);
   const sim = useFranchiseSim();
@@ -111,6 +112,14 @@ export function FranchiseHub() {
           <span className="flex-1">Simulating{sim.date ? `: ${formatDate(sim.date)}` : "…"}</span>
           <Button variant="secondary" onClick={stopFranchiseSim}>
             Stop
+          </Button>
+        </div>
+      )}
+      {franchise.undo && (
+        <div className="mb-4 flex items-center gap-3 rounded-[var(--radius-chip)] bg-deck p-3 ring-1 ring-line" role="status">
+          <span className="flex-1">{franchise.undo.label}</span>
+          <Button variant="secondary" disabled={sim.running} onClick={() => update(undoMove)}>
+            Undo
           </Button>
         </div>
       )}

@@ -90,7 +90,7 @@ export function FreeAgentsTab({ f }: { f: Franchise }) {
             </ul>
           )}
           {bidding && (
-            <Button className="mt-3" onClick={() => move("Next round", nextRound)}>
+            <Button className="mt-3" onClick={() => move(null, nextRound)}>
               {st.stage === "moratorium" ? "Start round one" : `Run round ${st.round + 1}`}
             </Button>
           )}

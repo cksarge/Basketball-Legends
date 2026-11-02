@@ -11,6 +11,7 @@ import { rollPicks } from "../pro/picks";
 import { processWaivers, standardCount } from "../pro/rosterMoves";
 import { OFFSEASON_ROSTER_MAX, ROSTER_MAX, ROSTER_MIN } from "../pro/rules";
 import type { Franchise, OffseasonStep, RetiredPlayer, SeasonSummary } from "../types";
+import { clearUndo, prunePlan } from "./moves";
 import { leagueProgress } from "./progress";
 
 /** The most unsigned players the league keeps around. The rest leave the game. */
@@ -47,7 +48,7 @@ export function advanceOffseason(f: Franchise, teams: Team[]): Franchise {
   if (!step) return startNewSeason(f, teams);
   const date = m.offseasonDate(step, f.season.year);
   const moved: Franchise = { ...f, date: date && date > f.date ? date : f.date, offseason: { ...f.offseason, step } };
-  return processWaivers(enter(moved, step, teams)).franchise;
+  return prunePlan(clearUndo(processWaivers(enter(moved, step, teams)).franchise));
 }
 
 function summarize(f: Franchise): SeasonSummary {
@@ -116,5 +117,5 @@ export function startNewSeason(f: Franchise, teams: Team[]): Franchise {
   };
   delete next.offseason;
   delete next.freeAgency;
-  return { ...next, picks: rollPicks(next, teams) };
+  return prunePlan(clearUndo({ ...next, picks: rollPicks(next, teams) }));
 }

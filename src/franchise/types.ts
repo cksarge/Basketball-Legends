@@ -147,6 +147,13 @@ export interface FreeAgencyState {
   notices: string[];
 }
 
+/** What it takes to reverse the last roster move. */
+export interface UndoRecord {
+  label: string;
+  before: Partial<Franchise>;
+  players: Record<string, Player | null>;
+}
+
 export interface RetiredPlayer {
   id: string;
   name: string;
@@ -205,6 +212,7 @@ export interface Franchise {
   /** Set during the offseason. */
   offseason?: OffseasonState;
   freeAgency?: FreeAgencyState;
+  undo?: UndoRecord;
   /** Player id -> tries used in contract talks this year. */
   talks: Record<string, number>;
   retired: RetiredPlayer[];

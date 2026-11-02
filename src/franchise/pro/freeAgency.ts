@@ -3,6 +3,7 @@ import { daysBetween, iso } from "@/career/calendar";
 import { fullName, generatePlayer, playerOvr } from "@/engine/player";
 import { Rng, clamp } from "@/engine/rng";
 import type { Contract, Player } from "@/engine/types";
+import { clearUndo } from "../core/moves";
 import type { Franchise, FreeAgencyState } from "../types";
 import { canSign, moneyM, signingRoom, useException, type SigningVia } from "./cap";
 import { decideOptionsFor, pendingOptions } from "./contracts";
@@ -149,7 +150,7 @@ function runRound(f: Franchise): Franchise {
 }
 
 /** On to the next round. After the moratorium, this is round one. */
-export const nextRound = (f: Franchise): Franchise => (!f.freeAgency || f.freeAgency.stage === "open" ? f : runRound(f));
+export const nextRound = (f: Franchise): Franchise => (!f.freeAgency || f.freeAgency.stage === "open" ? f : clearUndo(runRound(f)));
 
 export function finishBidding(f: Franchise): Franchise {
   let next = f;

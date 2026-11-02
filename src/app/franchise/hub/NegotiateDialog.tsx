@@ -49,15 +49,14 @@ export function NegotiateDialog({ f, player, kind, onClose }: { f: Franchise; pl
       if (offer.salary > limit) return setMessage(`Veteran rights let you pay him up to ${moneyM(limit)}.`);
       const reply = negotiate(f, player, offer);
       say(reply);
-      await move(`Re-signed ${fullName(player)}`, (x) =>
-        reply.kind === "accept" ? extendContract(x, player.id, offer.salary, offer.years) : recordTalk(x, player.id),
-      );
+      if (reply.kind === "accept") await move(`Re-signed ${fullName(player)}`, (x) => extendContract(x, player.id, offer.salary, offer.years));
+      else await move(null, (x) => recordTalk(x, player.id));
       if (reply.kind === "accept") ref.current?.close();
       return;
     }
     const attempt = kind === "bid" ? placeBid : signNow;
     let reason: string | null = null;
-    await move(kind === "bid" ? `Bid on ${fullName(player)}` : `Signed ${fullName(player)}`, (x) => {
+    await move(kind === "bid" ? null : `Signed ${fullName(player)}`, (x) => {
       const r = attempt(x, player.id, offer);
       if (!r.ok) reason = r.reason;
       return r.ok ? r.franchise : x;
@@ -120,7 +119,7 @@ export function NegotiateDialog({ f, player, kind, onClose }: { f: Franchise; pl
           <Button
             variant="secondary"
             onClick={async () => {
-              await move(`Withdrew bid on ${fullName(player)}`, (x) => withdrawBid(x, player.id));
+              await move(null, (x) => withdrawBid(x, player.id));
               ref.current?.close();
             }}
           >
