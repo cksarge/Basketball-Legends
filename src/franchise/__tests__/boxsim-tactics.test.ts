@@ -38,7 +38,7 @@ const base = measure({});
 
 const settings: Omit<typeof baseline, "systems"> = baseline;
 type Check = [
-  name: keyof typeof baseline,
+  name: keyof typeof settings,
   side: "own" | "opp",
   stat: "pts" | "fga" | "fgm" | "tpa" | "tpm" | "fta" | "oreb" | "dreb" | "ast" | "stl" | "tov",
   dir: 1 | -1,

@@ -2,7 +2,7 @@
 import type { IsoDate, ProSeries, ScheduledGame } from "@/career/types";
 import type { LeagueId, Player, Position, TeamTactics } from "@/engine/types";
 import type { Difficulty } from "@/game/sim/state";
-import type { StatLine } from "@/game/sim/stats";
+import type { BoxScore, StatLine } from "@/game/sim/stats";
 
 export const FRANCHISE_VERSION = 2;
 
@@ -71,6 +71,14 @@ export interface TeamPlan {
   staff: StaffMember[];
 }
 
+/** The first part of a game, simulated so the user can play the rest. */
+export interface PartialGame {
+  home: number;
+  away: number;
+  box: BoxScore;
+  seconds: number;
+}
+
 export interface Franchise {
   id: string;
   version: number;
@@ -85,6 +93,8 @@ export interface Franchise {
   phase: FranchisePhase;
   settings: FranchiseSettings;
   plan: TeamPlan;
+  /** The user's game that's partway through. */
+  live?: { gameId: string; partial: PartialGame };
   /** The last day of practice counted. */
   devDate: IsoDate;
   players: Record<string, Player>;

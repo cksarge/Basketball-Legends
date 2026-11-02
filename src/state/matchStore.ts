@@ -4,7 +4,7 @@ import type { LeagueId, Player, Team, TeamTactics } from "@/engine/types";
 import type { UniformStyle } from "@/game3d/character/uniformTexture";
 import type { ArenaKind } from "@/game3d/Arena";
 import type { BoxScore } from "@/game/sim/stats";
-import type { InjuryRecord, MatchState } from "@/game/sim/match";
+import type { InjuryRecord, LateStart, MatchState } from "@/game/sim/match";
 import type { Difficulty, ParkRules } from "@/game/sim/state";
 
 /** Links a match to a career game so the result can be recorded when it ends. */
@@ -81,6 +81,8 @@ export interface PendingMatch {
   careerRun?: string;
   /** Franchise game this match belongs to. */
   franchise?: FranchiseGameRef;
+  /** Starts partway through a simulated game (the last quarter of a franchise game). */
+  startFrom?: LateStart;
   /** The game is over, so reopening it goes back to returnTo instead of restarting it. */
   finished?: boolean;
   /** Overrides the difficulty from Settings (careers have their own). */

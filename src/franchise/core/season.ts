@@ -6,7 +6,7 @@ import { addLine, emptyLine, type StatLine } from "@/game/sim/stats";
 import { weeklyDevelopment } from "../coaching/development";
 import { resolveLineup } from "../coaching/plan";
 import { coachEdge, staffRating, trainerGamesOut } from "../coaching/staff";
-import { simBox, type BoxInput, type BoxResult, type BoxSide } from "../boxsim";
+import { finishBox, simBox, simQuarters, type BoxInput, type BoxResult, type BoxSide } from "../boxsim";
 import { seasonAwards } from "./awards";
 import { leagueModule } from "../leagues";
 import { conferenceSeeds } from "../leagues/pro";
@@ -142,6 +142,23 @@ export function advancePostseason(f: Franchise, teams: Team[]): Franchise {
   const next = leagueModule(f.league).postseason(f, teams);
   if (next.phase !== "offseason" || f.phase === "offseason") return next;
   return { ...next, season: { ...next.season, awards: seasonAwards(next, teams) } };
+}
+
+/** Sims all but the last period of the user's game. The result is saved, so reopening the game gets the same score. */
+export function startFourth(f: Franchise, game: ScheduledGame): Franchise {
+  if (f.live?.gameId === game.id) return f;
+  return { ...f, live: { gameId: game.id, partial: simQuarters(boxInput(f, game), leagueModule(f.league).periods - 1) } };
+}
+
+/** Sims the rest of a game that's partway through. */
+export function finishPartial(f: Franchise, gameId: string, teams: Team[]): Franchise {
+  const g = f.season.games.find((x) => x.id === gameId);
+  if (!g || g.result || f.live?.gameId !== gameId) return f;
+  const input = boxInput(f, g);
+  const next = applyGame(f, gameId, finishBox(input, f.live.partial), false, [...input.home.starters, ...input.away.starters]);
+  const done = { ...next };
+  delete done.live;
+  return advancePostseason(done, teams);
 }
 
 export interface SimDayResult {

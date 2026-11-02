@@ -88,6 +88,15 @@ export interface MatchSetup {
   practice?: boolean;
   /** Play in the Park: every roster player is on the floor (1 to 5 a side; 21 puts everyone on their own). */
   park?: ParkRules;
+  /** Start partway through a game that has been simulated up to this period. */
+  startFrom?: LateStart;
+}
+
+export interface LateStart {
+  period: number;
+  homeScore: number;
+  awayScore: number;
+  box: BoxScore;
 }
 
 export const DEFAULT_TACTICS: TeamTactics = { pace: 0.5, threeRate: 0.5, defense: "man", crashBoards: 0.4, doubleTeamStars: false };
@@ -192,7 +201,9 @@ export class Match {
     this.rng = new Rng(cfg.seed);
     const mkTeam = (s: MatchSetup["home"], side: 1 | -1): TeamGameState => {
       // park games put everyone on the floor (the line of waiting players lives outside the match)
-      const starters = cfg.park ? s.roster.map((p) => p.id) : s.starters && s.starters.length === 5 ? s.starters : pickStarters(s.roster);
+      const fouledOut = (id: string) => (setup.startFrom?.box[id]?.pf ?? 0) >= rules.foulOutLimit;
+      const planned = s.starters?.length === 5 && !s.starters.some(fouledOut) ? s.starters : undefined;
+      const starters = cfg.park ? s.roster.map((p) => p.id) : (planned ?? pickStarters(s.roster.filter((p) => !fouledOut(p.id))));
       return {
         team: s.team,
         roster: s.roster,
@@ -271,7 +282,30 @@ export class Match {
     if (!cfg.fast && !cfg.practice && !cfg.park) this.state.crew = createCrew(this);
     if (cfg.practice) this.setupPractice();
     else if (cfg.park) this.startPark();
+    else if (setup.startFrom) this.startLate(setup.startFrom);
     else this.setupJumpBall();
+  }
+
+  /** Picks up a game simulated this far: the score, the box and everyone's minutes, then the next period starts as usual. */
+  private startLate(from: LateStart) {
+    const s = this.state;
+    [from.homeScore, from.awayScore].forEach((score, ti) => {
+      const t = s.teams[ti];
+      t.score = score;
+      const done = from.period - 1;
+      t.periodScores = Array.from({ length: done }, (_, i) => Math.floor(score / done) + (i === done - 1 ? score % done : 0));
+    });
+    for (const [id, line] of Object.entries(from.box)) {
+      if (!s.box[id]) continue;
+      s.box[id] = line;
+      const team = s.teams.find((t) => t.roster.some((p) => p.id === id))!;
+      team.minutes[id] = line.min;
+    }
+    // the second half is at the other end
+    const half = s.cfg.rules.periods / 2;
+    if (from.period > half + 1) for (const t of s.teams) t.attackSide = (t.attackSide * -1) as 1 | -1;
+    s.period = from.period - 1;
+    this.startNextPeriod();
   }
 
   /** Everything needed to pick this game up later (see Match.restore). */

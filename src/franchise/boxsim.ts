@@ -2,7 +2,8 @@
 // the same box score a played game does. The constants below are tuned to real engine games (see engine-baseline.json).
 import { Rng, clamp } from "@/engine/rng";
 import type { LeagueId, Player, SystemId, TeamTactics } from "@/engine/types";
-import { emptyLine, gameScore, type BoxScore, type StatLine } from "@/game/sim/stats";
+import { addLine, emptyLine, gameScore, type BoxScore, type StatLine } from "@/game/sim/stats";
+import type { PartialGame } from "./types";
 
 export interface BoxSide {
   teamId: string;
@@ -265,41 +266,45 @@ function rollInjuries(rng: Rng, teams: Team[]): BoxResult["injuries"] {
   return out;
 }
 
-export function simBox(i: BoxInput): BoxResult {
-  const rng = new Rng(i.seed);
-  const gameMinutes = i.quarterMinutes * i.periods;
-  const home = buildTeam(i.home, gameMinutes);
-  const away = buildTeam(i.away, gameMinutes);
+function play(rng: Rng, i: BoxInput, home: Team, away: Team, box: BoxScore, minutes: number) {
+  const edge = i.neutral ? 0 : HOME_EDGE;
+  const pace = avg(i.home.tactics?.pace ?? 0.5, i.away.tactics?.pace ?? 0.5);
+  const n = Math.round(((POSSESSIONS_PER_48 * minutes) / 48) * (1 + (pace - 0.5) * 0.2) + rng.normal(0, 2) * (minutes / 48));
+  for (let p = 0; p < n; p++) {
+    possession(rng, away, home, box, -edge);
+    possession(rng, home, away, box, edge);
+  }
+}
+
+function matchup(i: BoxInput, minutes: number) {
+  const home = buildTeam(i.home, minutes);
+  const away = buildTeam(i.away, minutes);
   applyDefense(home, away);
   applyDefense(away, home);
   const box: BoxScore = {};
   for (const t of [home, away]) for (const s of t.list) box[s.p.id] = { ...emptyLine(), min: s.seconds };
-  const edge = i.neutral ? 0 : HOME_EDGE;
-  const pace = avg(i.home.tactics?.pace ?? 0.5, i.away.tactics?.pace ?? 0.5);
-  const play = (minutes: number) => {
-    const n = Math.round(((POSSESSIONS_PER_48 * minutes) / 48) * (1 + (pace - 0.5) * 0.2) + rng.normal(0, 2) * (minutes / 48));
-    for (let p = 0; p < n; p++) {
-      possession(rng, away, home, box, -edge);
-      possession(rng, home, away, box, edge);
-    }
-  };
-  play(gameMinutes);
+  return { home, away, box };
+}
+
+/** Plays out the minutes left, on top of anything already simulated. */
+function finishGame(i: BoxInput, rng: Rng, minutes: number, earlier?: PartialGame): BoxResult {
+  const { home, away, box } = matchup(i, minutes);
+  home.score = earlier?.home ?? 0;
+  away.score = earlier?.away ?? 0;
+  for (const [id, line] of Object.entries(earlier?.box ?? {})) box[id] = box[id] ? addLine(box[id], line) : line;
+  play(rng, i, home, away, box, minutes);
   let overtimes = 0;
   while (home.score === away.score) {
     overtimes++;
-    play(OVERTIME_MINUTES);
-    for (const t of [home, away]) {
-      const top = t.list.slice(0, 5);
-      for (const s of top) box[s.p.id].min += OVERTIME_MINUTES * 60;
-    }
+    play(rng, i, home, away, box, OVERTIME_MINUTES);
+    for (const t of [home, away]) for (const s of t.list.slice(0, 5)) box[s.p.id].min += OVERTIME_MINUTES * 60;
   }
   const margin = home.score - away.score;
-  const total = gameMinutes + overtimes * OVERTIME_MINUTES;
-  for (const [t, sign] of [
-    [home, 1],
-    [away, -1],
-  ] as const)
-    for (const s of t.list) box[s.p.id].plusMinus = Math.round((sign * margin * box[s.p.id].min) / (total * 60));
+  const total = i.quarterMinutes * i.periods + overtimes * OVERTIME_MINUTES;
+  for (const [id, line] of Object.entries(box)) {
+    const sign = home.list.some((s) => s.p.id === id) || i.home.roster.some((p) => p.id === id) ? 1 : -1;
+    line.plusMinus = Math.round((sign * margin * line.min) / (total * 60));
+  }
   let best: string | null = null;
   let top = -Infinity;
   for (const [id, line] of Object.entries(box)) {
@@ -307,4 +312,21 @@ export function simBox(i: BoxInput): BoxResult {
     if (score > top) [best, top] = [id, score];
   }
   return { home: home.score, away: away.score, overtimes, box, playerOfGame: best, injuries: rollInjuries(rng, [home, away]) };
+}
+
+export function simBox(i: BoxInput): BoxResult {
+  return finishGame(i, new Rng(i.seed), i.quarterMinutes * i.periods);
+}
+
+/** The first quarters of a game, stopping wherever the score stands. */
+export function simQuarters(i: BoxInput, quarters: number): PartialGame {
+  const minutes = i.quarterMinutes * quarters;
+  const { home, away, box } = matchup(i, minutes);
+  play(new Rng(`${i.seed}:start`), i, home, away, box, minutes);
+  return { home: home.score, away: away.score, box, seconds: minutes * 60 };
+}
+
+/** Sims the rest of a game from where a partial left off. */
+export function finishBox(i: BoxInput, partial: PartialGame): BoxResult {
+  return finishGame(i, new Rng(`${i.seed}:rest`), i.quarterMinutes * i.periods - partial.seconds / 60, partial);
 }
