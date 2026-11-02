@@ -161,7 +161,10 @@ Each is pushed to `/beta/` as it works, with unfinished areas showing "Coming so
 10. **College:** division world, recruiting battles, NIL, portal, eligibility, postseason.
 11. **High school:** feeders, tryouts, squads, state playoffs.
 12. **Roster editor and packs.**
-13. **Phase finish:** full audit, performance, page check, docs and legal, then wait for the user's go-ahead to merge to `main`.
+13. **Phase finish:** full audit, performance, page check, docs and legal, then wait for the user's go-ahead to merge to `main`. It must also meet these three requirements from the user:
+    - **Every feature is in.** Each item in Phase 3 of the master plan (`~/.claude/plans/i-want-you-to-distributed-flute.md`) and in this spec is checked off against working code, with anything missing built before the merge.
+    - **Changelog and How to Play are fully updated and well formatted.** How to Play avoids long blocks of text. The changelog's v0.4.0 section uses several headers, in the style of the v0.3.0 Road to Legend section, not one long list.
+    - **Everything in Phase 3 is tested fully.** Every feature from every milestone has working tests at the right level, including the weak or skipped tests found in earlier reviews.
 
 ## Testing
 
