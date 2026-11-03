@@ -13,6 +13,8 @@ import { useFranchise } from "@/state/franchiseStore";
 import { Button, Panel } from "@/ui/kit";
 import { SortTable, type Column } from "@/ui/SortTable";
 import { useRosterMove } from "./actions";
+import { addWalkOn, canRedshirt, releaseFromProgram, setRedshirt } from "@/franchise/college/eligibility";
+import { COLLEGE_ROSTER } from "@/franchise/leagues/college";
 import { CapPanel } from "./CapPanel";
 import { NegotiateDialog } from "./NegotiateDialog";
 
@@ -31,7 +33,93 @@ const yearsLabel = (p: Player) => {
   return marks.length ? `${c.years} (${marks.join(", ")})` : String(c.years);
 };
 
+/** Seasons of eligibility used, and a redshirt year if he's had one. */
+const eligibilityLabel = (p: Player, year: number) => {
+  const e = p.file?.eligibility;
+  if (!e) return "-";
+  return `${e.used} of 4${e.redshirted ? (e.year === year ? ", redshirting" : ", RS") : ""}`;
+};
+
+function CollegeRoster({ f }: { f: Franchise }) {
+  const move = useRosterMove();
+  const running = useFranchiseSim((s) => s.running);
+  const rows = f.rosters[f.teamId].map((id) => f.players[id]);
+  const line = (p: Player) => f.season.stats[p.id];
+  const per = (p: Player, stat: "pts" | "ast") => {
+    const l = line(p);
+    return l ? +(l[stat] / l.gp).toFixed(1) : 0;
+  };
+  const columns: Column<Player>[] = [
+    { key: "jersey", label: "#", value: (p) => p.jersey },
+    {
+      key: "name",
+      label: "Player",
+      text: true,
+      value: (p) => `${p.lastName} ${p.firstName}`,
+      render: (p) => `${p.firstName} ${p.lastName}${p.file?.walkOn ? " (walk-on)" : ""}`,
+    },
+    { key: "pos", label: "Pos", text: true, value: (p) => p.pos },
+    { key: "class", label: "Class", text: true, value: (p) => p.classYear ?? "" },
+    { key: "elig", label: "Seasons", text: true, value: (p) => eligibilityLabel(p, f.season.year) },
+    { key: "ht", label: "Ht", value: (p) => p.heightIn, render: (p) => heightStr(p.heightIn) },
+    { key: "ovr", label: "OVR", value: (p) => (p.file?.range ? (p.file.range.ovr[0] + p.file.range.ovr[1]) / 2 : playerOvr(p)), render: shownOvr },
+    { key: "gp", label: "GP", value: (p) => line(p)?.gp ?? 0 },
+    { key: "ppg", label: "PPG", value: (p) => per(p, "pts") },
+    { key: "apg", label: "APG", value: (p) => per(p, "ast") },
+    {
+      key: "status",
+      label: "Status",
+      text: true,
+      value: (p) => p.injury?.name ?? "",
+      render: (p) => (p.injury ? `${p.injury.name} (${p.injury.gamesOut})` : ""),
+    },
+    {
+      key: "act",
+      label: "",
+      text: true,
+      value: () => 0,
+      render: (p) => {
+        const sitting = p.file?.eligibility?.redshirted && p.file.eligibility.year === f.season.year;
+        return (
+          <span className="flex gap-1">
+            {canRedshirt(f, p.id) && (
+              <Button variant="ghost" className={small} disabled={running} onClick={() => move(null, (x) => setRedshirt(x, p.id, !sitting))}>
+                {sitting ? "End redshirt" : "Redshirt"}
+              </Button>
+            )}
+            <Button variant="ghost" className={small} disabled={running} onClick={() => move(`Released ${fullName(p)}`, (x) => releaseFromProgram(x, p.id))}>
+              Release
+            </Button>
+          </span>
+        );
+      },
+    },
+  ];
+  return (
+    <div className="flex flex-col gap-5">
+      <Panel title="Roster">
+        <p className="mb-2 text-sm text-steel">
+          {rows.length} players, {COLLEGE_ROSTER.min} to {COLLEGE_ROSTER.max} to play. A redshirt sits the season and keeps his year.
+        </p>
+        <SortTable label="Roster" rows={rows} columns={columns} rowKey={(p) => p.id} initial="ovr" filter={(p) => `${p.firstName} ${p.lastName} ${p.pos}`} />
+        {rows.length < COLLEGE_ROSTER.max && (
+          <div className="mt-3">
+            <Button variant="secondary" disabled={running} onClick={() => move("Added a walk-on", addWalkOn)}>
+              Add a walk-on
+            </Button>
+          </div>
+        )}
+      </Panel>
+    </div>
+  );
+}
+
 export function RosterTab({ f }: { f: Franchise }) {
+  if (f.league === "college") return <CollegeRoster f={f} />;
+  return <ProRoster f={f} />;
+}
+
+function ProRoster({ f }: { f: Franchise }) {
   const move = useRosterMove();
   const update = useFranchise((s) => s.update);
   const running = useFranchiseSim((s) => s.running);

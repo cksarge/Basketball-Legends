@@ -139,8 +139,8 @@ export default function HowToPlay() {
       </ul>
       <H2>Franchise</H2>
       <p>
-        Franchise mode is in beta. Pick a pro team from the main menu and run its season. All 30 teams play 82 games, then the play-in and playoffs decide a
-        champion, and then the offseason sets up the next season.
+        Franchise mode is in beta. Pick a pro team or a college program from the main menu and run its season. In pro, all 30 teams play 82 games, then the
+        play-in and playoffs decide a champion, and then the offseason sets up the next season.
       </p>
       <ul>
         <li>
@@ -218,6 +218,33 @@ export default function HowToPlay() {
         </li>
         <li>
           <b>Backups:</b> your franchise saves in your browser after every day. Export it from the Franchise screen to keep a copy.
+        </li>
+      </ul>
+      <H3>College</H3>
+      <ul>
+        <li>
+          <b>Your division:</b> pick a Division I, II or III program. Every program in your division has real players. The other two divisions play on, and
+          Standings shows them too.
+        </li>
+        <li>
+          <b>The season:</b> about 30 games, with conference play from January. Then come conference tournaments, the national tournament (68 teams in Division
+          I) and the invitational.
+        </li>
+        <li>
+          <b>Halves:</b> college games have two halves, so Play the 2nd half takes over at halftime.
+        </li>
+        <li>
+          <b>Recruiting:</b> your staff recruits for you in this beta. Your own recruiting board is coming.
+        </li>
+        <li>
+          <b>The summer:</b> some players declare for the pro draft, others enter the transfer portal, recruits sign, seniors graduate and walk-ons fill out the
+          roster.
+        </li>
+        <li>
+          <b>Redshirts:</b> sit a player for a season to keep his year. You can do it once per player, and only before his fifth game.
+        </li>
+        <li>
+          <b>Roster:</b> 10 to 15 players to play, and 13 to 15 at the start of a season. Add walk-ons on the Roster tab.
         </li>
       </ul>
 

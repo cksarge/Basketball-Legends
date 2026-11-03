@@ -20,6 +20,7 @@ export function SortTable<T>({
   highlight,
   label,
   filter,
+  limit,
 }: {
   rows: T[];
   columns: Column<T>[];
@@ -29,6 +30,8 @@ export function SortTable<T>({
   label: string;
   /** The text a filter box matches against. With it, the table gets a filter box. */
   filter?: (row: T) => string;
+  /** Shows only the first rows after sorting and filtering, for very long tables. */
+  limit?: number;
 }) {
   const [sort, setSort] = useState({ key: initial, asc: false });
   const [query, setQuery] = useState("");
@@ -42,7 +45,8 @@ export function SortTable<T>({
     });
   }, [rows, columns, sort]);
   const q = query.trim().toLowerCase();
-  const shown = filter && q ? sorted.filter((r) => filter(r).toLowerCase().includes(q)) : sorted;
+  const matching = filter && q ? sorted.filter((r) => filter(r).toLowerCase().includes(q)) : sorted;
+  const shown = limit ? matching.slice(0, limit) : matching;
   const onSort = (c: Column<T>) => setSort((s) => (s.key === c.key ? { key: c.key, asc: !s.asc } : { key: c.key, asc: !!c.text }));
   return (
     <div className="overflow-x-auto">
@@ -80,6 +84,11 @@ export function SortTable<T>({
           ))}
         </tbody>
       </table>
+      {shown.length < matching.length && (
+        <p className="mt-2 text-xs text-steel">
+          Showing the top {shown.length} of {matching.length}.{filter ? " Filter to find the rest." : ""}
+        </p>
+      )}
     </div>
   );
 }

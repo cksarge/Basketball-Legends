@@ -74,7 +74,8 @@ export function createFranchise(o: {
       teamId: o.team.id,
       date,
       phase: "regular",
-      settings: { ...DEFAULT_FRANCHISE_SETTINGS, ...o.settings, league },
+      // college plays halves, so a played game's period is twice as long
+      settings: { ...DEFAULT_FRANCHISE_SETTINGS, ...(o.league === "college" ? { quarterMinutes: 12 } : {}), ...o.settings, league },
       plan: defaultPlan(),
       devDate: date,
       players,

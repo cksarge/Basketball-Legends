@@ -35,7 +35,7 @@ function reach(f: Franchise, step: string) {
 
 describe("single systems", () => {
   it("every system has a toggle", () => {
-    expect(AUTO_KEYS.map((k) => k.key).sort()).toEqual(["contracts", "draft", "finances", "freeAgency", "practice", "roster", "scouting", "tactics", "trades"]);
+    expect(AUTO_KEYS.map((k) => k.key).sort()).toEqual(["contracts", "draft", "finances", "freeAgency", "practice", "recruiting", "roster", "scouting", "squads", "tactics", "trades"]);
   });
 
   it("with auto draft on, the user's pick is made", () => {

@@ -8,7 +8,7 @@ In testing at legends.carterscoding.com/beta/. These notes grow as Franchise mod
 
 ### Franchise
 
-- **Take over a team:** pick any pro team and start a franchise. College and Arizona high school teams arrive in later betas.
+- **Take over a team:** pick any pro team or college program and start a franchise. Arizona high schools arrive in a later beta.
 - **Your saves:** franchises save in your browser after everything you do, with Export and Import to back them up or move them.
 - **A full season:** all 30 teams play the 82-game schedule, then the play-in and best-of-seven playoffs, with a champion and awards at the end.
 - **Play or sim:** play any of your games in 3D with control of the whole team, sim one game, sim to a date, or sim the whole season. Sims run in the background, with a Stop button, and save after every day.
@@ -40,6 +40,18 @@ In testing at legends.carterscoding.com/beta/. These notes grow as Franchise mod
 - **Trade tools:** a finder that shows what you could send for a player, a trade block that draws offers, sign-and-trades during free agency, and calls about your pick on draft day. AI teams trade with each other too.
 - **Undo:** take back your last roster move until the next game is simulated.
 - **Roster moves:** waivers with claims, buyouts, three two-way players and three developmental players. You need 13 to 15 players on standard deals to play or sim.
+
+### College franchises
+
+- **Run a program:** start a franchise with any Division I, II or III school. Every program in your division has real players, stats and box scores.
+- **The rest of college:** the other two divisions play their seasons and tournaments too, on team strength. Standings shows them, and any team's roster opens with a click.
+- **March:** conference tournaments, a 68-team national tournament with four opening-round games (64 in Divisions II and III), and a 32-team invitational in Division I.
+- **College awards:** Player of the Year, Defensive Player of the Year, Freshman of the Year, the All-American team, a Player of the Year for every conference, and the tournament's Most Outstanding Player.
+- **Two halves:** played games use college rules, and Play the 2nd half takes over at halftime.
+- **The summer:** declarations for the pro draft, the transfer portal, signing day, graduation and walk-ons. Your staff recruits for you in this beta.
+- **Eligibility:** four seasons in five years, with one redshirt.
+- **Your boss:** the athletic director sets goals for winning, the postseason and your recruiting class. Schools also have a staff budget.
+- **College rules:** 30, 26 or 22 games, conference tournaments on or off, and a 68- or 64-team Division I field.
 
 ### Saves
 

@@ -131,7 +131,8 @@ export function HomeTab({ f, teams, onOffseason }: { f: Franchise; teams: Team[]
             </div>
             {live && (
               <p className="mt-3 font-semibold" role="status">
-                After three quarters: {byId(ev.game.awayId).name} {live.away}, {byId(ev.game.homeId).name} {live.home}
+                {leagueModule(f.league).periods === 2 ? "At halftime" : "After three quarters"}: {byId(ev.game.awayId).name} {live.away},{" "}
+                {byId(ev.game.homeId).name} {live.home}
               </p>
             )}
             <div className="mt-4 flex flex-wrap gap-2">
@@ -153,7 +154,7 @@ export function HomeTab({ f, teams, onOffseason }: { f: Franchise; teams: Team[]
                     </Button>
                   )}
                   <Button variant={live ? "primary" : "secondary"} disabled={running} onClick={playFourth}>
-                    Play the 4th quarter
+                    Play the {leagueModule(f.league).lastPeriodLabel}
                   </Button>
                 </>
               )}
@@ -187,7 +188,7 @@ export function HomeTab({ f, teams, onOffseason }: { f: Franchise; teams: Team[]
         <fieldset disabled={running}>
           <Toggle
             label="Close games only"
-            hint={`Sims your games, and stops if the 4th quarter starts within ${f.settings.closeGameMargin} points`}
+            hint={`Sims your games, and stops if the ${leagueModule(f.league).lastPeriodLabel} starts within ${f.settings.closeGameMargin} points`}
             checked={f.settings.closeGamesOnly}
             onChange={(closeGamesOnly) => update((x) => ({ ...x, settings: { ...x.settings, closeGamesOnly } }))}
           />

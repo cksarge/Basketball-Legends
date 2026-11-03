@@ -2,16 +2,16 @@
 import { Fragment, useState } from "react";
 import { heightStr, playerOvr } from "@/engine/player";
 import type { Player } from "@/engine/types";
-import type { Bracket, Career, ScheduledGame } from "@/career/types";
+import type { Career, ScheduledGame } from "@/career/types";
 import { formatDate } from "@/career/format";
 import { conferenceName, currentCollege, userCollegeGames } from "@/career/college/season";
 import { NATIONAL_ID } from "@/career/college/postseason";
 import { withUser, type HsContext } from "@/career/hs/season";
 import { standings } from "@/career/hs/sim";
-import { winnerOf } from "@/career/hs/playoffs";
 import { TeamLogo } from "@/ui/TeamLogo";
 import { Panel, Segmented } from "@/ui/kit";
 import { BoxTable } from "./ScheduleTab";
+import { BracketView } from "@/ui/BracketView";
 
 const seasonName = (s: { year: number }) => `${s.year}-${String(s.year + 1).slice(2)}`;
 
@@ -204,46 +204,8 @@ export function CollegeTeam({ career, ctx }: { career: Career; ctx: HsContext })
             </tbody>
           </table>
         </Panel>
-        {mine && <BracketRounds bracket={mine} games={s.games} ctx={ctx} teamId={s.teamId} />}
+        {mine && <BracketView bracket={mine} games={s.games} name={(id) => ctx.collegeById?.get(id)?.name ?? ""} teamId={s.teamId} />}
       </div>
     </div>
-  );
-}
-
-/** A bracket, latest round first: big ones are long, and the end of the tournament is what matters. */
-function BracketRounds({ bracket, games, ctx, teamId }: { bracket: Bracket; games: ScheduledGame[]; ctx: HsContext; teamId: string }) {
-  const byId = new Map(games.map((g) => [g.id, g]));
-  const seed = (id: string) => bracket.seeds.indexOf(id) + 1;
-  const rounds = bracket.rounds.map((ids) => ids.map((id) => byId.get(id)).filter((g): g is ScheduledGame => !!g)).reverse();
-  return (
-    <Panel title={bracket.name}>
-      {bracket.champion && <p className="mb-3 font-semibold text-amber">Champion: {ctx.collegeById?.get(bracket.champion)?.name}</p>}
-      {rounds.length === 0 && <p className="text-steel">The bracket is set after conference play.</p>}
-      <div className="flex max-h-[32rem] flex-col gap-4 overflow-y-auto pr-1">
-        {rounds.map((list) => (
-          <div key={list[0].id}>
-            <p className="mb-1 text-sm font-semibold text-steel">
-              {list[0].label?.replace(`${bracket.name} `, "")} · {formatDate(list[0].date)}
-            </p>
-            <ul className="flex flex-col gap-1 text-sm">
-              {list.map((g) => {
-                const w = winnerOf(g);
-                const row = (id: string, score?: number) => (
-                  <span className={`${id === teamId ? "text-amber" : ""} ${w === id ? "font-semibold" : ""}`}>
-                    <span className="text-steel">{seed(id)}</span> {ctx.collegeById?.get(id)?.name} {score ?? ""}
-                  </span>
-                );
-                return (
-                  <li key={g.id} className="flex flex-wrap justify-between gap-x-3 border-t border-line/60 py-1 tabular-nums">
-                    {row(g.homeId, g.result?.home)}
-                    {row(g.awayId, g.result?.away)}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
-      </div>
-    </Panel>
   );
 }

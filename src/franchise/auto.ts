@@ -26,7 +26,23 @@ export const AUTO_KEYS: { key: AutoKey; label: string; hint: string }[] = [
   { key: "trades", label: "Trades", hint: "Your team makes deals. Mark players untouchable on the Roster tab." },
   { key: "finances", label: "Finances", hint: "Ticket prices are set each season." },
   { key: "roster", label: "Roster limits", hint: "Your team signs or cuts to stay between 13 and 15." },
+  { key: "recruiting", label: "Recruiting", hint: "Your staff recruits, offers NIL and works the portal." },
+  { key: "squads", label: "Tryouts and squads", hint: "Your staff runs tryouts and sets the squads." },
 ];
+
+/** The Recruiting tab isn't built yet, so its switch stays hidden and on. */
+const RECRUITING_SCREEN = false;
+const PRO_ONLY: AutoKey[] = ["scouting", "draft", "contracts", "freeAgency", "trades", "finances"];
+/** College staffs fill the roster with walk-ons. */
+const COLLEGE_ROSTER_HINT = "Walk-ons fill the roster to 13, and the class always fits.";
+
+/** The switches that mean something in this league. */
+export function autoKeysFor(f: Franchise): typeof AUTO_KEYS {
+  const s = leagueModule(f.league).systems;
+  return AUTO_KEYS.filter(
+    (k) => (s.cap || !PRO_ONLY.includes(k.key)) && (k.key !== "recruiting" || (s.recruiting && RECRUITING_SCREEN)) && (k.key !== "squads" || s.squads),
+  ).map((k) => (k.key === "roster" && f.league === "college" ? { ...k, hint: COLLEGE_ROSTER_HINT } : k));
+}
 
 const ROTATION = 8;
 const KEEP_RANK = 9;

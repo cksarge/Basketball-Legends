@@ -239,3 +239,19 @@ export function collegeProgress(f: Franchise): { franchise: Franchise; report: P
   const done: Franchise = { ...f, players, rosters, college: { ...c, recruits: c.recruits.filter((r) => r.kind !== "hs") } };
   return { franchise: addNews(done, news), report };
 }
+
+/** The user lets a player go. He leaves the league. */
+export function releaseFromProgram(f: Franchise, id: string): Franchise {
+  if (!f.rosters[f.teamId].includes(id)) return f;
+  const players = { ...f.players };
+  delete players[id];
+  const plan = { ...f.plan, starters: f.plan.starters.filter((x) => x !== id) };
+  return { ...f, players, plan, rosters: { ...f.rosters, [f.teamId]: f.rosters[f.teamId].filter((x) => x !== id) } };
+}
+
+/** The user adds one walk-on, up to the roster limit. */
+export function addWalkOn(f: Franchise): Franchise {
+  const n = f.rosters[f.teamId].length;
+  if (n >= COLLEGE_ROSTER_MAX) return f;
+  return fillWalkOns(f, f.teamId, new Rng(`${f.seed}:walkon:${f.date}:${n}`), n + 1);
+}

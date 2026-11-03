@@ -191,8 +191,9 @@ export const collegeLeague: LeagueModule = {
   newSeason: same,
   gates: same,
   closeSeason: same,
-  awards: collegeAwards,
-  goals: adGoals,
-  development: youngCore,
+  // imported functions are read when called, since these modules import each other
+  awards: (f, teams) => collegeAwards(f, teams),
+  goals: (f, teams) => adGoals(f, teams),
+  development: (f) => youngCore(f),
   settingsOptions: { games: [30, 26, 22], fields: ["conferenceTournaments", "nationalField"] },
 };

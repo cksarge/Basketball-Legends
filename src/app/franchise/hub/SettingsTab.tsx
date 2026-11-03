@@ -1,5 +1,7 @@
 "use client";
-import { AUTO_KEYS, setAuto } from "@/franchise/auto";
+import { autoKeysFor, setAuto } from "@/franchise/auto";
+import type { LeagueId } from "@/engine/types";
+import { leagueModule, type SettingsField } from "@/franchise/leagues";
 import { setLeagueSettings } from "@/franchise/settings";
 import type { Franchise, LeagueSettings } from "@/franchise/types";
 import type { Difficulty } from "@/game/sim/state";
@@ -7,46 +9,92 @@ import { useFranchiseSim } from "@/state/franchiseSim";
 import { useFranchise } from "@/state/franchiseStore";
 import { Panel, Select, Toggle } from "@/ui/kit";
 
-const GAMES = [82, 70, 58, 41] as const;
 const LATER = "Starts next season";
 
-/** League rules, as fields. Used by the creator and the Settings tab. */
-export function LeagueFields({ value, onChange, waits }: { value: LeagueSettings; onChange: (patch: Partial<LeagueSettings>) => void; waits?: boolean }) {
+/** League rules, as fields. Used by the creator and the Settings tab. Each league shows only the rules it has. */
+export function LeagueFields({
+  league,
+  value,
+  onChange,
+  waits,
+}: {
+  league: LeagueId;
+  value: LeagueSettings;
+  onChange: (patch: Partial<LeagueSettings>) => void;
+  waits?: boolean;
+}) {
+  const options = leagueModule(league).settingsOptions;
+  const has = (field: SettingsField) => options.fields.includes(field);
+  const format = (patch: Partial<LeagueSettings["playoffFormat"]>) => onChange({ playoffFormat: { ...value.playoffFormat, ...patch } });
   return (
     <>
       <Select
         label="Games per season"
         value={value.gamesPerSeason}
-        options={GAMES.map((n) => ({ value: n, label: String(n) }))}
+        options={options.games.map((n) => ({ value: n, label: String(n) }))}
         onChange={(gamesPerSeason) => onChange({ gamesPerSeason })}
         hint={waits ? LATER : undefined}
       />
-      <Select
-        label="First round"
-        value={value.playoffFormat.firstRoundBestOf}
-        options={[
-          { value: 7, label: "Best of 7" },
-          { value: 5, label: "Best of 5" },
-        ]}
-        onChange={(firstRoundBestOf) => onChange({ playoffFormat: { ...value.playoffFormat, firstRoundBestOf } })}
-        hint={waits ? LATER : undefined}
-      />
-      <Toggle
-        label="Play-in tournament"
-        hint={waits ? LATER : "Seeds 7 to 10 play for the last two spots"}
-        checked={value.playoffFormat.playIn}
-        onChange={(playIn) => onChange({ playoffFormat: { ...value.playoffFormat, playIn } })}
-      />
-      <Select
-        label="Trade difficulty"
-        value={value.tradeDifficulty}
-        options={[
-          { value: "easy", label: "Easy" },
-          { value: "normal", label: "Normal" },
-          { value: "hard", label: "Hard" },
-        ]}
-        onChange={(tradeDifficulty) => onChange({ tradeDifficulty })}
-      />
+      {has("conferenceTournaments") && (
+        <Toggle
+          label="Conference tournaments"
+          hint={waits ? LATER : "Off: each conference's regular-season champion gets its bid"}
+          checked={value.playoffFormat.conferenceTournaments !== false}
+          onChange={(conferenceTournaments) => format({ conferenceTournaments })}
+        />
+      )}
+      {has("nationalField") && (
+        <Select
+          label="Division I tournament"
+          value={value.playoffFormat.nationalField ?? 68}
+          options={[
+            { value: 68, label: "68 teams" },
+            { value: 64, label: "64 teams" },
+          ]}
+          onChange={(nationalField) => format({ nationalField })}
+          hint={waits ? LATER : "68 adds four opening-round games"}
+        />
+      )}
+      {has("openDivision") && (
+        <Toggle
+          label="Open Division"
+          hint={waits ? LATER : "The best 16 from 6A to 4A play their own bracket"}
+          checked={value.playoffFormat.openDivision !== false}
+          onChange={(openDivision) => format({ openDivision })}
+        />
+      )}
+      {has("playoffFormat") && (
+        <>
+          <Select
+            label="First round"
+            value={value.playoffFormat.firstRoundBestOf}
+            options={[
+              { value: 7, label: "Best of 7" },
+              { value: 5, label: "Best of 5" },
+            ]}
+            onChange={(firstRoundBestOf) => format({ firstRoundBestOf })}
+            hint={waits ? LATER : undefined}
+          />
+          <Toggle
+            label="Play-in tournament"
+            hint={waits ? LATER : "Seeds 7 to 10 play for the last two spots"}
+            checked={value.playoffFormat.playIn}
+            onChange={(playIn) => format({ playIn })}
+          />
+        </>
+      )}
+      {has("tradeDifficulty") && (
+        <Select
+          label="Trade difficulty"
+          value={value.tradeDifficulty}
+          options={[
+            { value: "easy", label: "Easy" },
+            { value: "normal", label: "Normal" },
+            { value: "hard", label: "Hard" },
+          ]}
+          onChange={(tradeDifficulty) => onChange({ tradeDifficulty })}
+        />
+      )}
       <Select
         label="Injuries"
         value={value.injuries}
@@ -89,7 +137,7 @@ export function SettingsTab({ f }: { f: Franchise }) {
   return (
     <fieldset disabled={running} className="flex flex-col gap-5">
       <Panel title="League">
-        <LeagueFields value={shown} waits onChange={(patch) => update((x) => setLeagueSettings(x, patch), [])} />
+        <LeagueFields league={f.league} value={shown} waits onChange={(patch) => update((x) => setLeagueSettings(x, patch), [])} />
       </Panel>
       <Panel title="Auto-manage">
         <p className="mb-2 text-sm text-steel">Your staff runs anything switched on, using the same rules as every other team.</p>
@@ -99,15 +147,15 @@ export function SettingsTab({ f }: { f: Franchise }) {
           checked={f.plan.autoRotation}
           onChange={(autoRotation) => update((x) => ({ ...x, plan: { ...x.plan, autoRotation } }), [])}
         />
-        {AUTO_KEYS.map((k) => (
+        {autoKeysFor(f).map((k) => (
           <Toggle key={k.key} label={k.label} hint={k.hint} checked={f.settings.auto[k.key]} onChange={(on) => update((x) => setAuto(x, k.key, on))} />
         ))}
       </Panel>
       <Panel title="Playing games">
         <Select
-          label="Quarter length"
+          label={leagueModule(f.league).periods === 2 ? "Half length" : "Quarter length"}
           value={f.settings.quarterMinutes}
-          options={[3, 5, 6, 8, 10, 12].map((n) => ({ value: n, label: `${n} minutes` }))}
+          options={(leagueModule(f.league).periods === 2 ? [6, 8, 10, 12, 16, 20] : [3, 5, 6, 8, 10, 12]).map((n) => ({ value: n, label: `${n} minutes` }))}
           onChange={(quarterMinutes) => set({ quarterMinutes })}
           hint="Stats from shorter games count at full length"
         />

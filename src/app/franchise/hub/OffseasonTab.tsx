@@ -78,6 +78,27 @@ function LotteryPanel({ f, teams }: { f: Franchise; teams: Team[] }) {
   );
 }
 
+/** What a college summer step means, until each gets its own screen. */
+function CollegeStep({ f }: { f: Franchise }) {
+  const step = f.offseason!.step;
+  const c = f.college!;
+  const mine = (ids: string[]) => ids.filter((id) => f.rosters[f.teamId].includes(id) || f.players[id]?.file?.lastTeamId === f.teamId);
+  return (
+    <Panel title={STEP_NAME[step]}>
+      {step === "declarations" && (
+        <p>{mine(c.declared.map((d) => d.id)).length} of your players declared for the pro draft. Declared players leave this summer.</p>
+      )}
+      {step === "portal" && (
+        <p>
+          {c.portal?.entered.length ?? 0} players entered the transfer portal, {mine(c.portal?.entered ?? []).length} of them yours.
+        </p>
+      )}
+      {step === "signing" && <p>{c.recruits.filter((r) => r.signed && r.committed === f.teamId).length} recruits and transfers signed with you.</p>}
+      {step === "camp" && <p>You have {f.rosters[f.teamId].length} players. The season needs 13 to 15, and walk-ons can fill the gap on the Roster tab.</p>}
+    </Panel>
+  );
+}
+
 export function OffseasonTab({ f, teams }: { f: Franchise; teams: Team[] }) {
   const update = useFranchise((s) => s.update);
   const running = useFranchiseSim((s) => s.running);
@@ -107,7 +128,8 @@ export function OffseasonTab({ f, teams }: { f: Franchise; teams: Team[] }) {
       {step === "draft" && <DraftTab f={f} teams={teams} />}
       {step === "contracts" && <ContractsPanel f={f} />}
       {step === "freeAgency" && <FreeAgentsTab f={f} />}
-      {step === "camp" && (
+      {f.league === "college" && step !== "review" && step !== "progress" && <CollegeStep f={f} />}
+      {step === "camp" && f.league === "pro" && (
         <Panel title="Training camp">
           <p className="mb-3 text-steel">
             You have {standardCount(f, f.teamId)} players on standard deals. The {f.season.year + 1} season needs 13 to 15.

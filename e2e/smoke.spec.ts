@@ -238,6 +238,67 @@ test("run a franchise offseason: option, re-sign, bid, release, two-way", async 
   expect(errors).toEqual([]);
 });
 
+/** A Division II program: a smaller world than Division I, so it builds faster. */
+async function collegeFranchise(page: Page) {
+  await page.goto("franchise/new/");
+  await page.getByRole("radio", { name: "College" }).click();
+  await page.getByRole("radio", { name: "Division II", exact: true }).click();
+  await page.getByLabel("Search teams").fill("a");
+  await page.getByRole("list", { name: "Team list" }).getByRole("button").first().click();
+  await page.getByRole("button", { name: "Start franchise" }).click();
+  await page.waitForURL(/franchise\/hub\/\?id=/, { timeout: 60_000 });
+}
+
+test("create a Division II franchise, sim to the next event, and reload", async ({ page }) => {
+  test.setTimeout(180_000);
+  const errors = watchErrors(page);
+  await collegeFranchise(page);
+  const title = await page.getByRole("heading", { level: 1 }).textContent();
+  await page.getByRole("button", { name: "Sim game", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Sim game", exact: true })).toBeEnabled({ timeout: 60_000 });
+  await page.getByRole("tab", { name: "Schedule" }).click();
+  await expect(page.getByText(/^[WL]$/).first()).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(title!);
+  await page.getByRole("tab", { name: "Schedule" }).click();
+  await expect(page.getByText(/^[WL]$/).first()).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("the college hub hides trades, free agents, the draft and the club", async ({ page }) => {
+  test.setTimeout(120_000);
+  await collegeFranchise(page);
+  const tabs = page.getByRole("tablist", { name: "Franchise sections" });
+  for (const name of ["Recruiting", "Program", "Postseason", "Roster", "Coaching", "Standings"]) await expect(tabs.getByRole("tab", { name })).toBeVisible();
+  for (const name of ["Trades", "Free agents", "Draft", "Club", "Playoffs"]) await expect(tabs.getByRole("tab", { name, exact: true })).toHaveCount(0);
+  await page.getByRole("tab", { name: "Recruiting" }).click();
+  await expect(page.getByText(/staff is recruiting for you/)).toBeVisible();
+});
+
+test("standings switch conferences and show other divisions, and an outside team's roster opens", async ({ page }) => {
+  test.setTimeout(120_000);
+  await collegeFranchise(page);
+  await page.getByRole("tab", { name: "Standings" }).click();
+  await expect(page.getByRole("heading", { name: "Top 25" })).toBeVisible();
+  const conference = page.getByRole("combobox", { name: "Conference" });
+  const first = await conference.inputValue();
+  const options = await conference.locator("option").allTextContents();
+  await conference.selectOption({ index: options.length > 1 ? 1 : 0 });
+  expect(await conference.inputValue()).not.toBe(options.length > 1 ? first : "");
+  await page.getByRole("radio", { name: "Division I", exact: true }).click();
+  const outside = page.getByRole("table").first().locator("tbody").getByRole("button").first();
+  await outside.click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.getByRole("dialog").getByRole("row")).not.toHaveCount(0);
+});
+
+test("the college play controls say 2nd half", async ({ page }) => {
+  test.setTimeout(120_000);
+  await collegeFranchise(page);
+  await expect(page.getByRole("button", { name: "Play the 2nd half" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /4th quarter/ })).toHaveCount(0);
+});
+
 test("make a franchise trade, undo it and make it again", async ({ page }) => {
   test.setTimeout(120_000);
   const errors = watchErrors(page);

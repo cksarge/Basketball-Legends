@@ -8,6 +8,8 @@ import { Panel } from "@/ui/kit";
 import { SortTable, type Column } from "@/ui/SortTable";
 
 type Row = { id: string; l: SeasonLine };
+/** A college division has thousands of players, so the table shows the top of the sort. */
+const LIMIT = 250;
 const avg = (l: SeasonLine, n: number) => +(n / l.gp).toFixed(1);
 const pct = (m: number, a: number) => (a ? +((m / a) * 100).toFixed(1) : 0);
 
@@ -48,6 +50,7 @@ export function LeadersTab({ f, teams }: { f: Franchise; teams: Team[] }) {
             initial="pts"
             highlight={(r) => f.players[r.id].teamId === f.teamId}
             filter={(r) => `${leaderRow(f, teams, r.id).name} ${leaderRow(f, teams, r.id).team}`}
+            limit={LIMIT}
           />
         </div>
       )}

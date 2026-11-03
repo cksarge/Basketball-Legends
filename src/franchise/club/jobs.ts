@@ -7,6 +7,7 @@ import { addNews, hiredNews } from "../history/news";
 import { START_SECURITY } from "../pro/gmState";
 import { teamSlot } from "../pro/tradeValue";
 import type { Franchise, JobStint } from "../types";
+import { worldTeams } from "../world";
 import { seasonGoals } from "./owner";
 
 const TITLE_REPUTATION = 0.06;
@@ -22,8 +23,9 @@ export function reputation(f: Franchise): number {
 }
 
 /** Better records reach better teams. The worst team in the league always calls. */
-export function jobOffers(f: Franchise, teams: Team[]): string[] {
+export function jobOffers(f: Franchise, all: Team[]): string[] {
   if (!f.job.fired) return [];
+  const teams = worldTeams(all, f.world);
   const open = teams.map((t) => t.id).filter((id) => id !== f.job.fired!.teamId);
   const order = open.sort((a, b) => teamSlot(f, a) - teamSlot(f, b));
   const reach = Math.round(reputation(f) * (order.length - 1));
@@ -31,8 +33,9 @@ export function jobOffers(f: Franchise, teams: Team[]): string[] {
   return [order[0], ...near];
 }
 
-export function takeJob(f: Franchise, teamId: string, teams: Team[]): Franchise {
-  if (!jobOffers(f, teams).includes(teamId)) return f;
+export function takeJob(f: Franchise, teamId: string, all: Team[]): Franchise {
+  if (!jobOffers(f, all).includes(teamId)) return f;
+  const teams = worldTeams(all, f.world);
   const year = f.season.year;
   const ended = f.job.stints.map((s, i, all): JobStint => (i === all.length - 1 ? { ...s, to: year } : s));
   const moved: Franchise = { ...clearUndo(f), teamId, plan: defaultPlan(), tradeBlock: [], tradeOffers: [], talks: {}, draft: { ...f.draft, assigned: [] } };
