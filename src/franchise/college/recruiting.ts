@@ -169,7 +169,7 @@ function pickWants(rng: Rng): RecruitNeed[] {
 export const recruitNilAsk = (stars: number, division: CollegeDivision) => Math.round(NIL_BY_STARS[stars] * NIL_DIVISION[division]);
 
 /** The class of `classYear`, with AI programs (the user's included) already some weeks into recruiting it. */
-export function newClass(f: Franchise, teams: Team[], classYear: number, headStartWeeks: number): Franchise {
+export function newClass(f: Franchise, teams: Team[], classYear: number, headStartWeeks: number, includeUser = true): Franchise {
   const c = college(f);
   const rng = new Rng(`${f.seed}:class:${classYear}`);
   const base = teams.reduce((s, t) => s + teamTalentTarget(t), 0) / teams.length - RECRUIT_GAP;
@@ -213,7 +213,7 @@ export function newClass(f: Franchise, teams: Team[], classYear: number, headSta
     teams,
   );
   for (let w = 0; w < headStartWeeks; w++) {
-    next = aiRecruiting(next, teams, true);
+    next = aiRecruiting(next, teams, includeUser);
     next = refillPoints(resolveWeek(next, new Rng(`${f.seed}:class:${classYear}:head:${w}`)), teams);
   }
   return next;
@@ -249,10 +249,12 @@ function apply(f: Franchise, teamId: string, r: Recruit, action: RecruitAction, 
     return { recruit: { ...r, offers: { ...r.offers, [teamId]: amount } }, cost, nil: amount };
   }
   if (action === "pullOffer") {
-    if (r.committed === teamId) return { error: "He's committed to you." };
     const offers = { ...r.offers };
     delete offers[teamId];
-    return { recruit: { ...r, offers }, cost, nil: 0 };
+    // pulling the offer of a recruit who hasn't signed ends his commitment too
+    const recruit = { ...r, offers };
+    if (r.committed === teamId) delete recruit.committed;
+    return { recruit, cost, nil: 0 };
   }
   // scouting
   const p = r.player;

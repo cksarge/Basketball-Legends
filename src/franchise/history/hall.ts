@@ -1,7 +1,10 @@
 // The Hall of Fame: a career's numbers, honors and titles, judged at retirement.
+import type { LeagueId } from "@/engine/types";
 import type { Franchise, HallEntry, RetiredPlayer } from "../types";
 
-export const HALL_BAR = 75;
+/** Careers are shorter below the pros, so the bar is lower. */
+export const HALL_BARS: Record<LeagueId, number> = { pro: 75, college: 30, hs: 25 };
+export const HALL_BAR = HALL_BARS.pro;
 const POINTS = 400;
 const REBOUNDS_ASSISTS = 800;
 const PER_AWARD = 3;
@@ -14,7 +17,7 @@ export function hallScore(r: RetiredPlayer): number {
 
 export function induct(f: Franchise, r: RetiredPlayer): Franchise {
   const score = hallScore(r);
-  if (!r.career || score < HALL_BAR) return f;
+  if (!r.career || score < HALL_BARS[f.league]) return f;
   const entry: HallEntry = {
     id: r.id,
     name: r.name,

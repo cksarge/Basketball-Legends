@@ -233,7 +233,8 @@ export interface PlayerFile {
   /** The last team he played for. */
   lastTeamId?: string;
   /** College seasons played, and whether the one redshirt year is used. */
-  eligibility?: { used: number; redshirted: boolean };
+  /** `year` is the season he sat out. */
+  eligibility?: { used: number; redshirted: boolean; year?: number };
   /** On the roster without a scholarship. */
   walkOn?: boolean;
   /** A recruit's rating, 2 to 5. */

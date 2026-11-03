@@ -8,7 +8,9 @@ import { advanceOffseason, canAdvance } from "./core/offseason";
 import { rightsLimit } from "./pro/cap";
 import { expiring, extendContract } from "./pro/contracts";
 import { boardScore, currentPick, simDraftToEnd } from "./pro/draft";
-import { setRoster, staffHandles } from "./pro/freeAgency";
+import { staffHandles } from "./pro/freeAgency";
+import { overCommitted, pitch, trimCommitments } from "./college/eligibility";
+import { leagueModule } from "./leagues";
 import { askingPrice } from "./pro/market";
 import { ticketBase } from "./pro/rules";
 import { MAX_ASSIGNED } from "./pro/scouting";
@@ -82,6 +84,17 @@ function autoContracts(f: Franchise): Franchise {
   return next;
 }
 
+/** College: the class fits next season's spots, and every declared player hears a pitch. */
+function autoCollege(f: Franchise): Franchise {
+  const step = f.offseason?.step;
+  let next = f;
+  if (f.settings.auto.roster && (step === "declarations" || step === "portal" || step === "signing") && overCommitted(next, next.teamId) > 0)
+    next = trimCommitments(next, next.teamId);
+  if (f.settings.auto.recruiting && step === "declarations")
+    for (const d of next.college!.declared) if (next.rosters[next.teamId].includes(d.id)) next = pitch(next, d.id);
+  return next;
+}
+
 /** Runs whatever's switched on for this moment. Returns the same franchise if there was nothing to do. */
 export function autoStep(f: Franchise): Franchise {
   const { auto } = f.settings;
@@ -92,7 +105,8 @@ export function autoStep(f: Franchise): Franchise {
   const step = next.offseason?.step;
   if (auto.draft && step === "draft" && currentPick(next)) next = simDraftToEnd(next);
   if (auto.contracts && step === "contracts") next = autoContracts(next);
-  if (auto.roster && step === "camp") next = setRoster(next, next.teamId);
+  if (auto.roster && step === "camp") next = leagueModule(next.league).fixRoster(next);
+  if (next.college) next = autoCollege(next);
   return next;
 }
 

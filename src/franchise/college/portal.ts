@@ -53,7 +53,7 @@ export function portalChance(f: Franchise, p: Player): number {
 function aiRetention(f: Franchise, teams: Team[]): Franchise {
   let next = f;
   for (const t of teams) {
-    if (t.id === f.teamId) continue;
+    if (t.id === f.teamId && !f.settings.auto.recruiting) continue;
     const keep = f.rosters[t.id].filter((id) => returning(f, id)).sort((a, b) => playerOvr(f.players[b]) - playerOvr(f.players[a]) || a.localeCompare(b));
     for (const id of keep) {
       const ask = nilAsk(f.players[id], f.college!.division);

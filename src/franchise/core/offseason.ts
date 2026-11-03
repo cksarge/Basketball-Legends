@@ -11,6 +11,7 @@ import { leagueModule } from "../leagues";
 import { applyPending } from "../settings";
 import type { Franchise, RetiredPlayer, SeasonSummary } from "../types";
 import { clearUndo, prunePlan } from "./moves";
+import { outsideSchedule, outsideTeams, worldTeams } from "../world";
 
 /** The most unsigned players the league keeps around. The rest leave the game. */
 const FREE_AGENT_POOL = 100;
@@ -20,12 +21,14 @@ export function canAdvance(f: Franchise): { ok: true } | { ok: false; reason: st
   return leagueModule(f.league).canAdvance(f);
 }
 
-export function advanceOffseason(start: Franchise, teams: Team[]): Franchise {
+/** `all` is every team in the league. */
+export function advanceOffseason(start: Franchise, all: Team[]): Franchise {
   const f = autoStep(start);
   if (!f.offseason || !canAdvance(f).ok) return start;
   const m = leagueModule(f.league);
+  const teams = worldTeams(all, f.world);
   const step = m.offseasonSteps[m.offseasonSteps.indexOf(f.offseason.step) + 1];
-  if (!step) return startNewSeason(f, teams);
+  if (!step) return startNewSeason(f, all);
   const date = m.offseasonDate(step, f.season.year);
   const moved: Franchise = { ...f, date: date && date > f.date ? date : f.date, offseason: { ...f.offseason, step } };
   return autoStep(prunePlan(clearUndo(m.daily(m.enterStep(moved, step, teams), teams, false).franchise)));
@@ -71,8 +74,9 @@ function leaveLeague(f: Franchise, year: number) {
   return { players, retired: [...f.retired, ...retired], freeAgents: pool.slice(0, FREE_AGENT_POOL) };
 }
 
-export function startNewSeason(old: Franchise, teams: Team[]): Franchise {
+export function startNewSeason(old: Franchise, all: Team[]): Franchise {
   const f = applyPending(old);
+  const teams = worldTeams(all, f.world);
   const year = f.season.year + 1;
   const m = leagueModule(f.league);
   const date = m.calendar(year).opening;
@@ -103,6 +107,7 @@ export function startNewSeason(old: Franchise, teams: Team[]): Franchise {
       games: m.schedule(teams, year, f.seed, f.settings.league, `${f.seed}:${year}`),
       series: [],
       brackets: [],
+      ...(f.world.division ? { outside: { games: outsideSchedule(outsideTeams(all, f.world), f.world, year, f.seed, f.settings.league), brackets: [] } } : {}),
       stats: {},
       playoffStats: {},
       awards: [],

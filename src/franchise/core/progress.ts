@@ -1,7 +1,7 @@
 // The whole league's summer: everyone turns a year older, the young grow, the old fade, and some retire.
 import { overall, playerOvr } from "@/engine/player";
 import { Rng, clamp } from "@/engine/rng";
-import type { Player, RatingKey, Ratings } from "@/engine/types";
+import type { LeagueId, Player, RatingKey, Ratings } from "@/engine/types";
 import { budgetEffect } from "../club/finance";
 import { staffRating } from "../coaching/staff";
 import { PROGRESSION_SPEED } from "../settings";
@@ -19,8 +19,10 @@ const UNSIGNED_RETIRE = 2.5;
 /** Room to potential at which a player grows at the full rate for his age. */
 const FULL_ROOM = 6;
 
-/** Average overall change for a player reaching this age. */
-function ageChange(age: number) {
+/** Average overall change for a player reaching this age. Teenagers in high school and college grow fastest. */
+function ageChange(age: number, league: LeagueId) {
+  if (league === "hs") return age <= 16 ? 4.5 : 3.8;
+  if (league === "college" && age <= 23) return age <= 20 ? 3 : 2.4;
   if (age <= 21) return 1.9;
   if (age <= 24) return 1;
   if (age <= 27) return 0.3;
@@ -52,10 +54,10 @@ function toOverall(p: Player, target: number): Ratings {
   return best;
 }
 
-export function progressPlayer(p: Player, rng: Rng, bonus = 0, speed = 1): Player {
+export function progressPlayer(p: Player, rng: Rng, bonus = 0, speed = 1, league: LeagueId = "pro"): Player {
   const age = p.age + 1;
   const start = playerOvr(p);
-  const base = ageChange(age);
+  const base = ageChange(age, league);
   const mean = base > 0 ? base * Math.min(2.6, Math.max(0, p.potential - start) / FULL_ROOM) : base;
   const effort = (p.traits.workEthic - 0.5) * 1.2 + (age <= LAST_GROWING_AGE ? bonus : bonus * 0.3);
   const change = (mean + effort + rng.normal(0, 2.2 - p.traits.consistency)) * speed;
