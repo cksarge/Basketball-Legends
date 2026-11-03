@@ -7,6 +7,7 @@ import type { IsoDate, ScheduledGame } from "@/career/types";
 import { generateRoster, teamTalentTarget } from "@/engine/player";
 import { Rng } from "@/engine/rng";
 import type { CollegeDivision, Player, Team } from "@/engine/types";
+import { advanceDivision } from "./college/brackets";
 import { seedNumber } from "./seed";
 import type { Franchise, LeagueSettings, WorldRef } from "./types";
 
@@ -49,20 +50,49 @@ export function outsideRoster(t: Team, year: number, seed: string): Player[] {
   return generateRoster(t, seedNumber(`${seed}:${t.id}:${year}`)).map((p, i) => ({ ...p, id: `${t.id}-o${year}-${i}` }));
 }
 
-/** Decides every outside game up to and including the date. */
+/** Decides every outside game up to and including the date, and runs each division's tournaments as far as they go. */
 export function simOutsideDay(f: Franchise, outside: Team[], date: IsoDate): Franchise {
   const season = f.season.outside;
-  if (!season || !season.games.some((g) => !g.result && g.date <= date)) return f;
+  if (!season) return f;
   const byId = new Map(outside.map((t) => [t.id, t]));
   const strength = (id: string) => {
     const t = byId.get(id);
     if (!t) throw new Error(`Outside team ${id} wasn't passed in.`);
     return outsideStrength(t, f.season.year, f.seed);
   };
-  const games = season.games.map((g) => {
-    if (g.result || g.date > date) return g;
-    const r = simScore(strength(g.homeId), strength(g.awayId), new Rng(`${f.seed}:${g.id}`), g.neutral);
-    return { ...g, result: { ...r, home: r.home + SCORE_LIFT, away: r.away + SCORE_LIFT } };
-  });
-  return { ...f, season: { ...f.season, outside: { ...season, games } } };
+  let games = season.games;
+  let brackets = season.brackets;
+  let changed = false;
+  for (let guard = 0; guard < 40; guard++) {
+    let moved = false;
+    if (games.some((g) => !g.result && g.date <= date)) {
+      games = games.map((g) => {
+        if (g.result || g.date > date) return g;
+        const r = simScore(strength(g.homeId), strength(g.awayId), new Rng(`${f.seed}:${g.id}`), g.neutral);
+        return { ...g, result: { ...r, home: r.home + SCORE_LIFT, away: r.away + SCORE_LIFT } };
+      });
+      moved = true;
+    }
+    for (const division of DIVISIONS) {
+      if (division === f.world.division) continue;
+      const teams = outside.filter((t) => t.tier === division);
+      if (teams.length < 2) continue;
+      const next = advanceDivision({
+        year: f.season.year,
+        teams,
+        games,
+        brackets,
+        format: f.settings.league.playoffFormat,
+        names: f.conferences,
+        tag: division,
+      });
+      if (!next.changed) continue;
+      games = next.games;
+      brackets = next.brackets;
+      moved = true;
+    }
+    if (!moved) break;
+    changed = true;
+  }
+  return changed ? { ...f, season: { ...f.season, outside: { games, brackets } } } : f;
 }

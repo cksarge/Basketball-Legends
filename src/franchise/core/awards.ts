@@ -49,7 +49,8 @@ export function leaderRow(f: Franchise, teams: Team[], id: string) {
 const impact = (l: SeasonLine) => (l.pts + reb(l) * 0.7 + l.ast * 0.9 + (l.stl + l.blk) * 1.2) / l.gp;
 const defense = (l: SeasonLine) => ((l.stl + l.blk) * 1.5 + reb(l) * 0.3) / l.gp;
 
-export function seasonAwards(f: Franchise, teams: Team[]): Award[] {
+/** Everyone who played enough, ranked by value, plus the best defender. Winning counts toward value. */
+function awardPool(f: Franchise, teams: Team[]) {
   const need = gamesNeeded(f);
   const table = standings(
     f.season.games.filter((g) => g.kind === "region"),
@@ -65,17 +66,27 @@ export function seasonAwards(f: Franchise, teams: Team[]): Award[] {
     .map(([id, l]) => ({ id, l, teamId: f.players[id].teamId! }));
   // winning counts: a big year on a bad team loses to one on a contender
   const value = [...eligible].sort((a, b) => impact(b.l) * (0.8 + winPct(b.teamId) * 0.4) - impact(a.l) * (0.8 + winPct(a.teamId) * 0.4));
-  const award = (id: string, label: string, x?: { id: string; teamId: string }): Award[] => (x ? [{ id, label, playerId: x.id, teamId: x.teamId }] : []);
-  const teamsOf = (n: number, label: string) => value.slice((n - 1) * 5, n * 5).flatMap((x) => award(`allLeague${n}`, label, x));
-  const bench = value.filter((x) => x.l.gs < x.l.gp / 2);
   const stopper = [...eligible].sort((a, b) => defense(b.l) - defense(a.l))[0];
+  return { value, stopper };
+}
+
+const award = (id: string, label: string, x?: { id: string; teamId: string }): Award[] => (x ? [{ id, label, playerId: x.id, teamId: x.teamId }] : []);
+
+/** The champion's best player in the postseason. */
+function postseasonStar(f: Franchise) {
   const champion = f.season.championId;
-  const finals = champion
+  return champion
     ? f.rosters[champion]
         .filter((id) => f.season.playoffStats[id])
         .map((id) => ({ id, teamId: champion, score: gameScore(f.season.playoffStats[id]) / f.season.playoffStats[id].gp }))
         .sort((a, b) => b.score - a.score)[0]
     : undefined;
+}
+
+export function seasonAwards(f: Franchise, teams: Team[]): Award[] {
+  const { value, stopper } = awardPool(f, teams);
+  const teamsOf = (n: number, label: string) => value.slice((n - 1) * 5, n * 5).flatMap((x) => award(`allLeague${n}`, label, x));
+  const bench = value.filter((x) => x.l.gs < x.l.gp / 2);
   return [
     ...award("mvp", "Most Valuable Player", value[0]),
     ...award("dpoy", "Defensive Player of the Year", stopper),
@@ -83,6 +94,31 @@ export function seasonAwards(f: Franchise, teams: Team[]): Award[] {
     ...teamsOf(1, "All-League First Team"),
     ...teamsOf(2, "All-League Second Team"),
     ...teamsOf(3, "All-League Third Team"),
-    ...award("finalsMvp", "Finals MVP", finals),
+    ...award("finalsMvp", "Finals MVP", postseasonStar(f)),
+  ];
+}
+
+/** National and conference honors. */
+export function collegeAwards(f: Franchise, teams: Team[]): Award[] {
+  const { value, stopper } = awardPool(f, teams);
+  const conferenceOf = new Map(teams.map((t) => [t.id, t.conferenceId]));
+  const conferences = [...new Set(teams.map((t) => t.conferenceId))].sort();
+  return [
+    ...award("poy", "Player of the Year", value[0]),
+    ...award("dpoy", "Defensive Player of the Year", stopper),
+    ...award(
+      "froy",
+      "Freshman of the Year",
+      value.find((x) => f.players[x.id].classYear === "FR"),
+    ),
+    ...value.slice(0, 5).flatMap((x) => award("allAmerican1", "All-American First Team", x)),
+    ...conferences.flatMap((c) =>
+      award(
+        `confPoy-${c}`,
+        `${f.conferences?.[c]?.short ?? "Conference"} Player of the Year`,
+        value.find((x) => conferenceOf.get(x.teamId) === c),
+      ),
+    ),
+    ...award("mop", "Most Outstanding Player", postseasonStar(f)),
   ];
 }

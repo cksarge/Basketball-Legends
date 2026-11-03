@@ -43,14 +43,14 @@ const fieldSize = (tier: string) => (tier === "D1" ? 68 : 64);
  * Selection Sunday: conference tournament winners get in automatically, the best remaining teams fill the field,
  * and Division I's last eight play opening-round games. The next 32 go to the invitational.
  */
-export function selectFields(teams: Team[], games: ScheduledGame[], conference: Bracket[]): Bracket[] {
+export function selectFields(teams: Team[], games: ScheduledGame[], conference: Bracket[], fieldLimit = fieldSize(teams[0].tier!)): Bracket[] {
   const tier = teams[0].tier!;
   const label = tier === "D1" ? "National Tournament" : `Division ${tier === "D2" ? "II" : "III"} National Tournament`;
   const order = ranked(
     games.filter((g) => g.kind !== "playoff"),
     teams.map((t) => t.id),
   );
-  const size = Math.min(fieldSize(tier), 2 ** Math.floor(Math.log2(teams.length)) + (tier === "D1" ? 4 : 0));
+  const size = Math.min(fieldLimit, 2 ** Math.floor(Math.log2(teams.length)) + (fieldLimit === 68 ? 4 : 0));
   const auto = new Set(conference.map((b) => b.champion!));
   const field = new Set(auto);
   for (const id of order) {
@@ -81,10 +81,12 @@ function pairUp(slots: string[], seeds: string[]): [string, string][] {
 export function advanceCollegeBracket(b: Bracket, byId: Map<string, ScheduledGame>, year: number): ScheduledGame[] {
   if (b.champion) return [];
   const cal = collegeCalendar(year);
-  const national = b.id === NATIONAL_ID;
+  // Franchise tags the brackets of other divisions, as in "national:D2"
+  const kind = b.id.split(":")[0];
+  const national = kind === NATIONAL_ID;
   const make = (pairs: [string, string][], round: string): ScheduledGame[] => {
     const totalRounds = b.playIn ? 7 : Math.ceil(Math.log2(b.seeds.length));
-    const dates = national ? cal.national : b.id === INVITATIONAL_ID ? cal.invitational : cal.conferenceTournament;
+    const dates = national ? cal.national : kind === INVITATIONAL_ID ? cal.invitational : cal.conferenceTournament;
     // brackets without an opening round line up with the last dates on their calendar
     const date = dates[dates.length - totalRounds + b.rounds.length];
     const games = pairs.map(([h, a], i) => ({
@@ -100,7 +102,7 @@ export function advanceCollegeBracket(b: Bracket, byId: Map<string, ScheduledGam
     b.rounds.push(games.map((g) => g.id));
     return games;
   };
-  const roundName = national ? nationalRound : b.id === INVITATIONAL_ID ? invitationalRound : conferenceRound;
+  const roundName = national ? nationalRound : kind === INVITATIONAL_ID ? invitationalRound : conferenceRound;
   if (b.rounds.length === 0) {
     if (b.playIn)
       return make(

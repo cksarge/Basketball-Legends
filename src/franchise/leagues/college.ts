@@ -2,6 +2,9 @@
 // live in src/franchise/college/.
 import { collegeCalendar } from "@/career/calendar";
 import { generateCollegeSchedule } from "@/career/college/schedule";
+import type { Team } from "@/engine/types";
+import { advanceDivision } from "../college/brackets";
+import { collegeAwards } from "../core/awards";
 import type { Franchise } from "../types";
 import type { LeagueModule } from "./index";
 
@@ -13,6 +16,26 @@ function rosterProblem(f: Franchise): string | null {
   return n >= COLLEGE_ROSTER.min && n <= COLLEGE_ROSTER.max
     ? null
     : `You have ${n} players, and need ${COLLEGE_ROSTER.min} to ${COLLEGE_ROSTER.max} before you can play or sim.`;
+}
+
+/** Tournaments move along as results come in. The national champion ends the season. */
+function postseason(f: Franchise, teams: Team[]): Franchise {
+  if (f.phase === "offseason") return f;
+  const next = advanceDivision({
+    year: f.season.year,
+    teams,
+    games: f.season.games,
+    brackets: f.season.brackets,
+    format: f.settings.league.playoffFormat,
+    names: f.conferences,
+  });
+  if (!next.changed) return f;
+  const champion = next.brackets.find((b) => b.id === "national")?.champion;
+  return {
+    ...f,
+    phase: champion ? "offseason" : "playoffs",
+    season: { ...f.season, games: next.games, brackets: next.brackets, ...(champion ? { championId: champion } : {}) },
+  };
 }
 
 const same = (f: Franchise) => f;
@@ -33,7 +56,7 @@ export const collegeLeague: LeagueModule = {
   systems: { cap: false, trades: false, freeAgency: false, draft: false, finances: false, recruiting: true, squads: false },
   // conference play takes up to 20 games and leaves at least 6 for the non-conference schedule
   schedule: (teams, year, seed, settings) => generateCollegeSchedule(teams, year, seed, settings.gamesPerSeason, Math.min(20, settings.gamesPerSeason - 6)),
-  postseason: same,
+  postseason,
   offseasonSteps: ["review"],
   offseasonDate: () => null,
   enterStep: same,
@@ -46,7 +69,7 @@ export const collegeLeague: LeagueModule = {
   newSeason: same,
   gates: same,
   closeSeason: same,
-  awards: () => [],
+  awards: collegeAwards,
   goals: () => [],
   settingsOptions: { games: [30, 26, 22], fields: ["conferenceTournaments", "nationalField"] },
 };
