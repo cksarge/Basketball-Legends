@@ -54,7 +54,7 @@ export function releasePlayer(f: Franchise, id: string): Franchise {
   return {
     ...f,
     rosters,
-    players: { ...f.players, [id]: { ...p, teamId: null, file: { ...p.file!, lastTeamId: teamId } } },
+    players: { ...f.players, [id]: { ...p, teamId: null, file: { ...p.file!, lastTeamId: teamId, untouchable: false } } },
     books: addDead(f, teamId, { playerId: id, name: fullName(p), salary: c.salary, years: guaranteedYears(c) }),
     waivers: [...f.waivers, { playerId: id, fromTeamId: teamId, until: addDays(f.date, WAIVER_DAYS) }],
   };
@@ -64,7 +64,14 @@ function toMarket(f: Franchise, p: Player) {
   const out: Player = {
     ...p,
     teamId: null,
-    file: { ...p.file!, teamSeasons: 0, lastSalary: p.contract?.salary, rightsTeamId: undefined, lastTeamId: p.teamId ?? p.file?.lastTeamId },
+    file: {
+      ...p.file!,
+      teamSeasons: 0,
+      lastSalary: p.contract?.salary,
+      rightsTeamId: undefined,
+      lastTeamId: p.teamId ?? p.file?.lastTeamId,
+      untouchable: false,
+    },
   };
   delete out.contract;
   return { players: { ...f.players, [p.id]: out }, freeAgents: [...f.freeAgents, p.id] };
@@ -148,7 +155,7 @@ export function joinTeam(f: Franchise, teamId: string, id: string, contract: Con
     teamId,
     contract,
     jersey: freeJersey(f, teamId, p.jersey),
-    file: { ...p.file!, rightsTeamId: undefined, teamSeasons: p.file?.rightsTeamId === teamId ? p.file.teamSeasons : 0 },
+    file: { ...p.file!, untouchable: false, rightsTeamId: undefined, teamSeasons: p.file?.rightsTeamId === teamId ? p.file.teamSeasons : 0 },
   };
 }
 

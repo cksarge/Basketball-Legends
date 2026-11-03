@@ -15,6 +15,7 @@ const PRICE_ELASTICITY = 1.6;
 const TV_PER_GAME = 2_500_000;
 const SPONSORS_PER_GAME = 1_200_000;
 const PLAYOFF_TICKETS = 1.5;
+const FULL_SEASON = 82;
 const MIN_TICKET = 10;
 const MAX_TICKET = 1000;
 const HYPE_FROM_WINS = 40;
@@ -33,7 +34,9 @@ export function attendance(f: Franchise, teamId: string, capacity: number): numb
 
 export function homeGameRevenue(f: Franchise, team: Team, playoff = false): number {
   const tickets = attendance(f, team.id, team.arena.capacity) * f.finance[team.id].ticketPrice * (playoff ? PLAYOFF_TICKETS : 1);
-  return Math.round(tickets + (TV_PER_GAME + team.prestige * SPONSORS_PER_GAME) * capScale(f));
+  // deals and season tickets are sold for a season, so a shorter one earns as much per year
+  const season = playoff ? 1 : FULL_SEASON / f.settings.league.gamesPerSeason;
+  return Math.round((tickets + (TV_PER_GAME + team.prestige * SPONSORS_PER_GAME) * capScale(f)) * season);
 }
 
 export function recordHomeGame(f: Franchise, team: Team, playoff = false): Franchise {

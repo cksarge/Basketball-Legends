@@ -4,7 +4,7 @@ import Dexie, { type Table } from "dexie";
 import type { Player, Team } from "@/engine/types";
 import { defaultPlan } from "./coaching/plan";
 import { archiveSeason } from "./history/career";
-import { fillGmState } from "./pro/gmState";
+import { backfillCareers, fillGmState } from "./pro/gmState";
 import { FRANCHISE_VERSION, type Franchise, type FranchiseSummary, type LeagueSeason } from "./types";
 
 type SaveData = Omit<Franchise, "players" | "season">;
@@ -98,7 +98,14 @@ export async function loadFranchise(id: string): Promise<Franchise | null> {
     const players = await d.players.where("saveId").equals(id).toArray();
     const seasons = await d.seasons.where("saveId").equals(id).toArray();
     const season = seasons.reduce((a, b) => (b.year > a.year ? b : a)).data;
-    return migrateFranchise({ ...row.data, players: Object.fromEntries(players.map((p) => [p.id, p.data])), season });
+    const f = migrateFranchise({ ...row.data, players: Object.fromEntries(players.map((p) => [p.id, p.data])), season });
+    // version 4 started keeping career totals, so older saves build them from their past seasons
+    return row.data.job
+      ? f
+      : backfillCareers(
+          f,
+          seasons.map((s) => s.data),
+        );
   });
 }
 
@@ -184,6 +191,7 @@ export async function importFranchise(text: string, team: (f: Franchise) => Team
   const file = parsed as { kind?: string; franchise?: Franchise; past?: LeagueSeason[] };
   if (file?.kind !== FRANCHISE_EXPORT_KIND || !file.franchise) throw new Error("That file isn't a franchise save.");
   let f = migrateFranchise(file.franchise);
+  if (!file.franchise.job && Array.isArray(file.past)) f = backfillCareers(f, file.past);
   if (!team(f)) throw new Error("That file isn't a franchise save.");
   if (await getDb().saves.get(f.id)) f = { ...f, id: `${f.id}-import-${Date.now().toString(36)}` };
   return createFranchiseSave(f, team(f), Array.isArray(file.past) ? file.past : []);

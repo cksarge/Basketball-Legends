@@ -127,7 +127,7 @@ export function applyTrade(f: Franchise, t: Trade): Franchise {
     const dev = next.devRosters[a.from].includes(a.id);
     next = {
       ...next,
-      players: { ...next.players, [a.id]: { ...moved, file: { ...moved.file!, teamSeasons: 0 } } },
+      players: { ...next.players, [a.id]: { ...moved, file: { ...moved.file!, teamSeasons: 0, untouchable: false } } },
       rosters: dev ? next.rosters : { ...next.rosters, [a.from]: next.rosters[a.from].filter((x) => x !== a.id), [a.to]: [...next.rosters[a.to], a.id] },
       devRosters: dev
         ? { ...next.devRosters, [a.from]: next.devRosters[a.from].filter((x) => x !== a.id), [a.to]: [...next.devRosters[a.to], a.id] }

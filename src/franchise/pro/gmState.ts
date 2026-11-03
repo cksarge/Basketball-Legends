@@ -4,7 +4,8 @@ import { Rng, clamp } from "@/engine/rng";
 import type { Player, Team } from "@/engine/types";
 import { leagueTactics } from "../coaching/aiPlan";
 import { DEFAULT_AUTO, DEFAULT_LEAGUE } from "../settings";
-import type { Franchise, PlayerFile, TeamBooks, TeamFinance } from "../types";
+import { addSeason } from "../history/career";
+import type { Franchise, LeagueSeason, PlayerFile, TeamBooks, TeamFinance } from "../types";
 import { newDraftState } from "./draftClass";
 import { PICK_YEARS, futurePicks } from "./picks";
 import { START_CAP, capRules, ticketBase } from "./rules";
@@ -55,6 +56,39 @@ function defaultFinance(cap: Franchise["cap"], prestige?: number): TeamFinance {
   };
 }
 
+/** A save from before jobs existed: its record comes from the season summaries, plus a season finished but not yet summarized. */
+function startingJob(f: BareFranchise): Franchise["job"] {
+  const history = f.history ?? [];
+  const total = history.reduce((t, h) => ({ w: t.w + h.record.w, l: t.l + h.record.l, titles: t.titles + (h.championId === f.teamId ? 1 : 0) }), {
+    w: 0,
+    l: 0,
+    titles: 0,
+  });
+  if (f.phase === "offseason") {
+    for (const g of f.season.games) {
+      if (!g.result || g.kind !== "region" || (g.homeId !== f.teamId && g.awayId !== f.teamId)) continue;
+      if (g.result.home > g.result.away === (g.homeId === f.teamId)) total.w++;
+      else total.l++;
+    }
+    if (f.season.championId === f.teamId) total.titles++;
+  }
+  const from = history[0]?.year ?? f.season.year;
+  return { security: START_SECURITY, goals: [], seasons: 0, reviews: [], stints: [{ teamId: f.teamId, league: f.league, from, ...total }] };
+}
+
+/** Career totals for a save from before they were kept, from its finished seasons. */
+export function backfillCareers(f: Franchise, past: LeagueSeason[]): Franchise {
+  const done = past.filter((s) => s.year < f.season.year).sort((a, b) => a.year - b.year);
+  if (!done.length) return f;
+  const players = { ...f.players };
+  for (const s of done)
+    for (const [id, line] of Object.entries(s.stats)) {
+      const p = players[id];
+      if (p) players[id] = addSeason(p, line, { ...f, season: s });
+    }
+  return { ...f, players };
+}
+
 /** Saves don't hold team data, so prestige only reaches the books of a new franchise. */
 export function fillGmState(f: BareFranchise, teams?: Team[]): Franchise {
   const teamIds = Object.keys(f.rosters);
@@ -81,13 +115,7 @@ export function fillGmState(f: BareFranchise, teams?: Team[]): Franchise {
     tradeOffers: f.tradeOffers ?? [],
     tradeLog: f.tradeLog ?? [],
     finance: f.finance ?? Object.fromEntries(teamIds.map((id) => [id, defaultFinance(cap, teams?.find((t) => t.id === id)?.prestige)])),
-    job: f.job ?? {
-      security: START_SECURITY,
-      goals: [],
-      seasons: 0,
-      reviews: [],
-      stints: [{ teamId: f.teamId, league: f.league, from: year, w: 0, l: 0, titles: 0 }],
-    },
+    job: f.job ?? startingJob(f),
     news: f.news ?? [],
     hall: f.hall ?? [],
     records: f.records ?? [],

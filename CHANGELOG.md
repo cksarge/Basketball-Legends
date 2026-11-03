@@ -77,6 +77,7 @@ In testing at legends.carterscoding.com/beta/. These notes grow as Franchise mod
 
 - The matchup picker lists your planned starters. Simulated games ignore matchups under a zone, as the screen says.
 - Leaders shows a player's last team after he leaves one. A refused two-way deal, call-up or waiver claim now says why.
+- Shorter seasons earn a full season's money. Franchises from earlier betas keep their coaching record and players' career totals. Untouchable wears off when a player leaves your team.
 - Bid messages from every free agency round are kept. Trades can't take a team past three two-way players. Unseen rookies' values follow their rating range.
 
 ### League life
