@@ -96,7 +96,14 @@ export function DraftTab({ f, teams }: { f: Franchise; teams: Team[] }) {
             The draft is {formatDate(draftCalendar(draft.year).draft)}. Your scouts follow up to {MAX_ASSIGNED} prospects closely ({draft.assigned.length}{" "}
             chosen). Ranges narrow each week, and the truth stays uncertain until a player has played.
           </p>
-          <SortTable label="Draft class" rows={rows} columns={columns} rowKey={(p) => p.id} initial="ovr" />
+          <SortTable
+            label="Draft class"
+            rows={rows}
+            columns={columns}
+            rowKey={(p) => p.id}
+            initial="ovr"
+            filter={(p) => `${p.firstName} ${p.lastName} ${p.pos}`}
+          />
         </Panel>
       )}
     </div>

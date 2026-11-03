@@ -1,4 +1,7 @@
 "use client";
+import { DEFAULT_LEAGUE } from "@/franchise/settings";
+import type { LeagueSettings } from "@/franchise/types";
+import { LeagueFields } from "../hub/SettingsTab";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { LEAGUES, loadLeague, teamLabel, type LeagueData } from "@/data/leagues";
@@ -28,10 +31,17 @@ export function FranchiseCreator() {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [data, q]);
 
+  const [league, setLeague] = useState<LeagueSettings>(DEFAULT_LEAGUE);
   const start = async () => {
     if (!team || !data) return;
     setBusy(true);
-    const f = createFranchise({ league: "pro", team, teams: data.teams, seed: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}` });
+    const f = createFranchise({
+      league: "pro",
+      team,
+      teams: data.teams,
+      seed: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      settings: { league },
+    });
     try {
       await set(f);
       router.push(`/franchise/hub/?id=${encodeURIComponent(f.id)}`);
@@ -78,6 +88,12 @@ export function FranchiseCreator() {
           ))}
           {data && list.length === 0 && <li className="px-3 py-4 text-sm text-steel">No teams match. Try a shorter search.</li>}
         </ul>
+        <details className="mt-4">
+          <summary className="cursor-pointer font-semibold">League settings</summary>
+          <div className="mt-2">
+            <LeagueFields value={league} onChange={(patch) => setLeague((l) => ({ ...l, ...patch }))} />
+          </div>
+        </details>
         <div className="mt-4 flex justify-end">
           <Button onClick={start} disabled={!team || busy}>
             Start franchise

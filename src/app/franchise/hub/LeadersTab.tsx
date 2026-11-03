@@ -47,6 +47,7 @@ export function LeadersTab({ f, teams }: { f: Franchise; teams: Team[] }) {
             rowKey={(r) => r.id}
             initial="pts"
             highlight={(r) => f.players[r.id].teamId === f.teamId}
+            filter={(r) => `${leaderRow(f, teams, r.id).name} ${leaderRow(f, teams, r.id).team}`}
           />
         </div>
       )}

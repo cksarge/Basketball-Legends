@@ -19,6 +19,7 @@ export function SortTable<T>({
   initial,
   highlight,
   label,
+  filter,
 }: {
   rows: T[];
   columns: Column<T>[];
@@ -26,8 +27,11 @@ export function SortTable<T>({
   initial: string;
   highlight?: (row: T) => boolean;
   label: string;
+  /** The text a filter box matches against. With it, the table gets a filter box. */
+  filter?: (row: T) => string;
 }) {
   const [sort, setSort] = useState({ key: initial, asc: false });
+  const [query, setQuery] = useState("");
   const sorted = useMemo(() => {
     const col = columns.find((c) => c.key === sort.key) ?? columns[0];
     const dir = sort.asc ? 1 : -1;
@@ -37,9 +41,21 @@ export function SortTable<T>({
       return (x < y ? -1 : x > y ? 1 : 0) * dir;
     });
   }, [rows, columns, sort]);
+  const q = query.trim().toLowerCase();
+  const shown = filter && q ? sorted.filter((r) => filter(r).toLowerCase().includes(q)) : sorted;
   const onSort = (c: Column<T>) => setSort((s) => (s.key === c.key ? { key: c.key, asc: !s.asc } : { key: c.key, asc: !!c.text }));
   return (
     <div className="overflow-x-auto">
+      {filter && (
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Filter"
+          aria-label={`Filter ${label}`}
+          className="mb-2 w-full max-w-xs rounded-[var(--radius-chip)] bg-navy px-3 py-1.5 text-sm text-net ring-1 ring-line placeholder:text-steel"
+        />
+      )}
       <table className="w-full text-sm tabular-nums" aria-label={label}>
         <thead className="text-steel">
           <tr>
@@ -53,7 +69,7 @@ export function SortTable<T>({
           </tr>
         </thead>
         <tbody>
-          {sorted.map((r) => (
+          {shown.map((r) => (
             <tr key={rowKey(r)} className={`border-t border-line/60 ${highlight?.(r) ? "text-amber" : ""}`}>
               {columns.map((c) => (
                 <td key={c.key} className={`py-1.5 ${c.text ? "text-left" : "text-right"}`}>

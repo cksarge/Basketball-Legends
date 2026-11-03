@@ -22,6 +22,7 @@ import { OffseasonTab } from "./OffseasonTab";
 import { PlayoffsTab } from "./PlayoffsTab";
 import { RosterTab } from "./RosterTab";
 import { ScheduleTab } from "./ScheduleTab";
+import { SettingsTab } from "./SettingsTab";
 import { StandingsTab } from "./StandingsTab";
 import { TradesTab } from "./TradesTab";
 
@@ -39,6 +40,7 @@ const TABS = [
   "Standings",
   "Leaders",
   "Playoffs",
+  "Settings",
 ] as const;
 type Tab = (typeof TABS)[number];
 
@@ -161,6 +163,7 @@ export function FranchiseHub() {
       {tab === "Coaching" && <CoachingTab f={franchise} />}
       {tab === "Trades" && <TradesTab f={franchise} teams={teams} />}
       {tab === "Free agents" && <FreeAgentsTab f={franchise} />}
+      {tab === "Settings" && <SettingsTab f={franchise} />}
       {tab === "League" && <LeagueTab f={franchise} teams={teams} />}
       {tab === "Club" && <ClubTab f={franchise} team={team} />}
       {tab === "Draft" && <DraftTab f={franchise} teams={teams} />}

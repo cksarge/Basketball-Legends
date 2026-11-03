@@ -129,7 +129,7 @@ export function FreeAgentsTab({ f }: { f: Franchise }) {
         {rows.length === 0 ? (
           <p className="text-steel">Nobody&apos;s available.</p>
         ) : (
-          <SortTable label="Free agents" rows={rows} columns={columns} rowKey={(p) => p.id} initial="value" />
+          <SortTable label="Free agents" rows={rows} columns={columns} rowKey={(p) => p.id} initial="value" filter={(p) => `${p.firstName} ${p.lastName}`} />
         )}
       </Panel>
       {talk && <NegotiateDialog f={f} player={talk} kind={bidding ? "bid" : "sign"} onClose={() => setTalk(null)} />}

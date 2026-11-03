@@ -3,13 +3,14 @@ import { useState } from "react";
 import type { Team } from "@/engine/types";
 import type { Franchise } from "@/franchise/types";
 import { Segmented } from "@/ui/kit";
+import { ComparePanel } from "./ComparePanel";
 import { HallPanel } from "./HallPanel";
 import { HistoryPanel } from "./HistoryPanel";
 import { NewsPanel } from "./NewsPanel";
 import { PowerPanel } from "./PowerPanel";
 import { RecordsPanel } from "./RecordsPanel";
 
-const SECTIONS = ["News", "Power rankings", "History", "Records", "Hall of Fame"] as const;
+const SECTIONS = ["News", "Power rankings", "History", "Records", "Hall of Fame", "Compare"] as const;
 type Section = (typeof SECTIONS)[number];
 
 export function LeagueTab({ f, teams }: { f: Franchise; teams: Team[] }) {
@@ -22,6 +23,7 @@ export function LeagueTab({ f, teams }: { f: Franchise; teams: Team[] }) {
       {section === "History" && <HistoryPanel f={f} teams={teams} />}
       {section === "Records" && <RecordsPanel f={f} />}
       {section === "Hall of Fame" && <HallPanel f={f} teams={teams} />}
+      {section === "Compare" && <ComparePanel f={f} teams={teams} />}
     </div>
   );
 }

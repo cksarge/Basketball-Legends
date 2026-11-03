@@ -6,7 +6,9 @@ import { buyOut, buyoutAsk, callUp, releasePlayer } from "@/franchise/pro/roster
 import { shownOvr } from "@/franchise/pro/scouting";
 import { toggleBlock } from "@/franchise/pro/tradeAi";
 import type { Franchise } from "@/franchise/types";
+import { setUntouchable } from "@/franchise/auto";
 import { useFranchiseSim } from "@/state/franchiseSim";
+import { useFranchise } from "@/state/franchiseStore";
 import { Button, Panel } from "@/ui/kit";
 import { SortTable, type Column } from "@/ui/SortTable";
 import { useRosterMove } from "./actions";
@@ -30,6 +32,7 @@ const yearsLabel = (p: Player) => {
 
 export function RosterTab({ f }: { f: Franchise }) {
   const move = useRosterMove();
+  const update = useFranchise((s) => s.update);
   const running = useFranchiseSim((s) => s.running);
   const [talk, setTalk] = useState<Player | null>(null);
   const rows = f.rosters[f.teamId].map((id) => f.players[id]);
@@ -91,6 +94,9 @@ export function RosterTab({ f }: { f: Franchise }) {
             <Button variant="ghost" className={small} disabled={running} onClick={() => move(null, (x) => toggleBlock(x, p.id))}>
               {f.tradeBlock.includes(p.id) ? "Off block" : "Trade block"}
             </Button>
+            <Button variant="ghost" className={small} disabled={running} onClick={() => update((x) => setUntouchable(x, p.id, !p.file?.untouchable), [p.id])}>
+              {p.file?.untouchable ? "Untouchable ✓" : "Untouchable"}
+            </Button>
             <Button variant="ghost" className={small} disabled={running} onClick={() => move(`Released ${fullName(p)}`, (x) => releasePlayer(x, p.id))}>
               Release
             </Button>
@@ -104,7 +110,7 @@ export function RosterTab({ f }: { f: Franchise }) {
     <div className="flex flex-col gap-5">
       <CapPanel f={f} />
       <Panel title="Roster">
-        <SortTable label="Roster" rows={rows} columns={columns} rowKey={(p) => p.id} initial="ovr" />
+        <SortTable label="Roster" rows={rows} columns={columns} rowKey={(p) => p.id} initial="ovr" filter={(p) => `${p.firstName} ${p.lastName} ${p.pos}`} />
       </Panel>
       {dev.length > 0 && (
         <Panel title="Developmental players">

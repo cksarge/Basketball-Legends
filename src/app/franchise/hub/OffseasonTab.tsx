@@ -2,6 +2,7 @@
 import { fullName } from "@/engine/player";
 import type { Team } from "@/engine/types";
 import { teamLabel } from "@/data/leagues";
+import { simOffseason } from "@/franchise/auto";
 import { advanceOffseason, canAdvance } from "@/franchise/core/offseason";
 import { leagueModule } from "@/franchise/leagues";
 import type { Franchise, OffseasonStep } from "@/franchise/types";
@@ -113,6 +114,9 @@ export function OffseasonTab({ f, teams }: { f: Franchise; teams: Team[] }) {
         </Panel>
       )}
       <div className="flex flex-wrap items-center gap-3">
+        <Button variant="secondary" disabled={running || !!f.job.fired} onClick={() => update((x) => simOffseason(x, teams))}>
+          Sim the offseason
+        </Button>
         <Button disabled={running || !allowed.ok} onClick={() => update((x) => advanceOffseason(x, teams))}>
           {next ? `Continue to ${STEP_NAME[next]}` : `Start the ${f.season.year + 1} season`}
         </Button>

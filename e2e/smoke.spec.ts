@@ -383,6 +383,41 @@ test("the league remembers: news, rankings, history, records and the Hall", asyn
   expect(errors).toEqual([]);
 });
 
+test("change settings, turn on auto-manage and compare two players", async ({ page }) => {
+  test.setTimeout(240_000);
+  const errors = watchErrors(page);
+  await page.goto("franchise/new/");
+  await page.getByRole("button", { name: /Phoenix/ }).click();
+  await page.getByText("League settings").click();
+  await page.getByRole("combobox", { name: "Games per season" }).selectOption("41");
+  await page.getByRole("button", { name: "Start franchise" }).click();
+  await page.waitForURL(/franchise\/hub\/\?id=/);
+  await page.getByRole("tab", { name: "Settings" }).click();
+  await expect(page.getByRole("combobox", { name: "Games per season" })).toHaveValue("41");
+  await page.getByRole("combobox", { name: "Games per season" }).selectOption("58");
+  await expect(page.getByText("Starts next season").first()).toBeVisible();
+  for (const toggle of await page.getByRole("switch").all()) if ((await toggle.getAttribute("aria-checked")) === "false") await toggle.click();
+  await page.reload();
+  await page.getByRole("tab", { name: "Settings" }).click();
+  await expect(page.getByRole("combobox", { name: "Games per season" })).toHaveValue("58");
+  await page.getByRole("tab", { name: "Home" }).click();
+  await page.getByRole("button", { name: "Sim the season" }).click();
+  await expect(page.getByText(/won the championship/)).toBeVisible({ timeout: 180_000 });
+  await page.getByRole("button", { name: "Go to the offseason" }).click();
+  await page.getByRole("button", { name: "Sim the offseason" }).click();
+  await expect(page.getByRole("tab", { name: "Offseason" })).toHaveCount(0);
+  await page.getByRole("tab", { name: "Roster" }).click();
+  await page.getByLabel("Filter Roster").fill("zzzz");
+  await expect(page.getByRole("table", { name: "Roster" }).getByRole("row")).toHaveCount(1);
+  await page.getByLabel("Filter Roster").fill("");
+  await page.getByRole("tab", { name: "League" }).click();
+  await page.getByRole("radio", { name: "Compare" }).click();
+  await page.getByRole("combobox", { name: "First player" }).selectOption({ index: 1 });
+  await page.getByRole("combobox", { name: "Second player" }).selectOption({ index: 2 });
+  await expect(page.getByRole("table", { name: "Player comparison" }).getByText("Overall")).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test("a franchise game saves to a Franchise slot, resumes from the hub and records its result @gpu", async ({ page }) => {
   test.setTimeout(240_000);
   await lowGraphics(page);

@@ -96,6 +96,11 @@ export function autoStep(f: Franchise): Franchise {
   return next;
 }
 
+export const setUntouchable = (f: Franchise, id: string, on: boolean): Franchise => ({
+  ...f,
+  players: { ...f.players, [id]: { ...f.players[id], file: { ...f.players[id].file!, untouchable: on } } },
+});
+
 export const setAuto = (f: Franchise, key: AutoKey, on: boolean): Franchise =>
   autoStep({ ...f, settings: { ...f.settings, auto: { ...f.settings.auto, [key]: on } } });
 
