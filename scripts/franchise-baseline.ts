@@ -1,18 +1,24 @@
 /**
- * Measures what real engine pro games produce, so the franchise box-score simulator can be tuned against them.
- * Run with: npx tsx scripts/franchise-baseline.ts
- * Writes src/franchise/__tests__/engine-baseline.json.
+ * Measures what real engine games produce, so the franchise box-score simulator can be tuned against them.
+ * Run with: npx tsx scripts/franchise-baseline.ts [--league pro|college|hs]
+ * Writes src/franchise/__tests__/engine-baseline.json for pro, or engine-baseline-<league>.json.
  */
 import fs from "node:fs";
 import path from "node:path";
 import { runMatchSync } from "../src/career/hs/play";
+import college from "../src/data/generated/college.json";
+import hs from "../src/data/generated/hs.json";
 import pro from "../src/data/generated/pro.json";
 import { generateRoster } from "../src/engine/player";
-import type { Team } from "../src/engine/types";
+import { LEAGUE_RULES, type LeagueId, type Team } from "../src/engine/types";
 import type { StatLine } from "../src/game/sim/stats";
 
 const GAMES = 60;
-const teams = (pro as unknown as { teams: Team[] }).teams;
+const flag = process.argv.indexOf("--league");
+const league = (flag >= 0 ? process.argv[flag + 1] : "pro") as LeagueId;
+// college games are between Division I programs, and high school games between varsity teams
+const all = ({ pro, college, hs } as unknown as Record<LeagueId, { teams: Team[] }>)[league].teams;
+const teams = league === "college" ? all.filter((t) => t.tier === "D1") : league === "hs" ? all.filter((t) => t.levels?.includes("varsity") ?? true) : all;
 const KEYS = ["pts", "fga", "fgm", "tpa", "tpm", "fta", "ftm", "oreb", "dreb", "ast", "stl", "blk", "tov", "pf"] as const;
 
 const perTeam: Record<string, number[]> = Object.fromEntries(KEYS.map((k) => [k, []]));
@@ -23,8 +29,8 @@ for (let i = 0; i < GAMES; i++) {
   const home = teams[(i * 7) % teams.length];
   const away = teams[(i * 11 + 3) % teams.length === (i * 7) % teams.length ? (i * 11 + 4) % teams.length : (i * 11 + 3) % teams.length];
   const m = runMatchSync({
-    league: "pro",
-    quarterMinutes: 12,
+    league,
+    quarterMinutes: LEAGUE_RULES[league].quarterMinutes,
     seed: i + 1,
     home: { team: home, roster: generateRoster(home, i), controllers: [] },
     away: { team: away, roster: generateRoster(away, i + 100), controllers: [] },
@@ -51,5 +57,6 @@ const out = {
   topScorerPts: round(mean(topScorer)),
   homeWinRate: round(homeWins / GAMES),
 };
-fs.writeFileSync(path.join(__dirname, "..", "src", "franchise", "__tests__", "engine-baseline.json"), `${JSON.stringify(out, null, 2)}\n`);
+const file = league === "pro" ? "engine-baseline.json" : `engine-baseline-${league}.json`;
+fs.writeFileSync(path.join(__dirname, "..", "src", "franchise", "__tests__", file), `${JSON.stringify(out, null, 2)}\n`);
 console.log(JSON.stringify(out));

@@ -36,26 +36,86 @@ export interface BoxResult {
   injuries: { playerId: string; name: string; gamesOut: number }[];
 }
 
-/** Possessions a team uses in 48 minutes. */
-const POSSESSIONS_PER_48 = 105.5;
-const OVERTIME_MINUTES = 5;
-const TURNOVER = 0.155;
-const STEAL_SHARE = 0.45;
-const SHOOTING_FOUL = 0.118;
-const THREE_SHARE = 0.37;
-const THREE_MAKE = 0.212;
-const TWO_MAKE = 0.52;
-const FREE_THROW = 0.8;
-const ASSIST = 0.725;
-const OFFENSIVE_REBOUND = 0.286;
-const BLOCK = 0.22;
-/** Misses that end up out of bounds, so nobody gets the rebound. */
-const TEAM_REBOUND = 0.11;
-const LOOSE_FOUL = 0.05;
-const HOME_EDGE = 0.003;
-const DUNK_SHARE = 0.3;
-/** League-average ratings that the make rates above are centered on. */
-const AVG = { off: 75, def: 72, three: 74, ft: 80, reb: 70 };
+/** The parts of the game that change by league, tuned to that league's real engine games. */
+interface Style {
+  /** Possessions a team uses in 48 minutes. */
+  possessionsPer48: number;
+  overtimeMinutes: number;
+  turnover: number;
+  stealShare: number;
+  shootingFoul: number;
+  threeShare: number;
+  threeMake: number;
+  twoMake: number;
+  freeThrow: number;
+  assist: number;
+  offensiveRebound: number;
+  block: number;
+  /** Misses that end up out of bounds, so nobody gets the rebound. */
+  teamRebound: number;
+  looseFoul: number;
+  homeEdge: number;
+  dunkShare: number;
+  /** League-average ratings that the make rates are centered on. */
+  avg: { off: number; def: number; three: number; ft: number; reb: number };
+}
+const PRO_STYLE: Style = {
+  possessionsPer48: 105.5,
+  overtimeMinutes: 5,
+  turnover: 0.155,
+  stealShare: 0.45,
+  shootingFoul: 0.118,
+  threeShare: 0.37,
+  threeMake: 0.212,
+  twoMake: 0.52,
+  freeThrow: 0.8,
+  assist: 0.725,
+  offensiveRebound: 0.286,
+  block: 0.22,
+  teamRebound: 0.11,
+  looseFoul: 0.05,
+  homeEdge: 0.003,
+  dunkShare: 0.3,
+  avg: { off: 75, def: 72, three: 74, ft: 80, reb: 70 },
+};
+export const LEAGUE_STYLE: Record<LeagueId, Style> = {
+  pro: PRO_STYLE,
+  college: {
+    ...PRO_STYLE,
+    possessionsPer48: 91.5,
+    turnover: 0.158,
+    stealShare: 0.345,
+    shootingFoul: 0.13,
+    threeShare: 0.3,
+    threeMake: 0.17,
+    twoMake: 0.425,
+    freeThrow: 0.74,
+    assist: 0.65,
+    offensiveRebound: 0.228,
+    block: 0.165,
+    teamRebound: 0.06,
+    looseFoul: 0.085,
+    avg: { off: 64, def: 61, three: 64, ft: 68, reb: 59 },
+  },
+  hs: {
+    ...PRO_STYLE,
+    possessionsPer48: 91.5,
+    overtimeMinutes: 4,
+    turnover: 0.165,
+    stealShare: 0.305,
+    shootingFoul: 0.13,
+    threeShare: 0.19,
+    threeMake: 0.145,
+    twoMake: 0.39,
+    freeThrow: 0.655,
+    assist: 0.58,
+    offensiveRebound: 0.215,
+    block: 0.08,
+    teamRebound: 0.02,
+    looseFoul: 0.135,
+    avg: { off: 49, def: 46, three: 49, ft: 54, reb: 45 },
+  },
+};
 /** Make rate per rating point of the gap between shooter and defense. */
 const SHOOT_GAIN = 0.0105;
 const DEFENSE_GAIN = 0.021;
@@ -125,7 +185,7 @@ interface Team {
 
 const avg = (...n: number[]) => n.reduce((a, b) => a + b, 0) / n.length;
 
-function buildTeam(side: BoxSide, gameMinutes: number): Team {
+function buildTeam(side: BoxSide, gameMinutes: number, st: Style): Team {
   const scale = (gameMinutes * 5) / Object.values(side.rotation).reduce((a, b) => a + b, 0);
   const players = side.roster.filter((p) => side.rotation[p.id] > 0);
   const seconds = players.map((p) => Math.round(side.rotation[p.id] * scale * 60));
@@ -142,16 +202,16 @@ function buildTeam(side: BoxSide, gameMinutes: number): Team {
       p,
       guarded: 0,
       seconds: seconds[i],
-      usage: share * Math.exp((scoring - AVG.off) / USAGE_SCALE) * (p.pos === "C" || p.pos === "PF" ? style.bigs : 1),
-      threeShare: clamp(THREE_SHARE + style.three + (r.three - inside) * 0.008 + (lean - 0.5) * 0.3, 0.02, 0.85),
+      usage: share * Math.exp((scoring - st.avg.off) / USAGE_SCALE) * (p.pos === "C" || p.pos === "PF" ? style.bigs : 1),
+      threeShare: clamp(st.threeShare + style.three + (r.three - inside) * 0.008 + (lean - 0.5) * 0.3, 0.02, 0.85),
       three: r.three,
       inside,
       ft: r.freeThrow,
       dunk: r.dunk,
-      passer: share * Math.exp((avg(r.passAccuracy, r.passVision) - AVG.off) / USAGE_SCALE),
-      rebound: share * Math.exp((avg(r.offReb, r.defReb) - AVG.reb) / USAGE_SCALE),
-      block: share * Math.exp((r.block - AVG.reb) / 6),
-      steal: share * Math.exp((r.steal - AVG.reb) / 8),
+      passer: share * Math.exp((avg(r.passAccuracy, r.passVision) - st.avg.off) / USAGE_SCALE),
+      rebound: share * Math.exp((avg(r.offReb, r.defReb) - st.avg.reb) / USAGE_SCALE),
+      block: share * Math.exp((r.block - st.avg.reb) / 6),
+      steal: share * Math.exp((r.steal - st.avg.reb) / 8),
       foul: share,
     };
   });
@@ -197,8 +257,8 @@ function choose<T>(rng: Rng, items: T[], weight: (x: T) => number, skip?: T): T 
   return items[items.length - 1];
 }
 
-function shootFreeThrows(rng: Rng, s: Skater, n: number, line: StatLine, team: Team) {
-  const make = clamp(FREE_THROW + (s.ft - AVG.ft) * 0.006, 0.4, 0.95);
+function shootFreeThrows(rng: Rng, s: Skater, n: number, line: StatLine, team: Team, st: Style) {
+  const make = clamp(st.freeThrow + (s.ft - st.avg.ft) * 0.006, 0.4, 0.95);
   for (let i = 0; i < n; i++) {
     line.fta++;
     if (rng.chance(make)) {
@@ -209,30 +269,30 @@ function shootFreeThrows(rng: Rng, s: Skater, n: number, line: StatLine, team: T
   }
 }
 
-function possession(rng: Rng, off: Team, def: Team, box: BoxScore, homeEdge: number) {
+function possession(rng: Rng, off: Team, def: Team, box: BoxScore, homeEdge: number, st: Style) {
   const style = off.side.tactics?.system ? SYSTEM_STYLE[off.side.tactics.system] : NO_STYLE;
   const edge = homeEdge + (off.side.coachEdge ?? 0) + style.make;
   const lineOf = (s: Skater) => box[s.p.id];
   const shooter = choose(rng, off.list, (s) => s.usage);
   const scheme = SCHEMES[def.side.tactics?.defense ?? "man"];
-  const turnover = clamp(TURNOVER + scheme.turnover + style.turnover + (def.handling - off.handling) * 0.005, 0.08, 0.3);
+  const turnover = clamp(st.turnover + scheme.turnover + style.turnover + (def.handling - off.handling) * 0.005, 0.08, 0.3);
   if (rng.chance(turnover)) {
     lineOf(shooter).tov++;
-    if (rng.chance(STEAL_SHARE + scheme.steal)) lineOf(choose(rng, def.list, (s) => s.steal)).stl++;
+    if (rng.chance(st.stealShare + scheme.steal)) lineOf(choose(rng, def.list, (s) => s.steal)).stl++;
     return;
   }
-  if (rng.chance(LOOSE_FOUL)) lineOf(choose(rng, def.list, (s) => s.foul)).pf++;
+  if (rng.chance(st.looseFoul)) lineOf(choose(rng, def.list, (s) => s.foul)).pf++;
   const line = lineOf(shooter);
-  if (rng.chance(SHOOTING_FOUL + scheme.foul)) {
+  if (rng.chance(st.shootingFoul + scheme.foul)) {
     lineOf(choose(rng, def.list, (s) => s.foul)).pf++;
-    shootFreeThrows(rng, shooter, 2, line, off);
+    shootFreeThrows(rng, shooter, 2, line, off, st);
     return;
   }
   const three = rng.chance(clamp(shooter.threeShare + scheme.three, 0.02, 0.85));
-  const defense = (def.defense - AVG.def) * DEFENSE_GAIN;
+  const defense = (def.defense - st.avg.def) * DEFENSE_GAIN;
   const make = three
-    ? THREE_MAKE + scheme.threeMake + (shooter.three - AVG.three) * SHOOT_GAIN - defense + edge + shooter.guarded
-    : TWO_MAKE + scheme.twoMake + (shooter.inside - AVG.off) * SHOOT_GAIN - defense + edge + shooter.guarded;
+    ? st.threeMake + scheme.threeMake + (shooter.three - st.avg.three) * SHOOT_GAIN - defense + edge + shooter.guarded
+    : st.twoMake + scheme.twoMake + (shooter.inside - st.avg.off) * SHOOT_GAIN - defense + edge + shooter.guarded;
   line.fga++;
   if (three) line.tpa++;
   if (rng.chance(clamp(make, 0.15, 0.8))) {
@@ -240,19 +300,19 @@ function possession(rng: Rng, off: Team, def: Team, box: BoxScore, homeEdge: num
     line.pts += three ? 3 : 2;
     off.score += three ? 3 : 2;
     if (three) line.tpm++;
-    else if (rng.chance(DUNK_SHARE * (shooter.dunk / AVG.off) ** 2)) line.dunks++;
-    if (rng.chance(ASSIST + scheme.assist + style.assist)) lineOf(choose(rng, off.list, (s) => s.passer, shooter)).ast++;
+    else if (rng.chance(st.dunkShare * (shooter.dunk / st.avg.off) ** 2)) line.dunks++;
+    if (rng.chance(st.assist + scheme.assist + style.assist)) lineOf(choose(rng, off.list, (s) => s.passer, shooter)).ast++;
     return;
   }
-  if (!three && rng.chance(BLOCK)) lineOf(choose(rng, def.list, (s) => s.block)).blk++;
+  if (!three && rng.chance(st.block)) lineOf(choose(rng, def.list, (s) => s.block)).blk++;
   const boards = ((off.side.tactics?.crashBoards ?? DEFAULT_CRASH) - DEFAULT_CRASH) * CRASH_GAIN;
-  const offBoard = clamp(OFFENSIVE_REBOUND + boards + (off.rebounding - def.rebounding) * 0.01, 0.12, 0.45);
-  if (rng.chance(TEAM_REBOUND)) return;
+  const offBoard = clamp(st.offensiveRebound + boards + (off.rebounding - def.rebounding) * 0.01, 0.12, 0.45);
+  if (rng.chance(st.teamRebound)) return;
   const crash = rng.chance(offBoard);
   const board = choose(rng, crash ? off.list : def.list, (s) => s.rebound);
   if (crash) {
     lineOf(board).oreb++;
-    possession(rng, off, def, box, homeEdge);
+    possession(rng, off, def, box, homeEdge, st);
   } else lineOf(board).dreb++;
 }
 
@@ -270,18 +330,19 @@ function rollInjuries(rng: Rng, teams: Team[], box: BoxScore, rate = 1): BoxResu
 }
 
 function play(rng: Rng, i: BoxInput, home: Team, away: Team, box: BoxScore, minutes: number) {
-  const edge = i.neutral ? 0 : HOME_EDGE;
+  const st = LEAGUE_STYLE[i.league];
+  const edge = i.neutral ? 0 : st.homeEdge;
   const pace = avg(i.home.tactics?.pace ?? 0.5, i.away.tactics?.pace ?? 0.5);
-  const n = Math.round(((POSSESSIONS_PER_48 * minutes) / 48) * (1 + (pace - 0.5) * 0.2) + rng.normal(0, 2) * (minutes / 48));
+  const n = Math.round(((st.possessionsPer48 * minutes) / 48) * (1 + (pace - 0.5) * 0.2) + rng.normal(0, 2) * (minutes / 48));
   for (let p = 0; p < n; p++) {
-    possession(rng, away, home, box, -edge);
-    possession(rng, home, away, box, edge);
+    possession(rng, away, home, box, -edge, st);
+    possession(rng, home, away, box, edge, st);
   }
 }
 
 function matchup(i: BoxInput, minutes: number) {
-  const home = buildTeam(i.home, minutes);
-  const away = buildTeam(i.away, minutes);
+  const home = buildTeam(i.home, minutes, LEAGUE_STYLE[i.league]);
+  const away = buildTeam(i.away, minutes, LEAGUE_STYLE[i.league]);
   applyDefense(home, away);
   applyDefense(away, home);
   const box: BoxScore = {};
@@ -299,11 +360,12 @@ function finishGame(i: BoxInput, rng: Rng, minutes: number, earlier?: PartialGam
   let overtimes = 0;
   while (home.score === away.score) {
     overtimes++;
-    play(rng, i, home, away, box, OVERTIME_MINUTES);
-    for (const t of [home, away]) for (const s of t.list.slice(0, 5)) box[s.p.id].min += OVERTIME_MINUTES * 60;
+    const extra = LEAGUE_STYLE[i.league].overtimeMinutes;
+    play(rng, i, home, away, box, extra);
+    for (const t of [home, away]) for (const s of t.list.slice(0, 5)) box[s.p.id].min += extra * 60;
   }
   const margin = home.score - away.score;
-  const total = i.quarterMinutes * i.periods + overtimes * OVERTIME_MINUTES;
+  const total = i.quarterMinutes * i.periods + overtimes * LEAGUE_STYLE[i.league].overtimeMinutes;
   for (const [id, line] of Object.entries(box)) {
     const sign = home.list.some((s) => s.p.id === id) || i.home.roster.some((p) => p.id === id) ? 1 : -1;
     line.plusMinus = Math.round((sign * margin * line.min) / (total * 60));

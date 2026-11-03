@@ -179,3 +179,84 @@ describe("simBox", () => {
     expect(performance.now() - t0).toBeLessThan(4000);
   });
 });
+
+describe.each([
+  { league: "college" as const, quarterMinutes: 20, periods: 2, file: "college", pick: (t: Team) => t.tier === "D1" },
+  { league: "hs" as const, quarterMinutes: 8, periods: 4, file: "hs", pick: (t: Team) => t.levels?.includes("varsity") ?? true },
+])("simBox in $league", ({ league, quarterMinutes, periods, file, pick }) => {
+  const want = JSON.parse(readFileSync(`src/franchise/__tests__/engine-baseline-${file}.json`, "utf8")) as typeof baseline;
+  const all = (JSON.parse(readFileSync(`src/data/generated/${file}.json`, "utf8")) as { teams: Team[] }).teams.filter(pick);
+  const ranked = [...all].sort((a, b) => teamTalentTarget(a) - teamTalentTarget(b));
+  const minutes = quarterMinutes * periods * 5;
+  const sideOf = (t: Team, roster: Player[]) => {
+    const rotation = defaultRotation(roster, minutes);
+    return { teamId: t.id, roster, rotation, starters: Object.keys(rotation).slice(0, 5) };
+  };
+  const play = (a: Team, b: Team, seed: string, ra: Player[], rb: Player[]): BoxInput => ({
+    league,
+    quarterMinutes,
+    periods,
+    home: sideOf(a, ra),
+    away: sideOf(b, rb),
+    seed,
+  });
+
+  it("matches the real engine's stat averages over 300 games", () => {
+    const totals = emptyLine();
+    for (let i = 0; i < 300; i++) {
+      // the real baseline mixes every kind of matchup, so these do too
+      const a = all[(i * 7) % all.length],
+        b = all[(i * 11 + 3) % all.length];
+      const ra = generateRoster(a, i),
+        rb = generateRoster(b, i + 100);
+      const r = simBox(play(a, b, `cal${i}`, ra, rb));
+      for (const roster of [ra, rb]) {
+        const l = sumLines(roster, r.box);
+        for (const k of Object.keys(totals) as (keyof StatLine)[]) totals[k] += l[k];
+      }
+    }
+    const mean = (k: keyof StatLine) => totals[k] / 600;
+    expect(Math.abs(mean("pts") - want.perTeam.pts.mean), `pts: ${mean("pts").toFixed(1)} vs ${want.perTeam.pts.mean}`).toBeLessThanOrEqual(4);
+    for (const k of ["fga", "fgm", "tpa", "tpm", "fta", "ftm", "oreb", "dreb", "ast", "stl", "blk", "tov", "pf"] as const) {
+      const target = want.perTeam[k].mean;
+      expect(Math.abs(mean(k) - target) / target, `${k}: ${mean(k).toFixed(1)} vs ${target}`).toBeLessThanOrEqual(0.08);
+    }
+  });
+
+  it("lets the best roster beat the worst more than 85% of the time", () => {
+    const [low, high] = [ranked[0], ranked[ranked.length - 1]];
+    const rl = generateRoster(low, 1),
+      rh = generateRoster(high, 2);
+    let wins = 0;
+    for (let i = 0; i < 200; i++) {
+      const r = simBox(play(i % 2 ? high : low, i % 2 ? low : high, `gap${i}`, i % 2 ? rh : rl, i % 2 ? rl : rh));
+      if (r.home > r.away === (i % 2 === 1)) wins++;
+    }
+    expect(wins / 200).toBeGreaterThan(0.85);
+  });
+
+  it("keeps home wins near the real engine's rate", () => {
+    const mid = [ranked[Math.floor(ranked.length / 2)], ranked[Math.floor(ranked.length / 2) + 1]];
+    const ra = generateRoster(mid[0], 1),
+      rb = generateRoster(mid[1], 2);
+    let wins = 0;
+    for (let i = 0; i < 300; i++) {
+      const swap = i % 2 === 1;
+      const r = simBox(play(swap ? mid[1] : mid[0], swap ? mid[0] : mid[1], `home${i}`, swap ? rb : ra, swap ? ra : rb));
+      if (r.home > r.away) wins++;
+    }
+    expect(Math.abs(wins / 300 - want.homeWinRate)).toBeLessThanOrEqual(0.06);
+  });
+
+  it(`adds up to ${minutes} minutes per team in regulation`, () => {
+    const [a, b] = [ranked[10], ranked[20]];
+    const ra = generateRoster(a, 1),
+      rb = generateRoster(b, 2);
+    for (let i = 0; i < 30; i++) {
+      const r = simBox(play(a, b, `min${i}`, ra, rb));
+      if (r.overtimes) continue;
+      expect(sumLines(ra, r.box).min).toBe(minutes * 60);
+      expect(sumLines(rb, r.box).min).toBe(minutes * 60);
+    }
+  });
+});
