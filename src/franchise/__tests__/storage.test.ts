@@ -173,7 +173,7 @@ describe("franchise storage", () => {
     await createFranchiseSave(beta10({ ...f, season: { ...f.season, stats: { [id]: { ...emptyLine(), gp: 3, gs: 3, pts: 60 } } } }), team);
     const up = (await loadFranchise(f.id))!;
     expect(up.version).toBe(FRANCHISE_VERSION);
-    expect(FRANCHISE_VERSION).toBe(4);
+    expect(FRANCHISE_VERSION).toBe(5);
     expect(up.season.stats[id].pts).toBe(60);
     expect(Object.keys(up.finance)).toHaveLength(30);
     expect(up.finance[team.id]).toMatchObject({ hype: 50, facilities: 50, balance: 0 });

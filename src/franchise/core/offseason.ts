@@ -1,6 +1,5 @@
 // The summer, one step at a time, and the start of the next season.
 import { fullName, playerOvr } from "@/engine/player";
-import { Rng } from "@/engine/rng";
 import type { Team } from "@/engine/types";
 import { autoFinances, autoStep } from "../auto";
 import { seasonGoals } from "../club/owner";
@@ -8,57 +7,17 @@ import { leagueTactics } from "../coaching/aiPlan";
 import { addSeason } from "../history/career";
 import { induct } from "../history/hall";
 import { updateRecords } from "../history/records";
-import { addNews, draftNews, retirementNews, signingNews } from "../history/news";
 import { leagueModule } from "../leagues";
-import { decideOptions, pendingOptions, rollContracts } from "../pro/contracts";
-import { currentPick } from "../pro/draft";
-import { newDraftState } from "../pro/draftClass";
-import { aiFillRosters, aiResign, cutTo, finishBidding, openFreeAgency } from "../pro/freeAgency";
-import { runLottery } from "../pro/lottery";
-import { rollPicks } from "../pro/picks";
-import { processWaivers, standardCount } from "../pro/rosterMoves";
-import { aiTradeDay } from "../pro/tradeAi";
-import { OFFSEASON_ROSTER_MAX, ROSTER_MAX, ROSTER_MIN } from "../pro/rules";
-import { applyPending, trimSchedule } from "../settings";
-import type { Franchise, OffseasonStep, RetiredPlayer, SeasonSummary } from "../types";
+import { applyPending } from "../settings";
+import type { Franchise, RetiredPlayer, SeasonSummary } from "../types";
 import { clearUndo, prunePlan } from "./moves";
-import { leagueProgress } from "./progress";
 
 /** The most unsigned players the league keeps around. The rest leave the game. */
 const FREE_AGENT_POOL = 100;
 
 export function canAdvance(f: Franchise): { ok: true } | { ok: false; reason: string } {
-  const step = f.offseason?.step;
   if (f.job.fired) return { ok: false, reason: "Choose your next job first." };
-  if (step === "draft" && currentPick(f)) return { ok: false, reason: "Finish the draft first." };
-  if (step === "contracts" && pendingOptions(f, f.teamId).length) return { ok: false, reason: "Decide your team options first." };
-  if (step === "camp") {
-    const n = standardCount(f, f.teamId);
-    if (n < ROSTER_MIN || n > ROSTER_MAX) return { ok: false, reason: `You have ${n} players on standard deals, and need ${ROSTER_MIN} to ${ROSTER_MAX}.` };
-  }
-  return { ok: true };
-}
-
-/** What happens on arriving at a step. */
-function enter(f: Franchise, step: OffseasonStep, teams: Team[]): Franchise {
-  if (step === "progress") {
-    const { franchise, report } = leagueProgress(f);
-    const reported: Franchise = { ...franchise, offseason: { step, report } };
-    return addNews(reported, retirementNews(reported, teams));
-  }
-  if (step === "lottery") return runLottery(f, teams);
-  if (step === "draft") return aiTradeDay(f, new Rng(`${f.seed}:draftday:${f.draft.year}`)).franchise;
-  if (step === "contracts")
-    return addNews(
-      teams.reduce((x, t) => (t.id === f.teamId ? x : cutTo(x, t.id, OFFSEASON_ROSTER_MAX)), decideOptions(f)),
-      draftNews(f, teams),
-    );
-  if (step === "freeAgency") return openFreeAgency(aiResign(rollContracts(f)));
-  if (step === "camp") {
-    const done = finishBidding(f);
-    return addNews(aiFillRosters(done), signingNews(done, teams));
-  }
-  return f;
+  return leagueModule(f.league).canAdvance(f);
 }
 
 export function advanceOffseason(start: Franchise, teams: Team[]): Franchise {
@@ -69,7 +28,7 @@ export function advanceOffseason(start: Franchise, teams: Team[]): Franchise {
   if (!step) return startNewSeason(f, teams);
   const date = m.offseasonDate(step, f.season.year);
   const moved: Franchise = { ...f, date: date && date > f.date ? date : f.date, offseason: { ...f.offseason, step } };
-  return autoStep(prunePlan(clearUndo(processWaivers(enter(moved, step, teams)).franchise)));
+  return autoStep(prunePlan(clearUndo(m.daily(m.enterStep(moved, step, teams), teams, false).franchise)));
 }
 
 function summarize(f: Franchise): SeasonSummary {
@@ -117,8 +76,7 @@ export function startNewSeason(old: Franchise, teams: Team[]): Franchise {
   const year = f.season.year + 1;
   const m = leagueModule(f.league);
   const date = m.calendar(year).opening;
-  const trimmed = aiFillRosters(processWaivers({ ...f, date }).franchise);
-  const cleared = processWaivers({ ...trimmed, waivers: trimmed.waivers.map((w) => ({ ...w, until: date })) }).franchise;
+  const cleared = m.beforeNewSeason(f, date);
   const credited = { ...cleared, players: Object.fromEntries(Object.entries(cleared.players).map(([id, p]) => [id, addSeason(p, f.season.stats[id], f)])) };
   const left = leaveLeague(credited, year);
   const remembered = updateRecords({ ...credited, retired: left.retired });
@@ -140,16 +98,11 @@ export function startNewSeason(old: Franchise, teams: Team[]): Franchise {
     phase: "regular",
     talks: {},
     history: [...f.history, summarize(f)],
-    draft: newDraftState(f.seed, year + 1),
     season: {
       year,
-      games: trimSchedule(
-        m.schedule(teams, year, f.seed),
-        teams.map((t) => t.id),
-        f.settings.league.gamesPerSeason,
-        `${f.seed}:${year}`,
-      ),
+      games: m.schedule(teams, year, f.seed, f.settings.league, `${f.seed}:${year}`),
       series: [],
+      brackets: [],
       stats: {},
       playoffStats: {},
       awards: [],
@@ -157,7 +110,7 @@ export function startNewSeason(old: Franchise, teams: Team[]): Franchise {
   };
   delete next.offseason;
   delete next.freeAgency;
-  const ready = prunePlan(clearUndo({ ...next, picks: rollPicks(next, teams) }));
+  const ready = prunePlan(clearUndo(m.newSeason(next, teams)));
   const coached = autoFinances(autoStep({ ...ready, aiTactics: leagueTactics(ready) }), teams);
   return { ...coached, job: { ...coached.job, goals: seasonGoals(coached, teams) } };
 }

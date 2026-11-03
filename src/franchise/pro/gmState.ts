@@ -35,7 +35,9 @@ type GmFields =
   | "hall"
   | "records"
   | "powerLast"
-  | "aiTactics";
+  | "aiTactics"
+  | "world"
+  | "formerWorlds";
 export type BareFranchise = Omit<Franchise, GmFields> & Partial<Pick<Franchise, GmFields>>;
 
 function defaultFile(seed: string, p: Player): PlayerFile {
@@ -89,8 +91,19 @@ export function backfillCareers(f: Franchise, past: LeagueSeason[]): Franchise {
   return { ...f, players };
 }
 
+/** Saves from before college and high school ran in the pro world. */
+export function fillWorld<T extends BareFranchise>(f: T): T & Pick<Franchise, "world" | "formerWorlds"> {
+  return {
+    ...f,
+    world: f.world ?? { league: f.league },
+    formerWorlds: f.formerWorlds ?? [],
+    season: f.season.brackets ? f.season : { ...f.season, brackets: [] },
+  };
+}
+
 /** Saves don't hold team data, so prestige only reaches the books of a new franchise. */
-export function fillGmState(f: BareFranchise, teams?: Team[]): Franchise {
+export function fillGmState(bare: BareFranchise, teams?: Team[]): Franchise {
+  const f = fillWorld(bare);
   const teamIds = Object.keys(f.rosters);
   const year = f.season.year;
   const cap = f.cap ?? { year, salaryCap: START_CAP };

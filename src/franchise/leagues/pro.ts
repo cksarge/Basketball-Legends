@@ -1,11 +1,28 @@
-// The pro league in Franchise: the 82-game schedule, play-in and best-of-seven playoffs.
+// The pro league in Franchise: the 82-game schedule, play-in and best-of-seven playoffs, and the general manager's systems.
 import { addDays, draftCalendar, iso, proCalendar } from "@/career/calendar";
 import { standings } from "@/career/hs/sim";
 import { nextSeries, seriesWins } from "@/career/pro/bracket";
 import { generateProSchedule } from "@/career/pro/schedule";
-import type { ProSeries, ScheduledGame } from "@/career/types";
+import type { IsoDate, ProSeries, ScheduledGame } from "@/career/types";
+import { Rng } from "@/engine/rng";
 import type { Team } from "@/engine/types";
-import type { Franchise } from "../types";
+import { closeSeasonBooks, payGates } from "../club/finance";
+import { proGoals } from "../club/owner";
+import { seasonAwards } from "../core/awards";
+import { leagueProgress } from "../core/progress";
+import { addNews, draftNews, retirementNews, signingNews, tradeNews } from "../history/news";
+import { decideOptions, pendingOptions, rollContracts } from "../pro/contracts";
+import { currentPick } from "../pro/draft";
+import { newDraftState } from "../pro/draftClass";
+import { aiFillRosters, aiResign, cutTo, finishBidding, openFreeAgency, setRoster, weeklyMarket } from "../pro/freeAgency";
+import { runLottery } from "../pro/lottery";
+import { rollPicks } from "../pro/picks";
+import { processWaivers, rosterProblem, standardCount } from "../pro/rosterMoves";
+import { OFFSEASON_ROSTER_MAX, ROSTER_MAX, ROSTER_MIN } from "../pro/rules";
+import { weeklyScouting } from "../pro/scouting";
+import { aiTradeDay, refreshOffers } from "../pro/tradeAi";
+import { trimSchedule } from "../settings";
+import type { Franchise, OffseasonStep } from "../types";
 import type { LeagueModule } from "./index";
 
 const conferenceOf = (t: Team): "East" | "West" => (t.conferenceId === "pro-east" ? "East" : "West");
@@ -67,6 +84,55 @@ function postseason(f: Franchise, teams: Team[]): Franchise {
   return { ...f, phase, season: { ...f.season, games, series, ...(champion ? { championId: champion } : {}) } };
 }
 
+function enterStep(f: Franchise, step: OffseasonStep, teams: Team[]): Franchise {
+  if (step === "progress") {
+    const { franchise, report } = leagueProgress(f);
+    const reported: Franchise = { ...franchise, offseason: { step, report } };
+    return addNews(reported, retirementNews(reported, teams));
+  }
+  if (step === "lottery") return runLottery(f, teams);
+  if (step === "draft") return aiTradeDay(f, new Rng(`${f.seed}:draftday:${f.draft.year}`)).franchise;
+  if (step === "contracts")
+    return addNews(
+      teams.reduce((x, t) => (t.id === f.teamId ? x : cutTo(x, t.id, OFFSEASON_ROSTER_MAX)), decideOptions(f)),
+      draftNews(f, teams),
+    );
+  if (step === "freeAgency") return openFreeAgency(aiResign(rollContracts(f)));
+  if (step === "camp") {
+    const done = finishBidding(f);
+    return addNews(aiFillRosters(done), signingNews(done, teams));
+  }
+  return f;
+}
+
+function canAdvance(f: Franchise): { ok: true } | { ok: false; reason: string } {
+  const step = f.offseason?.step;
+  if (step === "draft" && currentPick(f)) return { ok: false, reason: "Finish the draft first." };
+  if (step === "contracts" && pendingOptions(f, f.teamId).length) return { ok: false, reason: "Decide your team options first." };
+  if (step === "camp") {
+    const n = standardCount(f, f.teamId);
+    if (n < ROSTER_MIN || n > ROSTER_MAX) return { ok: false, reason: `You have ${n} players on standard deals, and need ${ROSTER_MIN} to ${ROSTER_MAX}.` };
+  }
+  return { ok: true };
+}
+
+/** Free agents sign, scouts work, and AI teams talk trades. */
+function weekly(f: Franchise, teams: Team[], date: IsoDate) {
+  const market = weeklyMarket(weeklyScouting(f));
+  const trades = aiTradeDay(refreshOffers(market.franchise), new Rng(`${f.seed}:trades:${date}`));
+  const reported = addNews(
+    trades.franchise,
+    trades.franchise.tradeLog.slice(market.franchise.tradeLog.length).flatMap((t) => tradeNews(trades.franchise, t, teams)),
+  );
+  return { franchise: reported, changedPlayers: [...market.changedPlayers, ...trades.changedPlayers] };
+}
+
+/** Rosters fill and waivers clear on the new opening day. */
+function beforeNewSeason(f: Franchise, date: IsoDate): Franchise {
+  const trimmed = aiFillRosters(processWaivers({ ...f, date }).franchise);
+  return processWaivers({ ...trimmed, waivers: trimmed.waivers.map((w) => ({ ...w, until: date })) }).franchise;
+}
+
 export const proLeague: LeagueModule = {
   id: "pro",
   calendar: (year) => {
@@ -75,7 +141,18 @@ export const proLeague: LeagueModule = {
   },
   quarterMinutes: 12,
   periods: 4,
-  schedule: (teams, year, seed) => generateProSchedule(teams, year, seed),
+  lastPeriodLabel: "4th quarter",
+  arena: "pro",
+  boss: "owner",
+  roster: { min: ROSTER_MIN, max: ROSTER_MAX, campMin: ROSTER_MIN },
+  systems: { cap: true, trades: true, freeAgency: true, draft: true, finances: true, recruiting: false, squads: false },
+  schedule: (teams, year, seed, settings, trimSeed = seed) =>
+    trimSchedule(
+      generateProSchedule(teams, year, seed),
+      teams.map((t) => t.id),
+      settings.gamesPerSeason,
+      trimSeed,
+    ),
   postseason,
   offseasonSteps: ["review", "progress", "lottery", "draft", "contracts", "freeAgency", "camp"],
   offseasonDate: (step, year) => {
@@ -86,4 +163,17 @@ export const proLeague: LeagueModule = {
     if (step === "camp") return proCalendar(year + 1).camp;
     return null;
   },
+  enterStep,
+  canAdvance,
+  rosterProblem,
+  fixRoster: (f) => setRoster(f, f.teamId),
+  weekly,
+  daily: (f) => processWaivers(f),
+  beforeNewSeason,
+  newSeason: (f, teams) => ({ ...f, draft: newDraftState(f.seed, f.season.year + 1), picks: rollPicks(f, teams) }),
+  gates: payGates,
+  closeSeason: closeSeasonBooks,
+  awards: seasonAwards,
+  goals: proGoals,
+  settingsOptions: { games: [82, 70, 58, 41], fields: ["playoffFormat", "tradeDifficulty"] },
 };

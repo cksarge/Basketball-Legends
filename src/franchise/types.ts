@@ -1,6 +1,6 @@
 // The Franchise save format: one persistent league, its players and the season in progress.
-import type { IsoDate, ProSeries, ScheduledGame } from "@/career/types";
-import type { CareerLine, LeagueId, Player, PlayerFile, Position, TeamTactics } from "@/engine/types";
+import type { Bracket, IsoDate, ProSeries, ScheduledGame } from "@/career/types";
+import type { CareerLine, CollegeDivision, LeagueId, Player, PlayerFile, Position, TeamTactics } from "@/engine/types";
 import type { Difficulty } from "@/game/sim/state";
 import type { BoxScore, StatLine } from "@/game/sim/stats";
 import type { SigningVia } from "./pro/cap";
@@ -8,7 +8,7 @@ import type { Offer } from "./pro/market";
 import type { TradeOffer } from "./pro/tradeAi";
 import type { TradeAsset } from "./pro/trades";
 
-export const FRANCHISE_VERSION = 4;
+export const FRANCHISE_VERSION = 5;
 
 export type { CareerLine, PlayerFile };
 
@@ -29,11 +29,18 @@ export interface FranchiseSettings {
   pendingLeague?: LeagueSettings;
 }
 
-export type AutoKey = "tactics" | "practice" | "scouting" | "draft" | "contracts" | "freeAgency" | "trades" | "finances" | "roster";
+export type AutoKey = "tactics" | "practice" | "scouting" | "draft" | "contracts" | "freeAgency" | "trades" | "finances" | "roster" | "recruiting" | "squads";
 
 export interface LeagueSettings {
-  gamesPerSeason: 82 | 70 | 58 | 41;
-  playoffFormat: { firstRoundBestOf: 5 | 7; playIn: boolean };
+  /** The choices come from the league module. */
+  gamesPerSeason: number;
+  playoffFormat: {
+    firstRoundBestOf: 5 | 7;
+    playIn: boolean;
+    conferenceTournaments?: boolean;
+    nationalField?: 68 | 64;
+    openDivision?: boolean;
+  };
   tradeDifficulty: "easy" | "normal" | "hard";
   injuries: "off" | "fewer" | "normal" | "more";
   progression: "slow" | "normal" | "fast";
@@ -55,6 +62,10 @@ export interface LeagueSeason {
   year: number;
   games: ScheduledGame[];
   series: ProSeries[];
+  /** College and high school tournaments. Pro uses series. */
+  brackets: Bracket[];
+  /** Teams outside the user's world, decided on team strength. */
+  outside?: OutsideSeason;
   /** Regular season totals by player id. */
   stats: Record<string, SeasonLine>;
   playoffStats: Record<string, SeasonLine>;
@@ -124,7 +135,8 @@ export interface TeamBooks {
   biannualYear?: number;
 }
 
-export type OffseasonStep = "review" | "progress" | "lottery" | "draft" | "contracts" | "freeAgency" | "camp";
+export type OffseasonStep =
+  "review" | "progress" | "lottery" | "draft" | "contracts" | "freeAgency" | "camp" | "declarations" | "portal" | "signing" | "tryouts";
 
 export interface ProgressReport {
   retired: string[];
@@ -201,7 +213,7 @@ export interface TeamFinance {
 }
 
 export interface OwnerGoal {
-  key: "winning" | "profit" | "development";
+  key: "winning" | "profit" | "development" | "postseason" | "recruiting";
   target: number;
 }
 
@@ -209,7 +221,7 @@ export type Grade = "A" | "B" | "C" | "D" | "F";
 
 export interface OwnerReview {
   year: number;
-  grades: Record<OwnerGoal["key"], Grade>;
+  grades: Partial<Record<OwnerGoal["key"], Grade>>;
   change: number;
   note: string;
 }
@@ -217,6 +229,7 @@ export interface OwnerReview {
 export interface JobStint {
   teamId: string;
   league: LeagueId;
+  division?: CollegeDivision;
   from: number;
   to?: number;
   w: number;
@@ -270,6 +283,28 @@ export interface SeasonSummary {
   awards: (Award & { name: string })[];
 }
 
+/** Games and brackets for teams outside the user's world. */
+export interface OutsideSeason {
+  games: ScheduledGame[];
+  brackets: Bracket[];
+}
+
+/** Which league, and in college which division, the save is running. */
+export interface WorldRef {
+  league: LeagueId;
+  division?: CollegeDivision;
+}
+
+/** A league the coach worked in before, kept for history. */
+export interface FormerWorld extends WorldRef {
+  from: number;
+  to: number;
+  teamIds: string[];
+  history: SeasonSummary[];
+  hall: HallEntry[];
+  records: LeagueRecord[];
+}
+
 /** The first part of a game, simulated so the user can play the rest. */
 export interface PartialGame {
   home: number;
@@ -287,6 +322,8 @@ export interface Franchise {
   createdAt: number;
   updatedAt: number;
   league: LeagueId;
+  world: WorldRef;
+  formerWorlds: FormerWorld[];
   teamId: string;
   date: IsoDate;
   phase: FranchisePhase;

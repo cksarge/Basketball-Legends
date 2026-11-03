@@ -22,6 +22,8 @@ export const DEFAULT_AUTO: Record<AutoKey, boolean> = {
   trades: false,
   finances: false,
   roster: true,
+  recruiting: false,
+  squads: true,
 };
 
 /** Home games minus away games a team can carry after a trim. */

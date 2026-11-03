@@ -214,7 +214,7 @@ export interface CareerLine {
 
 /** A pro's record in Franchise. */
 export interface PlayerFile {
-  /** Pro seasons played. */
+  /** Seasons played in this league. */
   service: number;
   /** Seasons in a row with this team. */
   teamSeasons: number;
@@ -232,6 +232,12 @@ export interface PlayerFile {
   untouchable?: boolean;
   /** The last team he played for. */
   lastTeamId?: string;
+  /** College seasons played, and whether the one redshirt year is used. */
+  eligibility?: { used: number; redshirted: boolean };
+  /** On the roster without a scholarship. */
+  walkOn?: boolean;
+  /** A recruit's rating, 2 to 5. */
+  stars?: number;
   /** What the league believes about a rookie until he plays. */
   range?: { ovr: [number, number]; pot: [number, number] };
 }

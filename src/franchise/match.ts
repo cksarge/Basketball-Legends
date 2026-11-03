@@ -48,7 +48,7 @@ export function franchisePending(f: Franchise, game: ScheduledGame, teams: Team[
   return {
     mode: "franchise",
     league: f.league,
-    arena: "pro",
+    arena: leagueModule(f.league).arena,
     home: {
       team: home,
       roster: homeRoster,

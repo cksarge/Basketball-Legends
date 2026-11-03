@@ -26,6 +26,10 @@ const STEP_NAME: Record<OffseasonStep, string> = {
   contracts: "Contracts",
   freeAgency: "Free agency",
   camp: "Training camp",
+  declarations: "Draft declarations",
+  portal: "Transfer portal",
+  signing: "Signing day",
+  tryouts: "Tryouts",
 };
 
 /** The champion and the year's awards. */

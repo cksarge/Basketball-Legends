@@ -1,26 +1,20 @@
 // Runs the league one day at a time. Each game gets its own seed, so a run that's interrupted replays the same way.
 import { addDays } from "@/career/calendar";
 import type { IsoDate, ScheduledGame } from "@/career/types";
-import { Rng } from "@/engine/rng";
 import type { Player, Team } from "@/engine/types";
 import { addLine, emptyLine, type BoxScore, type StatLine } from "@/game/sim/stats";
 import { weeklyDevelopment } from "../coaching/development";
-import { closeSeasonBooks, payGates } from "../club/finance";
 import { applyReview, ownerReview } from "../club/owner";
 import { resolveLineup } from "../coaching/plan";
 import { clearUndo } from "./moves";
 import { coachEdge, staffRating, trainerGamesOut } from "../coaching/staff";
 import { finishBox, simBox, simQuarters, type BoxInput, type BoxResult, type BoxSide } from "../boxsim";
-import { addNews, firedNews, gameNews, seasonNews, seriesNews, tradeNews } from "../history/news";
+import { addNews, firedNews, gameNews, seasonNews, seriesNews } from "../history/news";
 import { powerSnapshot } from "../history/power";
 import { gameRecords } from "../history/records";
 import { INJURY_RATE } from "../settings";
-import { seasonAwards } from "./awards";
-import { leagueModule } from "../leagues";
-import { setRoster, weeklyMarket } from "../pro/freeAgency";
-import { activeRoster, processWaivers, rosterProblem } from "../pro/rosterMoves";
-import { weeklyScouting } from "../pro/scouting";
-import { aiTradeDay, refreshOffers } from "../pro/tradeAi";
+import { leagueModule, totalMinutes } from "../leagues";
+import { activeRoster } from "../pro/rosterMoves";
 import { conferenceSeeds } from "../leagues/pro";
 import { defaultRotation } from "../rotation";
 import type { Franchise, PartialGame, SeasonLine } from "../types";
@@ -50,10 +44,7 @@ function boxSide(f: Franchise, teamId: string, g: ScheduledGame): BoxSide {
   return { teamId, roster, rotation, starters: Object.keys(rotation).slice(0, 5), tactics: f.aiTactics[teamId] };
 }
 
-function leagueTotalMinutes(f: Franchise) {
-  const m = leagueModule(f.league);
-  return m.quarterMinutes * m.periods * 5;
-}
+const leagueTotalMinutes = totalMinutes;
 
 export function boxInputFor(f: Franchise, g: ScheduledGame): BoxInput {
   const m = leagueModule(f.league);
@@ -168,8 +159,9 @@ export function applyGame(f: Franchise, gameId: string, r: BoxResult, played: bo
 
 /** Creates the postseason games that are due; the awards land the moment the league's champion is decided. */
 export function advancePostseason(f: Franchise, teams: Team[]): Franchise {
-  const paid = payGates(f, teams);
-  const decided = leagueModule(f.league).postseason(paid, teams);
+  const m = leagueModule(f.league);
+  const paid = m.gates(f, teams);
+  const decided = m.postseason(paid, teams);
   const was = new Set(f.season.series.filter((x) => x.winner).map((x) => x.id));
   const next = addNews(
     decided,
@@ -177,8 +169,8 @@ export function advancePostseason(f: Franchise, teams: Team[]): Franchise {
   );
   if (next.phase !== "offseason" || f.phase === "offseason") return next;
   const championRoster = next.season.championId ? next.rosters[next.season.championId] : [];
-  const closed = closeSeasonBooks(
-    { ...next, offseason: { step: "review", report: null }, season: { ...next.season, championRoster, awards: seasonAwards(next, teams) } },
+  const closed = m.closeSeason(
+    { ...next, offseason: { step: "review", report: null }, season: { ...next.season, championRoster, awards: m.awards(next, teams) } },
     teams,
   );
   const reviewed = applyReview(closed, ownerReview(closed));
@@ -216,8 +208,9 @@ export interface SimDayResult {
 export function simDay(start: Franchise, teams: Team[], opts: { includeUser: boolean; simLive?: boolean }): SimDayResult {
   if (start.phase === "offseason") return { franchise: start, changedPlayers: [], blocked: false };
   // with auto roster on, a short or long roster gets fixed rather than stopping the sim
-  const f = start.settings.auto.roster && rosterProblem(start) ? setRoster(start, start.teamId) : start;
-  if (rosterProblem(f)) return { franchise: f, changedPlayers: [], blocked: true };
+  const m = leagueModule(start.league);
+  const f = start.settings.auto.roster && m.rosterProblem(start) ? m.fixRoster(start) : start;
+  if (m.rosterProblem(f)) return { franchise: f, changedPlayers: [], blocked: true };
   const rosterMoves = f === start ? [] : Object.keys(f.players).filter((id) => f.players[id] !== start.players[id]);
   const today = f.season.games.filter((g) => g.date <= f.date && !g.result);
   const w = working(f);
@@ -257,21 +250,11 @@ export function simDay(start: Franchise, teams: Team[], opts: { includeUser: boo
   const dated = { ...next, date: next.phase === "offseason" ? next.date : addDays(next.date, 1) };
   const practice = weeklyDevelopment(dated);
   const weekDone = practice.franchise.devDate !== dated.devDate;
-  const market = weekDone ? weeklyMarket(weeklyScouting(practice.franchise)) : { franchise: practice.franchise, changedPlayers: [] };
-  const trades =
-    weekDone && !blocked
-      ? aiTradeDay(refreshOffers(market.franchise), new Rng(`${f.seed}:trades:${dated.date}`))
-      : { franchise: market.franchise, changedPlayers: [] };
-  const reported = addNews(
-    trades.franchise,
-    trades.franchise.tradeLog.slice(market.franchise.tradeLog.length).flatMap((t) => tradeNews(trades.franchise, t, teams)),
-  );
-  const waivers = processWaivers(weekDone ? { ...reported, powerLast: powerSnapshot(reported) } : reported);
+  const week = weekDone ? m.weekly(practice.franchise, teams, dated.date) : { franchise: practice.franchise, changedPlayers: [] };
+  const daily = m.daily(weekDone ? { ...week.franchise, powerLast: powerSnapshot(week.franchise) } : week.franchise, teams, weekDone);
   return {
-    franchise: waivers.franchise,
-    changedPlayers: [
-      ...new Set([...changedPlayers, ...practice.changedPlayers, ...market.changedPlayers, ...trades.changedPlayers, ...waivers.changedPlayers]),
-    ],
+    franchise: daily.franchise,
+    changedPlayers: [...new Set([...changedPlayers, ...practice.changedPlayers, ...week.changedPlayers, ...daily.changedPlayers])],
     blocked,
   };
 }

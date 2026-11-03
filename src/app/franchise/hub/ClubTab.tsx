@@ -14,7 +14,7 @@ const BUDGETS: { key: BudgetKey; label: string; hint: string }[] = [
   { key: "scouting", label: "Scouting", hint: "Draft ranges narrow faster." },
   { key: "facilities", label: "Facilities", hint: "Builds slowly. Helps attendance and signing free agents." },
 ];
-const GOAL_NAME: Record<OwnerGoal["key"], (target: number) => string> = {
+const GOAL_NAME: Partial<Record<OwnerGoal["key"], (target: number) => string>> = {
   winning: (n) => `Win ${n} games`,
   profit: (n) => `Make ${moneyM(n)}`,
   development: () => "Grow your young core",
@@ -106,7 +106,7 @@ export function ClubTab({ f, team }: { f: Franchise; team: Team }) {
             <p className="text-steel">Your owner wants you to:</p>
             <ul className="list-inside list-disc">
               {f.job.goals.map((g) => (
-                <li key={g.key}>{GOAL_NAME[g.key](g.target)}</li>
+                <li key={g.key}>{GOAL_NAME[g.key]?.(g.target)}</li>
               ))}
             </ul>
           </>
