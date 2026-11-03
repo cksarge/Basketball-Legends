@@ -305,6 +305,61 @@ export interface FormerWorld extends WorldRef {
   records: LeagueRecord[];
 }
 
+export type RecruitNeed = "prestige" | "playingTime" | "nil" | "distance" | "winning" | "coach";
+
+/** A player being recruited: a high school senior, or a player in the transfer portal. */
+export interface Recruit {
+  id: string;
+  kind: "hs" | "transfer";
+  /** A high school recruit, who joins the league when he enrolls. Transfers are already in f.players. */
+  player?: Player;
+  /** The team a transfer left. */
+  from?: string;
+  stars: 2 | 3 | 4 | 5;
+  /** 1 is the best in the class. */
+  rank: number;
+  /** What he cares about most, first. */
+  wants: RecruitNeed[];
+  nilAsk: number;
+  /** Team id -> interest. */
+  interest: Record<string, number>;
+  /** Team id -> NIL offered. */
+  offers: Record<string, number>;
+  homeVisits: string[];
+  officialVisits: string[];
+  /** The user's scouting on him. */
+  scouted: number;
+  committed?: string;
+  signed?: boolean;
+}
+
+export interface NilBook {
+  /** This season's budget and deals. */
+  now: { budget: number; deals: Record<string, number> };
+  /** Next season's budget, and what's promised against it. */
+  next: { budget: number; deals: Record<string, number> };
+}
+
+export interface PortalState {
+  /** 1 to 3. */
+  round: number;
+  entered: string[];
+}
+
+export interface CollegeState {
+  division: CollegeDivision;
+  /** The season the class being recruited arrives for. */
+  classYear: number;
+  recruits: Recruit[];
+  /** Points left this week, by team. */
+  points: Record<string, number>;
+  earlySigned: boolean;
+  nil: Record<string, NilBook>;
+  portal: PortalState | null;
+  declared: { id: string; projection: string }[];
+  pitched: string[];
+}
+
 /** The first part of a game, simulated so the user can play the rest. */
 export interface PartialGame {
   home: number;
@@ -324,6 +379,8 @@ export interface Franchise {
   league: LeagueId;
   world: WorldRef;
   formerWorlds: FormerWorld[];
+  /** Recruiting, NIL, the portal and declarations, in college. */
+  college?: CollegeState;
   /** Conference names, for college and high school tournaments. */
   conferences?: Record<string, { name: string; short: string }>;
   teamId: string;

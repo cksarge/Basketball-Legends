@@ -33,6 +33,8 @@ export interface LeagueModule {
   offseasonSteps: OffseasonStep[];
   /** When a step happens, for the season starting in this year. */
   offseasonDate(step: OffseasonStep, year: number): IsoDate | null;
+  /** League-specific state for a brand new franchise. */
+  setup(f: Franchise, teams: Team[]): Franchise;
   /** What happens on arriving at a step. */
   enterStep(f: Franchise, step: OffseasonStep, teams: Team[]): Franchise;
   /** What the league needs from the user before the summer moves on. Firing is checked by the caller. */

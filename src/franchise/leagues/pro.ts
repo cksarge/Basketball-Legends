@@ -163,6 +163,7 @@ export const proLeague: LeagueModule = {
     if (step === "camp") return proCalendar(year + 1).camp;
     return null;
   },
+  setup: (f) => f,
   enterStep,
   canAdvance,
   rosterProblem,

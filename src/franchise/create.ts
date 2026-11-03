@@ -92,5 +92,6 @@ export function createFranchise(o: {
     },
     teams,
   );
-  return { ...made, job: { ...made.job, goals: seasonGoals(made, teams) } };
+  const ready = leagueModule(o.league).setup(made, teams);
+  return { ...ready, job: { ...ready.job, goals: seasonGoals(ready, teams) } };
 }

@@ -2,8 +2,11 @@
 // live in src/franchise/college/.
 import { collegeCalendar } from "@/career/calendar";
 import { generateCollegeSchedule } from "@/career/college/schedule";
-import type { Team } from "@/engine/types";
+import { Rng } from "@/engine/rng";
+import type { CollegeDivision, Team } from "@/engine/types";
+import { playerOvr } from "@/engine/player";
 import { advanceDivision } from "../college/brackets";
+import { SCHOLARSHIPS, aiRecruiting, earlySigning, earlySigningDate, newClass, refillPoints, resolveWeek } from "../college/recruiting";
 import { collegeAwards } from "../core/awards";
 import type { Franchise } from "../types";
 import type { LeagueModule } from "./index";
@@ -38,8 +41,43 @@ function postseason(f: Franchise, teams: Team[]): Franchise {
   };
 }
 
+/** Players past the scholarship limit are walk-ons. Division III has no athletic scholarships. */
+function markWalkOns(f: Franchise, division: CollegeDivision): Franchise {
+  if (division === "D3") return f;
+  const players = { ...f.players };
+  for (const ids of Object.values(f.rosters)) {
+    const best = [...ids].sort((a, b) => playerOvr(f.players[b]) - playerOvr(f.players[a]) || a.localeCompare(b));
+    for (const id of best.slice(SCHOLARSHIPS[division])) players[id] = { ...players[id], file: { ...players[id].file!, walkOn: true } };
+  }
+  return { ...f, players };
+}
+
+/** The first class is already eight weeks into recruiting when the save starts. */
+const HEAD_START_WEEKS = 8;
+
+function setup(f: Franchise, teams: Team[]): Franchise {
+  const division = f.world.division!;
+  const marked = markWalkOns(f, division);
+  const started: Franchise = {
+    ...marked,
+    college: { division, classYear: f.season.year + 1, recruits: [], points: {}, earlySigned: false, nil: {}, portal: null, declared: [], pitched: [] },
+  };
+  return newClass(started, teams, f.season.year + 1, HEAD_START_WEEKS);
+}
+
+/** AI programs recruit, the week's commitments land, and points refill. */
+function weekly(f: Franchise, teams: Team[], date: string) {
+  if (!f.college) return { franchise: f, changedPlayers: [] };
+  const worked = aiRecruiting(f, teams, f.settings.auto.recruiting);
+  return { franchise: refillPoints(resolveWeek(worked, new Rng(`${f.seed}:recruit:${date}`)), teams), changedPlayers: [] };
+}
+
+function daily(f: Franchise) {
+  const due = f.college && !f.college.earlySigned && f.date >= earlySigningDate(f.college.classYear - 1);
+  return { franchise: due ? earlySigning(f) : f, changedPlayers: [] };
+}
+
 const same = (f: Franchise) => f;
-const unchanged = (f: Franchise) => ({ franchise: f, changedPlayers: [] });
 
 export const collegeLeague: LeagueModule = {
   id: "college",
@@ -59,12 +97,13 @@ export const collegeLeague: LeagueModule = {
   postseason,
   offseasonSteps: ["review"],
   offseasonDate: () => null,
+  setup,
   enterStep: same,
   canAdvance: () => ({ ok: true }),
   rosterProblem,
   fixRoster: same,
-  weekly: unchanged,
-  daily: unchanged,
+  weekly,
+  daily,
   beforeNewSeason: (f, date) => ({ ...f, date }),
   newSeason: same,
   gates: same,
