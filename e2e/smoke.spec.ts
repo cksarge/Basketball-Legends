@@ -210,10 +210,9 @@ test("run a franchise offseason: option, re-sign, bid, release, two-way", async 
   await page.getByRole("button", { name: "Place bid" }).click();
   // with cap room he's a fair bid, and without it the dialog says why
   const dialog = page.getByRole("dialog");
-  if (await dialog.isVisible()) {
-    await expect(dialog.getByRole("status")).toBeVisible();
-    await page.getByRole("button", { name: "Close", exact: true }).click();
-  }
+  // wait until the dialog has closed on an accepted bid, or shows why it wasn't
+  await expect.poll(async () => (await dialog.count()) === 0 || (await dialog.getByRole("status").isVisible())).toBe(true);
+  if (await dialog.count()) await page.getByRole("button", { name: "Close", exact: true }).click();
   await expect(dialog).toHaveCount(0);
   await page.getByRole("button", { name: "Ask", exact: true }).click();
   await page.getByRole("button", { name: "Ask", exact: true }).click();
