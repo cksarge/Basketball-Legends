@@ -324,6 +324,8 @@ export interface Franchise {
   league: LeagueId;
   world: WorldRef;
   formerWorlds: FormerWorld[];
+  /** Conference names, for college and high school tournaments. */
+  conferences?: Record<string, { name: string; short: string }>;
   teamId: string;
   date: IsoDate;
   phase: FranchisePhase;

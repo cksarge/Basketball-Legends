@@ -75,7 +75,14 @@ function startingJob(f: BareFranchise): Franchise["job"] {
     if (f.season.championId === f.teamId) total.titles++;
   }
   const from = history[0]?.year ?? f.season.year;
-  return { security: START_SECURITY, goals: [], seasons: 0, reviews: [], stints: [{ teamId: f.teamId, league: f.league, from, ...total }] };
+  const division = f.world?.division;
+  return {
+    security: START_SECURITY,
+    goals: [],
+    seasons: 0,
+    reviews: [],
+    stints: [{ teamId: f.teamId, league: f.league, ...(division ? { division } : {}), from, ...total }],
+  };
 }
 
 /** Career totals for a save from before they were kept, from its finished seasons. */
@@ -104,6 +111,8 @@ export function fillWorld<T extends BareFranchise>(f: T): T & Pick<Franchise, "w
 /** Saves don't hold team data, so prestige only reaches the books of a new franchise. */
 export function fillGmState(bare: BareFranchise, teams?: Team[]): Franchise {
   const f = fillWorld(bare);
+  // the cap, picks, the draft and club money exist only in pro
+  const pro = f.league === "pro";
   const teamIds = Object.keys(f.rosters);
   const year = f.season.year;
   const cap = f.cap ?? { year, salaryCap: START_CAP };
@@ -115,19 +124,19 @@ export function fillGmState(bare: BareFranchise, teams?: Team[]): Franchise {
     players,
     cap,
     settings: { ...f.settings, auto: { ...DEFAULT_AUTO, ...f.settings.auto }, league: f.settings.league ?? DEFAULT_LEAGUE },
-    picks: f.picks ?? futurePicks(teamIds, year + 1, PICK_YEARS),
-    books: f.books ?? Object.fromEntries(teamIds.map((id): [string, TeamBooks] => [id, { dead: [], midLevelUsed: 0 }])),
+    picks: f.picks ?? (pro ? futurePicks(teamIds, year + 1, PICK_YEARS) : []),
+    books: f.books ?? (pro ? Object.fromEntries(teamIds.map((id): [string, TeamBooks] => [id, { dead: [], midLevelUsed: 0 }])) : {}),
     freeAgents: f.freeAgents ?? [],
     devRosters: f.devRosters ?? Object.fromEntries(teamIds.map((id) => [id, []])),
     waivers: f.waivers ?? [],
-    draft: f.draft ?? newDraftState(f.seed, year + 1),
+    draft: f.draft ?? (pro ? newDraftState(f.seed, year + 1) : { year: year + 1, prospects: [], scouting: {}, assigned: [], results: [] }),
     talks: f.talks ?? {},
     retired: f.retired ?? [],
     history: f.history ?? [],
     tradeBlock: f.tradeBlock ?? [],
     tradeOffers: f.tradeOffers ?? [],
     tradeLog: f.tradeLog ?? [],
-    finance: f.finance ?? Object.fromEntries(teamIds.map((id) => [id, defaultFinance(cap, teams?.find((t) => t.id === id)?.prestige)])),
+    finance: f.finance ?? (pro ? Object.fromEntries(teamIds.map((id) => [id, defaultFinance(cap, teams?.find((t) => t.id === id)?.prestige)])) : {}),
     job: f.job ?? startingJob(f),
     news: f.news ?? [],
     hall: f.hall ?? [],

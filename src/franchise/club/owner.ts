@@ -66,7 +66,7 @@ export function ownerReview(f: Franchise): OwnerReview {
   };
   const grades: Record<"winning" | "profit" | "development", Grade> = {
     winning: result("winning", wins(f), games),
-    profit: result("profit", f.finance[f.teamId].lastSeason?.profit ?? 0, money),
+    profit: result("profit", f.finance[f.teamId]?.lastSeason?.profit ?? 0, money),
     development: result("development", youngCore(f), 1),
   };
   const title = f.season.championId === f.teamId ? TITLE_BONUS : 0;

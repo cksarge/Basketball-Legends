@@ -14,7 +14,13 @@ const spread = (dates: IsoDate[], count: number) =>
   Array.from({ length: count }, (_, i) => dates[Math.round((i * (dates.length - 1)) / Math.max(1, count - 1))]);
 
 /** `kind: "region"` marks conference games, so the high school standings code counts them as league play. */
-export function generateCollegeSchedule(teams: Team[], year: number, seed: number | string = year): ScheduledGame[] {
+export function generateCollegeSchedule(
+  teams: Team[],
+  year: number,
+  seed: number | string = year,
+  target = COLLEGE_TARGET,
+  conferenceGames = MAX_CONFERENCE_GAMES,
+): ScheduledGame[] {
   const cal = collegeCalendar(year);
   const rng = new Rng(`college-schedule:${seed}:${teams[0]?.tier}`);
   const games: ScheduledGame[] = [];
@@ -35,7 +41,7 @@ export function generateCollegeSchedule(teams: Team[], year: number, seed: numbe
   for (const members of conferences.values()) {
     const first = roundRobin(rng.shuffle(members.map((t) => t.id)));
     // home and away against everyone, cut off at a full conference slate
-    const rounds = [...first, ...first.map((r) => r.map(([h, a]) => [a, h] as [string, string]))].slice(0, MAX_CONFERENCE_GAMES);
+    const rounds = [...first, ...first.map((r) => r.map(([h, a]) => [a, h] as [string, string]))].slice(0, conferenceGames);
     const dates = spread(conferenceDates, rounds.length);
     rounds.forEach((pairs, i) => pairs.forEach(([h, a]) => book(dates[i], h, a, "region")));
   }
@@ -44,7 +50,7 @@ export function generateCollegeSchedule(teams: Team[], year: number, seed: numbe
   const dates = datesOn(cal.firstGame, `${year}-12-22`, [1, 4, 6]);
   for (const date of dates) {
     const open = teams
-      .filter((t) => count.get(t.id)! < COLLEGE_TARGET && !busy.get(t.id)!.has(date))
+      .filter((t) => count.get(t.id)! < target && !busy.get(t.id)!.has(date))
       .map((t) => ({ t, k: t.prestige + rng.normal(0, 0.18) }))
       .sort((a, b) => b.k - a.k)
       .map((x) => x.t);

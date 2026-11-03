@@ -1,6 +1,7 @@
 // League rules the user can change, and which systems run themselves.
 import type { ScheduledGame } from "@/career/types";
 import { Rng } from "@/engine/rng";
+import type { LeagueId } from "@/engine/types";
 import type { AutoKey, Franchise, FranchiseSettings, LeagueSettings } from "./types";
 
 export const DEFAULT_LEAGUE: LeagueSettings = {
@@ -10,6 +11,14 @@ export const DEFAULT_LEAGUE: LeagueSettings = {
   injuries: "normal",
   progression: "normal",
 };
+
+/** Each league's settings for a new franchise. */
+export function defaultLeagueSettings(league: LeagueId): LeagueSettings {
+  if (league === "college")
+    return { ...DEFAULT_LEAGUE, gamesPerSeason: 30, playoffFormat: { ...DEFAULT_LEAGUE.playoffFormat, conferenceTournaments: true, nationalField: 68 } };
+  if (league === "hs") return { ...DEFAULT_LEAGUE, gamesPerSeason: 18, playoffFormat: { ...DEFAULT_LEAGUE.playoffFormat, openDivision: true } };
+  return DEFAULT_LEAGUE;
+}
 
 /** Only the roster runs itself to start with, so a sim is never blocked by surprise. */
 export const DEFAULT_AUTO: Record<AutoKey, boolean> = {

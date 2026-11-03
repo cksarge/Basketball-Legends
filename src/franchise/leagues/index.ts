@@ -2,6 +2,7 @@
 import type { IsoDate, ScheduledGame } from "@/career/types";
 import type { LeagueId, Team } from "@/engine/types";
 import type { Award, Franchise, LeagueSettings, OffseasonStep, OwnerGoal } from "../types";
+import { collegeLeague } from "./college";
 import { proLeague } from "./pro";
 
 export interface DayResult {
@@ -59,6 +60,7 @@ export interface LeagueModule {
 
 export function leagueModule(id: LeagueId): LeagueModule {
   if (id === "pro") return proLeague;
+  if (id === "college") return collegeLeague;
   throw new Error(`Franchise doesn't support the ${id} league yet.`);
 }
 

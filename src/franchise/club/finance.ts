@@ -121,4 +121,6 @@ export function setBudget(f: Franchise, key: BudgetKey, amount: number): Franchi
 }
 
 /** What the user's budget does to its system: 1 at the default. */
-export const budgetEffect = (f: Franchise, key: BudgetKey) => Math.sqrt(f.finance[f.teamId].budgets[key] / capRules(f.cap).budgetDefault);
+/** 1 at the default. Leagues without club money always get 1. */
+export const budgetEffect = (f: Franchise, key: BudgetKey) =>
+  f.finance[f.teamId] ? Math.sqrt(f.finance[f.teamId].budgets[key] / capRules(f.cap).budgetDefault) : 1;

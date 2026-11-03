@@ -16,6 +16,7 @@ import { INJURY_RATE } from "../settings";
 import { leagueModule, totalMinutes } from "../leagues";
 import { activeRoster } from "../pro/rosterMoves";
 import { conferenceSeeds } from "../leagues/pro";
+import { outsideTeams, simOutsideDay, worldTeams } from "../world";
 import { defaultRotation } from "../rotation";
 import type { Franchise, PartialGame, SeasonLine } from "../types";
 
@@ -158,7 +159,8 @@ export function applyGame(f: Franchise, gameId: string, r: BoxResult, played: bo
 }
 
 /** Creates the postseason games that are due; the awards land the moment the league's champion is decided. */
-export function advancePostseason(f: Franchise, teams: Team[]): Franchise {
+export function advancePostseason(f: Franchise, all: Team[]): Franchise {
+  const teams = worldTeams(all, f.world);
   const m = leagueModule(f.league);
   const paid = m.gates(f, teams);
   const decided = m.postseason(paid, teams);
@@ -205,8 +207,9 @@ export interface SimDayResult {
 }
 
 /** Sims the day's games and moves to the next day, unless the user's game is still open. */
-export function simDay(start: Franchise, teams: Team[], opts: { includeUser: boolean; simLive?: boolean }): SimDayResult {
+export function simDay(start: Franchise, all: Team[], opts: { includeUser: boolean; simLive?: boolean }): SimDayResult {
   if (start.phase === "offseason") return { franchise: start, changedPlayers: [], blocked: false };
+  const teams = worldTeams(all, start.world);
   // with auto roster on, a short or long roster gets fixed rather than stopping the sim
   const m = leagueModule(start.league);
   const f = start.settings.auto.roster && m.rosterProblem(start) ? m.fixRoster(start) : start;
@@ -238,7 +241,8 @@ export function simDay(start: Franchise, teams: Team[], opts: { includeUser: boo
     const input = boxInputFor({ ...f, players: w.players }, g);
     record(w, g, simBox(input), false, new Set([...input.home.starters, ...input.away.starters]));
   }
-  const finished = finish(w);
+  // the rest of the league plays on, whatever happens with the user's game
+  const finished = simOutsideDay(finish(w), outsideTeams(all, f.world), f.date);
   const told = addNews(
     finished,
     w.results.flatMap(({ g, r }) => gameNews(finished, g, r, teams)),
