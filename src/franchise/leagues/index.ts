@@ -57,6 +57,8 @@ export interface LeagueModule {
   closeSeason(f: Franchise, teams: Team[]): Franchise;
   awards(f: Franchise, teams: Team[]): Award[];
   goals(f: Franchise, teams: Team[]): OwnerGoal[];
+  /** The number a development goal is measured against. */
+  development(f: Franchise): number;
   settingsOptions: { games: number[]; fields: SettingsField[] };
 }
 

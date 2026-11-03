@@ -1,6 +1,7 @@
 // The coaching staff: who's available, who's hired, and what a role's rating is worth.
 import { FIRST_NAMES, LAST_NAMES } from "@/engine/names";
 import { Rng } from "@/engine/rng";
+import { STAFF_PAY } from "../club/program";
 import type { Franchise, StaffMember, StaffRole } from "../types";
 
 export const STAFF_ROLES: { role: StaffRole; label: string; hint: string }[] = [
@@ -15,6 +16,12 @@ const EMPTY_ROLE = 50;
 const MAX_COACH_EDGE = 0.004;
 const TOP_RATING = 95;
 
+/** Pro salaries round to $10K. Schools pay a share of that, rounded to $1K. */
+function pay(rating: number, league: Franchise["league"]) {
+  const pro = Math.round(((rating / 95) ** 3 * 3_000_000) / 10_000) * 10_000;
+  return league === "pro" ? pro : Math.round((pro * STAFF_PAY[league]) / 1000) * 1000;
+}
+
 export function staffPool(f: Franchise, role: StaffRole): StaffMember[] {
   const rng = new Rng(`${f.seed}:staff:${role}:${f.season.year}`);
   return Array.from({ length: POOL_SIZE }, (_, i) => {
@@ -24,7 +31,7 @@ export function staffPool(f: Franchise, role: StaffRole): StaffMember[] {
       role,
       name: `${rng.pick(FIRST_NAMES)} ${rng.pick(LAST_NAMES)}`,
       rating,
-      salary: Math.round(((rating / 95) ** 3 * 3_000_000) / 10_000) * 10_000,
+      salary: pay(rating, f.league),
     };
   });
 }

@@ -6,6 +6,8 @@ import { Rng } from "@/engine/rng";
 import type { CollegeDivision, Team } from "@/engine/types";
 import { playerOvr } from "@/engine/player";
 import { advanceDivision } from "../college/brackets";
+import { youngCore } from "../club/owner";
+import { adGoals } from "../club/program";
 import { aiRedshirts, collegeProgress, decideDeclarations, fillWalkOns, overCommitted } from "../college/eligibility";
 import { newBook, rollNil } from "../college/nil";
 import { PORTAL_ROUNDS, closePortal, openPortal, portalRound } from "../college/portal";
@@ -190,6 +192,7 @@ export const collegeLeague: LeagueModule = {
   gates: same,
   closeSeason: same,
   awards: collegeAwards,
-  goals: () => [],
+  goals: adGoals,
+  development: youngCore,
   settingsOptions: { games: [30, 26, 22], fields: ["conferenceTournaments", "nationalField"] },
 };

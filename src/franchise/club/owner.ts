@@ -2,7 +2,10 @@
 import { playerOvr } from "@/engine/player";
 import { clamp } from "@/engine/rng";
 import type { Team } from "@/engine/types";
+import type { ScheduledGame } from "@/career/types";
+import { classRank } from "../college/recruiting";
 import { leagueModule } from "../leagues";
+import { postseasonReached } from "./program";
 import { START_CAP } from "../pro/rules";
 import { teamSlot } from "../pro/tradeValue";
 import type { Franchise, Grade, OwnerGoal, OwnerReview } from "../types";
@@ -27,14 +30,18 @@ const BANDS: Record<OwnerGoal["key"], number[]> = {
   recruiting: [15, 0, -20, -45],
 };
 
-const youngCore = (f: Franchise) =>
+export const youngCore = (f: Franchise) =>
   f.rosters[f.teamId].reduce((sum, id) => {
     const p = f.players[id];
     return sum + (p.age <= YOUNG_AGE ? Math.max(0, playerOvr(p) - YOUNG_FLOOR) : 0);
   }, 0);
 
+/** Games that count in a record: every pro game is "region", and in college and high school that's only conference play. */
+export const inRecord = (f: Pick<Franchise, "league">, g: ScheduledGame) =>
+  f.league === "pro" ? g.kind === "region" : g.kind !== "playoff" && g.kind !== "scrimmage";
+
 const wins = (f: Franchise) =>
-  f.season.games.filter((g) => g.result && g.kind === "region" && (g.result.home > g.result.away ? g.homeId : g.awayId) === f.teamId).length;
+  f.season.games.filter((g) => g.result && inRecord(f, g) && (g.result.home > g.result.away ? g.homeId : g.awayId) === f.teamId).length;
 
 /** What the coach's boss wants from the season ahead. */
 export const seasonGoals = (f: Franchise, teams: Team[]): OwnerGoal[] => leagueModule(f.league).goals(f, teams);
@@ -55,7 +62,39 @@ function grade(key: OwnerGoal["key"], margin: number, scale: number): Grade {
   return (["A", "B", "C", "D"] as const)[i] ?? "F";
 }
 
+/** What a school's boss weighs. */
+const SCHOOL_WEIGHTS: Record<string, Partial<Record<OwnerGoal["key"], number>>> = {
+  "athletic director": { winning: 0.4, postseason: 0.35, recruiting: 0.25 },
+  principal: { winning: 0.5, postseason: 0.3, development: 0.2 },
+};
+
+function mood(boss: string, change: number) {
+  const feeling = change > 5 ? "thrilled" : change >= 0 ? "satisfied" : change > -10 ? "concerned" : "out of patience";
+  return `The ${boss} is ${feeling}.`;
+}
+
+/** A school grades only the goals it set. */
+function schoolReview(f: Franchise): OwnerReview {
+  const m = leagueModule(f.league);
+  const games = f.season.games.filter((g) => inRecord(f, g) && (g.homeId === f.teamId || g.awayId === f.teamId)).length / FULL_SEASON;
+  const actual = (key: OwnerGoal["key"], target: number) =>
+    key === "winning"
+      ? wins(f) - target
+      : key === "postseason"
+        ? postseasonReached(f, f.teamId) - target
+        : key === "recruiting"
+          ? target - classRank(f, f.teamId)
+          : m.development(f) - target;
+  const grades: Partial<Record<OwnerGoal["key"], Grade>> = {};
+  for (const g of f.job.goals) grades[g.key] = grade(g.key, actual(g.key, g.target), g.key === "winning" ? games : 1);
+  const weights = SCHOOL_WEIGHTS[m.boss] ?? {};
+  const title = f.season.championId === f.teamId ? TITLE_BONUS : 0;
+  const change = Math.round(f.job.goals.reduce((sum, g) => sum + POINTS[grades[g.key]!] * (weights[g.key] ?? 0), 0)) + title;
+  return { year: f.season.year, grades, change, note: mood(m.boss, change) };
+}
+
 export function ownerReview(f: Franchise): OwnerReview {
+  if (f.league !== "pro") return schoolReview(f);
   const year = f.season.year;
   const goal = (key: OwnerGoal["key"]) => f.job.goals.find((g) => g.key === key);
   const games = f.settings.league.gamesPerSeason / FULL_SEASON;
@@ -71,22 +110,14 @@ export function ownerReview(f: Franchise): OwnerReview {
   };
   const title = f.season.championId === f.teamId ? TITLE_BONUS : 0;
   const change = Math.round((Object.keys(grades) as (keyof typeof grades)[]).reduce((sum, k) => sum + POINTS[grades[k]] * (WEIGHTS[k] ?? 0), 0)) + title;
-  const note =
-    change > 5
-      ? "The owner is thrilled."
-      : change >= 0
-        ? "The owner is satisfied."
-        : change > -10
-          ? "The owner is concerned."
-          : "The owner is out of patience.";
-  return { year, grades, change, note };
+  return { year, grades, change, note: mood("owner", change) };
 }
 
 export function applyReview(f: Franchise, r: OwnerReview): Franchise {
   const security = clamp(f.job.security + r.change, 0, 100);
   const title = f.season.championId === f.teamId ? 1 : 0;
   const w = wins(f);
-  const l = f.season.games.filter((g) => g.result && g.kind === "region" && (g.homeId === f.teamId || g.awayId === f.teamId)).length - w;
+  const l = f.season.games.filter((g) => g.result && inRecord(f, g) && (g.homeId === f.teamId || g.awayId === f.teamId)).length - w;
   const stints = f.job.stints.map((s, i, all) => (i === all.length - 1 ? { ...s, w: s.w + w, l: s.l + l, titles: s.titles + title } : s));
   const fired = security <= 0 && f.job.seasons >= 1 ? { year: r.year, teamId: f.teamId } : undefined;
   return { ...f, job: { ...f.job, security, seasons: f.job.seasons + 1, stints, reviews: [...f.job.reviews, r], ...(fired ? { fired } : {}) } };

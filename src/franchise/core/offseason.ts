@@ -2,7 +2,7 @@
 import { fullName, playerOvr } from "@/engine/player";
 import type { Team } from "@/engine/types";
 import { autoFinances, autoStep } from "../auto";
-import { seasonGoals } from "../club/owner";
+import { inRecord, seasonGoals } from "../club/owner";
 import { leagueTactics } from "../coaching/aiPlan";
 import { addSeason } from "../history/career";
 import { induct } from "../history/hall";
@@ -38,7 +38,7 @@ function summarize(f: Franchise): SeasonSummary {
   let w = 0,
     l = 0;
   for (const g of f.season.games) {
-    if (!g.result || g.kind !== "region" || (g.homeId !== f.teamId && g.awayId !== f.teamId)) continue;
+    if (!g.result || !inRecord(f, g) || (g.homeId !== f.teamId && g.awayId !== f.teamId)) continue;
     if (g.result.home > g.result.away === (g.homeId === f.teamId)) w++;
     else l++;
   }

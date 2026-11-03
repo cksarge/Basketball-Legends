@@ -7,7 +7,7 @@ import type { IsoDate, ProSeries, ScheduledGame } from "@/career/types";
 import { Rng } from "@/engine/rng";
 import type { Team } from "@/engine/types";
 import { closeSeasonBooks, payGates } from "../club/finance";
-import { proGoals } from "../club/owner";
+import { proGoals, youngCore } from "../club/owner";
 import { seasonAwards } from "../core/awards";
 import { leagueProgress } from "../core/progress";
 import { addNews, draftNews, retirementNews, signingNews, tradeNews } from "../history/news";
@@ -176,5 +176,6 @@ export const proLeague: LeagueModule = {
   closeSeason: closeSeasonBooks,
   awards: seasonAwards,
   goals: proGoals,
+  development: youngCore,
   settingsOptions: { games: [82, 70, 58, 41], fields: ["playoffFormat", "tradeDifficulty"] },
 };
