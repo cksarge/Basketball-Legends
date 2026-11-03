@@ -89,7 +89,7 @@ describe("retirement", () => {
     expect(franchise.players[id].teamId).toBeNull();
     const row = leaderRow(franchise, teams, id);
     expect(row.name).toBe(`${f.players[id].firstName} ${f.players[id].lastName}`);
-    expect(row.team).toBe("");
+    expect(row.team).toBe(teams[1].abbrev);
   });
 
   it("reports how the user's players changed", () => {

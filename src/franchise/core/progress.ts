@@ -91,7 +91,7 @@ export function leagueProgress(f: Franchise): { franchise: Franchise; report: Pr
     const next = { ...grown, file: { ...grown.file!, peak: Math.max(grown.file?.peak ?? 0, playerOvr(p), playerOvr(grown)) } };
     // a deal that's in its last year ends this summer
     if (retires(next, rng, (p.contract?.years ?? 0) > 1)) {
-      const out = { ...next, teamId: null };
+      const out = { ...next, teamId: null, file: { ...next.file!, ...(p.teamId ? { lastTeamId: p.teamId } : {}) } };
       delete out.contract;
       players[id] = out;
       gone.add(id);

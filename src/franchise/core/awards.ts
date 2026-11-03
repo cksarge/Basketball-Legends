@@ -43,7 +43,7 @@ export function leaders(f: Franchise, key: LeaderKey, limit = 10) {
 /** A stats row's name and team. A retired player or free agent has no team. */
 export function leaderRow(f: Franchise, teams: Team[], id: string) {
   const p = f.players[id];
-  return { name: fullName(p), team: teams.find((t) => t.id === p.teamId)?.abbrev ?? "" };
+  return { name: fullName(p), team: teams.find((t) => t.id === (p.teamId ?? p.file?.lastTeamId))?.abbrev ?? "" };
 }
 
 const impact = (l: SeasonLine) => (l.pts + reb(l) * 0.7 + l.ast * 0.9 + (l.stl + l.blk) * 1.2) / l.gp;

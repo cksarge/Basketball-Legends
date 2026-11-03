@@ -177,7 +177,8 @@ function applyDefense(off: Team, def: Team) {
       s.guarded += DOUBLED.make;
     }
   }
-  for (const [mineId, theirId] of Object.entries(t?.matchups ?? {})) {
+  // matchups are for man-to-man; a zone guards areas
+  for (const [mineId, theirId] of Object.entries((t?.defense ?? "man") === "man" ? (t?.matchups ?? {}) : {})) {
     const stopper = def.list.find((s) => s.p.id === mineId);
     const mark = off.list.find((s) => s.p.id === theirId);
     if (stopper && mark) mark.guarded -= (avg(stopper.p.ratings.perimeterD, stopper.p.ratings.interiorD) - def.defense) * MATCHUP_GAIN;

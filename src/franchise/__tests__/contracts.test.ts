@@ -116,7 +116,7 @@ describe("the new contract year", () => {
 
   it("an expired free agent with this season's stats still renders in Leaders", () => {
     const f = deal({ ...start, season: { ...start.season, stats: { [id]: { ...emptyLine(), gp: 50, gs: 50, pts: 800 } } } }, id, { salary: 9e6, years: 1 });
-    expect(leaderRow(rollContracts(f), teams, id).team).toBe("");
+    expect(leaderRow(rollContracts(f), teams, id).team).toBe(teams[0].abbrev);
     expect(playerOvr(rollContracts(f).players[id])).toBe(playerOvr(f.players[id]));
   });
 });

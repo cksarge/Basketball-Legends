@@ -2,7 +2,8 @@
 import { useState } from "react";
 import { fullName, heightStr, playerOvr } from "@/engine/player";
 import type { Player } from "@/engine/types";
-import { buyOut, buyoutAsk, callUp, releasePlayer } from "@/franchise/pro/rosterMoves";
+import { buyOut, buyoutAsk, callUp, callUpProblem, releasePlayer } from "@/franchise/pro/rosterMoves";
+import { toast } from "@/ui/Toaster";
 import { shownOvr } from "@/franchise/pro/scouting";
 import { toggleBlock } from "@/franchise/pro/tradeAi";
 import type { Franchise } from "@/franchise/types";
@@ -77,7 +78,16 @@ export function RosterTab({ f }: { f: Franchise }) {
               </Button>
             )}
             {c?.twoWay && (
-              <Button variant="ghost" className={small} disabled={running} onClick={() => move(`Called up ${fullName(p)}`, (x) => callUp(x, p.id))}>
+              <Button
+                variant="ghost"
+                className={small}
+                disabled={running}
+                onClick={() => {
+                  const reason = callUpProblem(f, p.id);
+                  if (reason) toast(reason, "bad");
+                  else move(`Called up ${fullName(p)}`, (x) => callUp(x, p.id));
+                }}
+              >
                 Call up
               </Button>
             )}
@@ -120,7 +130,16 @@ export function RosterTab({ f }: { f: Franchise }) {
                 <span>
                   {fullName(p)}, {p.pos}, {shownOvr(p)}
                 </span>
-                <Button variant="secondary" className={small} disabled={running} onClick={() => move(`Called up ${fullName(p)}`, (x) => callUp(x, p.id))}>
+                <Button
+                  variant="secondary"
+                  className={small}
+                  disabled={running}
+                  onClick={() => {
+                    const reason = callUpProblem(f, p.id);
+                    if (reason) toast(reason, "bad");
+                    else move(`Called up ${fullName(p)}`, (x) => callUp(x, p.id));
+                  }}
+                >
                   Call up
                 </Button>
               </li>

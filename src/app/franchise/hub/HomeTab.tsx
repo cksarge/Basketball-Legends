@@ -40,6 +40,7 @@ function GamePlanPanel({ f, game }: { f: Franchise; game: ScheduledGame }) {
       <p className="mb-2 text-sm text-steel">For this game only. Matchups apply when you play man-to-man.</p>
       <MatchupPicker
         mine={mine.filter((p) => !p.injury)}
+        lineup={f.plan.autoRotation ? undefined : f.plan.starters}
         theirs={roster(opponent).filter((p) => !p.injury)}
         value={f.plan.tactics}
         disabled={running}

@@ -4,8 +4,9 @@ import { fullName, playerOvr } from "@/engine/player";
 import type { Player, Position } from "@/engine/types";
 import { moneyM } from "@/franchise/pro/cap";
 import { nextRound } from "@/franchise/pro/freeAgency";
-import { askingPrice, marketValue, mood } from "@/franchise/pro/market";
-import { claimWaiver, lowDealOpen, signDev, signTwoWay } from "@/franchise/pro/rosterMoves";
+import { askingPrice, marketValue, mood, shownValue } from "@/franchise/pro/market";
+import { claimProblem, claimWaiver, devProblem, lowDealOpen, signDev, signTwoWay, twoWayProblem } from "@/franchise/pro/rosterMoves";
+import { toast } from "@/ui/Toaster";
 import { shownOvr } from "@/franchise/pro/scouting";
 import type { Franchise } from "@/franchise/types";
 import { useFranchiseSim } from "@/state/franchiseSim";
@@ -23,6 +24,12 @@ const STAGE: Record<string, string> = {
 };
 
 /** The market: who's out there, what they want and what you've bid. */
+/** Shows why a move can't happen. True means it was stopped. */
+const explain = (reason: string | null) => {
+  if (reason) toast(reason, "bad");
+  return !!reason;
+};
+
 export function FreeAgentsTab({ f }: { f: Franchise }) {
   const move = useRosterMove();
   const running = useFranchiseSim((s) => s.running);
@@ -31,14 +38,16 @@ export function FreeAgentsTab({ f }: { f: Franchise }) {
   const st = f.freeAgency;
   const bidding = st && st.stage !== "open";
   const bidOf = (id: string) => st?.bids.find((b) => b.playerId === id && b.teamId === f.teamId);
+  // an unseen rookie's ask follows what the league can see of him
+  const shownAsk = (p: Player) => askingPrice(f, p, f.teamId).salary * (shownValue(f, p) / marketValue(f, p));
   const rows = f.freeAgents.map((id) => f.players[id]).filter((p) => pos === "All" || p.pos === pos);
   const columns: Column<Player>[] = [
     { key: "name", label: "Player", text: true, value: (p) => `${p.lastName} ${p.firstName}`, render: fullName },
     { key: "pos", label: "Pos", text: true, value: (p) => p.pos },
     { key: "age", label: "Age", value: (p) => p.age },
-    { key: "ovr", label: "OVR", value: playerOvr, render: shownOvr },
-    { key: "value", label: "Value", value: (p) => marketValue(f, p), render: (p) => moneyM(marketValue(f, p)) },
-    { key: "ask", label: "Ask", value: (p) => askingPrice(f, p, f.teamId).salary, render: (p) => moneyM(askingPrice(f, p, f.teamId).salary) },
+    { key: "ovr", label: "OVR", value: (p) => (p.file?.range ? (p.file.range.ovr[0] + p.file.range.ovr[1]) / 2 : playerOvr(p)), render: shownOvr },
+    { key: "value", label: "Value", value: (p) => shownValue(f, p), render: (p) => moneyM(shownValue(f, p)) },
+    { key: "ask", label: "Ask", value: (p) => shownAsk(p), render: (p) => moneyM(shownAsk(p)) },
     { key: "mood", label: "Mood", value: (p) => Math.round(mood(f, p, f.teamId).score * 100) },
     { key: "bid", label: "Your bid", value: (p) => bidOf(p.id)?.salary ?? 0, render: (p) => (bidOf(p.id) ? moneyM(bidOf(p.id)!.salary) : "") },
     {
@@ -57,7 +66,9 @@ export function FreeAgentsTab({ f }: { f: Franchise }) {
                 variant="ghost"
                 className={small}
                 disabled={running}
-                onClick={() => move(`Signed ${fullName(p)} to a two-way deal`, (x) => signTwoWay(x, f.teamId, p.id))}
+                onClick={() =>
+                  explain(twoWayProblem(f, f.teamId, p.id)) || move(`Signed ${fullName(p)} to a two-way deal`, (x) => signTwoWay(x, f.teamId, p.id))
+                }
               >
                 Two-way
               </Button>
@@ -65,7 +76,9 @@ export function FreeAgentsTab({ f }: { f: Franchise }) {
                 variant="ghost"
                 className={small}
                 disabled={running}
-                onClick={() => move(`Signed ${fullName(p)} to a developmental deal`, (x) => signDev(x, f.teamId, p.id))}
+                onClick={() =>
+                  explain(devProblem(f, f.teamId, p.id)) || move(`Signed ${fullName(p)} to a developmental deal`, (x) => signDev(x, f.teamId, p.id))
+                }
               >
                 Dev
               </Button>
@@ -111,7 +124,7 @@ export function FreeAgentsTab({ f }: { f: Franchise }) {
                       variant="secondary"
                       className={small}
                       disabled={running}
-                      onClick={() => move(`Claimed ${fullName(p)}`, (x) => claimWaiver(x, f.teamId, p.id))}
+                      onClick={() => explain(claimProblem(f, f.teamId, p.id)) || move(`Claimed ${fullName(p)}`, (x) => claimWaiver(x, f.teamId, p.id))}
                     >
                       Claim
                     </Button>

@@ -7,7 +7,7 @@ import { moneyM, payroll, rightsLimit } from "./cap";
 import { freeJersey } from "./draft";
 import { askingPrice } from "./market";
 import { joinTeam, standardCount } from "./rosterMoves";
-import { OFFSEASON_ROSTER_MAX, ROSTER_MAX, ROSTER_MIN, capRules } from "./rules";
+import { OFFSEASON_ROSTER_MAX, ROSTER_MAX, ROSTER_MIN, TWO_WAY_MAX, capRules } from "./rules";
 
 export type TradeAsset =
   | { kind: "player"; id: string; from: string; to: string; signAndTrade?: { salary: number; years: number } }
@@ -71,6 +71,12 @@ function rosterProblem(f: Franchise, t: Trade, teamId: string): string | null {
     t.assets.filter((a) => a.to === teamId && counts(a)).length -
     t.assets.filter((a) => a.from === teamId && counts(a) && !(a.kind === "player" && a.signAndTrade)).length;
   const limit = f.phase === "offseason" ? OFFSEASON_ROSTER_MAX : ROSTER_MAX;
+  const twoWay = (a: TradeAsset) => a.kind === "player" && !!f.players[a.id].contract?.twoWay;
+  const lowDeals =
+    f.rosters[teamId].filter((id) => f.players[id].contract?.twoWay).length +
+    t.assets.filter((a) => a.to === teamId && twoWay(a)).length -
+    t.assets.filter((a) => a.from === teamId && twoWay(a)).length;
+  if (lowDeals > TWO_WAY_MAX) return `${teamId} would have more than ${TWO_WAY_MAX} two-way players.`;
   if (after > limit) return `${teamId} would have ${after} players, over the roster limit of ${limit}.`;
   // AI teams keep a full roster in season; the user can sign someone before the next game
   return f.phase !== "offseason" && teamId !== f.teamId && after < ROSTER_MIN ? `${teamId} would have too few players.` : null;

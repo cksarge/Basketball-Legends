@@ -1,5 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
+import { CONTROL_ROWS } from "./controlRows";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Match, type MatchSetup } from "@/game/sim/match";
@@ -973,30 +974,7 @@ function SubsPanel({ match, team }: { match: Match; team: TeamIdx }) {
 
 function ControlsReference() {
   const keys = useSettings((s) => s.controls.keys);
-  const rows: [string, string[]][] = [
-    ["Move", ["up", "left", "down", "right"]],
-    ["Sprint", ["sprint"]],
-    ["Shoot (hold, release at the top)", ["shoot"]],
-    ["Pass / call for ball", ["pass"]],
-    ["Lob / alley-oop", ["lob"]],
-    ["Bounce pass", ["bounce"]],
-    ["Icon pass (hold, then 1-5)", ["iconPass"]],
-    ["Crossover", ["dribbleLeft", "dribbleRight"]],
-    ["Stepback", ["dribbleBack"]],
-    ["Spin", ["dribbleSpin"]],
-    ["Pump fake", ["pumpFake"]],
-    ["Post up", ["post"]],
-    ["Call pick and roll", ["callScreen"]],
-    ["Steal (defense)", ["steal"]],
-    ["Block / rebound (defense)", ["block"]],
-    ["Intense defense", ["intenseD"]],
-    ["Switch player", ["switchPlayer"]],
-    ["Take charge", ["takeCharge"]],
-    ["Timeout", ["timeout"]],
-    ["Camera", ["camera"]],
-    ["Instant replay", ["replay"]],
-    ["Pause", ["pause"]],
-  ];
+  const rows = CONTROL_ROWS;
   const lab = (c: string) =>
     c
       .replace(/^Key/, "")

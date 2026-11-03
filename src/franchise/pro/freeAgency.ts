@@ -152,7 +152,8 @@ function runRound(f: Franchise): Franchise {
     if (best.b.teamId === f.teamId) notices.push(`${fullName(p)} accepted your offer.`);
     else if (live.some((b) => b.teamId === f.teamId)) notices.push(`${fullName(p)} chose another team.`);
   }
-  return { ...next, freeAgency: { stage: round >= BIDDING_ROUNDS ? "open" : "bidding", round, bids: kept, signed, notices } };
+  const roundNotes = notices.map((n) => `Round ${round}: ${n}`);
+  return { ...next, freeAgency: { stage: round >= BIDDING_ROUNDS ? "open" : "bidding", round, bids: kept, signed, notices: [...st.notices, ...roundNotes] } };
 }
 
 /** On to the next round. After the moratorium, this is round one. */

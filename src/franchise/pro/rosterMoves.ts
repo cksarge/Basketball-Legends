@@ -54,26 +54,35 @@ export function releasePlayer(f: Franchise, id: string): Franchise {
   return {
     ...f,
     rosters,
-    players: { ...f.players, [id]: { ...p, teamId: null } },
+    players: { ...f.players, [id]: { ...p, teamId: null, file: { ...p.file!, lastTeamId: teamId } } },
     books: addDead(f, teamId, { playerId: id, name: fullName(p), salary: c.salary, years: guaranteedYears(c) }),
     waivers: [...f.waivers, { playerId: id, fromTeamId: teamId, until: addDays(f.date, WAIVER_DAYS) }],
   };
 }
 
 function toMarket(f: Franchise, p: Player) {
-  const out: Player = { ...p, teamId: null, file: { ...p.file!, teamSeasons: 0, lastSalary: p.contract?.salary, rightsTeamId: undefined } };
+  const out: Player = {
+    ...p,
+    teamId: null,
+    file: { ...p.file!, teamSeasons: 0, lastSalary: p.contract?.salary, rightsTeamId: undefined, lastTeamId: p.teamId ?? p.file?.lastTeamId },
+  };
   delete out.contract;
   return { players: { ...f.players, [p.id]: out }, freeAgents: [...f.freeAgents, p.id] };
 }
 
+export function claimProblem(f: Franchise, teamId: string, id: string): string | null {
+  if (!f.waivers.some((w) => w.playerId === id)) return "He's no longer on waivers.";
+  if (standardCount(f, teamId) >= rosterLimit(f)) return "Your roster is full. Release someone first.";
+  const rules = capRules(f.cap);
+  const salary = f.players[id].contract!.salary;
+  return salary > rules.minSalary && salary > rules.salaryCap - payroll(f, teamId) ? "You don't have the cap room for his contract." : null;
+}
+
 /** Takes a player and his whole contract off waivers. */
 export function claimWaiver(f: Franchise, teamId: string, id: string): Franchise {
-  const entry = f.waivers.find((w) => w.playerId === id);
+  if (claimProblem(f, teamId, id)) return f;
+  const entry = f.waivers.find((w) => w.playerId === id)!;
   const p = f.players[id];
-  if (!entry || standardCount(f, teamId) >= rosterLimit(f)) return f;
-  const rules = capRules(f.cap);
-  const salary = p.contract!.salary;
-  if (salary > rules.minSalary && salary > rules.salaryCap - payroll(f, teamId)) return f;
   const books = { ...f.books[entry.fromTeamId], dead: f.books[entry.fromTeamId].dead.filter((d) => d.playerId !== id) };
   return {
     ...f,
@@ -150,8 +159,20 @@ export const lowDealOpen = (f: Franchise, p: Player) =>
 /** Before July 1, a low deal is for next season. */
 const lowDealTiming = (f: Franchise) => (f.offseason && !f.freeAgency ? { startsNext: true } : {});
 
+export function twoWayProblem(f: Franchise, teamId: string, id: string): string | null {
+  if (!f.freeAgents.includes(id)) return "He isn't a free agent.";
+  if (!lowDealOpen(f, f.players[id])) return "He won't take a two-way deal. Only young fringe players will.";
+  return f.rosters[teamId].filter((x) => isTwoWay(f.players[x])).length >= TWO_WAY_MAX ? "You already have three two-way players." : null;
+}
+
+export function devProblem(f: Franchise, teamId: string, id: string): string | null {
+  if (!f.freeAgents.includes(id)) return "He isn't a free agent.";
+  if (!lowDealOpen(f, f.players[id])) return "He won't take a developmental deal. Only young fringe players will.";
+  return f.devRosters[teamId].length >= DEV_MAX ? "You already have three developmental players." : null;
+}
+
 export function signTwoWay(f: Franchise, teamId: string, id: string): Franchise {
-  if (!f.freeAgents.includes(id) || !lowDealOpen(f, f.players[id]) || f.rosters[teamId].filter((x) => isTwoWay(f.players[x])).length >= TWO_WAY_MAX) return f;
+  if (twoWayProblem(f, teamId, id)) return f;
   const player = joinTeam(f, teamId, id, { salary: capRules(f.cap).twoWaySalary, years: 1, twoWay: true, ...lowDealTiming(f) });
   return {
     ...f,
@@ -162,7 +183,7 @@ export function signTwoWay(f: Franchise, teamId: string, id: string): Franchise 
 }
 
 export function signDev(f: Franchise, teamId: string, id: string): Franchise {
-  if (!f.freeAgents.includes(id) || !lowDealOpen(f, f.players[id]) || f.devRosters[teamId].length >= DEV_MAX) return f;
+  if (devProblem(f, teamId, id)) return f;
   const player = joinTeam(f, teamId, id, { salary: capRules(f.cap).devSalary, years: 1, dev: true, ...lowDealTiming(f) });
   return {
     ...f,
@@ -172,17 +193,23 @@ export function signDev(f: Franchise, teamId: string, id: string): Franchise {
   };
 }
 
+export function callUpProblem(f: Franchise, id: string): string | null {
+  const p = f.players[id];
+  if (!p.teamId || !(p.contract?.dev || p.contract?.twoWay)) return "Only two-way and developmental players can be called up.";
+  return standardCount(f, p.teamId) >= rosterLimit(f) ? "Your roster is full. Release someone first." : null;
+}
+
 /** A two-way or developmental player moves up to a standard minimum deal. */
 export function callUp(f: Franchise, id: string): Franchise {
   const p = f.players[id];
-  if (!p.teamId || !(p.contract?.dev || p.contract?.twoWay) || standardCount(f, p.teamId) >= rosterLimit(f)) return f;
-  const teamId = p.teamId;
+  if (callUpProblem(f, id)) return f;
+  const teamId = p.teamId!;
   const onRoster = f.rosters[teamId].includes(id);
   return {
     ...f,
     players: {
       ...f.players,
-      [id]: { ...p, contract: { salary: capRules(f.cap).minSalary, years: 1, ...(p.contract.startsNext ? { startsNext: true } : {}) } },
+      [id]: { ...p, contract: { salary: capRules(f.cap).minSalary, years: 1, ...(p.contract!.startsNext ? { startsNext: true } : {}) } },
     },
     rosters: onRoster ? f.rosters : { ...f.rosters, [teamId]: [...f.rosters[teamId], id] },
     devRosters: { ...f.devRosters, [teamId]: f.devRosters[teamId].filter((x) => x !== id) },

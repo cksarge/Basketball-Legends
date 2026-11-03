@@ -44,9 +44,14 @@ function producedOvr(f: Franchise, p: Player) {
   return 52 + ((l.pts + reb(l) * 0.7 + l.ast * 0.9 + (l.stl + l.blk) * 1.2) / l.gp) * 1.1;
 }
 
-export function marketValue(f: Franchise, p: Player): number {
+/** A player's value as the league can see it: a rookie no one has seen play is judged on the middle of his range. */
+export function shownValue(f: Franchise, p: Player): number {
+  return p.file?.range ? marketValue(f, p, (p.file.range.ovr[0] + p.file.range.ovr[1]) / 2) : marketValue(f, p);
+}
+
+export function marketValue(f: Franchise, p: Player, seenOvr?: number): number {
   const rules = capRules(f.cap);
-  const ovr = playerOvr(p);
+  const ovr = seenOvr ?? playerOvr(p);
   const produced = producedOvr(f, p);
   const base = produced === null ? valueAt(ovr) : valueAt(ovr) * (1 - PRODUCTION_SHARE) + valueAt(produced) * PRODUCTION_SHARE;
   return roundMoney(clamp((base * ageDiscount(p.age) * rules.salaryCap) / START_CAP, rules.minSalary, rules.maxSalary(p.file?.service ?? 0)));

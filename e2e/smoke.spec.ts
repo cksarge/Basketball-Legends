@@ -182,10 +182,18 @@ test("run a franchise offseason: option, re-sign, bid, release, two-way", async 
   await expect(page.getByRole("heading", { name: "Team options" })).toBeVisible();
   const staff = page.getByRole("button", { name: "Let your staff decide" });
   if (await staff.isVisible()) await staff.click();
+  await expect(page.getByText("You have no team options to decide.")).toBeVisible();
   const resign = page.getByRole("button", { name: "Re-sign" }).first();
   if (await resign.isVisible()) {
     await resign.click();
     await page.getByRole("button", { name: "Make offer" }).click();
+    // either he signed and the dialog closed, or it says why not
+    await expect(
+      page
+        .getByRole("dialog")
+        .getByRole("status")
+        .or(page.getByText(/Re-signed /)),
+    ).toBeVisible();
     // his ask can top what veteran rights allow, and then the dialog stays open and says so
     await page
       .getByRole("button", { name: "Close", exact: true })
@@ -259,6 +267,7 @@ test("make a franchise trade, undo it and make it again", async ({ page }) => {
   await page.getByRole("tab", { name: "Trades" }).click();
   await expect(page.getByRole("heading", { name: "Trade block" })).toBeVisible();
   await page.getByRole("button", { name: "Ask around" }).click();
+  await expect(page.getByRole("button", { name: "Accept" }).first()).toBeVisible();
   expect(errors).toEqual([]);
 });
 

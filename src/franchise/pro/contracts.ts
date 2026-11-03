@@ -89,7 +89,7 @@ export function rollContracts(f: Franchise): Franchise {
       players[p.id] = { ...p, file, contract: deal };
       continue;
     }
-    const out: Player = { ...p, teamId: null, file: { ...file, lastSalary: p.contract.salary, rightsTeamId: teamId } };
+    const out: Player = { ...p, teamId: null, file: { ...file, lastSalary: p.contract.salary, rightsTeamId: teamId, lastTeamId: teamId } };
     delete out.contract;
     players[p.id] = out;
     rosters[teamId] = rosters[teamId].filter((id) => id !== p.id);
