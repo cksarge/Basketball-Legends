@@ -53,6 +53,32 @@ In testing at legends.carterscoding.com/beta/. These notes grow as Franchise mod
 - **Your owner:** goals for winning, profit and development each season, with a review and a job security score.
 - **Getting fired:** your save continues. Pick from the teams willing to hire you, and your coaching record comes with you.
 
+### Let your staff handle it
+
+- **Auto-manage:** switch on any of rotation, tactics, practice, scouting, the draft, contracts, free agency, trades, finances and roster limits, and your staff runs them on the same rules as every other team.
+- **Untouchable:** mark players your staff will never trade.
+- **Sim the offseason:** run the whole summer in one press. It stops only when something needs you.
+
+### League settings
+
+- **Your rules:** 82, 70, 58 or 41 games, a best-of-five or best-of-seven first round, and the play-in on or off. These start next season.
+- **Difficulty:** trade difficulty, injury rate and progression speed, which apply at once. Set them when you start a franchise or any time after.
+
+### Smarter opponents
+
+- **AI playbooks:** every AI team picks a system that fits its roster, each season.
+
+### Compare and find
+
+- **Compare:** two players, a player and a Hall of Famer, or two teams, side by side with the better number marked.
+- **Filters:** search boxes on the roster, free agent, draft and leaders tables.
+
+### Fixes
+
+- The matchup picker lists your planned starters. Simulated games ignore matchups under a zone, as the screen says.
+- Leaders shows a player's last team after he leaves one. A refused two-way deal, call-up or waiver claim now says why.
+- Bid messages from every free agency round are kept. Trades can't take a team past three two-way players. Unseen rookies' values follow their rating range.
+
 ### League life
 
 - **News:** a feed of trades, signings, injuries, upsets, milestones, awards and retirements, with a filter for your team.

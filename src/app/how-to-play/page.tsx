@@ -204,7 +204,17 @@ export default function HowToPlay() {
           <b>The league:</b> the League tab has news, power rankings, history, records and the Hall of Fame. Your Legends from Road to Legend appear there too.
         </li>
         <li>
-          <b>Save slots:</b> Franchise has three of its own. Resume a saved game from the hub.
+          <b>Auto-manage:</b> the Settings tab lets your staff run any part of the job. Mark players Untouchable on the Roster tab to keep them out of trades.
+        </li>
+        <li>
+          <b>League settings:</b> change the game count, playoff format, trade difficulty, injuries and progression. Game count and playoff format start next
+          season.
+        </li>
+        <li>
+          <b>Compare:</b> the League tab compares any two players or teams.
+        </li>
+        <li>
+          <b>Save slots:</b> Franchise has three of its own. They show in Resume game on the main menu, and in the hub.
         </li>
         <li>
           <b>Backups:</b> your franchise saves in your browser after every day. Export it from the Franchise screen to keep a copy.
