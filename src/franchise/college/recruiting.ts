@@ -10,6 +10,7 @@ import type { CollegeDivision, Player, Position, Team } from "@/engine/types";
 import { reputation } from "../club/jobs";
 import { staffRating } from "../coaching/staff";
 import { readProspect, scoutMultiplier } from "../pro/scouting";
+import { nilRoom, promiseNil, releaseNil } from "./nil";
 import type { CollegeState, Franchise, Recruit, RecruitNeed } from "../types";
 
 export const RECRUITS_PER_PROGRAM = 4.2;
@@ -26,6 +27,8 @@ const OFFER_BOOST = 1.5;
 export const MAX_OFFICIAL_VISITS = 5;
 export const COMMIT_INTEREST = 120;
 export const COMMIT_LEAD = 1.25;
+/** The portal moves fast: three rounds, so transfers commit sooner. */
+export const PORTAL_COMMIT = 50;
 const FLIP_RATIO = 1.5;
 const FLIP_CHANCE = 0.1;
 export const SCHOLARSHIPS: Record<CollegeDivision, number> = { D1: 13, D2: 10, D3: 0 };
@@ -216,7 +219,7 @@ export function newClass(f: Franchise, teams: Team[], classYear: number, headSta
   return next;
 }
 
-type Result = { recruit: Recruit; cost: number } | { error: string };
+type Result = { recruit: Recruit; cost: number; nil?: number } | { error: string };
 
 /** One program's move on one recruit. */
 function apply(f: Franchise, teamId: string, r: Recruit, action: RecruitAction, ctx: RecruitContext, nil?: number): Result {
@@ -241,13 +244,15 @@ function apply(f: Franchise, teamId: string, r: Recruit, action: RecruitAction, 
   if (action === "offer") {
     if (r.offers[teamId] === undefined && openScholarships(f, teamId) <= 0)
       return { error: college(f).division === "D3" ? "You have no open roster spots." : "You have no open scholarships." };
-    return { recruit: { ...r, offers: { ...r.offers, [teamId]: Math.max(0, Math.round(nil ?? 0)) } }, cost };
+    const amount = Math.max(0, Math.round(nil ?? 0));
+    if (amount - (r.offers[teamId] ?? 0) > nilRoom(f, teamId)) return { error: "That's more NIL than you have left for next season." };
+    return { recruit: { ...r, offers: { ...r.offers, [teamId]: amount } }, cost, nil: amount };
   }
   if (action === "pullOffer") {
     if (r.committed === teamId) return { error: "He's committed to you." };
     const offers = { ...r.offers };
     delete offers[teamId];
-    return { recruit: { ...r, offers }, cost };
+    return { recruit: { ...r, offers }, cost, nil: 0 };
   }
   // scouting
   const p = r.player;
@@ -257,10 +262,12 @@ function apply(f: Franchise, teamId: string, r: Recruit, action: RecruitAction, 
   return { recruit: { ...r, scouted, player: { ...p, file: { ...p.file, range } } }, cost };
 }
 
-function store(f: Franchise, teamId: string, recruit: Recruit, cost: number): Franchise {
-  const c = college(f);
+function store(f: Franchise, teamId: string, recruit: Recruit, cost: number, nil?: number): Franchise {
+  const promised = nil === undefined ? f : promiseNil(f, teamId, recruit.id, nil);
+  if ("error" in promised) return f;
+  const c = college(promised);
   return {
-    ...f,
+    ...promised,
     college: {
       ...c,
       points: { ...c.points, [teamId]: c.points[teamId] - cost },
@@ -274,7 +281,7 @@ export function recruitAction(f: Franchise, recruitId: string, action: RecruitAc
   const r = college(f).recruits.find((x) => x.id === recruitId);
   if (!r) return { error: "That recruit isn't in this class." };
   const result = apply(f, f.teamId, r, action, recruitContext(f, teams), nil);
-  return "error" in result ? result : store(f, f.teamId, result.recruit, result.cost);
+  return "error" in result ? result : store(f, f.teamId, result.recruit, result.cost, result.nil);
 }
 
 /** Stable per team and recruit, so programs spread out instead of chasing the same players. */
@@ -297,6 +304,7 @@ export function aiRecruiting(f: Franchise, teams: Team[], includeUser: boolean):
   let recruits = college(f).recruits;
   const index = new Map(recruits.map((r, i) => [r.id, i]));
   const points = { ...college(f).points };
+  let nil = college(f).nil;
   recruits = [...recruits];
   for (const team of [...teams].sort((a, b) => a.id.localeCompare(b.id))) {
     if (team.id === f.teamId && !includeUser) continue;
@@ -308,7 +316,7 @@ export function aiRecruiting(f: Franchise, teams: Team[], includeUser: boolean):
       .sort((a, b) => (b.interest[team.id] ?? 0) - (a.interest[team.id] ?? 0) || taste(team.id, a.id) - taste(team.id, b.id))
       .slice(0, AI_TARGETS);
     if (!targets.length) continue;
-    const view = (): Franchise => ({ ...f, college: { ...college(f), recruits, points } });
+    const view = (): Franchise => ({ ...f, college: { ...college(f), recruits, points, nil } });
     const save = (r: Recruit, cost: number) => {
       recruits[index.get(r.id)!] = r;
       points[team.id] -= cost;
@@ -318,8 +326,10 @@ export function aiRecruiting(f: Franchise, teams: Team[], includeUser: boolean):
       if (offers >= Math.ceil(open * AI_OFFER_RATIO)) break;
       const r = recruits[index.get(t.id)!];
       if (r.offers[team.id] !== undefined) continue;
-      const done = apply(view(), team.id, r, "offer", ctx, r.nilAsk);
+      const done = apply(view(), team.id, r, "offer", ctx, Math.min(r.nilAsk, Math.max(0, nilRoom(view(), team.id))));
       if ("error" in done) break;
+      const promised = promiseNil(view(), team.id, r.id, done.nil ?? 0);
+      if (!("error" in promised)) nil = promised.college!.nil;
       save(done.recruit, done.cost);
       offers++;
     }
@@ -347,7 +357,7 @@ export function aiRecruiting(f: Franchise, teams: Team[], includeUser: boolean):
       }
     }
   }
-  return { ...f, college: { ...college(f), recruits, points } };
+  return { ...f, college: { ...college(f), recruits, points, nil } };
 }
 
 /** Commitments and flips at the end of a week. */
@@ -370,7 +380,7 @@ export function resolveWeek(f: Franchise, rng: Rng): Franchise {
       return { ...r, committed: rival[0] };
     }
     const leader = ranked.find(([id]) => r.offers[id] !== undefined);
-    if (!leader || leader[1] < COMMIT_INTEREST || roomOf(leader[0]) <= 0) return r;
+    if (!leader || leader[1] < (r.kind === "transfer" ? PORTAL_COMMIT : COMMIT_INTEREST) || roomOf(leader[0]) <= 0) return r;
     const second = ranked.find(([id]) => id !== leader[0])?.[1] ?? 0;
     if (leader[1] < COMMIT_LEAD * second) return r;
     room.set(leader[0], roomOf(leader[0]) - 1);
@@ -379,10 +389,17 @@ export function resolveWeek(f: Franchise, rng: Rng): Franchise {
   return { ...f, college: { ...c, recruits } };
 }
 
+/** A signed player's other suitors get their NIL back. */
+function releaseOthers(f: Franchise, r: Recruit): Franchise {
+  return Object.keys(r.offers).reduce((x, teamId) => (teamId === r.committed ? x : releaseNil(x, teamId, r.id)), f);
+}
+
 /** Everyone committed by the early signing date signs, and can't flip after. */
 export function earlySigning(f: Franchise): Franchise {
   const c = college(f);
-  return { ...f, college: { ...c, earlySigned: true, recruits: c.recruits.map((r) => (r.committed && !r.signed ? { ...r, signed: true } : r)) } };
+  const recruits = c.recruits.map((r) => (r.committed && !r.signed ? { ...r, signed: true } : r));
+  const signing = recruits.filter((r, i) => r.signed && !c.recruits[i].signed);
+  return signing.reduce(releaseOthers, { ...f, college: { ...c, earlySigned: true, recruits } } as Franchise);
 }
 
 /** The last day: commitments sign, the rest take their best offer that still has room, and anyone left goes elsewhere. */
@@ -401,7 +418,14 @@ export function signingDay(f: Franchise, teams: Team[]): Franchise {
     };
   }
   const known = new Set(teams.map((t) => t.id));
-  return { ...next, college: { ...next.college!, recruits: next.college!.recruits.filter((r) => r.signed && known.has(r.committed!)) } };
+  const kept = next.college!.recruits.filter((r) => r.signed && known.has(r.committed!));
+  const gone = next.college!.recruits.filter((r) => !kept.includes(r));
+  // suitors who missed out, and everyone who offered a recruit who went elsewhere, get their money back
+  const released = [
+    ...kept.map((r) => (x: Franchise) => releaseOthers(x, r)),
+    ...gone.map((r) => (x: Franchise) => Object.keys(r.offers).reduce((y, t) => releaseNil(y, t, r.id), x)),
+  ].reduce((x, step) => step(x), next);
+  return { ...released, college: { ...released.college!, recruits: kept } };
 }
 
 /** 1 for the best class: stars committed and signed. */

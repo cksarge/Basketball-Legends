@@ -6,6 +6,7 @@ import { Rng } from "@/engine/rng";
 import type { CollegeDivision, Team } from "@/engine/types";
 import { playerOvr } from "@/engine/player";
 import { advanceDivision } from "../college/brackets";
+import { newBook } from "../college/nil";
 import { SCHOLARSHIPS, aiRecruiting, earlySigning, earlySigningDate, newClass, refillPoints, resolveWeek } from "../college/recruiting";
 import { collegeAwards } from "../core/awards";
 import type { Franchise } from "../types";
@@ -60,7 +61,17 @@ function setup(f: Franchise, teams: Team[]): Franchise {
   const marked = markWalkOns(f, division);
   const started: Franchise = {
     ...marked,
-    college: { division, classYear: f.season.year + 1, recruits: [], points: {}, earlySigned: false, nil: {}, portal: null, declared: [], pitched: [] },
+    college: {
+      division,
+      classYear: f.season.year + 1,
+      recruits: [],
+      points: {},
+      earlySigned: false,
+      nil: Object.fromEntries(teams.map((t) => [t.id, newBook(t, division)])),
+      portal: null,
+      declared: [],
+      pitched: [],
+    },
   };
   return newClass(started, teams, f.season.year + 1, HEAD_START_WEEKS);
 }
